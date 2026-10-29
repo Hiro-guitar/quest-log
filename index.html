@@ -167,6 +167,17 @@ select option{background:var(--panel-solid)}
 .estep .ic{color:var(--dim);width:26px;height:30px;font-size:13px;border-radius:3px}
 .estep .ic:hover{color:var(--text);background:rgba(255,255,255,.06)}
 .hint{font-size:12px;color:var(--dim)}
+.qico{flex:none;width:18px;height:22px;color:var(--blue);font-size:15px;line-height:1;margin-top:1px}
+.qstep.done .qico{color:var(--dim)}
+.qstep .step-t{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px}
+.qlink{color:var(--blue);font-weight:700;text-align:left;text-decoration:underline;text-decoration-color:rgba(95,212,239,.35);text-underline-offset:4px}
+.qstep.done .qlink{color:var(--dim);text-decoration:line-through}
+.qpct{font-size:12px;color:var(--muted);font-style:italic}
+.qnext{flex-basis:100%;order:3;font-size:12px;color:var(--muted);font-weight:400}
+.qstep.next .step-t::after{order:2}
+.eref{flex:1;min-width:0;padding:8px 10px;border:1px dashed rgba(95,212,239,.4);border-radius:3px;color:var(--blue);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.eref small{color:var(--dim);margin-left:8px;font-size:11px}
+.estep .promote{width:auto;padding:0 8px;font-size:11px;color:var(--blue);border:1px solid rgba(95,212,239,.35)}
 .drag{flex:none;cursor:grab;color:var(--dim);padding:4px 8px;margin:-4px -4px -4px 0;touch-action:none;user-select:none;-webkit-user-select:none;font-size:15px;line-height:1.4;letter-spacing:-3px}
 .drag:hover{color:var(--text)}
 .dragging{background:rgba(95,212,239,.10);outline:1px solid var(--blue);border-radius:3px;box-shadow:0 0 14px rgba(95,212,239,.3);position:relative;z-index:2}
@@ -287,17 +298,24 @@ let tab='active', selId=null, editing=false, showCleared=false;
 /* ---------- helpers ---------- */
 const findQ=id=>state.quests.find(q=>q.id===id);
 const kids=id=>state.quests.filter(q=>q.parentId===id);
-function progress(q){
+const refQ=s=>s&&s.qref?findQ(s.qref):null;
+function stepDone(s){const r=refQ(s); return r? !!r.done : !!s.done}
+function stepText(s){const r=refQ(s); return r? (r.title||'(無題)') : s.text}
+function looseKids(q){return kids(q.id).filter(k=>!q.steps.some(s=>s.qref===k.id))}
+function progress(q,g=0){
   if(q.done) return 1;
-  const ks=kids(q.id), units=q.steps.length+ks.length;
+  if(g>20) return 0;
+  const ks=looseKids(q), units=q.steps.length+ks.length;
   if(!units) return 0;
-  return (q.steps.filter(s=>s.done).length + ks.reduce((n,k)=>n+progress(k),0))/units;
+  const sv=q.steps.reduce((n,s)=>{const r=refQ(s); return n+(r?progress(r,g+1):(s.done?1:0))},0);
+  return (sv + ks.reduce((n,k)=>n+progress(k,g+1),0))/units;
 }
-function nextStep(q){return q.steps.find(s=>!s.done)}
-function nextAction(q){
-  const s=nextStep(q); if(s) return s.text;
+function nextStep(q){return q.steps.find(s=>!stepDone(s))}
+function nextAction(q,g=0){
+  const s=nextStep(q);
+  if(s){const r=refQ(s); return r&&g<10 ? (nextAction(r,g+1)||r.title) : s.text;}
   const k=kids(q.id).find(k=>!k.done);
-  if(k) return (nextAction(k)||k.title);
+  if(k&&g<10) return (nextAction(k,g+1)||k.title);
   return null;
 }
 function ancestors(q){const out=[];let p=findQ(q.parentId),g=0;while(p&&g++<20){out.unshift(p);p=findQ(p.parentId)}return out}
@@ -312,7 +330,7 @@ function dueHtml(d){
 const stars=r=>`<span class="stars">${'★'.repeat(r)}<span class="off">${'★'.repeat(5-r)}</span></span>`;
 function byDue(a,b){const da=a.deadline||'9999',db=b.deadline||'9999';return da<db?-1:da>db?1:a.created-b.created}
 function lvInfo(xp){let lv=1,need=100,rest=xp;while(rest>=need){rest-=need;lv++;need=100+(lv-1)*40}return{lv,rest,need}}
-function allStepsDone(q){return !q.done && (q.steps.length||kids(q.id).length) && q.steps.every(s=>s.done) && kids(q.id).every(k=>k.done)}
+function allStepsDone(q){return !q.done && (q.steps.length||kids(q.id).length) && q.steps.every(stepDone) && kids(q.id).every(k=>k.done)}
 
 function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('show'),2200)}
 function gain(n){
@@ -324,7 +342,7 @@ function gain(n){
 
 /* ---------- actions ---------- */
 function toggleStep(qid,sid){
-  const q=findQ(qid), s=q&&q.steps.find(x=>x.id===sid); if(!s) return;
+  const q=findQ(qid), s=q&&q.steps.find(x=>x.id===sid); if(!s||s.qref) return;
   s.done=!s.done; gain((s.done?1:-1)*10*q.rank);
   save(); render();
   if(s.done){
@@ -353,9 +371,24 @@ function cleanupEmpty(){
     state.quests=state.quests.filter(x=>x!==q); selId=null; save();
   }
 }
+function promoteStep(q,sid){
+  const s=q.steps.find(x=>x.id===sid); if(!s||s.qref) return;
+  const n={id:uid(),title:s.text,type:'sub',parentId:null,rank:Math.max(1,q.rank-1),deadline:'',reward:'',memo:'',steps:[],accepted:false,done:!!s.done,doneAt:s.done?Date.now():null,created:Date.now()};
+  if(canLink(n,q)) n.parentId=q.id; else if(canLink(n,findQ(q.parentId))) n.parentId=q.parentId;
+  state.quests.push(n); s.qref=n.id; save();
+  renderEdit($('detail'),q); renderList(); renderTabs(); renderHud();
+  toast('サブクエストに格上げしました');
+}
+function insertRef(q,id){
+  const r=findQ(id); if(!r||q.steps.some(s=>s.qref===id)) return;
+  q.steps.push({id:uid(),text:r.title,done:false,qref:id});
+  if(!r.parentId&&canLink(r,q)) r.parentId=q.id;
+  save(); renderEdit($('detail'),q); renderList();
+}
 function deleteQuest(q){
   if(!confirm(`「${q.title||'(無題)'}」を削除する？\n下位クエストは1つ上の階層に移動します。`)) return;
-  kids(q.id).forEach(k=>k.parentId=q.parentId);
+  kids(q.id).forEach(k=>k.parentId=canLink(k,findQ(q.parentId))?q.parentId:null);
+  state.quests.forEach(o=>o.steps.forEach(x=>{if(x.qref===q.id){x.qref=null;x.text=q.title||x.text;x.done=!!q.done}}));
   state.quests=state.quests.filter(x=>x!==q); selId=null; editing=false; save(); render();
 }
 function addSteps(q,text){
@@ -417,7 +450,7 @@ function renderList(){
     }
   }else if(tab==='log'){
     const done=state.quests.filter(q=>q.done).sort((a,b)=>(b.doneAt||0)-(a.doneAt||0));
-    const steps=state.quests.reduce((n,q)=>n+q.steps.filter(s=>s.done).length,0);
+    const steps=state.quests.reduce((n,q)=>n+q.steps.filter(s=>!s.qref&&s.done).length,0);
     h=`<div class="group-h">達成 ${done.length}件 ・ クリアした工程 ${steps}個 ・ 累計 ${state.xp} XP</div>`;
     h+=done.length?done.map(q=>row(q)).join(''):`<div class="empty">まだ達成したクエストはありません。最初の1つを目指そう。</div>`;
   }else if(tab==='tools'){
@@ -449,14 +482,22 @@ function renderView(D,q){
   if(anc.length) h+=`<div class="crumb link">${anc.map(a=>`${TYPES[a.type].mark} <button data-act="select" data-id="${a.id}">${esc(a.title||'(無題)')}</button>`).join('　›　')}　につながる冒険</div>`;
   if(q.memo) h+=`<p class="memo">${esc(q.memo)}</p>`;
   h+=`<div class="bar"><i style="width:${p}%"></i></div><div class="bar-txt">進捗 ${p}%</div>`;
-  h+=`<div class="sec-h"><span>工程</span><span>${q.steps.filter(s=>s.done).length} / ${q.steps.length}</span></div><ul class="steps" data-sortable>`;
-  q.steps.forEach(s=>{h+=`<li class="step ${s.done?'done':''} ${!q.done&&ns&&s.id===ns.id?'next':''}" data-sid="${s.id}"><button class="chk" data-act="step" data-q="${q.id}" data-s="${s.id}" aria-label="完了切替"></button><span class="step-t">${esc(s.text)}</span><span class="drag" data-drag title="ドラッグで並び替え">⋮⋮</span></li>`});
+  h+=`<div class="sec-h"><span>工程</span><span>${q.steps.filter(stepDone).length} / ${q.steps.length}</span></div><ul class="steps" data-sortable>`;
+  q.steps.forEach(s=>{
+    const r=refQ(s), dn=stepDone(s), isNext=!q.done&&ns&&s.id===ns.id;
+    if(r){
+      const na=!dn&&isNext?nextAction(r):null;
+      h+=`<li class="step qstep ${dn?'done':''} ${isNext?'next':''}" data-sid="${s.id}"><button class="qico" data-act="select" data-id="${r.id}" aria-label="サブクエストを開く">◇</button><span class="step-t"><button class="qlink" data-act="select" data-id="${r.id}">${esc(r.title||'(無題)')}</button><span class="qpct">${dn?'CLEAR':Math.round(progress(r)*100)+'%'}</span>${na?`<span class="qnext">▸ ${esc(na)}</span>`:''}</span><span class="drag" data-drag title="ドラッグで並び替え">⋮⋮</span></li>`;
+    }else{
+      h+=`<li class="step ${dn?'done':''} ${isNext?'next':''}" data-sid="${s.id}"><button class="chk" data-act="step" data-q="${q.id}" data-s="${s.id}" aria-label="完了切替"></button><span class="step-t">${esc(s.text)}</span><span class="drag" data-drag title="ドラッグで並び替え">⋮⋮</span></li>`;
+    }
+  });
   h+=`</ul>`;
   if(!q.done) h+=`<div class="add"><input type="text" id="quickAdd" placeholder="工程を追加（Enter／複数行を貼り付けで一括）"></div>`;
   if(q.type!=='sub'){
     const isMain=q.type==='main';
     const kidRow=k=>`<button class="kid ${k.done?'done':''}" data-act="select" data-id="${k.id}"><span>${TYPES[k.type].mark} ${esc(k.title||'(無題)')}</span><span class="k-pct">${k.done?'CLEAR':Math.round(progress(k)*100)+'%'}</span></button>`;
-    const open=ks.filter(k=>!k.done), done=ks.filter(k=>k.done);
+    const open=ks.filter(k=>!k.done&&!q.steps.some(s=>s.qref===k.id)), done=ks.filter(k=>k.done);
     h+=`<div class="sec-h"><span>${isMain?'このシナリオ':'このチャレンジ'}につながる冒険</span>${q.done?'':`<button class="btn small ghost" data-act="addchild">＋ ${isMain?'チャレンジ':'サブクエスト'}を追加</button>`}</div>`;
     h+=open.length?`<div class="kids">${open.map(kidRow).join('')}</div>`
                   :`<div class="hint">${isMain?'このメインのためのチャレンジやサブクエストを作ると、ここに並びます':'このチャレンジのためのサブクエストを作ると、ここに並びます。工程が細かくなりすぎたら、サブクエストに分けよう'}</div>`;
@@ -494,8 +535,17 @@ function renderEdit(D,q){
   <div class="f"><label>クリア報酬（自分へのご褒美）</label><input type="text" data-field="reward" value="${esc(q.reward)}" placeholder="例：好きなケーキを買う"></div>
   <div class="f"><label>説明・なぜやるのか</label><textarea data-field="memo" placeholder="このクエストの目的や、クリアした先の姿">${esc(q.memo)}</textarea></div>
   <div class="f"><label>工程（⋮⋮ をつまんで並び替え）</label><div style="display:grid;gap:6px" data-sortable>`;
-  q.steps.forEach((s,i)=>{h+=`<div class="estep" data-sid="${s.id}"><span class="drag" data-drag title="ドラッグで並び替え">⋮⋮</span><input type="text" data-steptext="${s.id}" value="${esc(s.text)}"><button class="ic" data-act="up" data-s="${s.id}" ${i?'':'disabled'}>↑</button><button class="ic" data-act="down" data-s="${s.id}" ${i<q.steps.length-1?'':'disabled'}>↓</button><button class="ic" data-act="sdel" data-s="${s.id}">✕</button></div>`});
-  h+=`<input type="text" id="quickAdd" placeholder="工程を追加（Enter／複数行を貼り付けで一括）"></div></div>
+  q.steps.forEach((s,i)=>{
+    const r=refQ(s);
+    const mid=r?`<span class="eref">◇ ${esc(r.title||'(無題)')}<small>サブクエスト</small></span>`:`<input type="text" data-steptext="${s.id}" value="${esc(s.text)}">`;
+    const up=r?'':`<button class="ic promote" data-act="promote" data-s="${s.id}" title="サブクエストに格上げ">格上げ</button>`;
+    h+=`<div class="estep" data-sid="${s.id}"><span class="drag" data-drag title="ドラッグで並び替え">⋮⋮</span>${mid}${up}<button class="ic" data-act="up" data-s="${s.id}" ${i?'':'disabled'}>↑</button><button class="ic" data-act="down" data-s="${s.id}" ${i<q.steps.length-1?'':'disabled'}>↓</button><button class="ic" data-act="sdel" data-s="${s.id}" title="${r?'工程から外す（サブクエストは残ります）':'削除'}">✕</button></div>`;
+  });
+  const insCands=state.quests.filter(o=>o.type==='sub'&&o.id!==q.id&&!q.steps.some(s=>s.qref===o.id)&&!(o.done&&o.parentId!==q.id)).sort(byDue);
+  h+=`<input type="text" id="quickAdd" placeholder="工程を追加（Enter／複数行を貼り付けで一括）"></div>
+  <div class="hint" style="margin-top:6px">「格上げ」を押すと、その工程がサブクエストになります（中身が大きい工程向け）</div>
+  ${insCands.length?`<select id="insRef" style="margin-top:8px"><option value="">＋ 既存のサブクエストを工程に差し込む</option>${insCands.map(o=>`<option value="${o.id}">◇ ${esc(o.title||'(無題)')}</option>`).join('')}</select>`:''}
+  </div>
   </div>
   <div class="actions"><button class="btn primary" data-act="doneedit">完了</button><button class="btn danger" data-act="delete" style="margin-left:auto">削除</button></div>`;
   D.innerHTML=h;
@@ -523,6 +573,7 @@ document.addEventListener('click',e=>{
     case 'up': case 'down': {
       const i=q.steps.findIndex(s=>s.id===b.dataset.s), j=a==='up'?i-1:i+1;
       if(j<0||j>=q.steps.length) break; [q.steps[i],q.steps[j]]=[q.steps[j],q.steps[i]]; save(); renderEdit($('detail'),q); break;}
+    case 'promote': promoteStep(q,b.dataset.s); break;
     case 'sdel': q.steps=q.steps.filter(s=>s.id!==b.dataset.s); save(); renderEdit($('detail'),q); renderList(); break;
     case 'cleared': showCleared=!showCleared; renderList(); break;
     case 'export': {
@@ -551,6 +602,7 @@ document.addEventListener('input',e=>{
   }
 });
 document.addEventListener('change',e=>{
+  if(e.target.id==='insRef'&&e.target.value){const q=findQ(selId); q&&insertRef(q,e.target.value); return;}
   if(e.target.dataset.field==='type'||e.target.dataset.field==='parentId'){ renderList(); }
 });
 document.addEventListener('keydown',e=>{
