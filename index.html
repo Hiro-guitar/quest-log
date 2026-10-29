@@ -112,6 +112,8 @@ button{cursor:pointer;background:none;border:0;padding:0}
 .due.over{color:var(--red)}
 .crumb{font-size:12px;color:var(--muted);margin-bottom:12px}
 .crumb button{color:var(--blue);text-decoration:underline;text-underline-offset:3px}
+.crumb.link{color:var(--orange);font-size:13px}
+.crumb.link button{color:var(--orange)}
 .memo{white-space:pre-wrap;color:#d9d3be;font-size:14px;margin:0 0 16px;line-height:1.85}
 .bar{height:4px;background:rgba(255,255,255,.07);position:relative;margin:4px 0 4px}
 .bar i{position:absolute;inset:0 auto 0 0;background:var(--text);box-shadow:0 0 8px rgba(242,236,214,.6);transition:width .5s}
@@ -250,10 +252,10 @@ function sample(){
     {id:uid(),title:'クエストログの使い方を覚える',type:'sub',parentId:null,rank:1,deadline:d(3),reward:'',memo:'まずはこのクエストをクリアしてみよう。\n終わったら削除してOK。',
      steps:[st('右下の「＋ 新しいクエスト」で作ってみる'),st('工程を追加する（複数行を貼り付けると一括で追加される）'),st('「受注する」を押すと、上の「現在の目標」に次の一手が出る'),st('受注は3つまでに絞るのがおすすめ'),st('全工程が終わったら「クエスト達成を報告」')],
      accepted:true,done:false,created:now},
-    {id:a,title:'理想の暮らしを手に入れる',type:'main',parentId:null,rank:5,deadline:'',reward:'家族で記念旅行',memo:'人生単位のゴール（サンプル）。\nこの下に数ヶ月単位のチャレンジをぶら下げていく。',steps:[],accepted:false,done:false,created:now-3},
+    {id:a,title:'理想の暮らしを手に入れる',type:'main',parentId:null,rank:5,deadline:'',reward:'家族で記念旅行',memo:'人生のシナリオ（サンプル）。\nチャレンジやサブクエストを作るときに「どのメインのため？」でこれを選ぶと、ここに並んでいく。',steps:[],accepted:false,done:false,created:now-3},
     {id:b,title:'収入の柱をもう一本つくる',type:'challenge',parentId:a,rank:4,deadline:d(90),reward:'',memo:'サンプル。数ヶ月かけて攻略する目標。',
      steps:[st('アイデアを3つ書き出す'),st('一番やれそうなものを選ぶ'),st('最初の小さな一歩を決める')],accepted:false,done:false,created:now-2},
-    {id:uid(),title:'市場調査をする',type:'sub',parentId:b,rank:2,deadline:d(14),reward:'',memo:'',steps:[st('似たサービスを5つ調べる'),st('気づいたことをメモする')],accepted:false,done:false,created:now-1}
+    {id:uid(),title:'市場調査をする',type:'sub',parentId:a,rank:2,deadline:d(14),reward:'',memo:'',steps:[st('似たサービスを5つ調べる'),st('気づいたことをメモする')],accepted:false,done:false,created:now-1}
   ]};
 }
 function load(){
@@ -261,6 +263,16 @@ function load(){
   return sample();
 }
 let state=load();
+function migrate(){
+  const by=id=>state.quests.find(q=>q.id===id);
+  state.quests.forEach(q=>{
+    if(q.type==='main'){q.parentId=null;return}
+    let p=by(q.parentId),g=0;
+    while(p&&p.type!=='main'&&g++<50)p=by(p.parentId);
+    q.parentId=p?p.id:null;
+  });
+}
+migrate(); save();
 function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
 
 let tab='active', selId=null, editing=false, showCleared=false;
@@ -375,7 +387,7 @@ function renderTabs(){
 function row(q,subOverride){
   const p=Math.round(progress(q)*100);
   const parent=findQ(q.parentId);
-  const sub=subOverride ?? (q.done ? (q.doneAt?new Date(q.doneAt).toLocaleDateString('ja-JP')+' 達成':'達成') : (nextAction(q)?'▸ '+nextAction(q):(parent?'↑ '+parent.title:TYPES[q.type].hint)));
+  const sub=subOverride ?? (q.done ? (q.doneAt?new Date(q.doneAt).toLocaleDateString('ja-JP')+' 達成':'達成') : (nextAction(q)?'▸ '+nextAction(q):(parent?'◆ '+parent.title:TYPES[q.type].hint)));
   return `<button class="row ${q.id===selId?'sel':''} ${q.done?'done':''}" data-act="select" data-id="${q.id}">
     <span class="r-mark ${q.type==='main'?'t-main':''}">${TYPES[q.type].mark}</span>
     <span class="r-main"><span class="r-title">${esc(q.title||'(無題)')}</span><span class="r-sub">${esc(sub)}</span></span>
@@ -415,7 +427,7 @@ function renderList(){
 function renderDetail(){
   const D=$('detail'); const q=findQ(selId);
   if(!q){
-    D.innerHTML=`<div class="d-empty"><div>クエストを選ぶと、ここに詳細が表示されます<br><span style="font-size:12px">大きな目標は「メイン」→「チャレンジ」→「サブ」→「工程」と細かく分けていこう</span></div></div>`;
+    D.innerHTML=`<div class="d-empty"><div>クエストを選ぶと、ここに詳細が表示されます<br><span style="font-size:12px">人生のシナリオは「メイン」に。日々の冒険は「チャレンジ」「サブ」で作って、どのメインのためかを選ぼう</span></div></div>`;
     return;
   }
   editing ? renderEdit(D,q) : renderView(D,q);
@@ -427,16 +439,22 @@ function renderView(D,q){
   <div class="d-type ${q.type==='main'?'t-main':''}">${TYPES[q.type].mark} ${TYPES[q.type].label}${q.done?'　・　CLEAR':''}</div>
   <div class="d-title">${esc(q.title||'(無題)')}</div>
   <div class="d-meta">${stars(q.rank)}${q.deadline?`<span>期限 ${q.deadline.replace(/-/g,'/')}　${dueHtml(q.deadline)}</span>`:''}${q.reward?`<span>報酬：${esc(q.reward)}</span>`:''}</div>`;
-  if(anc.length) h+=`<div class="crumb">上位：${anc.map(a=>`<button data-act="select" data-id="${a.id}">${esc(a.title||'(無題)')}</button>`).join(' › ')}</div>`;
+  const mainQ=q.type!=='main'?findQ(q.parentId):null;
+  if(mainQ) h+=`<div class="crumb link">◆ <button data-act="select" data-id="${mainQ.id}">${esc(mainQ.title||'(無題)')}</button> につながる冒険</div>`;
   if(q.memo) h+=`<p class="memo">${esc(q.memo)}</p>`;
   h+=`<div class="bar"><i style="width:${p}%"></i></div><div class="bar-txt">進捗 ${p}%</div>`;
   h+=`<div class="sec-h"><span>工程</span><span>${q.steps.filter(s=>s.done).length} / ${q.steps.length}</span></div><ul class="steps">`;
   q.steps.forEach(s=>{h+=`<li class="step ${s.done?'done':''} ${!q.done&&ns&&s.id===ns.id?'next':''}"><button class="chk" data-act="step" data-q="${q.id}" data-s="${s.id}" aria-label="完了切替"></button><span class="step-t">${esc(s.text)}</span></li>`});
   h+=`</ul>`;
   if(!q.done) h+=`<div class="add"><input type="text" id="quickAdd" placeholder="工程を追加（Enter／複数行を貼り付けで一括）"></div>`;
-  h+=`<div class="sec-h"><span>下位クエスト</span>${q.done?'':`<button class="btn small ghost" data-act="addchild">＋ 追加</button>`}</div>`;
-  h+=ks.length?`<div class="kids">${ks.map(k=>`<button class="kid ${k.done?'done':''}" data-act="select" data-id="${k.id}"><span>${TYPES[k.type].mark} ${esc(k.title||'(無題)')}</span><span class="k-pct">${k.done?'CLEAR':Math.round(progress(k)*100)+'%'}</span></button>`).join('')}</div>`
-             :`<div class="hint">大きすぎて工程に分けにくいときは、下位クエストに分割しよう</div>`;
+  if(q.type==='main'){
+    const kidRow=k=>`<button class="kid ${k.done?'done':''}" data-act="select" data-id="${k.id}"><span>${TYPES[k.type].mark} ${esc(k.title||'(無題)')}</span><span class="k-pct">${k.done?'CLEAR':Math.round(progress(k)*100)+'%'}</span></button>`;
+    const open=ks.filter(k=>!k.done), done=ks.filter(k=>k.done);
+    h+=`<div class="sec-h"><span>このシナリオにつながる冒険</span>${q.done?'':`<button class="btn small ghost" data-act="addchild">＋ 冒険を追加</button>`}</div>`;
+    h+=open.length?`<div class="kids">${open.map(kidRow).join('')}</div>`
+                  :`<div class="hint">このメインのためのチャレンジやサブクエストを作ると、ここに並びます</div>`;
+    if(done.length) h+=`<div class="sec-h"><span>達成した冒険</span><span>${done.length}</span></div><div class="kids">${done.map(kidRow).join('')}</div>`;
+  }
   if(!q.done && allStepsDone(q)) h+=`<div class="ready">すべての工程をクリアしました。クエスト達成を報告しよう！</div>`;
   h+=`<div class="actions">`;
   if(!q.done){
@@ -449,14 +467,15 @@ function renderView(D,q){
   D.innerHTML=h;
 }
 function renderEdit(D,q){
-  const opts=state.quests.filter(o=>o.id!==q.id&&!isDesc(o.id,q.id)&&!o.done)
-    .sort((a,b)=>Object.keys(TYPES).indexOf(a.type)-Object.keys(TYPES).indexOf(b.type));
+  const mains=state.quests.filter(o=>o.type==='main'&&o.id!==q.id&&(!o.done||o.id===q.parentId));
   let h=`<button class="back" data-act="back">← 一覧へ戻る</button>
   <div class="d-type">クエストを編集</div><div class="form" style="margin-top:10px">
   <div class="f"><label>クエスト名</label><input type="text" data-field="title" value="${esc(q.title)}" placeholder="例：引っ越しを終わらせる"></div>
   <div class="f2">
-    <div class="f"><label>種類</label><select data-field="type">${Object.entries(TYPES).map(([k,t])=>`<option value="${k}" ${q.type===k?'selected':''}>${t.label}（${t.hint.replace(/の.*/,'')}）</option>`).join('')}</select></div>
-    <div class="f"><label>上位クエスト</label><select data-field="parentId"><option value="">なし（いちばん上）</option>${opts.map(o=>`<option value="${o.id}" ${q.parentId===o.id?'selected':''}>${TYPES[o.type].mark} ${esc(o.title||'(無題)')}</option>`).join('')}</select></div>
+    <div class="f"><label>種類</label><select data-field="type">${Object.entries(TYPES).map(([k,t])=>`<option value="${k}" ${q.type===k?'selected':''}>${t.label}</option>`).join('')}</select></div>
+    ${q.type==='main'
+      ? `<div class="f"><label>&nbsp;</label><div class="hint">メインクエストは人生のシナリオ。ほかの冒険がここにつながります</div></div>`
+      : `<div class="f"><label>どのメインクエストのため？（任意）</label><select data-field="parentId"><option value="">とくになし</option>${mains.map(o=>`<option value="${o.id}" ${q.parentId===o.id?'selected':''}>◆ ${esc(o.title||'(無題)')}</option>`).join('')}</select></div>`}
   </div>
   <div class="f2">
     <div class="f"><label>難易度</label><div class="rank-pick">${[1,2,3,4,5].map(r=>`<button data-act="rank" data-v="${r}" class="${r<=q.rank?'on':''}">★</button>`).join('')}</div></div>
@@ -513,7 +532,9 @@ document.addEventListener('input',e=>{
   if(f){
     let v=e.target.value;
     if(f==='parentId') v=v||null;
-    q[f]=v; save();
+    q[f]=v;
+    if(f==='type'){ if(v==='main'){q.parentId=null;} else { kids(q.id).forEach(k=>k.parentId=null); } save(); renderEdit($('detail'),q); renderList(); renderTabs(); return; }
+    save();
     if(f!=='memo') {renderList(); renderHud(); renderTabs();}
   }else if(sid){
     const s=q.steps.find(x=>x.id===sid); if(s){s.text=e.target.value; save();}
