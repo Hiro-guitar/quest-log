@@ -105,6 +105,30 @@ button{cursor:pointer;background:none;border:0;padding:0}
 .row.done{opacity:.42}
 .row.done .ico{color:var(--muted)}
 .r-clear{font-size:11px;letter-spacing:.15em;color:var(--muted)}
+.cat-bar{display:grid;justify-items:center;gap:6px;padding:4px 0 12px;border-bottom:1px solid var(--line);margin-bottom:8px}
+.cat-name{font-size:12px;letter-spacing:.25em;color:var(--muted)}
+.cat-icons{display:flex;gap:10px}
+.cat{position:relative;width:44px;height:36px;display:grid;place-items:center;border-radius:4px;color:var(--dim);border:1px solid transparent;transition:all .15s}
+.cat .ico{width:20px;height:20px;color:inherit}
+.cat .ico-main{width:28px}
+.cat:hover{color:var(--muted)}
+.cat.on{color:var(--text);border-color:rgba(242,236,214,.6);box-shadow:0 0 12px rgba(242,236,214,.18);background:rgba(242,236,214,.05)}
+.cat.on .ico-main{color:var(--orange)}.cat.on .ico-challenge{color:var(--blue)}
+.cat-n{position:absolute;top:-6px;right:-6px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:var(--panel-solid);border:1px solid var(--line);font-size:10px;line-height:14px;color:var(--muted);font-style:normal}
+.cat-list{position:relative;overflow:hidden;min-height:120px}
+.cat-list .sec-bg{position:absolute;right:6px;top:6px;color:var(--text);opacity:.05;pointer-events:none}
+.cat-main .sec-bg{width:60px;right:40px}.cat-challenge .sec-bg{width:260px}.cat-mini .sec-bg{width:240px;top:20px}
+.cat-list .row,.cat-list .mini-add,.cat-list .toggle,.cat-list .sec-empty{position:relative}
+.add-row .r-mark{color:var(--muted);font-size:16px}.add-row .r-title{color:var(--muted);font-weight:500}
+.add-row:hover .r-title,.add-row:hover .r-mark{color:var(--blue)}
+.r-clear{font-size:11px;font-style:italic;font-weight:900;letter-spacing:.12em;color:var(--orange)}
+.d-giver{display:flex;justify-content:space-between;gap:12px;font-size:13px;color:#d9d3be;margin:-4px 0 10px}
+.giver-mark{display:inline-grid;place-items:center;width:15px;height:15px;border-radius:50%;background:var(--red);color:#fff;font-size:10px;font-style:normal;font-weight:900;margin-right:6px;vertical-align:-2px}
+.d-place{color:var(--muted)}
+.memo-wrap{position:relative}
+.empty-memo{color:var(--dim)!important;font-size:13px!important}
+.stamp{position:absolute;right:6px;top:-6px;transform:rotate(-8deg);font-size:28px;font-weight:900;font-style:italic;letter-spacing:.12em;color:var(--orange);opacity:.75;border:2px solid var(--orange);padding:0 10px;border-radius:4px;pointer-events:none;text-shadow:0 0 10px rgba(240,166,64,.4)}
+.d-count{text-align:right;font-size:12px;letter-spacing:.12em;color:var(--muted);margin-top:14px;padding-top:10px;border-top:1px solid var(--line)}
 .sec{position:relative;margin:6px 0 18px;padding:2px 0 4px;overflow:hidden;border-top:1px solid var(--line)}
 .sec-bg{position:absolute;right:-6px;top:6px;color:var(--text);opacity:.06;pointer-events:none}
 .sec-main .sec-bg{width:46px;right:18px;top:4px}
@@ -365,7 +389,7 @@ function migrate(){
 migrate(); save();
 function save(){ if(window.__qlReady) stamp(); try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){} if(window.__qlReady){ syncScan(); schedulePush(); } }
 
-let tab='active', selId=null, editing=false, showCleared=false, miniOpen=false;
+let tab='active', selId=null, editing=false, showCleared=false, miniOpen=false, listCat='challenge';
 
 /* ---------- helpers ---------- */
 const findQ=id=>state.quests.find(q=>q.id===id);
@@ -446,7 +470,7 @@ function addMinis(text){
 }
 function newQuest(type,parentId){
   const q={id:uid(),title:'',type,parentId:parentId||null,rank:type==='mini'?1:2,deadline:'',reward:'',memo:'',steps:[],accepted:false,done:false,created:Date.now()};
-  state.quests.push(q); selId=q.id; editing=true;
+  state.quests.push(q); selId=q.id; editing=true; listCat=type;
   if(tab==='tools') tab='list';
   save(); render();
   setTimeout(()=>{const t=document.querySelector('[data-field=title]'); t&&t.focus()},30);
@@ -536,11 +560,11 @@ function renderTabs(){
 function row(q,subOverride){
   const p=Math.round(progress(q)*100);
   const parent=findQ(q.parentId);
-  const sub=subOverride ?? (q.done ? (q.doneAt?new Date(q.doneAt).toLocaleDateString('ja-JP')+' 達成':'達成') : (nextAction(q)?'▸ '+nextAction(q):(parent?'◆ '+parent.title:TYPES[q.type].hint)));
+  const sub=subOverride ?? (q.place&&!q.done ? q.place : null) ?? (q.done ? (q.doneAt?new Date(q.doneAt).toLocaleDateString('ja-JP')+' 達成':'達成') : (nextAction(q)?'▸ '+nextAction(q):(parent?'◆ '+parent.title:TYPES[q.type].hint)));
   return `<button class="row ${q.id===selId?'sel':''} ${q.done?'done':''}" data-act="select" data-id="${q.id}">
     ${q.type==='mini'&&!q.done?`<span class="r-mark qcheck" data-act="quickdone" data-id="${q.id}" title="クリア">${ico('mini')}</span>`:`<span class="r-mark">${ico(q.type,q.done)}</span>`}
-    <span class="r-main"><span class="r-title">${esc(q.title||'(無題)')}</span>${(q.type==='mini'&&!q.done&&!q.steps.length)?'':`<span class="r-sub">${esc(sub)}</span>`}</span>
-    <span class="r-side">${q.done?'<span class="r-clear">クリア</span>':`${q.type==='mini'&&!q.steps.length?'':`<span class="r-pct">${p}%</span>`}${q.doDate?`<span class="do">${doLabel(q,true)}</span>`:''}${dueHtml(q.deadline)}`}${q.accepted&&!q.done&&tab!=='active'?'<span class="pin">受注中</span>':''}</span>
+    <span class="r-main"><span class="r-title">${esc(q.title||'(無題)')}</span>${(q.type==='mini'&&!q.done&&!q.steps.length&&!q.place)?'':`<span class="r-sub">${esc(sub)}</span>`}</span>
+    <span class="r-side">${q.done?'<span class="r-clear">CLEAR</span>':`${q.type==='mini'&&!q.steps.length?'':`<span class="r-pct">${p}%</span>`}${q.doDate?`<span class="do">${doLabel(q,true)}</span>`:''}${dueHtml(q.deadline)}`}${q.accepted&&!q.done&&tab!=='active'?'<span class="pin">受注中</span>':''}</span>
   </button>`;
 }
 function renderList(){
@@ -549,24 +573,23 @@ function renderList(){
     const act=state.quests.filter(q=>q.accepted&&!q.done).sort(byDue);
     h=act.length?act.map(q=>row(q)).join(''):`<div class="empty">受注中のチャレンジはまだありません。<br>「チャレンジ」タブから選んで「受注する」を押すと、ここに並びます。</div>`;
   }else if(tab==='list'){
-    const doneAll=state.quests.filter(q=>q.done).length, stepsDone=state.quests.reduce((n,q)=>n+q.steps.filter(x=>!x.qref&&x.done).length,0);
-    h=`<div class="group-h">達成 ${doneAll}件 ・ クリアした工程 ${stepsDone}個 ・ 累計 ${state.xp} XP</div>`;
     const names={main:'メインチャレンジ',challenge:'チャレンジ',mini:'ミニチャレンジ'};
-    ['main','challenge','mini'].forEach(t=>{
-      const qs=state.quests.filter(q=>q.type===t);
-      const open=qs.filter(q=>!q.done).sort(byDue);
-      let done=qs.filter(q=>q.done).sort((a,b)=>(b.doneAt||0)-(a.doneAt||0));
-      const hidden=t==='mini'&&!showCleared ? Math.max(0,done.length-5) : 0; if(hidden) done=done.slice(0,5);
-      h+=`<section class="sec sec-${t}"><div class="sec-bg">${SECBG[t]}</div>
-        <div class="sec-head">${ico(t)}<span class="sec-title">${names[t]}</span><span class="sec-count">${qs.length-open.length} / ${qs.length}</span><button class="sec-add" data-act="${t==='mini'?'miniopen':'new'}" data-type="${t}" title="${names[t]}を追加">＋</button></div>`;
-      if(t==='mini'&&miniOpen) h+=`<div class="mini-add"><input type="text" id="miniAdd" placeholder="ミニチャレンジを追加（Enter で続けて追加）"></div>`;
-      h+=open.map(q=>row(q)).join('');
-      if(!qs.length) h+=`<div class="sec-empty">${t==='main'?'人生のシナリオを2〜3個立てよう':t==='challenge'?'大事なことをここに':'雑用は＋から放り込もう'}</div>`;
-      h+=done.map(q=>row(q)).join('');
-      if(hidden) h+=`<button class="toggle" data-act="cleared">ほかにクリア済み ${hidden}件</button>`;
-      if(t==='mini'&&showCleared&&done.length>5) h+=`<button class="toggle" data-act="cleared">クリア済みをたたむ</button>`;
-      h+=`</section>`;
-    });
+    const t=listCat, qs=state.quests.filter(q=>q.type===t);
+    const open=qs.filter(q=>!q.done).sort(byDue);
+    let done=qs.filter(q=>q.done).sort((a,b)=>(b.doneAt||0)-(a.doneAt||0));
+    const hidden=!showCleared ? Math.max(0,done.length-(t==='mini'?5:20)) : 0; if(hidden) done=done.slice(0,t==='mini'?5:20);
+    h=`<div class="cat-bar"><div class="cat-name">${names[t]}</div><div class="cat-icons">${['main','challenge','mini'].map(c=>{
+        const n=state.quests.filter(q=>q.type===c&&!q.done).length;
+        return `<button class="cat ${c===t?'on':''}" data-act="cat" data-v="${c}" title="${names[c]}">${ico(c)}${n?`<span class="cat-n">${n}</span>`:''}</button>`;}).join('')}</div></div>`;
+    h+=`<div class="cat-list cat-${t}"><div class="sec-bg">${SECBG[t]}</div>`;
+    if(t==='mini'&&miniOpen) h+=`<div class="mini-add"><input type="text" id="miniAdd" placeholder="ミニチャレンジを追加（Enter で続けて追加）"></div>`;
+    else h+=`<button class="row add-row" data-act="${t==='mini'?'miniopen':'new'}" data-type="${t}"><span class="r-mark">＋</span><span class="r-main"><span class="r-title">新しい${names[t]}</span></span></button>`;
+    h+=open.map(q=>row(q)).join('');
+    if(!qs.length) h+=`<div class="sec-empty">${t==='main'?'人生のシナリオを2〜3個立てよう':t==='challenge'?'大事なことをここに':'雑用はここに放り込もう'}</div>`;
+    h+=done.map(q=>row(q)).join('');
+    if(hidden) h+=`<button class="toggle" data-act="cleared">ほかにクリア済み ${hidden}件</button>`;
+    else if(showCleared&&qs.filter(q=>q.done).length>5) h+=`<button class="toggle" data-act="cleared">クリア済みをたたむ</button>`;
+    h+=`</div>`;
   }else if(tab==='tools'){
     h=`<div class="tools">
       <p>データはこのブラウザの中だけに保存されています。スマホとPCで使う場合や、念のためのバックアップには書き出し／読み込みを使ってください。</p>
@@ -600,9 +623,10 @@ function renderView(D,q){
   let h=`<button class="back" data-act="back">← 一覧へ戻る</button>
   <div class="d-type t-${q.type}">${ico(q.type,q.done)} ${TYPES[q.type].label}${q.done?'　・　クリア':''}</div>
   <div class="d-title">${esc(q.title||'(無題)')}</div>
+  ${(q.giver||q.place)?`<div class="d-giver"><span>${q.giver?`<i class="giver-mark">!</i>${esc(q.giver)}`:''}</span><span class="d-place">${esc(q.place||'')}</span></div>`:''}
   <div class="d-meta">${stars(q.rank)}${q.doDate?`<span class="do">やる日 ${doLabel(q)}</span>`:''}${q.deadline?`<span>期限 ${q.deadline.replace(/-/g,'/')}　${dueHtml(q.deadline)}</span>`:''}${q.reward?`<span>報酬：${esc(q.reward)}</span>`:''}</div>`;
   if(anc.length) h+=`<div class="crumb link">${anc.map(a=>`${ico(a.type)} <button data-act="select" data-id="${a.id}">${esc(a.title||'(無題)')}</button>`).join('　›　')}　のためのチャレンジ</div>`;
-  if(q.memo) h+=`<p class="memo">${esc(q.memo)}</p>`;
+  h+=`<div class="memo-wrap">${q.done?'<div class="stamp">CLEAR</div>':''}${q.memo?`<p class="memo">${esc(q.memo)}</p>`:`<p class="memo empty-memo">説明はまだありません。「編集」で、なぜやるのか・どうなったらクリアかを書いておくと迷子になりません。</p>`}</div>`;
   h+=`<div class="bar"><i style="width:${p}%"></i></div><div class="bar-txt">進捗 ${p}%</div>`;
   h+=`<div class="sec-h"><span>工程</span><span>${q.steps.filter(stepDone).length} / ${q.steps.length}</span></div><ul class="steps" data-sortable>`;
   q.steps.forEach(s=>{
@@ -635,6 +659,7 @@ function renderView(D,q){
     h+=`<button class="btn" data-act="reopen">未達成に戻す</button>`;
   }
   h+=`<button class="btn ghost" data-act="edit">編集</button></div>`;
+  { const all=state.quests.filter(x=>x.type===q.type); h+=`<div class="d-count">${TYPES[q.type].label}クリア　${all.filter(x=>x.done).length}/${all.length}</div>`; }
   D.innerHTML=h;
 }
 function renderEdit(D,q){
@@ -645,6 +670,10 @@ function renderEdit(D,q){
   let h=`<button class="back" data-act="back">← 一覧へ戻る</button>
   <div class="d-type">編集</div><div class="form" style="margin-top:10px">
   <div class="f"><label>名前</label><input type="text" data-field="title" value="${esc(q.title)}" placeholder="例：引っ越しを終わらせる"></div>
+  <div class="f2">
+    <div class="f"><label>依頼人（誰から・誰のため）</label><input type="text" data-field="giver" value="${esc(q.giver||'')}" placeholder="例：妻、自分、お客さん"></div>
+    <div class="f"><label>場所</label><input type="text" data-field="place" value="${esc(q.place||'')}" placeholder="例：自宅、市役所、図書館"></div>
+  </div>
   <div class="f2">
     <div class="f"><label>種類</label><select data-field="type">${Object.entries(TYPES).map(([k,t])=>`<option value="${k}" ${q.type===k?'selected':''}>${t.label}</option>`).join('')}</select></div>
     ${q.type==='main'
@@ -695,6 +724,7 @@ document.addEventListener('click',e=>{
     case 'back': if(editing){cleanupEmpty();editing=false} selId=null; render(); break;
     case 'step': toggleStep(b.dataset.q,b.dataset.s); break;
     case 'new': newQuest(b.dataset.type,null); break;
+    case 'cat': listCat=b.dataset.v; showCleared=false; miniOpen=false; renderList(); break;
     case 'miniopen': miniOpen=true; renderList(); setTimeout(()=>{const el=$('miniAdd'); el&&el.focus()},20); break;
     case 'quickdone': { const m=findQ(b.dataset.id); if(m){ const row=b.closest('.row'); row&&row.classList.add('vanish'); setTimeout(()=>completeQuest(m),260); } break; }
     case 'accept': q.accepted=!q.accepted; save(); render(); toast(q.accepted?'チャレンジを受注しました':'受注を取り消しました'); break;
@@ -995,7 +1025,7 @@ setInterval(()=>{ if(document.visibilityState==='visible') loadData(); },30000);
 document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') loadData(); });
 
 // #q=ID で開いたら、そのチャレンジを表示
-(function(){ const m=location.hash.match(/^#q=([\w-]+)/); const q=m&&findQ(m[1]); if(q){ selId=q.id; tab='list'; } })();
+(function(){ const m=location.hash.match(/^#q=([\w-]+)/); const q=m&&findQ(m[1]); if(q){ selId=q.id; tab='list'; listCat=q.type; } })();
 
 stamp(); window.__qlReady=true;
 render();
