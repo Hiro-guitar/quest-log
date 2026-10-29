@@ -100,6 +100,12 @@ button{cursor:pointer;background:none;border:0;padding:0}
 .row.done .r-title{color:var(--muted)}
 .row.done .r-mark{color:var(--dim)}
 .pin{color:var(--orange);font-size:10px;letter-spacing:.1em}
+.qcheck{width:18px;height:18px;flex:none;border:1.5px solid var(--muted);border-radius:50%;cursor:pointer;transition:all .15s;margin:0 0 0 0}
+.qcheck:hover{border-color:var(--blue);box-shadow:0 0 8px var(--blue);background:var(--blue-soft)}
+.row.vanish{opacity:0;transform:translateX(12px);transition:all .25s}
+.row.vanish .qcheck{background:var(--blue);border-color:var(--blue)}
+.mini-add{padding:2px 0 8px}
+.row:has(.qcheck){padding-top:9px;padding-bottom:9px}
 .group-h{font-size:11px;letter-spacing:.2em;color:var(--dim);padding:12px 12px 4px}
 .empty{color:var(--dim);font-size:14px;padding:28px 12px;line-height:1.9}
 .toggle{font-size:12px;color:var(--dim);padding:12px;text-align:left}
@@ -266,7 +272,8 @@ body.is-dragging,body.is-dragging *{cursor:grabbing!important;user-select:none;-
 const KEY='questlog-v1';
 const TYPES={
   main:{label:'メインチャレンジ',hint:'人生のシナリオ。数年〜ずっと続く大きな目標',mark:'◆',child:'challenge'},
-  challenge:{label:'チャレンジ',hint:'やること。大きければ工程に分けよう',mark:'◇',child:'challenge'}
+  challenge:{label:'チャレンジ',hint:'大事なこと。メインにつながることも。大きければ工程に分けよう',mark:'◇',child:'challenge'},
+  mini:{label:'ミニチャレンジ',hint:'ちょっとした用事・雑用。左の○で即クリア',mark:'○',child:'mini'}
 };
 const TITLES=['旅立ったばかり','見習い','駆け出しの冒険者','一人前','腕利き','歴戦の勇士','英傑','伝説'];
 const DAY=864e5;
@@ -381,16 +388,24 @@ function toggleStep(qid,sid){
     if(allStepsDone(q)) setTimeout(()=>toast('全工程クリア！ チャレンジ達成を報告しよう'),1400);
   }
 }
+function xpFor(q){return (q.type==='mini'?15:50)*q.rank}
 function completeQuest(q){
   q.done=true; q.doneAt=Date.now(); q.accepted=false;
-  const xp=50*q.rank; gain(xp); save();
+  const xp=xpFor(q); gain(xp); save();
+  if(q.type==='mini'){ render(); toast(`ミニチャレンジ達成  +${xp} XP`); return; }
   $('clearT').textContent=q.title; $('clearXp').textContent=`+${xp} XP${q.reward?'　報酬：'+q.reward:''}`;
   const c=$('clear'); c.classList.remove('show'); void c.offsetWidth; c.classList.add('show');
   render();
 }
-function reopen(q){q.done=false;q.doneAt=null;gain(-50*q.rank);save();render()}
+function reopen(q){q.done=false;q.doneAt=null;gain(-xpFor(q));save();render()}
+function addMinis(text){
+  const lines=text.split(/\r?\n/).map(x=>x.replace(/^\s*([-*・●○◇◆□■]|\d+[.)．]|\[\s?\])\s*/,'').trim()).filter(Boolean);
+  lines.forEach((t,i)=>state.quests.push({id:uid(),title:t,type:'mini',parentId:null,rank:1,deadline:'',reward:'',memo:'',steps:[],accepted:false,done:false,created:Date.now()+i}));
+  if(lines.length){ save(); renderList(); renderTabs(); if(lines.length>1) toast(`${lines.length}個のミニチャレンジを追加`); }
+  const el=$('miniAdd'); if(el){ el.value=''; el.focus(); }
+}
 function newQuest(type,parentId){
-  const q={id:uid(),title:'',type,parentId:parentId||null,rank:2,deadline:'',reward:'',memo:'',steps:[],accepted:false,done:false,created:Date.now()};
+  const q={id:uid(),title:'',type,parentId:parentId||null,rank:type==='mini'?1:2,deadline:'',reward:'',memo:'',steps:[],accepted:false,done:false,created:Date.now()};
   state.quests.push(q); selId=q.id; editing=true;
   if(tab==='log'||tab==='tools') tab=type;
   save(); render();
@@ -475,7 +490,7 @@ function renderHud(){
 function renderTabs(){
   const open=t=>state.quests.filter(q=>q.type===t&&!q.done).length;
   const acc=state.quests.filter(q=>q.accepted&&!q.done).length;
-  const tabs=[['active','受注中',acc],['main','メイン',open('main')],['challenge','チャレンジ',open('challenge')],['log','達成記録',state.quests.filter(q=>q.done).length],['tools','道具',null]];
+  const tabs=[['active','受注中',acc],['main','メイン',open('main')],['challenge','チャレンジ',open('challenge')],['mini','ミニ',open('mini')],['log','達成記録',state.quests.filter(q=>q.done).length],['tools','道具',null]];
   $('tabs').innerHTML=tabs.map(([k,l,n])=>`<button class="tab ${tab===k?'on':''}" data-act="tab" data-v="${k}">${l}${n!==null?`<span class="n">${n}</span>`:''}</button>`).join('');
 }
 function row(q,subOverride){
@@ -483,9 +498,9 @@ function row(q,subOverride){
   const parent=findQ(q.parentId);
   const sub=subOverride ?? (q.done ? (q.doneAt?new Date(q.doneAt).toLocaleDateString('ja-JP')+' 達成':'達成') : (nextAction(q)?'▸ '+nextAction(q):(parent?'◆ '+parent.title:TYPES[q.type].hint)));
   return `<button class="row ${q.id===selId?'sel':''} ${q.done?'done':''}" data-act="select" data-id="${q.id}">
-    <span class="r-mark ${q.type==='main'?'t-main':''}">${TYPES[q.type].mark}</span>
-    <span class="r-main"><span class="r-title">${esc(q.title||'(無題)')}</span><span class="r-sub">${esc(sub)}</span></span>
-    <span class="r-side">${q.done?'<span>CLEAR</span>':`<span class="r-pct">${p}%</span>${q.doDate?`<span class="do">${doLabel(q,true)}</span>`:''}${dueHtml(q.deadline)}`}${q.accepted&&!q.done&&tab!=='active'?'<span class="pin">受注中</span>':''}</span>
+    ${q.type==='mini'&&!q.done?`<span class="qcheck" data-act="quickdone" data-id="${q.id}" title="クリア"></span>`:`<span class="r-mark ${q.type==='main'?'t-main':''}">${q.type==='mini'&&q.done?'✓':TYPES[q.type].mark}</span>`}
+    <span class="r-main"><span class="r-title">${esc(q.title||'(無題)')}</span>${(q.type==='mini'&&!q.done&&!q.steps.length)?'':`<span class="r-sub">${esc(sub)}</span>`}</span>
+    <span class="r-side">${q.done?'<span>CLEAR</span>':`${q.type==='mini'&&!q.steps.length?'':`<span class="r-pct">${p}%</span>`}${q.doDate?`<span class="do">${doLabel(q,true)}</span>`:''}${dueHtml(q.deadline)}`}${q.accepted&&!q.done&&tab!=='active'?'<span class="pin">受注中</span>':''}</span>
   </button>`;
 }
 function renderList(){
@@ -497,7 +512,8 @@ function renderList(){
     let qs=state.quests.filter(q=>q.type===tab);
     const open=qs.filter(q=>!q.done).sort(byDue), done=qs.filter(q=>q.done).sort((a,b)=>(b.doneAt||0)-(a.doneAt||0));
     h=`<div class="group-h">${TYPES[tab].hint}</div>`;
-    h+=open.length?open.map(q=>row(q)).join(''):`<div class="empty">まだありません。右下の「＋ 新しいチャレンジ」から追加しよう。</div>`;
+    if(tab==='mini') h+=`<div class="mini-add"><input type="text" id="miniAdd" placeholder="ミニチャレンジを追加（Enter／複数行を貼ると一括）"></div>`;
+    h+=open.length?open.map(q=>row(q)).join(''):`<div class="empty">${tab==='mini'?'雑用はここにどんどん放り込もう。':'まだありません。右下の「＋ 新しいチャレンジ」から追加しよう。'}</div>`;
     if(done.length){
       h+=`<button class="toggle" data-act="cleared">${showCleared?'▾':'▸'} クリア済み ${done.length}件</button>`;
       if(showCleared) h+=done.map(q=>row(q)).join('');
@@ -589,6 +605,7 @@ function renderEdit(D,q){
     <div class="f"><label>種類</label><select data-field="type">${Object.entries(TYPES).map(([k,t])=>`<option value="${k}" ${q.type===k?'selected':''}>${t.label}</option>`).join('')}</select></div>
     ${q.type==='main'
       ? `<div class="f"><label>&nbsp;</label><div class="hint">メインチャレンジは人生のシナリオ。ほかのチャレンジがここにつながります</div></div>`
+      : q.type==='mini' ? `<div class="f"><label>&nbsp;</label><div class="hint">ミニチャレンジは雑用用。思ったより大事なら、種類を「チャレンジ」に変えよう</div></div>`
       : `<div class="f"><label>どのメインのため？（任意）</label>${linkSel}</div>`}
   </div>
   <div class="f2">
@@ -633,6 +650,7 @@ document.addEventListener('click',e=>{
     case 'select': dateSid=null; if(editing){cleanupEmpty();editing=false} selId=b.dataset.id; render(); window.innerWidth<=820&&window.scrollTo({top:0}); break;
     case 'back': if(editing){cleanupEmpty();editing=false} selId=null; render(); break;
     case 'step': toggleStep(b.dataset.q,b.dataset.s); break;
+    case 'quickdone': { const m=findQ(b.dataset.id); if(m){ const row=b.closest('.row'); row&&row.classList.add('vanish'); setTimeout(()=>completeQuest(m),260); } break; }
     case 'accept': q.accepted=!q.accepted; save(); render(); toast(q.accepted?'チャレンジを受注しました':'受注を取り消しました'); break;
     case 'complete':
       if(!allStepsDone(q) && !confirm('まだ終わっていない工程があります。達成を報告しますか？')) break;
@@ -708,6 +726,7 @@ document.addEventListener('change',e=>{
   if(e.target.dataset.field==='type'||e.target.dataset.field==='parentId'){ renderList(); }
 });
 document.addEventListener('keydown',e=>{
+  if(e.target.id==='miniAdd'&&e.key==='Enter'&&!e.isComposing&&e.keyCode!==229){ e.preventDefault(); addMinis(e.target.value); return; }
   if(e.target.id!=='quickAdd'||e.key!=='Enter'||e.isComposing||e.keyCode===229) return;
   e.preventDefault();
   const q=findQ(selId), v=e.target.value; if(!q||!v.trim()) return;
@@ -715,6 +734,7 @@ document.addEventListener('keydown',e=>{
   const n=$('quickAdd'); n&&n.focus();
 });
 document.addEventListener('paste',e=>{
+  if(e.target.id==='miniAdd'){ const t=(e.clipboardData||window.clipboardData).getData('text'); if(/\n/.test(t)){ e.preventDefault(); addMinis(t); } return; }
   if(e.target.id!=='quickAdd') return;
   const t=(e.clipboardData||window.clipboardData).getData('text');
   if(!/\n/.test(t)) return;
