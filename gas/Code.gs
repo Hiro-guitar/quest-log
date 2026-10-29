@@ -77,6 +77,7 @@ function upsert_(cal, props, q) {
   }
   ev.setTitle(title);
   ev.setDescription(desc_(q));
+  ev.setColor(q.done ? CalendarApp.EventColor.GRAY : CalendarApp.EventColor.CYAN);
   props.setProperty('ev_' + q.id, ev.getId());
 }
 
