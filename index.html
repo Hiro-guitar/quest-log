@@ -167,6 +167,10 @@ select option{background:var(--panel-solid)}
 .estep .ic{color:var(--dim);width:26px;height:30px;font-size:13px;border-radius:3px}
 .estep .ic:hover{color:var(--text);background:rgba(255,255,255,.06)}
 .hint{font-size:12px;color:var(--dim)}
+.drag{flex:none;cursor:grab;color:var(--dim);padding:4px 8px;margin:-4px -4px -4px 0;touch-action:none;user-select:none;-webkit-user-select:none;font-size:15px;line-height:1.4;letter-spacing:-3px}
+.drag:hover{color:var(--text)}
+.dragging{background:rgba(95,212,239,.10);outline:1px solid var(--blue);border-radius:3px;box-shadow:0 0 14px rgba(95,212,239,.3);position:relative;z-index:2}
+body.is-dragging,body.is-dragging *{cursor:grabbing!important;user-select:none;-webkit-user-select:none}
 
 /* 道具 */
 .tools{display:grid;gap:12px;padding:6px 12px}
@@ -443,8 +447,8 @@ function renderView(D,q){
   if(mainQ) h+=`<div class="crumb link">◆ <button data-act="select" data-id="${mainQ.id}">${esc(mainQ.title||'(無題)')}</button> につながる冒険</div>`;
   if(q.memo) h+=`<p class="memo">${esc(q.memo)}</p>`;
   h+=`<div class="bar"><i style="width:${p}%"></i></div><div class="bar-txt">進捗 ${p}%</div>`;
-  h+=`<div class="sec-h"><span>工程</span><span>${q.steps.filter(s=>s.done).length} / ${q.steps.length}</span></div><ul class="steps">`;
-  q.steps.forEach(s=>{h+=`<li class="step ${s.done?'done':''} ${!q.done&&ns&&s.id===ns.id?'next':''}"><button class="chk" data-act="step" data-q="${q.id}" data-s="${s.id}" aria-label="完了切替"></button><span class="step-t">${esc(s.text)}</span></li>`});
+  h+=`<div class="sec-h"><span>工程</span><span>${q.steps.filter(s=>s.done).length} / ${q.steps.length}</span></div><ul class="steps" data-sortable>`;
+  q.steps.forEach(s=>{h+=`<li class="step ${s.done?'done':''} ${!q.done&&ns&&s.id===ns.id?'next':''}" data-sid="${s.id}"><button class="chk" data-act="step" data-q="${q.id}" data-s="${s.id}" aria-label="完了切替"></button><span class="step-t">${esc(s.text)}</span><span class="drag" data-drag title="ドラッグで並び替え">⋮⋮</span></li>`});
   h+=`</ul>`;
   if(!q.done) h+=`<div class="add"><input type="text" id="quickAdd" placeholder="工程を追加（Enter／複数行を貼り付けで一括）"></div>`;
   if(q.type==='main'){
@@ -483,8 +487,8 @@ function renderEdit(D,q){
   </div>
   <div class="f"><label>クリア報酬（自分へのご褒美）</label><input type="text" data-field="reward" value="${esc(q.reward)}" placeholder="例：好きなケーキを買う"></div>
   <div class="f"><label>説明・なぜやるのか</label><textarea data-field="memo" placeholder="このクエストの目的や、クリアした先の姿">${esc(q.memo)}</textarea></div>
-  <div class="f"><label>工程</label><div style="display:grid;gap:6px">`;
-  q.steps.forEach((s,i)=>{h+=`<div class="estep"><input type="text" data-steptext="${s.id}" value="${esc(s.text)}"><button class="ic" data-act="up" data-s="${s.id}" ${i?'':'disabled'}>↑</button><button class="ic" data-act="down" data-s="${s.id}" ${i<q.steps.length-1?'':'disabled'}>↓</button><button class="ic" data-act="sdel" data-s="${s.id}">✕</button></div>`});
+  <div class="f"><label>工程（⋮⋮ をつまんで並び替え）</label><div style="display:grid;gap:6px" data-sortable>`;
+  q.steps.forEach((s,i)=>{h+=`<div class="estep" data-sid="${s.id}"><span class="drag" data-drag title="ドラッグで並び替え">⋮⋮</span><input type="text" data-steptext="${s.id}" value="${esc(s.text)}"><button class="ic" data-act="up" data-s="${s.id}" ${i?'':'disabled'}>↑</button><button class="ic" data-act="down" data-s="${s.id}" ${i<q.steps.length-1?'':'disabled'}>↓</button><button class="ic" data-act="sdel" data-s="${s.id}">✕</button></div>`});
   h+=`<input type="text" id="quickAdd" placeholder="工程を追加（Enter／複数行を貼り付けで一括）"></div></div>
   </div>
   <div class="actions"><button class="btn primary" data-act="doneedit">完了</button><button class="btn danger" data-act="delete" style="margin-left:auto">削除</button></div>`;
@@ -557,6 +561,39 @@ document.addEventListener('paste',e=>{
   e.preventDefault(); const q=findQ(selId); if(!q) return;
   addSteps(q,t); const n=$('quickAdd'); n&&n.focus();
 });
+/* ---------- 工程のドラッグ並び替え ---------- */
+let drag=null;
+document.addEventListener('pointerdown',e=>{
+  const h=e.target.closest('[data-drag]'); if(!h) return;
+  const item=h.closest('[data-sid]'), list=item&&item.closest('[data-sortable]'); if(!list) return;
+  e.preventDefault();
+  drag={item,list,q:findQ(selId),id:e.pointerId};
+  item.classList.add('dragging'); document.body.classList.add('is-dragging');
+  try{h.setPointerCapture(e.pointerId)}catch(err){}
+});
+document.addEventListener('pointermove',e=>{
+  if(!drag||e.pointerId!==drag.id) return;
+  e.preventDefault();
+  const others=[...drag.list.querySelectorAll(':scope > [data-sid]')].filter(x=>x!==drag.item);
+  let before=null;
+  for(const it of others){const r=it.getBoundingClientRect(); if(e.clientY<r.top+r.height/2){before=it;break}}
+  const ref=before || (others.length?others[others.length-1].nextSibling:null);
+  if(ref!==drag.item && drag.item.nextSibling!==ref) drag.list.insertBefore(drag.item,ref);
+  if(e.clientY<70) window.scrollBy(0,-12); else if(e.clientY>window.innerHeight-70) window.scrollBy(0,12);
+},{passive:false});
+function endDrag(){
+  if(!drag) return;
+  const order=[...drag.list.querySelectorAll(':scope > [data-sid]')].map(x=>x.dataset.sid);
+  const q=drag.q; drag.item.classList.remove('dragging'); document.body.classList.remove('is-dragging'); drag=null;
+  if(!q) return;
+  const before=q.steps.map(x=>x.id).join();
+  q.steps.sort((a,b)=>order.indexOf(a.id)-order.indexOf(b.id));
+  if(q.steps.map(x=>x.id).join()===before) return;
+  save(); editing ? renderEdit($('detail'),q) : (renderDetail(), renderList(), renderHud());
+}
+document.addEventListener('pointerup',endDrag);
+document.addEventListener('pointercancel',endDrag);
+
 $('importFile').addEventListener('change',e=>{
   const f=e.target.files[0]; if(!f) return;
   const r=new FileReader();
