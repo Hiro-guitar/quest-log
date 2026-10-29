@@ -174,6 +174,7 @@ button{cursor:pointer;background:none;border:0;padding:0}
 .stars .off{color:var(--dim)}
 .due.soon{color:var(--orange)}
 .do{color:var(--blue)}
+.carry{margin-left:6px;font-size:.9em;color:var(--orange);opacity:.9}
 .sdate{flex:none;font-size:11px;color:var(--dim);border:1px solid transparent;border-radius:10px;padding:1px 8px;margin-top:2px;white-space:nowrap}
 .step:hover .sdate,.sdate:focus{border-color:var(--line);color:var(--muted)}
 .sdate.on{color:var(--blue);border-color:rgba(95,212,239,.35)}
@@ -517,6 +518,20 @@ function nextAction(q,g=0){
 }
 function ancestors(q){const out=[];let p=findQ(q.parentId),g=0;while(p&&g++<20){out.unshift(p);p=findQ(p.parentId)}return out}
 function isDesc(id,of){let q=findQ(id),g=0;while(q&&g++<50){if(q.parentId===of)return true;q=findQ(q.parentId)}return false}
+function ymd(d){d=d||new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+// やる日を過ぎた未達成のもの（チャレンジ・工程）を今日に持ち越す。持ち越した回数は carry に数える
+function carryOver(){
+  const t=ymd(); let n=0;
+  state.quests.forEach(q=>{
+    if(q.done) return;
+    if(q.doDate&&q.doDate<t){ q.doDate=t; q.carry=(q.carry||0)+1; n++; }
+    (q.steps||[]).forEach(st=>{ if(!st.qref&&!st.done&&st.doDate&&st.doDate<t){ st.doDate=t; st.carry=(st.carry||0)+1; n++; } });
+  });
+  return n;
+}
+let carryDay=ymd();
+function runCarry(){ carryDay=ymd(); const n=carryOver(); if(n){ save(); render(); toast(`やり残し${n}件を今日に持ち越しました`); } return n; }
+const carryHtml=o=>o&&o.carry&&!o.done?`<span class="carry" title="${o.carry}回持ち越し">↻${o.carry}</span>`:'';
 function daysLeft(d){if(!d)return null;const t=new Date(d+'T00:00:00');const n=new Date();n.setHours(0,0,0,0);return Math.round((t-n)/DAY)}
 function dueHtml(d){
   const n=daysLeft(d); if(n===null) return '';
@@ -660,7 +675,7 @@ function row(q){
   const mark=q.type==='mini'&&!q.done?`<span class="r-mark qcheck" data-act="quickdone" data-id="${q.id}" title="クリア">${ico('mini')}</span>`:`<span class="r-mark">${ico(q.type,q.done)}</span>`;
   return `<button class="row ${q.id===selId?'sel':''} ${q.done?'done':''}" data-act="select" data-id="${q.id}">
     ${mark}<span class="r-main"><span class="r-title">${esc(q.title||'(無題)')}</span>${sub?`<span class="r-sub">${esc(sub)}</span>`:''}</span>
-    <span class="r-side">${q.done?'<span class="r-clear">COMPLETE</span>':`${q.accepted?'<span class="r-dest" title="目的地に設定中">◎</span>':''}${q.doDate?`<span class="do">${doLabel(q,true)}</span>`:''}${dueHtml(q.deadline)}`}</span><span class="r-notch"></span>
+    <span class="r-side">${q.done?'<span class="r-clear">COMPLETE</span>':`${q.accepted?'<span class="r-dest" title="目的地に設定中">◎</span>':''}${q.doDate?`<span class="do">${doLabel(q,true)}${carryHtml(q)}</span>`:''}${dueHtml(q.deadline)}`}</span><span class="r-notch"></span>
   </button>`;
 }
 function renderList(){
@@ -726,7 +741,7 @@ function renderView(D,q){
   <h2 class="p-title">${esc(q.title||'(無題)')}</h2>
   <div class="p-giver"><span>${q.giver?`<i class="giver-mark">!</i>${esc(q.giver)}`:''}</span><span class="p-place">${esc(q.place||'')}</span></div>
   <div class="p-desc">${q.memo?esc(q.memo).split('\n').map(l=>`<p>${l||'&nbsp;'}</p>`).join(''):'<p class="empty-memo">説明はまだありません。「編集」で、なぜやるのか・どうなったらクリアかを書いておこう。</p>'}</div>`;
-  const meta=[q.rank?stars(q.rank):'', q.doDate?`<span class="do">やる日 ${doLabel(q)}</span>`:'', q.deadline?`<span>期限 ${q.deadline.replace(/-/g,'/')} ${dueHtml(q.deadline)}</span>`:'', q.reward?`<span>報酬：${esc(q.reward)}</span>`:''].filter(Boolean).join('');
+  const meta=[q.rank?stars(q.rank):'', q.doDate?`<span class="do">やる日 ${doLabel(q)}${q.carry&&!q.done?`<span class="carry">↻${q.carry}回持ち越し</span>`:''}</span>`:'', q.deadline?`<span>期限 ${q.deadline.replace(/-/g,'/')} ${dueHtml(q.deadline)}</span>`:'', q.reward?`<span>報酬：${esc(q.reward)}</span>`:''].filter(Boolean).join('');
   if(meta) h+=`<div class="p-meta">${meta}</div>`;
   if(anc.length) h+=`<div class="crumb link">${anc.map(a=>`${ico(a.type)} <button data-act="select" data-id="${a.id}">${esc(a.title||'(無題)')}</button>`).join('　›　')}　のためのチャレンジ</div>`;
   if(q.steps.length||!q.done){
@@ -737,7 +752,7 @@ function renderView(D,q){
         const na=!dn&&isNext?nextAction(r):null;
         h+=`<li class="step qstep ${dn?'done':''} ${isNext?'next':''}" data-sid="${s.id}"><button class="qico" data-act="select" data-id="${r.id}" aria-label="チャレンジを開く">${ico(r.type,dn)}</button><span class="step-t"><button class="qlink" data-act="select" data-id="${r.id}">${esc(r.title||'(無題)')}</button><span class="qpct">${dn?'COMPLETE':Math.round(progress(r)*100)+'%'}</span>${na?`<span class="qnext">▸ ${esc(na)}</span>`:''}</span><span class="drag" data-drag title="ドラッグで並び替え">⋮⋮</span></li>`;
       }else{
-        const chip=s.doDate?`<button class="sdate on" data-act="sdate" data-s="${s.id}">${doLabel(s,true).replace(' やる','')}</button>`:`<button class="sdate" data-act="sdate" data-s="${s.id}" title="日付を入れる">日付</button>`;
+        const chip=s.doDate?`<button class="sdate on" data-act="sdate" data-s="${s.id}">${doLabel(s,true).replace(' やる','')}${carryHtml(s)}</button>`:`<button class="sdate" data-act="sdate" data-s="${s.id}" title="日付を入れる">日付</button>`;
         h+=`<li class="step ${dn?'done':''} ${isNext?'next':''}" data-sid="${s.id}"><button class="chk" data-act="step" data-q="${q.id}" data-s="${s.id}" aria-label="完了切替"></button><span class="step-t">${esc(s.text)}</span>${chip}<span class="drag" data-drag title="ドラッグで並び替え">⋮⋮</span></li>`;
         if(dateSid===s.id) h+=`<li class="sdate-row"><input type="date" data-sdate="${s.id}" value="${esc(s.doDate||'')}"><input type="time" data-stime="${s.id}" value="${esc(s.doTime||'')}"><button class="btn small ghost" data-act="sdateclear" data-s="${s.id}">消す</button><button class="btn small" data-act="sdateclose">OK</button></li>`;
       }
@@ -865,7 +880,7 @@ document.addEventListener('click',e=>{
       if(j<0||j>=q.steps.length) break; [q.steps[i],q.steps[j]]=[q.steps[j],q.steps[i]]; save(); renderEdit($('detail'),q); break;}
     case 'sdate': dateSid=dateSid===b.dataset.s?null:b.dataset.s; renderDetail(); setTimeout(()=>{const el=document.querySelector(`[data-sdate="${dateSid}"]`); el&&!el.value&&el.showPicker&&(()=>{try{el.showPicker()}catch(e){}})()},30); break;
     case 'sdateclose': dateSid=null; renderDetail(); break;
-    case 'sdateclear': {const st=q.steps.find(x=>x.id===b.dataset.s); if(st){st.doDate='';st.doTime='';} dateSid=null; save(); renderDetail(); renderList(); break;}
+    case 'sdateclear': {const st=q.steps.find(x=>x.id===b.dataset.s); if(st){st.doDate='';st.doTime='';st.carry=0;} dateSid=null; save(); renderDetail(); renderList(); break;}
     case 'promote': promoteStep(q,b.dataset.s); break;
     case 'demote': demoteStep(q,b.dataset.s); break;
     case 'move': moveSid=b.dataset.s; renderEdit($('detail'),q); break;
@@ -875,7 +890,7 @@ document.addEventListener('click',e=>{
     case 'export': {
       const blob=new Blob([JSON.stringify(state,null,1)],{type:'application/json'});
       const u=URL.createObjectURL(blob), l=document.createElement('a');
-      l.href=u; l.download='questlog-'+new Date().toISOString().slice(0,10)+'.json'; document.body.appendChild(l); l.click(); l.remove();
+      l.href=u; l.download='questlog-'+ymd()+'.json'; document.body.appendChild(l); l.click(); l.remove();
       setTimeout(()=>URL.revokeObjectURL(u),1000); break;}
     case 'import': $('importFile').click(); break;
     case 'gassave': {
@@ -909,7 +924,7 @@ document.addEventListener('input',e=>{
   if(f){
     let v=e.target.value;
     if(f==='parentId') v=v||null;
-    q[f]=v;
+    q[f]=v; if(f==='doDate') q.carry=0;
     if(f==='type'){ if(!canLink(q,findQ(q.parentId))) q.parentId=null; kids(q.id).forEach(k=>{if(!canLink(k,q)) k.parentId=null}); save(); renderEdit($('detail'),q); renderList(); renderTabs(); return; }
     save();
     if(f!=='memo') {renderList(); renderHud(); renderTabs();}
@@ -920,7 +935,8 @@ document.addEventListener('input',e=>{
 document.addEventListener('change',e=>{
   if(e.target.dataset.sdate||e.target.dataset.stime){
     const q=findQ(selId), sid=e.target.dataset.sdate||e.target.dataset.stime, st=q&&q.steps.find(x=>x.id===sid); if(!st) return;
-    if(e.target.dataset.sdate) st.doDate=e.target.value; else { st.doTime=e.target.value; if(!st.doDate) st.doDate=new Date().toISOString().slice(0,10); }
+    if(e.target.dataset.sdate) st.doDate=e.target.value; else { st.doTime=e.target.value; if(!st.doDate) st.doDate=ymd(); }
+    if(e.target.dataset.sdate) st.carry=0;
     save(); renderDetail(); renderList(); return;
   }
   if(e.target.id==='insRef'&&e.target.value){const q=findQ(selId); q&&insertRef(q,e.target.value); return;}
@@ -1148,6 +1164,7 @@ function applyState(ns){
   syncScan();
   if(selId&&!findQ(selId)){ selId=null; editing=false; }
   if(editing){ renderLv(); renderHud(); renderTabs(); renderList(); } else render();
+  if(window.__qlReady&&carryOver()){ save(); render(); }
 }
 let pushT=null, pushing=false, pushAgain=false;
 function schedulePush(ms=1500){ if(!sync.url) return; clearTimeout(pushT); pushT=setTimeout(pushData,ms); }
@@ -1176,14 +1193,14 @@ async function loadData(){
     if(needPush) schedulePush(200);
   }catch(e){}
 }
-setInterval(()=>{ if(document.visibilityState==='visible') loadData(); },30000);
-document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') loadData(); });
+setInterval(()=>{ if(ymd()!==carryDay) runCarry(); if(document.visibilityState==='visible') loadData(); },30000);
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible'){ if(ymd()!==carryDay) runCarry(); loadData(); } });
 
 // #q=ID で開いたら、そのチャレンジを表示
 (function(){ const m=location.hash.match(/^#q=([\w-]+)/); const q=m&&findQ(m[1]); if(q){ selId=q.id; tab='list'; listCat=q.type; } })();
 
 stamp(); window.__qlReady=true;
-render();
+render(); runCarry();
 if(sync.url){ syncScan(); flush(); loadData().then(pull); }
 })();
 </script>
