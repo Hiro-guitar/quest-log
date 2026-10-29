@@ -502,7 +502,7 @@ function renderList(){
         <div class="sec-h" style="margin-top:6px"><span>Googleカレンダー連携</span></div>
         <p>「やる日」を入れたチャレンジが、Googleカレンダーの「クエストログ」カレンダーに自動で入ります。カレンダー側で予定を動かすと、やる日もこちらに戻ってきます。</p>
         <div class="f"><label>スクリプトのURL</label><input type="text" id="gasUrl" value="${esc(sync.url||'')}" placeholder="https://script.google.com/macros/s/.../exec"></div>
-        <div class="f"><label>合言葉</label><input type="text" id="gasToken" value="${esc(sync.token||'')}" autocomplete="off"></div>
+        <div class="f"><label>合言葉</label><div style="display:flex;gap:8px"><input type="text" id="gasToken" value="${esc(sync.token||'')}" autocomplete="off" placeholder="「作る」を押すと自動で入ります"><button class="btn small" data-act="gasgen">作る</button><button class="btn small" data-act="gascopy">コピー</button></div></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" data-act="gassave">保存して接続テスト</button>${sync.url?'<button class="btn" data-act="gassync">今すぐ同期</button><button class="btn ghost" data-act="gasoff">連携を解除</button>':''}</div>
         <p class="hint" id="syncStatus">${syncStatusText()}</p>
       </div>
@@ -649,6 +649,13 @@ document.addEventListener('click',e=>{
       gas({action:'ping'}).then(j=>{toast(`接続OK：「${j.calendar}」カレンダーに同期します`); syncScan(); flush(); pull(); renderList();})
         .catch(err=>{sync.err=String(err.message||err); saveSync(); toast('接続できませんでした：'+sync.err); renderList();});
       break;}
+    case 'gasgen': {
+      const t=$('gasToken'); if(t.value&&!confirm('合言葉を作り直しますか？（スクリプト側も書き換えが必要になります）')) break;
+      const a=new Uint8Array(12); crypto.getRandomValues(a); t.value=[...a].map(x=>x.toString(36).padStart(2,'0')).join('').slice(0,20);
+      sync.token=t.value; saveSync(); toast('合言葉を作りました。「コピー」してスクリプトに貼ってください'); break;}
+    case 'gascopy': {
+      const v=$('gasToken').value; if(!v){toast('先に「作る」を押してください');break}
+      (navigator.clipboard?navigator.clipboard.writeText(v):Promise.reject()).then(()=>toast('合言葉をコピーしました')).catch(()=>{$('gasToken').select();toast('選択したのでコピーしてください')}); break;}
     case 'gassync': syncScan(); flush(true); pull(); break;
     case 'gasoff':
       if(confirm('カレンダー連携を解除します（カレンダーに入っている予定はそのまま残ります）')){sync={sigs:{},pending:{}};saveSync();renderList();toast('連携を解除しました')} break;
