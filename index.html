@@ -110,6 +110,13 @@ button{cursor:pointer;background:none;border:0;padding:0}
 .stars .off{color:var(--dim)}
 .due.soon{color:var(--orange)}
 .do{color:var(--blue)}
+.sdate{flex:none;font-size:11px;color:var(--dim);border:1px solid transparent;border-radius:10px;padding:1px 8px;margin-top:2px;white-space:nowrap}
+.step:hover .sdate,.sdate:focus{border-color:var(--line);color:var(--muted)}
+.sdate.on{color:var(--blue);border-color:rgba(95,212,239,.35)}
+.step.done .sdate.on{color:var(--dim);border-color:transparent}
+@media (hover:none){.sdate{border-color:var(--line)}}
+.sdate-row{display:flex;gap:8px;align-items:center;padding:6px 0 10px 28px;flex-wrap:wrap}
+.sdate-row input{width:auto;flex:1;min-width:120px}
 .due.over{color:var(--red)}
 .crumb{font-size:12px;color:var(--muted);margin-bottom:12px}
 .crumb button{color:var(--blue);text-decoration:underline;text-underline-offset:3px}
@@ -416,7 +423,7 @@ function demoteStep(q,sid){
   save(); renderEdit($('detail'),q); renderList(); renderTabs(); renderHud();
   toast('工程に戻しました');
 }
-let moveSid=null;
+let moveSid=null, dateSid=null;
 function moveStep(q,sid,tid){
   const t=findQ(tid), i=q.steps.findIndex(x=>x.id===sid); if(!t||i<0) return;
   const s=q.steps[i], r=refQ(s);
@@ -537,7 +544,9 @@ function renderView(D,q){
       const na=!dn&&isNext?nextAction(r):null;
       h+=`<li class="step qstep ${dn?'done':''} ${isNext?'next':''}" data-sid="${s.id}"><button class="qico" data-act="select" data-id="${r.id}" aria-label="チャレンジを開く">◇</button><span class="step-t"><button class="qlink" data-act="select" data-id="${r.id}">${esc(r.title||'(無題)')}</button><span class="qpct">${dn?'CLEAR':Math.round(progress(r)*100)+'%'}</span>${na?`<span class="qnext">▸ ${esc(na)}</span>`:''}</span><span class="drag" data-drag title="ドラッグで並び替え">⋮⋮</span></li>`;
     }else{
-      h+=`<li class="step ${dn?'done':''} ${isNext?'next':''}" data-sid="${s.id}"><button class="chk" data-act="step" data-q="${q.id}" data-s="${s.id}" aria-label="完了切替"></button><span class="step-t">${esc(s.text)}</span><span class="drag" data-drag title="ドラッグで並び替え">⋮⋮</span></li>`;
+      const chip=s.doDate?`<button class="sdate on" data-act="sdate" data-s="${s.id}">${doLabel(s,true).replace(' やる','')}</button>`:`<button class="sdate" data-act="sdate" data-s="${s.id}" title="日付を入れる">日付</button>`;
+      h+=`<li class="step ${dn?'done':''} ${isNext?'next':''}" data-sid="${s.id}"><button class="chk" data-act="step" data-q="${q.id}" data-s="${s.id}" aria-label="完了切替"></button><span class="step-t">${esc(s.text)}</span>${chip}<span class="drag" data-drag title="ドラッグで並び替え">⋮⋮</span></li>`;
+      if(dateSid===s.id) h+=`<li class="sdate-row"><input type="date" data-sdate="${s.id}" value="${esc(s.doDate||'')}"><input type="time" data-stime="${s.id}" value="${esc(s.doTime||'')}"><button class="btn small ghost" data-act="sdateclear" data-s="${s.id}">消す</button><button class="btn small" data-act="sdateclose">OK</button></li>`;
     }
   });
   h+=`</ul>`;
@@ -614,7 +623,7 @@ document.addEventListener('click',e=>{
   const a=b.dataset.act, q=findQ(selId);
   switch(a){
     case 'tab': if(editing){cleanupEmpty();editing=false} tab=b.dataset.v; if(window.innerWidth<=820) selId=null; render(); break;
-    case 'select': if(editing){cleanupEmpty();editing=false} selId=b.dataset.id; render(); window.innerWidth<=820&&window.scrollTo({top:0}); break;
+    case 'select': dateSid=null; if(editing){cleanupEmpty();editing=false} selId=b.dataset.id; render(); window.innerWidth<=820&&window.scrollTo({top:0}); break;
     case 'back': if(editing){cleanupEmpty();editing=false} selId=null; render(); break;
     case 'step': toggleStep(b.dataset.q,b.dataset.s); break;
     case 'accept': q.accepted=!q.accepted; save(); render(); toast(q.accepted?'チャレンジを受注しました':'受注を取り消しました'); break;
@@ -630,6 +639,9 @@ document.addEventListener('click',e=>{
     case 'up': case 'down': {
       const i=q.steps.findIndex(s=>s.id===b.dataset.s), j=a==='up'?i-1:i+1;
       if(j<0||j>=q.steps.length) break; [q.steps[i],q.steps[j]]=[q.steps[j],q.steps[i]]; save(); renderEdit($('detail'),q); break;}
+    case 'sdate': dateSid=dateSid===b.dataset.s?null:b.dataset.s; renderDetail(); setTimeout(()=>{const el=document.querySelector(`[data-sdate="${dateSid}"]`); el&&!el.value&&el.showPicker&&(()=>{try{el.showPicker()}catch(e){}})()},30); break;
+    case 'sdateclose': dateSid=null; renderDetail(); break;
+    case 'sdateclear': {const st=q.steps.find(x=>x.id===b.dataset.s); if(st){st.doDate='';st.doTime='';} dateSid=null; save(); renderDetail(); renderList(); break;}
     case 'promote': promoteStep(q,b.dataset.s); break;
     case 'demote': demoteStep(q,b.dataset.s); break;
     case 'move': moveSid=b.dataset.s; renderEdit($('detail'),q); break;
@@ -679,6 +691,11 @@ document.addEventListener('input',e=>{
   }
 });
 document.addEventListener('change',e=>{
+  if(e.target.dataset.sdate||e.target.dataset.stime){
+    const q=findQ(selId), sid=e.target.dataset.sdate||e.target.dataset.stime, st=q&&q.steps.find(x=>x.id===sid); if(!st) return;
+    if(e.target.dataset.sdate) st.doDate=e.target.value; else { st.doTime=e.target.value; if(!st.doDate) st.doDate=new Date().toISOString().slice(0,10); }
+    save(); renderDetail(); renderList(); return;
+  }
   if(e.target.id==='insRef'&&e.target.value){const q=findQ(selId); q&&insertRef(q,e.target.value); return;}
   if(e.target.dataset.moveto&&e.target.value){const q=findQ(selId); q&&moveStep(q,e.target.dataset.moveto,e.target.value); return;}
   if(e.target.dataset.field==='type'||e.target.dataset.field==='parentId'){ renderList(); }
@@ -761,11 +778,28 @@ function calPayload(q){
     main:m?(m.title||''):'',memo:q.memo||'',steps:q.steps.map(s=>({t:stepText(s),d:stepDone(s)})),
     link:location.origin+location.pathname+'#q='+q.id};
 }
+function stepPayload(q,s){
+  const m=q.type==='main'?q:ancestors(q).find(a=>a.type==='main');
+  return {id:q.id+'~'+s.id,title:`${s.text}｜${q.title||'(無題)'}`,date:s.doDate,time:s.doTime||'',done:!!s.done,
+    main:m?(m.title||''):'',memo:`「${q.title||'(無題)'}」の工程`,steps:[],link:location.origin+location.pathname+'#q='+q.id};
+}
+function calEntities(){
+  const out={};
+  state.quests.forEach(q=>{
+    if(q.doDate) out[q.id]=calPayload(q);
+    q.steps.forEach(s=>{ if(!s.qref&&s.doDate) out[q.id+'~'+s.id]=stepPayload(q,s); });
+  });
+  return out;
+}
+function entTarget(eid){
+  const [qid,sid]=eid.split('~'); const q=findQ(qid); if(!q) return null;
+  return sid ? (q.steps.find(x=>x.id===sid&&!x.qref)||null) : q;
+}
 function syncScan(){
   if(!sync.url) return;
-  const seen={};
-  state.quests.forEach(q=>{ if(!q.doDate) return; seen[q.id]=1; const sig=JSON.stringify(calPayload(q)); if(sync.sigs[q.id]!==sig) sync.pending[q.id]='u'; });
-  Object.keys(sync.sigs).forEach(id=>{ if(!seen[id]) sync.pending[id]='d'; });
+  const ents=calEntities();
+  Object.entries(ents).forEach(([id,pl])=>{ if(sync.sigs[id]!==JSON.stringify(pl)) sync.pending[id]='u'; });
+  Object.keys(sync.sigs).forEach(id=>{ if(!ents[id]) sync.pending[id]='d'; });
   saveSync(); if(Object.keys(sync.pending).length) scheduleFlush();
 }
 let flushT=null, flushing=false, errShown=false;
@@ -781,11 +815,13 @@ async function flush(manual){
   const ids=Object.keys(sync.pending); if(!ids.length){ if(manual) toast('同期済みです'); return; }
   flushing=true;
   const ups=[],dels=[],sent={};
-  ids.forEach(id=>{const q=findQ(id); if(sync.pending[id]==='u'&&q&&q.doDate){const pl=calPayload(q); ups.push(pl); sent[id]=JSON.stringify(pl);} else dels.push(id);});
+  const ents=calEntities();
+  ids.forEach(id=>{ if(sync.pending[id]==='u'&&ents[id]){ ups.push(ents[id]); sent[id]=JSON.stringify(ents[id]); } else dels.push(id); });
   try{
     await gas({action:'sync',upserts:ups,deletes:dels});
-    ups.forEach(pl=>{ sync.sigs[pl.id]=sent[pl.id]; const q=findQ(pl.id); if(q&&q.doDate&&JSON.stringify(calPayload(q))===sent[pl.id]) delete sync.pending[pl.id]; });
-    dels.forEach(id=>{ delete sync.sigs[id]; const q=findQ(id); if(!q||!q.doDate) delete sync.pending[id]; });
+    const now=calEntities();
+    ups.forEach(pl=>{ sync.sigs[pl.id]=sent[pl.id]; if(now[pl.id]&&JSON.stringify(now[pl.id])===sent[pl.id]) delete sync.pending[pl.id]; });
+    dels.forEach(id=>{ delete sync.sigs[id]; if(!now[id]) delete sync.pending[id]; });
     sync.last=Date.now(); sync.err=''; errShown=false; saveSync();
     if(manual) toast('カレンダーと同期しました');
   }catch(err){
@@ -799,8 +835,8 @@ async function pull(){
   try{
     const j=await gas({action:'pull'}); let ch=0;
     Object.entries(j.dates||{}).forEach(([id,v])=>{
-      const q=findQ(id); if(!q||!q.doDate||sync.pending[id]) return;
-      if(q.doDate!==v.date||(q.doTime||'')!==(v.time||'')){ q.doDate=v.date; q.doTime=v.time||''; ch++; }
+      const t=entTarget(id); if(!t||!t.doDate||sync.pending[id]) return;
+      if(t.doDate!==v.date||(t.doTime||'')!==(v.time||'')){ t.doDate=v.date; t.doTime=v.time||''; ch++; }
     });
     if(ch){ save(); render(); toast(`カレンダーで動かした予定を${ch}件反映しました`); }
   }catch(e){}
