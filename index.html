@@ -90,8 +90,29 @@ button{cursor:pointer;background:none;border:0;padding:0}
 .row{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:11px 12px;border:1px solid transparent;border-radius:3px;transition:background .15s,border-color .15s,box-shadow .15s}
 .row:hover{background:rgba(255,255,255,.035)}
 .row.sel{border-color:rgba(242,236,214,.75);background:rgba(242,236,214,.06);box-shadow:0 0 14px rgba(242,236,214,.18),inset 0 0 12px rgba(242,236,214,.05)}
-.r-mark{width:18px;text-align:center;color:var(--blue);flex:none;font-size:13px}
-.r-mark.t-main{color:var(--orange)}
+.r-mark{width:22px;display:flex;justify-content:center;flex:none}
+.ico{display:inline-flex;width:16px;height:16px;vertical-align:-3px;flex:none}
+.ico svg{width:100%;height:100%;overflow:visible}
+.ico-main{width:22px;color:var(--orange)}
+.ico-challenge{color:var(--blue)}
+.ico-mini{color:var(--text)}
+.row.done{opacity:.42}
+.row.done .ico{color:var(--muted)}
+.r-clear{font-size:11px;letter-spacing:.15em;color:var(--muted)}
+.sec{position:relative;margin:6px 0 18px;padding:2px 0 4px;overflow:hidden;border-top:1px solid var(--line)}
+.sec-bg{position:absolute;right:-6px;top:6px;color:var(--text);opacity:.06;pointer-events:none}
+.sec-main .sec-bg{width:46px;right:18px;top:4px}
+.sec-challenge .sec-bg{width:190px}
+.sec-mini .sec-bg{width:170px;top:10px}
+.sec-head{display:flex;align-items:center;gap:8px;padding:12px 12px 8px;position:relative}
+.sec-title{font-weight:900;font-style:italic;letter-spacing:.08em;font-size:15px}
+.sec-main .sec-title{color:var(--orange)}
+.sec-count{font-size:11px;color:var(--dim);letter-spacing:.08em}
+.sec-add{margin-left:auto;width:26px;height:26px;border:1px solid var(--line);border-radius:50%;color:var(--muted);font-size:15px;line-height:1}
+.sec-add:hover{color:var(--blue);border-color:var(--blue);box-shadow:0 0 8px rgba(95,212,239,.35)}
+.sec-empty{font-size:13px;color:var(--dim);padding:4px 12px 10px 42px}
+.sec .row,.sec .mini-add{position:relative}
+.mini-add{padding:0 12px 8px}
 .r-main{flex:1;min-width:0;display:grid}
 .r-title{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .r-sub{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -100,10 +121,10 @@ button{cursor:pointer;background:none;border:0;padding:0}
 .row.done .r-title{color:var(--muted)}
 .row.done .r-mark{color:var(--dim)}
 .pin{color:var(--orange);font-size:10px;letter-spacing:.1em}
-.qcheck{width:18px;height:18px;flex:none;border:1.5px solid var(--muted);border-radius:50%;cursor:pointer;transition:all .15s;margin:0 0 0 0}
-.qcheck:hover{border-color:var(--blue);box-shadow:0 0 8px var(--blue);background:var(--blue-soft)}
+.qcheck{cursor:pointer;border-radius:4px;padding:2px 0}
+.qcheck:hover .ico{color:var(--blue);filter:drop-shadow(0 0 4px var(--blue))}
 .row.vanish{opacity:0;transform:translateX(12px);transition:all .25s}
-.row.vanish .qcheck{background:var(--blue);border-color:var(--blue)}
+.row.vanish .ico{color:var(--blue)}
 .mini-add{padding:2px 0 8px}
 .row:has(.qcheck){padding-top:9px;padding-bottom:9px}
 .group-h{font-size:11px;letter-spacing:.2em;color:var(--dim);padding:12px 12px 4px}
@@ -116,6 +137,7 @@ button{cursor:pointer;background:none;border:0;padding:0}
 .detail .back{display:none;font-size:13px;color:var(--muted);margin-bottom:10px}
 .d-type{font-size:11px;letter-spacing:.22em;color:var(--blue)}
 .d-type.t-main{color:var(--orange)}
+.d-type .ico{width:15px;height:15px;margin-right:2px}.d-type.t-main .ico{width:20px}
 .d-title{font-size:24px;font-weight:900;line-height:1.35;margin:4px 0 10px;font-style:italic;letter-spacing:.02em}
 .d-meta{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--muted);margin-bottom:12px}
 .stars{color:var(--orange);letter-spacing:1px}
@@ -275,6 +297,18 @@ const TYPES={
   challenge:{label:'チャレンジ',hint:'大事なこと。メインにつながることも。大きければ工程に分けよう',mark:'◇',child:'challenge'},
   mini:{label:'ミニチャレンジ',hint:'ちょっとした用事・雑用。左の○で即クリア',mark:'○',child:'mini'}
 };
+const ICON={
+  main:'<svg viewBox="0 0 24 16" aria-hidden="true"><path d="M12 14C9.5 10 5.5 8.6 1 9.4 4 7.2 7.4 6.6 10.2 7.5 7.6 5.6 4.8 3.4 3 1c3.8 1.1 7 3.3 9 7 2-3.7 5.2-5.9 9-7-1.8 2.4-4.6 4.6-7.2 6.5 2.8-.9 6.2-.3 9.2 1.9-4.5-.8-8.5.6-11 4.6Z" fill="currentColor"/></svg>',
+  challenge:'<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.2 14.8 8 8 14.8 1.2 8Z" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 10.6V8.4C6.2 7 7 6.2 8 6.2S9.8 7 9.8 8.4v2.2" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>',
+  mini:'<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3h11a1 1 0 0 1 1 1v6.5a1 1 0 0 1-1 1H7.2L4.4 14v-2.5H2.5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>',
+  miniDone:'<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3h11a1 1 0 0 1 1 1v6.5a1 1 0 0 1-1 1H7.2L4.4 14v-2.5H2.5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" fill="currentColor"/><path d="M5 7.3 7 9.2 11 5.4" fill="none" stroke="var(--bg)" stroke-width="1.5"/></svg>'
+};
+const SECBG={
+  main:'<svg viewBox="0 0 60 240" aria-hidden="true"><path d="M30 6 36 22V176H24V22Z" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 176H52L48 184H12Z" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M26 184H34V222H26Z" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="30" cy="230" r="5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M30 30V168" stroke="currentColor" stroke-width=".8"/></svg>',
+  challenge:'<svg viewBox="0 0 200 130" aria-hidden="true"><rect x="10" y="10" width="180" height="110" rx="14" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="30" y="26" width="140" height="78" rx="4" fill="none" stroke="currentColor" stroke-width="1"/><path d="M10 40H2M10 90H2M190 40h8M190 90h8" stroke="currentColor" stroke-width="1.5"/></svg>',
+  mini:'<svg viewBox="0 0 150 70" aria-hidden="true"><circle cx="30" cy="38" r="22" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="75" cy="30" r="22" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="120" cy="38" r="22" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="30" cy="38" r="14" fill="none" stroke="currentColor" stroke-width=".8"/><circle cx="75" cy="30" r="14" fill="none" stroke="currentColor" stroke-width=".8"/><circle cx="120" cy="38" r="14" fill="none" stroke="currentColor" stroke-width=".8"/></svg>'
+};
+const ico=(t,done)=>`<span class="ico ico-${t}">${t==='mini'&&done?ICON.miniDone:ICON[t]}</span>`;
 const TITLES=['旅立ったばかり','見習い','駆け出しの冒険者','一人前','腕利き','歴戦の勇士','英傑','伝説'];
 const DAY=864e5;
 
@@ -407,7 +441,7 @@ function addMinis(text){
 function newQuest(type,parentId){
   const q={id:uid(),title:'',type,parentId:parentId||null,rank:type==='mini'?1:2,deadline:'',reward:'',memo:'',steps:[],accepted:false,done:false,created:Date.now()};
   state.quests.push(q); selId=q.id; editing=true;
-  if(tab==='log'||tab==='tools') tab=type;
+  if(tab==='tools') tab='list';
   save(); render();
   setTimeout(()=>{const t=document.querySelector('[data-field=title]'); t&&t.focus()},30);
 }
@@ -490,7 +524,7 @@ function renderHud(){
 function renderTabs(){
   const open=t=>state.quests.filter(q=>q.type===t&&!q.done).length;
   const acc=state.quests.filter(q=>q.accepted&&!q.done).length;
-  const tabs=[['active','受注中',acc],['main','メイン',open('main')],['challenge','チャレンジ',open('challenge')],['mini','ミニ',open('mini')],['log','達成記録',state.quests.filter(q=>q.done).length],['tools','道具',null]];
+  const tabs=[['active','受注中',acc],['list','チャレンジ',open('main')+open('challenge')+open('mini')],['tools','道具',null]];
   $('tabs').innerHTML=tabs.map(([k,l,n])=>`<button class="tab ${tab===k?'on':''}" data-act="tab" data-v="${k}">${l}${n!==null?`<span class="n">${n}</span>`:''}</button>`).join('');
 }
 function row(q,subOverride){
@@ -498,31 +532,35 @@ function row(q,subOverride){
   const parent=findQ(q.parentId);
   const sub=subOverride ?? (q.done ? (q.doneAt?new Date(q.doneAt).toLocaleDateString('ja-JP')+' 達成':'達成') : (nextAction(q)?'▸ '+nextAction(q):(parent?'◆ '+parent.title:TYPES[q.type].hint)));
   return `<button class="row ${q.id===selId?'sel':''} ${q.done?'done':''}" data-act="select" data-id="${q.id}">
-    ${q.type==='mini'&&!q.done?`<span class="qcheck" data-act="quickdone" data-id="${q.id}" title="クリア"></span>`:`<span class="r-mark ${q.type==='main'?'t-main':''}">${q.type==='mini'&&q.done?'✓':TYPES[q.type].mark}</span>`}
+    ${q.type==='mini'&&!q.done?`<span class="r-mark qcheck" data-act="quickdone" data-id="${q.id}" title="クリア">${ico('mini')}</span>`:`<span class="r-mark">${ico(q.type,q.done)}</span>`}
     <span class="r-main"><span class="r-title">${esc(q.title||'(無題)')}</span>${(q.type==='mini'&&!q.done&&!q.steps.length)?'':`<span class="r-sub">${esc(sub)}</span>`}</span>
-    <span class="r-side">${q.done?'<span>CLEAR</span>':`${q.type==='mini'&&!q.steps.length?'':`<span class="r-pct">${p}%</span>`}${q.doDate?`<span class="do">${doLabel(q,true)}</span>`:''}${dueHtml(q.deadline)}`}${q.accepted&&!q.done&&tab!=='active'?'<span class="pin">受注中</span>':''}</span>
+    <span class="r-side">${q.done?'<span class="r-clear">クリア</span>':`${q.type==='mini'&&!q.steps.length?'':`<span class="r-pct">${p}%</span>`}${q.doDate?`<span class="do">${doLabel(q,true)}</span>`:''}${dueHtml(q.deadline)}`}${q.accepted&&!q.done&&tab!=='active'?'<span class="pin">受注中</span>':''}</span>
   </button>`;
 }
 function renderList(){
   const L=$('list'); let h='';
   if(tab==='active'){
     const act=state.quests.filter(q=>q.accepted&&!q.done).sort(byDue);
-    h=act.length?act.map(q=>row(q)).join(''):`<div class="empty">受注中のチャレンジはまだありません。<br>「メイン」「チャレンジ」タブから選んで「受注する」を押すと、ここに並びます。</div>`;
-  }else if(TYPES[tab]){
-    let qs=state.quests.filter(q=>q.type===tab);
-    const open=qs.filter(q=>!q.done).sort(byDue), done=qs.filter(q=>q.done).sort((a,b)=>(b.doneAt||0)-(a.doneAt||0));
-    h=`<div class="group-h">${TYPES[tab].hint}</div>`;
-    if(tab==='mini') h+=`<div class="mini-add"><input type="text" id="miniAdd" placeholder="ミニチャレンジを追加（Enter／複数行を貼ると一括）"></div>`;
-    h+=open.length?open.map(q=>row(q)).join(''):`<div class="empty">${tab==='mini'?'雑用はここにどんどん放り込もう。':'まだありません。右下の「＋ 新しいチャレンジ」から追加しよう。'}</div>`;
-    if(done.length){
-      h+=`<button class="toggle" data-act="cleared">${showCleared?'▾':'▸'} クリア済み ${done.length}件</button>`;
-      if(showCleared) h+=done.map(q=>row(q)).join('');
-    }
-  }else if(tab==='log'){
-    const done=state.quests.filter(q=>q.done).sort((a,b)=>(b.doneAt||0)-(a.doneAt||0));
-    const steps=state.quests.reduce((n,q)=>n+q.steps.filter(s=>!s.qref&&s.done).length,0);
-    h=`<div class="group-h">達成 ${done.length}件 ・ クリアした工程 ${steps}個 ・ 累計 ${state.xp} XP</div>`;
-    h+=done.length?done.map(q=>row(q)).join(''):`<div class="empty">まだ達成したチャレンジはありません。最初の1つを目指そう。</div>`;
+    h=act.length?act.map(q=>row(q)).join(''):`<div class="empty">受注中のチャレンジはまだありません。<br>「チャレンジ」タブから選んで「受注する」を押すと、ここに並びます。</div>`;
+  }else if(tab==='list'){
+    const doneAll=state.quests.filter(q=>q.done).length, stepsDone=state.quests.reduce((n,q)=>n+q.steps.filter(x=>!x.qref&&x.done).length,0);
+    h=`<div class="group-h">達成 ${doneAll}件 ・ クリアした工程 ${stepsDone}個 ・ 累計 ${state.xp} XP</div>`;
+    const names={main:'メインチャレンジ',challenge:'チャレンジ',mini:'ミニチャレンジ'};
+    ['main','challenge','mini'].forEach(t=>{
+      const qs=state.quests.filter(q=>q.type===t);
+      const open=qs.filter(q=>!q.done).sort(byDue);
+      let done=qs.filter(q=>q.done).sort((a,b)=>(b.doneAt||0)-(a.doneAt||0));
+      const hidden=t==='mini'&&!showCleared ? Math.max(0,done.length-5) : 0; if(hidden) done=done.slice(0,5);
+      h+=`<section class="sec sec-${t}"><div class="sec-bg">${SECBG[t]}</div>
+        <div class="sec-head">${ico(t)}<span class="sec-title">${names[t]}</span><span class="sec-count">${qs.length-open.length} / ${qs.length}</span>${t==='mini'?'':`<button class="sec-add" data-act="new" data-type="${t}" title="${names[t]}を追加">＋</button>`}</div>`;
+      if(t==='mini') h+=`<div class="mini-add"><input type="text" id="miniAdd" placeholder="ミニチャレンジを追加（Enter／複数行を貼ると一括）"></div>`;
+      h+=open.map(q=>row(q)).join('');
+      if(!qs.length) h+=`<div class="sec-empty">${t==='main'?'人生のシナリオを2〜3個立てよう':t==='challenge'?'大事なことをここに':'雑用はここに放り込もう'}</div>`;
+      h+=done.map(q=>row(q)).join('');
+      if(hidden) h+=`<button class="toggle" data-act="cleared">ほかにクリア済み ${hidden}件</button>`;
+      if(t==='mini'&&showCleared&&done.length>5) h+=`<button class="toggle" data-act="cleared">クリア済みをたたむ</button>`;
+      h+=`</section>`;
+    });
   }else if(tab==='tools'){
     h=`<div class="tools">
       <p>データはこのブラウザの中だけに保存されています。スマホとPCで使う場合や、念のためのバックアップには書き出し／読み込みを使ってください。</p>
@@ -554,10 +592,10 @@ function renderView(D,q){
   const p=Math.round(progress(q)*100), anc=ancestors(q), ks=kids(q.id).sort(byDue);
   const ns=nextStep(q);
   let h=`<button class="back" data-act="back">← 一覧へ戻る</button>
-  <div class="d-type ${q.type==='main'?'t-main':''}">${TYPES[q.type].mark} ${TYPES[q.type].label}${q.done?'　・　CLEAR':''}</div>
+  <div class="d-type t-${q.type}">${ico(q.type,q.done)} ${TYPES[q.type].label}${q.done?'　・　クリア':''}</div>
   <div class="d-title">${esc(q.title||'(無題)')}</div>
   <div class="d-meta">${stars(q.rank)}${q.doDate?`<span class="do">やる日 ${doLabel(q)}</span>`:''}${q.deadline?`<span>期限 ${q.deadline.replace(/-/g,'/')}　${dueHtml(q.deadline)}</span>`:''}${q.reward?`<span>報酬：${esc(q.reward)}</span>`:''}</div>`;
-  if(anc.length) h+=`<div class="crumb link">${anc.map(a=>`${TYPES[a.type].mark} <button data-act="select" data-id="${a.id}">${esc(a.title||'(無題)')}</button>`).join('　›　')}　のためのチャレンジ</div>`;
+  if(anc.length) h+=`<div class="crumb link">${anc.map(a=>`${ico(a.type)} <button data-act="select" data-id="${a.id}">${esc(a.title||'(無題)')}</button>`).join('　›　')}　のためのチャレンジ</div>`;
   if(q.memo) h+=`<p class="memo">${esc(q.memo)}</p>`;
   h+=`<div class="bar"><i style="width:${p}%"></i></div><div class="bar-txt">進捗 ${p}%</div>`;
   h+=`<div class="sec-h"><span>工程</span><span>${q.steps.filter(stepDone).length} / ${q.steps.length}</span></div><ul class="steps" data-sortable>`;
@@ -575,7 +613,7 @@ function renderView(D,q){
   h+=`</ul>`;
   if(!q.done) h+=`<div class="add"><input type="text" id="quickAdd" placeholder="工程を追加（Enter／複数行を貼り付けで一括）"></div>`;
   if(q.type==='main'){
-    const kidRow=k=>`<button class="kid ${k.done?'done':''}" data-act="select" data-id="${k.id}"><span>${TYPES[k.type].mark} ${esc(k.title||'(無題)')}</span><span class="k-pct">${k.done?'CLEAR':Math.round(progress(k)*100)+'%'}</span></button>`;
+    const kidRow=k=>`<button class="kid ${k.done?'done':''}" data-act="select" data-id="${k.id}"><span>${ico(k.type,k.done)} ${esc(k.title||'(無題)')}</span><span class="k-pct">${k.done?'CLEAR':Math.round(progress(k)*100)+'%'}</span></button>`;
     const open=ks.filter(k=>!k.done&&!q.steps.some(s=>s.qref===k.id)), done=ks.filter(k=>k.done);
     h+=`<div class="sec-h"><span>このシナリオのためのチャレンジ</span>${q.done?'':`<button class="btn small ghost" data-act="addchild">＋ チャレンジを追加</button>`}</div>`;
     h+=open.length?`<div class="kids">${open.map(kidRow).join('')}</div>`
@@ -650,6 +688,7 @@ document.addEventListener('click',e=>{
     case 'select': dateSid=null; if(editing){cleanupEmpty();editing=false} selId=b.dataset.id; render(); window.innerWidth<=820&&window.scrollTo({top:0}); break;
     case 'back': if(editing){cleanupEmpty();editing=false} selId=null; render(); break;
     case 'step': toggleStep(b.dataset.q,b.dataset.s); break;
+    case 'new': newQuest(b.dataset.type,null); break;
     case 'quickdone': { const m=findQ(b.dataset.id); if(m){ const row=b.closest('.row'); row&&row.classList.add('vanish'); setTimeout(()=>completeQuest(m),260); } break; }
     case 'accept': q.accepted=!q.accepted; save(); render(); toast(q.accepted?'チャレンジを受注しました':'受注を取り消しました'); break;
     case 'complete':
@@ -700,7 +739,7 @@ document.addEventListener('click',e=>{
       if(confirm('すべてのチャレンジとXPを消して初期化します。元に戻せません。よろしいですか？')){state={xp:0,quests:[]};selId=null;save();render();toast('初期化しました')} break;
   }
 });
-$('fab').addEventListener('click',()=>{if(editing)cleanupEmpty(); newQuest(TYPES[tab]?tab:'challenge',null)});
+$('fab').addEventListener('click',()=>{if(editing)cleanupEmpty(); newQuest('challenge',null)});
 document.addEventListener('input',e=>{
   const q=findQ(selId); if(!q) return;
   const f=e.target.dataset.field, sid=e.target.dataset.steptext;
@@ -931,7 +970,7 @@ setInterval(()=>{ if(document.visibilityState==='visible') loadData(); },30000);
 document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') loadData(); });
 
 // #q=ID で開いたら、そのチャレンジを表示
-(function(){ const m=location.hash.match(/^#q=([\w-]+)/); const q=m&&findQ(m[1]); if(q){ selId=q.id; tab=q.done?'log':q.type; } })();
+(function(){ const m=location.hash.match(/^#q=([\w-]+)/); const q=m&&findQ(m[1]); if(q){ selId=q.id; tab='list'; } })();
 
 stamp(); window.__qlReady=true;
 render();
