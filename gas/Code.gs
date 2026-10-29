@@ -17,6 +17,12 @@ function doPost(e) {
     const cal = cal_(props);
     if (req.action === 'ping') return out_({ ok: true, calendar: cal.getName() });
     if (req.action === 'pull') return out_({ ok: true, dates: pull_(cal, props) });
+    if (req.action === 'load') { const d = loadData_(props); return out_({ ok: true, rev: d.rev, data: d.data }); }
+    if (req.action === 'save') {
+      const d = loadData_(props);
+      if (d.rev > 0 && (req.baseRev || 0) !== d.rev) return out_({ ok: true, conflict: true, rev: d.rev, data: d.data });
+      return out_({ ok: true, rev: saveData_(props, req.data) });
+    }
     if (req.action === 'sync') {
       (req.upserts || []).forEach(function (q) { upsert_(cal, props, q); });
       (req.deletes || []).forEach(function (id) { remove_(cal, props, id); });
@@ -104,4 +110,23 @@ function desc_(q) {
   }
   lines.push('', 'クエストログで開く：' + q.link);
   return lines.join('\n');
+}
+
+// ---- PCとスマホで共有するデータの保管（スクリプトのプロパティに分割して保存） ----
+function loadData_(props) {
+  const n = +(props.getProperty('data_n') || 0);
+  let str = '';
+  for (let i = 0; i < n; i++) str += props.getProperty('data_' + i) || '';
+  return { rev: +(props.getProperty('data_rev') || 0), data: str ? JSON.parse(str) : null };
+}
+
+function saveData_(props, data) {
+  const str = JSON.stringify(data), size = 2800, n = Math.ceil(str.length / size), obj = {};
+  for (let i = 0; i < n; i++) obj['data_' + i] = str.slice(i * size, (i + 1) * size);
+  const old = +(props.getProperty('data_n') || 0);
+  for (let i = n; i < old; i++) props.deleteProperty('data_' + i);
+  const rev = +(props.getProperty('data_rev') || 0) + 1;
+  obj.data_n = String(n); obj.data_rev = String(rev);
+  props.setProperties(obj);
+  return rev;
 }

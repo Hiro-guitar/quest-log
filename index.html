@@ -280,7 +280,7 @@ function sample(){
   const now=Date.now(), d=n=>new Date(now+n*DAY).toISOString().slice(0,10);
   const a=uid(), b=uid();
   const c=uid();
-  return {xp:0,quests:[
+  return {xp:0,pristine:true,quests:[
     {id:uid(),title:'クエストログの使い方を覚える',type:'challenge',parentId:null,rank:1,deadline:d(3),reward:'',memo:'まずはこのチャレンジをクリアしてみよう。\n終わったら削除してOK。',
      steps:[st('右下の「＋ 新しいチャレンジ」で作ってみる'),st('工程を追加する（複数行を貼り付けると一括で追加される）'),st('「受注する」を押すと、上の「現在の目標」に次の一手が出る'),st('大きすぎる工程は、編集画面の「格上げ」でチャレンジにできる'),st('全工程が終わったら「チャレンジ達成を報告」')],
      accepted:true,done:false,created:now},
@@ -316,7 +316,7 @@ function migrate(){
   });
 }
 migrate(); save();
-function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){} if(window.__qlReady) syncScan();}
+function save(){ if(window.__qlReady) stamp(); try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){} if(window.__qlReady){ syncScan(); schedulePush(); } }
 
 let tab='active', selId=null, editing=false, showCleared=false;
 
@@ -513,8 +513,8 @@ function renderList(){
       <div><button class="btn primary" data-act="export">データを書き出す（JSON）</button></div>
       <div><button class="btn" data-act="import">データを読み込む</button></div>
       <div class="cal">
-        <div class="sec-h" style="margin-top:6px"><span>Googleカレンダー連携</span></div>
-        <p>「やる日」を入れたチャレンジが、Googleカレンダーの「クエストログ」カレンダーに自動で入ります。カレンダー側で予定を動かすと、やる日もこちらに戻ってきます。</p>
+        <div class="sec-h" style="margin-top:6px"><span>Googleアカウント連携（端末間の同期・カレンダー）</span></div>
+        <p>つなぐと、PCとスマホで同じデータが使えるようになり、「やる日」を入れたチャレンジや工程はGoogleカレンダーの「クエストログ」カレンダーに自動で入ります。スマホでつなぐときは、PCと同じURLと合言葉を入れてください（合言葉はApps Scriptの6行目にあります）。</p>
         <div class="f"><label>スクリプトのURL</label><input type="text" id="gasUrl" value="${esc(sync.url||'')}" placeholder="https://script.google.com/macros/s/.../exec"></div>
         <div class="f"><label>合言葉</label><div style="display:flex;gap:8px"><input type="text" id="gasToken" value="${esc(sync.token||'')}" autocomplete="off" placeholder="「作る」を押すと自動で入ります"><button class="btn small" data-act="gasgen">作る</button><button class="btn small" data-act="gascopy">コピー</button></div></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" data-act="gassave">保存して接続テスト</button>${sync.url?'<button class="btn" data-act="gassync">今すぐ同期</button><button class="btn ghost" data-act="gasoff">連携を解除</button>':''}</div>
@@ -665,7 +665,7 @@ document.addEventListener('click',e=>{
       const u=$('gasUrl').value.trim(), t=$('gasToken').value.trim();
       if(!/^https:\/\/script\.google\.com\//.test(u)){toast('スクリプトのURLを確認してください');break}
       sync.url=u; sync.token=t; sync.err=''; saveSync(); toast('接続テスト中…');
-      gas({action:'ping'}).then(j=>{toast(`接続OK：「${j.calendar}」カレンダーに同期します`); syncScan(); flush(); pull(); renderList();})
+      gas({action:'ping'}).then(j=>{toast(`接続OK：データとカレンダーを同期します`); sync.rev=undefined; saveSync(); syncScan(); flush(); loadData().then(()=>{pull(); renderList();});})
         .catch(err=>{sync.err=String(err.message||err); saveSync(); toast('接続できませんでした：'+sync.err); renderList();});
       break;}
     case 'gasgen': {
@@ -675,9 +675,9 @@ document.addEventListener('click',e=>{
     case 'gascopy': {
       const v=$('gasToken').value; if(!v){toast('先に「作る」を押してください');break}
       (navigator.clipboard?navigator.clipboard.writeText(v):Promise.reject()).then(()=>toast('合言葉をコピーしました')).catch(()=>{$('gasToken').select();toast('選択したのでコピーしてください')}); break;}
-    case 'gassync': syncScan(); flush(true); pull(); break;
+    case 'gassync': syncScan(); flush(true); loadData().then(()=>{pull(); pushData();}); break;
     case 'gasoff':
-      if(confirm('カレンダー連携を解除します（カレンダーに入っている予定はそのまま残ります）')){sync={sigs:{},pending:{}};saveSync();renderList();toast('連携を解除しました')} break;
+      if(confirm('連携を解除します（この端末の同期が止まります。カレンダーの予定や他の端末のデータはそのまま残ります）')){sync={sigs:{},pending:{}};saveSync();renderList();toast('連携を解除しました')} break;
     case 'reset':
       if(confirm('すべてのチャレンジとXPを消して初期化します。元に戻せません。よろしいですか？')){state={xp:0,quests:[]};selId=null;save();render();toast('初期化しました')} break;
   }
@@ -777,7 +777,8 @@ function syncStatusText(){
   if(!sync.url) return '未接続です。設定方法はClaudeに聞いてください。';
   const pend=Object.keys(sync.pending||{}).length;
   if(sync.err) return `⚠ 同期エラー：${esc(sync.err)}（${pend}件が送信待ち）`;
-  return sync.last ? `最終同期：${new Date(sync.last).toLocaleString('ja-JP')}${pend?`（${pend}件が送信待ち）`:''}` : '接続済み';
+  const t=Math.max(sync.last||0,sync.dataAt||0);
+  return t ? `接続中 ・ 最終同期：${new Date(t).toLocaleString('ja-JP')}${pend?`（カレンダー${pend}件が送信待ち）`:''}` : '接続済み';
 }
 function calPayload(q){
   const m=ancestors(q).find(a=>a.type==='main');
@@ -850,12 +851,71 @@ async function pull(){
 }
 document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible'&&sync.url){ pull(); flush(); } });
 
+/* ---------- PCとスマホのデータ同期 ---------- */
+let qSigs=null;
+function stamp(){
+  const now=Date.now(); state.deleted=state.deleted||{}; const cur={};
+  state.quests.forEach(q=>{ const {u,...rest}=q; const sg=JSON.stringify(rest); cur[q.id]=sg;
+    if(qSigs&&qSigs[q.id]!==sg){ q.u=now; state.pristine=false; } if(!q.u) q.u=q.created||now; });
+  if(qSigs) Object.keys(qSigs).forEach(id=>{ if(!cur[id]){ state.deleted[id]=now; state.pristine=false; } });
+  if(qSigs&&state.xp!==stamp.xp) state.pristine=false;
+  stamp.xp=state.xp;
+  Object.keys(state.deleted).forEach(id=>{ if(now-state.deleted[id]>90*DAY) delete state.deleted[id]; });
+  qSigs=cur;
+}
+function mergeStates(a,b){
+  const del={...(a.deleted||{})};
+  Object.entries(b.deleted||{}).forEach(([k,v])=>{ if(!del[k]||del[k]<v) del[k]=v; });
+  const map={};
+  [...(a.quests||[]),...(b.quests||[])].forEach(q=>{ const e=map[q.id]; if(!e||(q.u||0)>(e.u||0)) map[q.id]=q; });
+  const quests=Object.values(map).filter(q=>!(del[q.id]&&del[q.id]>=(q.u||0)));
+  return {xp:Math.max(a.xp||0,b.xp||0),quests,deleted:del,pristine:false};
+}
+function fingerprint(st){ return JSON.stringify([(st.quests||[]).map(q=>q.id+':'+(q.u||0)).sort(),st.xp||0]); }
+function applyState(ns){
+  state=ns; if(!Array.isArray(state.quests)) state.quests=[];
+  migrate(); qSigs=null; stamp();
+  try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}
+  syncScan();
+  if(selId&&!findQ(selId)){ selId=null; editing=false; }
+  if(editing){ renderLv(); renderHud(); renderTabs(); renderList(); } else render();
+}
+let pushT=null, pushing=false, pushAgain=false;
+function schedulePush(ms=1500){ if(!sync.url) return; clearTimeout(pushT); pushT=setTimeout(pushData,ms); }
+async function pushData(){
+  if(!sync.url) return; if(pushing){ pushAgain=true; return; }
+  pushing=true;
+  try{
+    const j=await gas({action:'save',data:state,baseRev:sync.rev||0});
+    if(j.conflict){ sync.rev=j.rev; saveSync(); applyState(mergeStates(state,j.data||{})); pushAgain=true; }
+    else { sync.rev=j.rev; sync.dataAt=Date.now(); saveSync(); refreshStatus(); }
+  }catch(err){ sync.err=String(err.message||err); saveSync(); refreshStatus(); clearTimeout(pushT); pushT=setTimeout(pushData,30000); }
+  finally{ pushing=false; if(pushAgain){ pushAgain=false; schedulePush(300); } }
+}
+async function loadData(){
+  if(!sync.url||pushing) return;
+  try{
+    const j=await gas({action:'load'});
+    if(!j.data){ schedulePush(100); return; }
+    if(j.rev===sync.rev) return;
+    const m=state.pristine ? {...j.data,pristine:false} : mergeStates(state,j.data);
+    sync.rev=j.rev; sync.dataAt=Date.now(); saveSync();
+    const needPush=fingerprint(m)!==fingerprint(j.data);
+    const changed=fingerprint(m)!==fingerprint(state);
+    applyState(m);
+    if(changed) toast('ほかの端末の変更を反映しました');
+    if(needPush) schedulePush(200);
+  }catch(e){}
+}
+setInterval(()=>{ if(document.visibilityState==='visible') loadData(); },30000);
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') loadData(); });
+
 // #q=ID で開いたら、そのチャレンジを表示
 (function(){ const m=location.hash.match(/^#q=([\w-]+)/); const q=m&&findQ(m[1]); if(q){ selId=q.id; tab=q.done?'log':q.type; } })();
 
-window.__qlReady=true;
+stamp(); window.__qlReady=true;
 render();
-if(sync.url){ syncScan(); flush(); pull(); }
+if(sync.url){ syncScan(); flush(); loadData().then(pull); }
 })();
 </script>
 </body>
