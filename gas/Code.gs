@@ -12,12 +12,13 @@ function doPost(e) {
   try {
     const req = JSON.parse(e.postData.contents);
     if (req.token !== TOKEN) return out_({ ok: false, error: '合言葉が違います' });
-    lock.waitLock(20000);
     const props = PropertiesService.getScriptProperties();
+    // 読むだけの処理は順番待ちしない
+    if (req.action === 'load') { const d = loadData_(props); return out_({ ok: true, rev: d.rev, data: d.data }); }
     const cal = cal_(props);
     if (req.action === 'ping') return out_({ ok: true, calendar: cal.getName() });
     if (req.action === 'pull') return out_({ ok: true, dates: pull_(cal, props) });
-    if (req.action === 'load') { const d = loadData_(props); return out_({ ok: true, rev: d.rev, data: d.data }); }
+    lock.waitLock(25000);
     if (req.action === 'save') {
       const d = loadData_(props);
       if (d.rev > 0 && (req.baseRev || 0) !== d.rev) return out_({ ok: true, conflict: true, rev: d.rev, data: d.data });
@@ -89,10 +90,13 @@ function remove_(cal, props, id) {
 
 function pull_(cal, props) {
   const all = props.getProperties(), tz = Session.getScriptTimeZone(), out = {};
+  // 予定を1回でまとめて取得（1件ずつ探すより速い）
+  const now = new Date(), from = new Date(now.getTime() - 400 * 86400000), to = new Date(now.getTime() + 1100 * 86400000);
+  const byId = {};
+  cal.getEvents(from, to).forEach(function (ev) { byId[ev.getId()] = ev; });
   Object.keys(all).forEach(function (k) {
     if (k.indexOf('ev_') !== 0) return;
-    let ev = null;
-    try { ev = cal.getEventById(all[k]); } catch (_) {}
+    const ev = byId[all[k]];
     if (!ev) return;
     out[k.slice(3)] = ev.isAllDayEvent()
       ? { date: Utilities.formatDate(ev.getAllDayStartDate(), tz, 'yyyy-MM-dd'), time: '' }

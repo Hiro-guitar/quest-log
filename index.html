@@ -65,6 +65,12 @@ button{cursor:pointer;background:none;border:0;padding:0}
 .xp{height:3px;background:rgba(255,255,255,.08);margin-top:6px;position:relative;overflow:hidden}
 .xp i{position:absolute;inset:0 auto 0 0;background:var(--blue);box-shadow:0 0 8px var(--blue);transition:width .6s}
 .xp-txt{font-size:11px;color:var(--dim);margin-top:3px}
+.sbadge{margin-left:10px;font-size:11px;letter-spacing:.05em}
+.sbadge:empty{display:none}
+.sbadge.busy{color:var(--blue);animation:blink 1.2s ease-in-out infinite}
+.sbadge.ok{color:var(--dim)}
+.sbadge.err{color:var(--red)}
+@keyframes blink{50%{opacity:.35}}
 
 /* ===== 現在の目標 ===== */
 .hud{border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:10px 2px;margin-bottom:14px;display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
@@ -505,10 +511,10 @@ function addSteps(q,text){
 function render(){renderLv();renderHud();renderTabs();renderList();renderDetail();
   $('split').classList.toggle('has-sel',!!selId||tab==='tools'&&false);
 }
-function renderLv(){
+function renderLv(){ setTimeout(syncBadge,0);
   const {lv,rest,need}=lvInfo(state.xp);
   $('lv').innerHTML=`<div class="lv-row"><span class="lv-title">${TITLES[Math.min(lv-1,TITLES.length-1)]}</span><span class="lv-num"><small>Lv.</small>${lv}</span></div>
-  <div class="xp"><i style="width:${rest/need*100}%"></i></div><div class="xp-txt">次のレベルまで ${need-rest} XP</div>`;
+  <div class="xp"><i style="width:${rest/need*100}%"></i></div><div class="xp-txt">次のレベルまで ${need-rest} XP<span id="syncBadge" class="sbadge"></span></div>`;
 }
 function renderHud(){
   const act=state.quests.filter(q=>q.accepted&&!q.done).sort(byDue);
@@ -872,16 +878,29 @@ function syncScan(){
   const ents=calEntities();
   Object.entries(ents).forEach(([id,pl])=>{ if(sync.sigs[id]!==JSON.stringify(pl)) sync.pending[id]='u'; });
   Object.keys(sync.sigs).forEach(id=>{ if(!ents[id]) sync.pending[id]='d'; });
-  saveSync(); if(Object.keys(sync.pending).length) scheduleFlush();
+  saveSync(); if(Object.keys(sync.pending).length){ scheduleFlush(); } syncBadge();
 }
 let flushT=null, flushing=false, errShown=false;
 function scheduleFlush(ms=1200){clearTimeout(flushT); flushT=setTimeout(flush,ms)}
-async function gas(body){
+let gasQ=Promise.resolve(), inflight=0;
+function gas(body){ const p=gasQ.then(()=>gasRaw(body)); gasQ=p.catch(()=>{}); return p; }
+function syncBadge(){
+  const el=$('syncBadge'); if(!el) return;
+  if(!sync.url){ el.textContent=''; el.className='sbadge'; return; }
+  if(inflight>0||Object.keys(sync.pending||{}).length){ el.textContent='同期中…'; el.className='sbadge busy'; }
+  else if(sync.err){ el.textContent='⚠ 同期エラー'; el.className='sbadge err'; }
+  else { el.textContent='同期済み'; el.className='sbadge ok'; }
+}
+async function gasRaw(body){
+  inflight++; syncBadge();
+  try{ return await gasFetch(body); } finally{ inflight--; syncBadge(); }
+}
+async function gasFetch(body){
   const r=await fetch(sync.url,{method:'POST',body:JSON.stringify({token:sync.token,...body})});
   let j; try{ j=await r.json(); }catch(e){ throw new Error('スクリプトから正しい返事がありません（URLか公開設定を確認）'); }
   if(!j.ok) throw new Error(j.error||'不明なエラー'); return j;
 }
-function refreshStatus(){const el=$('syncStatus'); if(el) el.innerHTML=syncStatusText();}
+function refreshStatus(){const el=$('syncStatus'); if(el) el.innerHTML=syncStatusText(); syncBadge();}
 async function flush(manual){
   if(!sync.url||flushing) return;
   const ids=Object.keys(sync.pending); if(!ids.length){ if(manual) toast('同期済みです'); return; }
