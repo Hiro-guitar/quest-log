@@ -573,8 +573,8 @@ function renderList(){
       <div><button class="btn primary" data-act="export">データを書き出す（JSON）</button></div>
       <div><button class="btn" data-act="import">データを読み込む</button></div>
       <div class="cal">
-        <div class="sec-h" style="margin-top:6px"><span>Googleアカウント連携（端末間の同期・カレンダー）</span></div>
-        <p>つなぐと、PCとスマホで同じデータが使えるようになり、「やる日」を入れたチャレンジや工程はGoogleカレンダーの「クエストログ」カレンダーに自動で入ります。スマホでつなぐときは、PCと同じURLと合言葉を入れてください（合言葉はApps Scriptの6行目にあります）。</p>
+        <div class="sec-h" style="margin-top:6px"><span>Googleアカウント連携（PCとスマホの同期）</span></div>
+        <p>つなぐと、PCとスマホで同じデータが使えるようになります。スマホでつなぐときは、PCと同じURLと合言葉を入れてください（合言葉はApps Scriptの6行目にあります）。</p>
         <div class="f"><label>スクリプトのURL</label><input type="text" id="gasUrl" value="${esc(sync.url||'')}" placeholder="https://script.google.com/macros/s/.../exec"></div>
         <div class="f"><label>合言葉</label><div style="display:flex;gap:8px"><input type="text" id="gasToken" value="${esc(sync.token||'')}" autocomplete="off" placeholder="「作る」を押すと自動で入ります"><button class="btn small" data-act="gasgen">作る</button><button class="btn small" data-act="gascopy">コピー</button></div></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" data-act="gassave">保存して接続テスト</button>${sync.url?'<button class="btn" data-act="gassync">今すぐ同期</button><button class="btn ghost" data-act="gasoff">連携を解除</button>':''}</div>
@@ -657,7 +657,7 @@ function renderEdit(D,q){
     <div class="f"><label>期限</label><input type="date" data-field="deadline" value="${esc(q.deadline)}"></div>
   </div>
   <div class="f2">
-    <div class="f"><label>やる日（カレンダーに入ります）</label><input type="date" data-field="doDate" value="${esc(q.doDate||'')}"></div>
+    <div class="f"><label>やる日</label><input type="date" data-field="doDate" value="${esc(q.doDate||'')}"></div>
     <div class="f"><label>時間（任意・空なら終日）</label><input type="time" data-field="doTime" value="${esc(q.doTime||'')}"></div>
   </div>
   <div class="f"><label>クリア報酬（自分へのご褒美）</label><input type="text" data-field="reward" value="${esc(q.reward)}" placeholder="例：好きなケーキを買う"></div>
@@ -729,7 +729,7 @@ document.addEventListener('click',e=>{
       const u=$('gasUrl').value.trim(), t=$('gasToken').value.trim();
       if(!/^https:\/\/script\.google\.com\//.test(u)){toast('スクリプトのURLを確認してください');break}
       sync.url=u; sync.token=t; sync.err=''; saveSync(); toast('接続テスト中…');
-      gas({action:'ping'}).then(j=>{toast(`接続OK：データとカレンダーを同期します`); sync.rev=undefined; saveSync(); syncScan(); flush(); loadData().then(()=>{pull(); renderList();});})
+      gas({action:'ping'}).then(j=>{toast(`接続OK：データを同期します`); sync.rev=undefined; saveSync(); syncScan(); flush(); loadData().then(()=>{pull(); renderList();});})
         .catch(err=>{sync.err=String(err.message||err); saveSync(); toast('接続できませんでした：'+sync.err); renderList();});
       break;}
     case 'gasgen': {
@@ -873,8 +873,9 @@ function entTarget(eid){
   const [qid,sid]=eid.split('~'); const q=findQ(qid); if(!q) return null;
   return sid ? (q.steps.find(x=>x.id===sid&&!x.qref)||null) : q;
 }
+const CAL_SYNC=false; // Googleカレンダー連携は停止中（PCとスマホのデータ同期は有効）
 function syncScan(){
-  if(!sync.url) return;
+  if(!sync.url||!CAL_SYNC) return;
   const ents=calEntities();
   Object.entries(ents).forEach(([id,pl])=>{ if(sync.sigs[id]!==JSON.stringify(pl)) sync.pending[id]='u'; });
   Object.keys(sync.sigs).forEach(id=>{ if(!ents[id]) sync.pending[id]='d'; });
@@ -902,7 +903,7 @@ async function gasFetch(body){
 }
 function refreshStatus(){const el=$('syncStatus'); if(el) el.innerHTML=syncStatusText(); syncBadge();}
 async function flush(manual){
-  if(!sync.url||flushing) return;
+  if(!sync.url||flushing||!CAL_SYNC) return;
   const ids=Object.keys(sync.pending); if(!ids.length){ if(manual) toast('同期済みです'); return; }
   flushing=true;
   const ups=[],dels=[],sent={};
@@ -922,7 +923,7 @@ async function flush(manual){
   }finally{ flushing=false; refreshStatus(); if(Object.keys(sync.pending).length&&!sync.err) scheduleFlush(); }
 }
 async function pull(){
-  if(!sync.url) return;
+  if(!sync.url||!CAL_SYNC) return;
   try{
     const j=await gas({action:'pull'}); let ch=0;
     Object.entries(j.dates||{}).forEach(([id,v])=>{
