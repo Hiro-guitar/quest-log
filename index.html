@@ -109,6 +109,7 @@ button{cursor:pointer;background:none;border:0;padding:0}
 .stars{color:var(--orange);letter-spacing:1px}
 .stars .off{color:var(--dim)}
 .due.soon{color:var(--orange)}
+.do{color:var(--blue)}
 .due.over{color:var(--red)}
 .crumb{font-size:12px;color:var(--muted);margin-bottom:12px}
 .crumb button{color:var(--blue);text-decoration:underline;text-underline-offset:3px}
@@ -187,6 +188,7 @@ body.is-dragging,body.is-dragging *{cursor:grabbing!important;user-select:none;-
 /* 道具 */
 .tools{display:grid;gap:12px;padding:6px 12px}
 .tools p{margin:0;color:var(--muted);font-size:13px}
+.cal{display:grid;gap:10px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:6px 0 14px;margin-top:6px}
 
 /* FAB */
 .fab{position:fixed;right:20px;bottom:22px;z-index:20;background:var(--panel-solid);border:1px solid var(--blue);color:var(--blue);padding:12px 20px;border-radius:30px;font-weight:700;letter-spacing:.06em;box-shadow:0 0 18px rgba(95,212,239,.3),0 6px 20px rgba(0,0,0,.5)}
@@ -300,7 +302,7 @@ function migrate(){
   });
 }
 migrate(); save();
-function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){} if(window.__qlReady) syncScan();}
 
 let tab='active', selId=null, editing=false, showCleared=false;
 
@@ -337,6 +339,12 @@ function dueHtml(d){
   return `<span class="due ${n<=3?'soon':''}">あと${n}日</span>`;
 }
 const stars=r=>`<span class="stars">${'★'.repeat(r)}<span class="off">${'★'.repeat(5-r)}</span></span>`;
+function doLabel(q,short){
+  const d=new Date(q.doDate+'T00:00:00'), w='日月火水木金土'[d.getDay()];
+  const n=daysLeft(q.doDate), rel=n===0?'今日':n===1?'明日':'';
+  const t=`${d.getMonth()+1}/${d.getDate()}（${w}）${q.doTime?' '+q.doTime:''}`;
+  return short ? (rel?rel+(q.doTime?' '+q.doTime:'')+' やる':t+' やる') : t+(rel?`　${rel}`:'');
+}
 function byDue(a,b){const da=a.deadline||'9999',db=b.deadline||'9999';return da<db?-1:da>db?1:a.created-b.created}
 function lvInfo(xp){let lv=1,need=100,rest=xp;while(rest>=need){rest-=need;lv++;need=100+(lv-1)*40}return{lv,rest,need}}
 function allStepsDone(q){return !q.done && (q.steps.length||kids(q.id).length) && q.steps.every(stepDone) && kids(q.id).every(k=>k.done)}
@@ -463,7 +471,7 @@ function row(q,subOverride){
   return `<button class="row ${q.id===selId?'sel':''} ${q.done?'done':''}" data-act="select" data-id="${q.id}">
     <span class="r-mark ${q.type==='main'?'t-main':''}">${TYPES[q.type].mark}</span>
     <span class="r-main"><span class="r-title">${esc(q.title||'(無題)')}</span><span class="r-sub">${esc(sub)}</span></span>
-    <span class="r-side">${q.done?'<span>CLEAR</span>':`<span class="r-pct">${p}%</span>${dueHtml(q.deadline)}`}${q.accepted&&!q.done&&tab!=='active'?'<span class="pin">受注中</span>':''}</span>
+    <span class="r-side">${q.done?'<span>CLEAR</span>':`<span class="r-pct">${p}%</span>${q.doDate?`<span class="do">${doLabel(q,true)}</span>`:''}${dueHtml(q.deadline)}`}${q.accepted&&!q.done&&tab!=='active'?'<span class="pin">受注中</span>':''}</span>
   </button>`;
 }
 function renderList(){
@@ -490,6 +498,14 @@ function renderList(){
       <p>データはこのブラウザの中だけに保存されています。スマホとPCで使う場合や、念のためのバックアップには書き出し／読み込みを使ってください。</p>
       <div><button class="btn primary" data-act="export">データを書き出す（JSON）</button></div>
       <div><button class="btn" data-act="import">データを読み込む</button></div>
+      <div class="cal">
+        <div class="sec-h" style="margin-top:6px"><span>Googleカレンダー連携</span></div>
+        <p>「やる日」を入れたチャレンジが、Googleカレンダーの「クエストログ」カレンダーに自動で入ります。カレンダー側で予定を動かすと、やる日もこちらに戻ってきます。</p>
+        <div class="f"><label>スクリプトのURL</label><input type="text" id="gasUrl" value="${esc(sync.url||'')}" placeholder="https://script.google.com/macros/s/.../exec"></div>
+        <div class="f"><label>合言葉</label><input type="text" id="gasToken" value="${esc(sync.token||'')}" autocomplete="off"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" data-act="gassave">保存して接続テスト</button>${sync.url?'<button class="btn" data-act="gassync">今すぐ同期</button><button class="btn ghost" data-act="gasoff">連携を解除</button>':''}</div>
+        <p class="hint" id="syncStatus">${syncStatusText()}</p>
+      </div>
       <p style="margin-top:14px">サンプルを消してまっさらから始めたいときはこちら。</p>
       <div><button class="btn danger" data-act="reset">すべて消して初期化</button></div>
     </div>`;
@@ -510,7 +526,7 @@ function renderView(D,q){
   let h=`<button class="back" data-act="back">← 一覧へ戻る</button>
   <div class="d-type ${q.type==='main'?'t-main':''}">${TYPES[q.type].mark} ${TYPES[q.type].label}${q.done?'　・　CLEAR':''}</div>
   <div class="d-title">${esc(q.title||'(無題)')}</div>
-  <div class="d-meta">${stars(q.rank)}${q.deadline?`<span>期限 ${q.deadline.replace(/-/g,'/')}　${dueHtml(q.deadline)}</span>`:''}${q.reward?`<span>報酬：${esc(q.reward)}</span>`:''}</div>`;
+  <div class="d-meta">${stars(q.rank)}${q.doDate?`<span class="do">やる日 ${doLabel(q)}</span>`:''}${q.deadline?`<span>期限 ${q.deadline.replace(/-/g,'/')}　${dueHtml(q.deadline)}</span>`:''}${q.reward?`<span>報酬：${esc(q.reward)}</span>`:''}</div>`;
   if(anc.length) h+=`<div class="crumb link">${anc.map(a=>`${TYPES[a.type].mark} <button data-act="select" data-id="${a.id}">${esc(a.title||'(無題)')}</button>`).join('　›　')}　のためのチャレンジ</div>`;
   if(q.memo) h+=`<p class="memo">${esc(q.memo)}</p>`;
   h+=`<div class="bar"><i style="width:${p}%"></i></div><div class="bar-txt">進捗 ${p}%</div>`;
@@ -562,6 +578,10 @@ function renderEdit(D,q){
   <div class="f2">
     <div class="f"><label>難易度</label><div class="rank-pick">${[1,2,3,4,5].map(r=>`<button data-act="rank" data-v="${r}" class="${r<=q.rank?'on':''}">★</button>`).join('')}</div></div>
     <div class="f"><label>期限</label><input type="date" data-field="deadline" value="${esc(q.deadline)}"></div>
+  </div>
+  <div class="f2">
+    <div class="f"><label>やる日（カレンダーに入ります）</label><input type="date" data-field="doDate" value="${esc(q.doDate||'')}"></div>
+    <div class="f"><label>時間（任意・空なら終日）</label><input type="time" data-field="doTime" value="${esc(q.doTime||'')}"></div>
   </div>
   <div class="f"><label>クリア報酬（自分へのご褒美）</label><input type="text" data-field="reward" value="${esc(q.reward)}" placeholder="例：好きなケーキを買う"></div>
   <div class="f"><label>説明・なぜやるのか</label><textarea data-field="memo" placeholder="このチャレンジの目的や、クリアした先の姿">${esc(q.memo)}</textarea></div>
@@ -622,6 +642,16 @@ document.addEventListener('click',e=>{
       l.href=u; l.download='questlog-'+new Date().toISOString().slice(0,10)+'.json'; document.body.appendChild(l); l.click(); l.remove();
       setTimeout(()=>URL.revokeObjectURL(u),1000); break;}
     case 'import': $('importFile').click(); break;
+    case 'gassave': {
+      const u=$('gasUrl').value.trim(), t=$('gasToken').value.trim();
+      if(!/^https:\/\/script\.google\.com\//.test(u)){toast('スクリプトのURLを確認してください');break}
+      sync.url=u; sync.token=t; sync.err=''; saveSync(); toast('接続テスト中…');
+      gas({action:'ping'}).then(j=>{toast(`接続OK：「${j.calendar}」カレンダーに同期します`); syncScan(); flush(); pull(); renderList();})
+        .catch(err=>{sync.err=String(err.message||err); saveSync(); toast('接続できませんでした：'+sync.err); renderList();});
+      break;}
+    case 'gassync': syncScan(); flush(true); pull(); break;
+    case 'gasoff':
+      if(confirm('カレンダー連携を解除します（カレンダーに入っている予定はそのまま残ります）')){sync={sigs:{},pending:{}};saveSync();renderList();toast('連携を解除しました')} break;
     case 'reset':
       if(confirm('すべてのチャレンジとXPを消して初期化します。元に戻せません。よろしいですか？')){state={xp:0,quests:[]};selId=null;save();render();toast('初期化しました')} break;
   }
@@ -706,7 +736,76 @@ $('importFile').addEventListener('change',e=>{
   r.readAsText(f);
 });
 
+/* ---------- Googleカレンダー同期 ---------- */
+const SKEY='questlog-sync';
+var sync=(()=>{try{return JSON.parse(localStorage.getItem(SKEY))||{}}catch(e){return {}}})();
+sync.sigs=sync.sigs||{}; sync.pending=sync.pending||{};
+function saveSync(){try{localStorage.setItem(SKEY,JSON.stringify(sync))}catch(e){}}
+const pad=n=>String(n).padStart(2,'0');
+function syncStatusText(){
+  if(!sync.url) return '未接続です。設定方法はClaudeに聞いてください。';
+  const pend=Object.keys(sync.pending||{}).length;
+  if(sync.err) return `⚠ 同期エラー：${esc(sync.err)}（${pend}件が送信待ち）`;
+  return sync.last ? `最終同期：${new Date(sync.last).toLocaleString('ja-JP')}${pend?`（${pend}件が送信待ち）`:''}` : '接続済み';
+}
+function calPayload(q){
+  const m=ancestors(q).find(a=>a.type==='main');
+  return {id:q.id,title:q.title||'(無題)',date:q.doDate,time:q.doTime||'',done:!!q.done,
+    main:m?(m.title||''):'',memo:q.memo||'',steps:q.steps.map(s=>({t:stepText(s),d:stepDone(s)})),
+    link:location.origin+location.pathname+'#q='+q.id};
+}
+function syncScan(){
+  if(!sync.url) return;
+  const seen={};
+  state.quests.forEach(q=>{ if(!q.doDate) return; seen[q.id]=1; const sig=JSON.stringify(calPayload(q)); if(sync.sigs[q.id]!==sig) sync.pending[q.id]='u'; });
+  Object.keys(sync.sigs).forEach(id=>{ if(!seen[id]) sync.pending[id]='d'; });
+  saveSync(); if(Object.keys(sync.pending).length) scheduleFlush();
+}
+let flushT=null, flushing=false, errShown=false;
+function scheduleFlush(ms=1200){clearTimeout(flushT); flushT=setTimeout(flush,ms)}
+async function gas(body){
+  const r=await fetch(sync.url,{method:'POST',body:JSON.stringify({token:sync.token,...body})});
+  let j; try{ j=await r.json(); }catch(e){ throw new Error('スクリプトから正しい返事がありません（URLか公開設定を確認）'); }
+  if(!j.ok) throw new Error(j.error||'不明なエラー'); return j;
+}
+function refreshStatus(){const el=$('syncStatus'); if(el) el.innerHTML=syncStatusText();}
+async function flush(manual){
+  if(!sync.url||flushing) return;
+  const ids=Object.keys(sync.pending); if(!ids.length){ if(manual) toast('同期済みです'); return; }
+  flushing=true;
+  const ups=[],dels=[],sent={};
+  ids.forEach(id=>{const q=findQ(id); if(sync.pending[id]==='u'&&q&&q.doDate){const pl=calPayload(q); ups.push(pl); sent[id]=JSON.stringify(pl);} else dels.push(id);});
+  try{
+    await gas({action:'sync',upserts:ups,deletes:dels});
+    ups.forEach(pl=>{ sync.sigs[pl.id]=sent[pl.id]; const q=findQ(pl.id); if(q&&q.doDate&&JSON.stringify(calPayload(q))===sent[pl.id]) delete sync.pending[pl.id]; });
+    dels.forEach(id=>{ delete sync.sigs[id]; const q=findQ(id); if(!q||!q.doDate) delete sync.pending[id]; });
+    sync.last=Date.now(); sync.err=''; errShown=false; saveSync();
+    if(manual) toast('カレンダーと同期しました');
+  }catch(err){
+    sync.err=String(err.message||err); saveSync();
+    if(!errShown||manual){ toast('カレンダー同期に失敗：'+sync.err); errShown=true; }
+    scheduleFlush(30000);
+  }finally{ flushing=false; refreshStatus(); if(Object.keys(sync.pending).length&&!sync.err) scheduleFlush(); }
+}
+async function pull(){
+  if(!sync.url) return;
+  try{
+    const j=await gas({action:'pull'}); let ch=0;
+    Object.entries(j.dates||{}).forEach(([id,v])=>{
+      const q=findQ(id); if(!q||!q.doDate||sync.pending[id]) return;
+      if(q.doDate!==v.date||(q.doTime||'')!==(v.time||'')){ q.doDate=v.date; q.doTime=v.time||''; ch++; }
+    });
+    if(ch){ save(); render(); toast(`カレンダーで動かした予定を${ch}件反映しました`); }
+  }catch(e){}
+}
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible'&&sync.url){ pull(); flush(); } });
+
+// #q=ID で開いたら、そのチャレンジを表示
+(function(){ const m=location.hash.match(/^#q=([\w-]+)/); const q=m&&findQ(m[1]); if(q){ selId=q.id; tab=q.done?'log':q.type; } })();
+
+window.__qlReady=true;
 render();
+if(sync.url){ syncScan(); flush(); pull(); }
 })();
 </script>
 </body>
