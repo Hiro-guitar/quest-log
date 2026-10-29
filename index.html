@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>クエストログ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#07090b;
+  --panel:rgba(18,24,28,.72);
+  --panel-solid:#11171b;
+  --line:rgba(242,236,214,.14);
+  --text:#f2ecd6;          /* 少し黄みがかった白 */
+  --muted:#8e9894;
+  --dim:#5b6461;
+  --blue:#5fd4ef;          /* 発光アクセント */
+  --blue-soft:rgba(95,212,239,.16);
+  --orange:#f0a640;
+  --red:#e8705f;
+  --green:#9fd98a;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow-x:hidden}
+body{
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 0%,rgba(95,212,239,.07),transparent 70%),
+    radial-gradient(ellipse 120% 90% at 50% 120%,rgba(240,166,64,.05),transparent 60%),
+    var(--bg);
+  background-attachment:fixed;
+  color:var(--text);
+  font-family:'Noto Sans JP',sans-serif;
+  font-size:15px;line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:0;padding:0}
+.wrap{max-width:1080px;margin:0 auto;padding:18px 16px 110px}
+
+/* ===== ヘッダー ===== */
+.top{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:14px}
+.brand{font-weight:900;letter-spacing:.18em;font-size:13px;color:var(--muted)}
+.brand b{display:block;color:var(--text);font-size:22px;letter-spacing:.12em;font-style:italic}
+.lv{min-width:190px;text-align:right}
+.lv-row{display:flex;align-items:baseline;justify-content:flex-end;gap:10px}
+.lv-num{font-weight:900;font-style:italic;font-size:22px}
+.lv-num small{font-size:11px;color:var(--muted);margin-right:3px;font-style:normal;letter-spacing:.1em}
+.lv-title{font-size:12px;color:var(--blue)}
+.xp{height:3px;background:rgba(255,255,255,.08);margin-top:6px;position:relative;overflow:hidden}
+.xp i{position:absolute;inset:0 auto 0 0;background:var(--blue);box-shadow:0 0 8px var(--blue);transition:width .6s}
+.xp-txt{font-size:11px;color:var(--dim);margin-top:3px}
+
+/* ===== 現在の目標 ===== */
+.hud{border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:10px 2px;margin-bottom:14px;display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.hud-label{font-size:11px;letter-spacing:.2em;color:var(--orange)}
+.hud-item{display:flex;gap:10px;align-items:baseline;text-align:left;width:100%;min-width:0;padding:2px 0}
+.hud-item:hover .hud-next{color:var(--text)}
+.hud-q{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:40%}
+.hud-next{flex:1;min-width:0;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hud-next::before{content:'▸ ';color:var(--blue)}
+.hud-empty{color:var(--dim);font-size:13px}
+
+/* ===== タブ ===== */
+.tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;margin-bottom:12px;border-bottom:1px solid var(--line)}
+.tabs::-webkit-scrollbar{display:none}
+.tab{padding:9px 14px 10px;font-size:14px;font-weight:700;color:var(--dim);white-space:nowrap;position:relative;letter-spacing:.04em}
+.tab .n{font-size:11px;font-weight:500;margin-left:4px}
+.tab.on{color:var(--text)}
+.tab.on::after{content:'';position:absolute;left:10px;right:10px;bottom:-1px;height:2px;background:var(--text);box-shadow:0 0 10px rgba(242,236,214,.7)}
+
+/* ===== 2ペイン ===== */
+.split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:18px;align-items:start}
+.list{display:grid;gap:4px}
+.row{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:11px 12px;border:1px solid transparent;border-radius:3px;transition:background .15s,border-color .15s,box-shadow .15s}
+.row:hover{background:rgba(255,255,255,.035)}
+.row.sel{border-color:rgba(242,236,214,.75);background:rgba(242,236,214,.06);box-shadow:0 0 14px rgba(242,236,214,.18),inset 0 0 12px rgba(242,236,214,.05)}
+.r-mark{width:18px;text-align:center;color:var(--blue);flex:none;font-size:13px}
+.r-mark.t-main{color:var(--orange)}
+.r-main{flex:1;min-width:0;display:grid}
+.r-title{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.r-sub{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.r-side{flex:none;text-align:right;font-size:12px;color:var(--muted);display:grid;justify-items:end;gap:1px}
+.r-pct{font-weight:700;color:var(--text);font-style:italic}
+.row.done .r-title{color:var(--muted)}
+.row.done .r-mark{color:var(--dim)}
+.pin{color:var(--orange);font-size:10px;letter-spacing:.1em}
+.group-h{font-size:11px;letter-spacing:.2em;color:var(--dim);padding:12px 12px 4px}
+.empty{color:var(--dim);font-size:14px;padding:28px 12px;line-height:1.9}
+.toggle{font-size:12px;color:var(--dim);padding:12px;text-align:left}
+.toggle:hover{color:var(--muted)}
+
+/* ===== 詳細 ===== */
+.detail{background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:22px 22px 18px;position:sticky;top:14px;backdrop-filter:blur(6px);min-height:280px}
+.detail .back{display:none;font-size:13px;color:var(--muted);margin-bottom:10px}
+.d-type{font-size:11px;letter-spacing:.22em;color:var(--blue)}
+.d-type.t-main{color:var(--orange)}
+.d-title{font-size:24px;font-weight:900;line-height:1.35;margin:4px 0 10px;font-style:italic;letter-spacing:.02em}
+.d-meta{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--muted);margin-bottom:12px}
+.stars{color:var(--orange);letter-spacing:1px}
+.stars .off{color:var(--dim)}
+.due.soon{color:var(--orange)}
+.due.over{color:var(--red)}
+.crumb{font-size:12px;color:var(--muted);margin-bottom:12px}
+.crumb button{color:var(--blue);text-decoration:underline;text-underline-offset:3px}
+.memo{white-space:pre-wrap;color:#d9d3be;font-size:14px;margin:0 0 16px;line-height:1.85}
+.bar{height:4px;background:rgba(255,255,255,.07);position:relative;margin:4px 0 4px}
+.bar i{position:absolute;inset:0 auto 0 0;background:var(--text);box-shadow:0 0 8px rgba(242,236,214,.6);transition:width .5s}
+.bar-txt{font-size:12px;color:var(--muted);text-align:right;margin-bottom:14px}
+.sec-h{font-size:11px;letter-spacing:.22em;color:var(--dim);margin:18px 0 6px;display:flex;justify-content:space-between;align-items:center}
+.steps{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.step{display:flex;gap:10px;align-items:flex-start;padding:7px 4px;border-bottom:1px dashed rgba(242,236,214,.07)}
+.chk{flex:none;width:18px;height:18px;margin-top:3px;border:1.5px solid var(--muted);border-radius:2px;transform:rotate(45deg) scale(.82);transition:all .2s;position:relative}
+.chk:hover{border-color:var(--blue);box-shadow:0 0 8px var(--blue)}
+.step.done .chk{background:var(--blue);border-color:var(--blue);box-shadow:0 0 10px var(--blue)}
+.step-t{flex:1;min-width:0;word-break:break-word}
+.step.done .step-t{color:var(--dim);text-decoration:line-through;text-decoration-color:rgba(255,255,255,.2)}
+.step.next .step-t{color:var(--text);font-weight:700}
+.step.next .step-t::after{content:'次の一手';font-size:10px;font-weight:500;color:var(--bg);background:var(--blue);padding:1px 6px;border-radius:2px;margin-left:8px;vertical-align:2px;letter-spacing:.08em}
+.add{display:flex;gap:8px;margin-top:8px}
+.add input{flex:1;min-width:0}
+input[type=text],input[type=date],select,textarea{background:rgba(0,0,0,.35);border:1px solid var(--line);border-radius:3px;padding:8px 10px;outline:none;width:100%}
+input:focus,select:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue-soft)}
+textarea{resize:vertical;min-height:70px;line-height:1.7}
+select option{background:var(--panel-solid)}
+::placeholder{color:var(--dim)}
+.kids{display:grid;gap:2px}
+.kid{display:flex;justify-content:space-between;gap:10px;padding:7px 4px;text-align:left;width:100%;font-size:14px;border-bottom:1px dashed rgba(242,236,214,.07)}
+.kid:hover{color:var(--blue)}
+.kid .k-pct{color:var(--muted);font-size:12px;flex:none}
+.kid.done{color:var(--dim)}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px;padding-top:16px;border-top:1px solid var(--line)}
+.btn{border:1px solid var(--line);padding:8px 14px;border-radius:3px;font-size:13px;font-weight:700;letter-spacing:.04em;transition:all .15s}
+.btn:hover{border-color:var(--text);box-shadow:0 0 10px rgba(242,236,214,.2)}
+.btn.primary{border-color:var(--blue);color:var(--blue)}
+.btn.primary:hover{background:var(--blue-soft);box-shadow:0 0 12px rgba(95,212,239,.35)}
+.btn.gold{border-color:var(--orange);color:var(--orange)}
+.btn.gold:hover{background:rgba(240,166,64,.12);box-shadow:0 0 12px rgba(240,166,64,.35)}
+.btn.on{background:rgba(240,166,64,.14);border-color:var(--orange);color:var(--orange)}
+.btn.danger{color:var(--red);border-color:rgba(232,112,95,.35)}
+.btn.ghost{border-color:transparent;color:var(--muted)}
+.btn.small{padding:4px 10px;font-size:12px}
+.ready{border:1px solid var(--orange);color:var(--orange);padding:10px 12px;margin-top:14px;font-size:13px;border-radius:3px;animation:pulse 2s infinite}
+@keyframes pulse{50%{box-shadow:0 0 14px rgba(240,166,64,.35)}}
+.d-empty{color:var(--dim);display:grid;place-items:center;min-height:240px;text-align:center;font-size:14px;line-height:2}
+
+/* 編集フォーム */
+.form{display:grid;gap:12px}
+.f label{display:block;font-size:11px;letter-spacing:.15em;color:var(--muted);margin-bottom:4px}
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.rank-pick{display:flex;gap:2px}
+.rank-pick button{font-size:20px;color:var(--dim);padding:0 2px;line-height:1}
+.rank-pick button.on{color:var(--orange);text-shadow:0 0 8px rgba(240,166,64,.6)}
+.estep{display:flex;gap:6px;align-items:center}
+.estep input{flex:1}
+.estep .ic{color:var(--dim);width:26px;height:30px;font-size:13px;border-radius:3px}
+.estep .ic:hover{color:var(--text);background:rgba(255,255,255,.06)}
+.hint{font-size:12px;color:var(--dim)}
+
+/* 道具 */
+.tools{display:grid;gap:12px;padding:6px 12px}
+.tools p{margin:0;color:var(--muted);font-size:13px}
+
+/* FAB */
+.fab{position:fixed;right:20px;bottom:22px;z-index:20;background:var(--panel-solid);border:1px solid var(--blue);color:var(--blue);padding:12px 20px;border-radius:30px;font-weight:700;letter-spacing:.06em;box-shadow:0 0 18px rgba(95,212,239,.3),0 6px 20px rgba(0,0,0,.5)}
+.fab:hover{background:#13232a}
+
+/* トースト・達成演出 */
+.toast{position:fixed;left:50%;bottom:86px;transform:translateX(-50%) translateY(20px);opacity:0;background:var(--panel-solid);border:1px solid var(--line);padding:9px 18px;border-radius:3px;font-size:13px;transition:all .3s;z-index:40;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.clear{position:fixed;inset:0;display:grid;place-items:center;z-index:50;pointer-events:none;opacity:0;background:radial-gradient(circle at 50% 50%,rgba(40,44,42,.92),rgba(3,4,5,.96) 65%);backdrop-filter:blur(4px)}
+.clear.show{animation:clearIn 2.6s ease forwards}
+.clear-in{text-align:center}
+.clear-k{font-size:13px;letter-spacing:.5em;color:var(--orange);margin-bottom:6px}
+.clear-big{font-size:clamp(34px,8vw,64px);font-weight:900;font-style:italic;letter-spacing:.12em;text-shadow:0 0 24px rgba(242,236,214,.7)}
+.clear-line{height:1px;margin:12px auto;width:0;background:linear-gradient(90deg,transparent,var(--text),transparent);animation:line 1.2s .2s forwards}
+.clear-t{font-size:16px;color:#d9d3be}
+.clear-xp{font-size:13px;color:var(--blue);margin-top:6px}
+@keyframes clearIn{0%{opacity:0}12%{opacity:1}80%{opacity:1}100%{opacity:0}}
+@keyframes line{to{width:min(420px,80vw)}}
+.flash{animation:flash .6s}
+@keyframes flash{0%{background:rgba(95,212,239,.25)}100%{background:transparent}}
+
+@media (max-width:820px){
+  .split{grid-template-columns:1fr}
+  .detail{display:none;position:static}
+  .split.has-sel .list-wrap{display:none}
+  .split.has-sel .detail{display:block}
+  .detail .back{display:inline-block}
+  .lv{min-width:0}
+  .brand b{font-size:19px}
+  .hud-q{max-width:45%}
+  .f2{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">ADVENTURE TASKS<b>クエストログ</b></div>
+    <div class="lv" id="lv"></div>
+  </header>
+  <section class="hud" id="hud"></section>
+  <nav class="tabs" id="tabs"></nav>
+  <div class="split" id="split">
+    <div class="list-wrap"><div class="list" id="list"></div></div>
+    <aside class="detail" id="detail"></aside>
+  </div>
+</div>
+<button class="fab" id="fab">＋ 新しいクエスト</button>
+<div class="toast" id="toast"></div>
+<div class="clear" id="clear"><div class="clear-in">
+  <div class="clear-k">QUEST</div>
+  <div class="clear-big">CLEAR</div>
+  <div class="clear-line"></div>
+  <div class="clear-t" id="clearT"></div>
+  <div class="clear-xp" id="clearXp"></div>
+</div></div>
+<input type="file" id="importFile" accept="application/json" hidden>
+
+<script>
+(function(){
+const KEY='questlog-v1';
+const TYPES={
+  main:{label:'メインクエスト',hint:'人生・数年がかりの大目標',mark:'◆',child:'challenge'},
+  challenge:{label:'チャレンジ',hint:'数ヶ月かけて攻略する目標',mark:'◈',child:'sub'},
+  sub:{label:'サブクエスト',hint:'数日〜数週間で片づく用事',mark:'◇',child:'sub'}
+};
+const TITLES=['旅立ったばかり','見習い','駆け出しの冒険者','一人前','腕利き','歴戦の勇士','英傑','伝説'];
+const DAY=864e5;
+
+const uid=()=>Math.random().toString(36).slice(2,10);
+const st=(t,d=false)=>({id:uid(),text:t,done:d});
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const $=id=>document.getElementById(id);
+
+function sample(){
+  const now=Date.now(), d=n=>new Date(now+n*DAY).toISOString().slice(0,10);
+  const a=uid(), b=uid();
+  return {xp:0,quests:[
+    {id:uid(),title:'クエストログの使い方を覚える',type:'sub',parentId:null,rank:1,deadline:d(3),reward:'',memo:'まずはこのクエストをクリアしてみよう。\n終わったら削除してOK。',
+     steps:[st('右下の「＋ 新しいクエスト」で作ってみる'),st('工程を追加する（複数行を貼り付けると一括で追加される）'),st('「受注する」を押すと、上の「現在の目標」に次の一手が出る'),st('受注は3つまでに絞るのがおすすめ'),st('全工程が終わったら「クエスト達成を報告」')],
+     accepted:true,done:false,created:now},
+    {id:a,title:'理想の暮らしを手に入れる',type:'main',parentId:null,rank:5,deadline:'',reward:'家族で記念旅行',memo:'人生単位のゴール（サンプル）。\nこの下に数ヶ月単位のチャレンジをぶら下げていく。',steps:[],accepted:false,done:false,created:now-3},
+    {id:b,title:'収入の柱をもう一本つくる',type:'challenge',parentId:a,rank:4,deadline:d(90),reward:'',memo:'サンプル。数ヶ月かけて攻略する目標。',
+     steps:[st('アイデアを3つ書き出す'),st('一番やれそうなものを選ぶ'),st('最初の小さな一歩を決める')],accepted:false,done:false,created:now-2},
+    {id:uid(),title:'市場調査をする',type:'sub',parentId:b,rank:2,deadline:d(14),reward:'',memo:'',steps:[st('似たサービスを5つ調べる'),st('気づいたことをメモする')],accepted:false,done:false,created:now-1}
+  ]};
+}
+function load(){
+  try{const s=JSON.parse(localStorage.getItem(KEY)); if(s&&Array.isArray(s.quests)) return s;}catch(e){}
+  return sample();
+}
+let state=load();
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
+
+let tab='active', selId=null, editing=false, showCleared=false;
+
+/* ---------- helpers ---------- */
+const findQ=id=>state.quests.find(q=>q.id===id);
+const kids=id=>state.quests.filter(q=>q.parentId===id);
+function progress(q){
+  if(q.done) return 1;
+  const ks=kids(q.id), units=q.steps.length+ks.length;
+  if(!units) return 0;
+  return (q.steps.filter(s=>s.done).length + ks.reduce((n,k)=>n+progress(k),0))/units;
+}
+function nextStep(q){return q.steps.find(s=>!s.done)}
+function nextAction(q){
+  const s=nextStep(q); if(s) return s.text;
+  const k=kids(q.id).find(k=>!k.done);
+  if(k) return (nextAction(k)||k.title);
+  return null;
+}
+function ancestors(q){const out=[];let p=findQ(q.parentId),g=0;while(p&&g++<20){out.unshift(p);p=findQ(p.parentId)}return out}
+function isDesc(id,of){let q=findQ(id),g=0;while(q&&g++<50){if(q.parentId===of)return true;q=findQ(q.parentId)}return false}
+function daysLeft(d){if(!d)return null;const t=new Date(d+'T00:00:00');const n=new Date();n.setHours(0,0,0,0);return Math.round((t-n)/DAY)}
+function dueHtml(d){
+  const n=daysLeft(d); if(n===null) return '';
+  if(n<0) return `<span class="due over">期限切れ ${-n}日</span>`;
+  if(n===0) return `<span class="due over">今日まで</span>`;
+  return `<span class="due ${n<=3?'soon':''}">あと${n}日</span>`;
+}
+const stars=r=>`<span class="stars">${'★'.repeat(r)}<span class="off">${'★'.repeat(5-r)}</span></span>`;
+function byDue(a,b){const da=a.deadline||'9999',db=b.deadline||'9999';return da<db?-1:da>db?1:a.created-b.created}
+function lvInfo(xp){let lv=1,need=100,rest=xp;while(rest>=need){rest-=need;lv++;need=100+(lv-1)*40}return{lv,rest,need}}
+function allStepsDone(q){return !q.done && (q.steps.length||kids(q.id).length) && q.steps.every(s=>s.done) && kids(q.id).every(k=>k.done)}
+
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('show'),2200)}
+function gain(n){
+  const before=lvInfo(state.xp).lv;
+  state.xp=Math.max(0,state.xp+n);
+  const after=lvInfo(state.xp).lv;
+  if(after>before) setTimeout(()=>toast(`LEVEL UP!  Lv.${after}「${TITLES[Math.min(after-1,TITLES.length-1)]}」`),n>=100?2700:200);
+}
+
+/* ---------- actions ---------- */
+function toggleStep(qid,sid){
+  const q=findQ(qid), s=q&&q.steps.find(x=>x.id===sid); if(!s) return;
+  s.done=!s.done; gain((s.done?1:-1)*10*q.rank);
+  save(); render();
+  if(s.done){
+    toast(`工程クリア  +${10*q.rank} XP`);
+    if(allStepsDone(q)) setTimeout(()=>toast('全工程クリア！ クエスト達成を報告しよう'),1400);
+  }
+}
+function completeQuest(q){
+  q.done=true; q.doneAt=Date.now(); q.accepted=false;
+  const xp=50*q.rank; gain(xp); save();
+  $('clearT').textContent=q.title; $('clearXp').textContent=`+${xp} XP${q.reward?'　報酬：'+q.reward:''}`;
+  const c=$('clear'); c.classList.remove('show'); void c.offsetWidth; c.classList.add('show');
+  render();
+}
+function reopen(q){q.done=false;q.doneAt=null;gain(-50*q.rank);save();render()}
+function newQuest(type,parentId){
+  const q={id:uid(),title:'',type,parentId:parentId||null,rank:2,deadline:'',reward:'',memo:'',steps:[],accepted:false,done:false,created:Date.now()};
+  state.quests.push(q); selId=q.id; editing=true;
+  if(tab==='log'||tab==='tools') tab=type;
+  save(); render();
+  setTimeout(()=>{const t=document.querySelector('[data-field=title]'); t&&t.focus()},30);
+}
+function cleanupEmpty(){
+  const q=findQ(selId);
+  if(q && !q.title.trim() && !q.steps.length && !kids(q.id).length){
+    state.quests=state.quests.filter(x=>x!==q); selId=null; save();
+  }
+}
+function deleteQuest(q){
+  if(!confirm(`「${q.title||'(無題)'}」を削除する？\n下位クエストは1つ上の階層に移動します。`)) return;
+  kids(q.id).forEach(k=>k.parentId=q.parentId);
+  state.quests=state.quests.filter(x=>x!==q); selId=null; editing=false; save(); render();
+}
+function addSteps(q,text){
+  const lines=text.split(/\r?\n/).map(s=>s.replace(/^\s*([-*・●○◇◆□■]|\d+[.)．]|\[\s?\])\s*/,'').trim()).filter(Boolean);
+  lines.forEach(l=>q.steps.push(st(l)));
+  if(lines.length){save();render();if(lines.length>1)toast(`${lines.length}個の工程を追加`);}
+  return lines.length;
+}
+
+/* ---------- render ---------- */
+function render(){renderLv();renderHud();renderTabs();renderList();renderDetail();
+  $('split').classList.toggle('has-sel',!!selId||tab==='tools'&&false);
+}
+function renderLv(){
+  const {lv,rest,need}=lvInfo(state.xp);
+  $('lv').innerHTML=`<div class="lv-row"><span class="lv-title">${TITLES[Math.min(lv-1,TITLES.length-1)]}</span><span class="lv-num"><small>Lv.</small>${lv}</span></div>
+  <div class="xp"><i style="width:${rest/need*100}%"></i></div><div class="xp-txt">次のレベルまで ${need-rest} XP</div>`;
+}
+function renderHud(){
+  const act=state.quests.filter(q=>q.accepted&&!q.done).sort(byDue);
+  let h=`<div class="hud-label">現在の目標</div>`;
+  if(!act.length) h+=`<div class="hud-empty">受注中のクエストはありません。クエストを開いて「受注する」を押そう。</div>`;
+  act.slice(0,3).forEach(q=>{
+    const n=nextAction(q);
+    h+=`<button class="hud-item" data-act="select" data-id="${q.id}"><span class="hud-q">${esc(q.title||'(無題)')}</span><span class="hud-next">${esc(n||(allStepsDone(q)?'達成を報告しよう':'工程を分けよう'))}</span></button>`;
+  });
+  if(act.length>3) h+=`<div class="hud-empty">ほか${act.length-3}件受注中。3つまでに絞ると進みやすいよ。</div>`;
+  $('hud').innerHTML=h;
+}
+function renderTabs(){
+  const open=t=>state.quests.filter(q=>q.type===t&&!q.done).length;
+  const acc=state.quests.filter(q=>q.accepted&&!q.done).length;
+  const tabs=[['active','受注中',acc],['main','メイン',open('main')],['challenge','チャレンジ',open('challenge')],['sub','サブ',open('sub')],['log','達成記録',state.quests.filter(q=>q.done).length],['tools','道具',null]];
+  $('tabs').innerHTML=tabs.map(([k,l,n])=>`<button class="tab ${tab===k?'on':''}" data-act="tab" data-v="${k}">${l}${n!==null?`<span class="n">${n}</span>`:''}</button>`).join('');
+}
+function row(q,subOverride){
+  const p=Math.round(progress(q)*100);
+  const parent=findQ(q.parentId);
+  const sub=subOverride ?? (q.done ? (q.doneAt?new Date(q.doneAt).toLocaleDateString('ja-JP')+' 達成':'達成') : (nextAction(q)?'▸ '+nextAction(q):(parent?'↑ '+parent.title:TYPES[q.type].hint)));
+  return `<button class="row ${q.id===selId?'sel':''} ${q.done?'done':''}" data-act="select" data-id="${q.id}">
+    <span class="r-mark ${q.type==='main'?'t-main':''}">${TYPES[q.type].mark}</span>
+    <span class="r-main"><span class="r-title">${esc(q.title||'(無題)')}</span><span class="r-sub">${esc(sub)}</span></span>
+    <span class="r-side">${q.done?'<span>CLEAR</span>':`<span class="r-pct">${p}%</span>${dueHtml(q.deadline)}`}${q.accepted&&!q.done&&tab!=='active'?'<span class="pin">受注中</span>':''}</span>
+  </button>`;
+}
+function renderList(){
+  const L=$('list'); let h='';
+  if(tab==='active'){
+    const act=state.quests.filter(q=>q.accepted&&!q.done).sort(byDue);
+    h=act.length?act.map(q=>row(q)).join(''):`<div class="empty">受注中のクエストはまだありません。<br>メイン・チャレンジ・サブの各タブからクエストを選んで「受注する」を押すと、ここに並びます。</div>`;
+  }else if(TYPES[tab]){
+    let qs=state.quests.filter(q=>q.type===tab);
+    const open=qs.filter(q=>!q.done).sort(byDue), done=qs.filter(q=>q.done).sort((a,b)=>(b.doneAt||0)-(a.doneAt||0));
+    h=`<div class="group-h">${TYPES[tab].hint}</div>`;
+    h+=open.length?open.map(q=>row(q)).join(''):`<div class="empty">まだありません。右下の「＋ 新しいクエスト」から追加しよう。</div>`;
+    if(done.length){
+      h+=`<button class="toggle" data-act="cleared">${showCleared?'▾':'▸'} クリア済み ${done.length}件</button>`;
+      if(showCleared) h+=done.map(q=>row(q)).join('');
+    }
+  }else if(tab==='log'){
+    const done=state.quests.filter(q=>q.done).sort((a,b)=>(b.doneAt||0)-(a.doneAt||0));
+    const steps=state.quests.reduce((n,q)=>n+q.steps.filter(s=>s.done).length,0);
+    h=`<div class="group-h">達成 ${done.length}件 ・ クリアした工程 ${steps}個 ・ 累計 ${state.xp} XP</div>`;
+    h+=done.length?done.map(q=>row(q)).join(''):`<div class="empty">まだ達成したクエストはありません。最初の1つを目指そう。</div>`;
+  }else if(tab==='tools'){
+    h=`<div class="tools">
+      <p>データはこのブラウザの中だけに保存されています。スマホとPCで使う場合や、念のためのバックアップには書き出し／読み込みを使ってください。</p>
+      <div><button class="btn primary" data-act="export">データを書き出す（JSON）</button></div>
+      <div><button class="btn" data-act="import">データを読み込む</button></div>
+      <p style="margin-top:14px">サンプルを消してまっさらから始めたいときはこちら。</p>
+      <div><button class="btn danger" data-act="reset">すべて消して初期化</button></div>
+    </div>`;
+  }
+  L.innerHTML=h;
+}
+function renderDetail(){
+  const D=$('detail'); const q=findQ(selId);
+  if(!q){
+    D.innerHTML=`<div class="d-empty"><div>クエストを選ぶと、ここに詳細が表示されます<br><span style="font-size:12px">大きな目標は「メイン」→「チャレンジ」→「サブ」→「工程」と細かく分けていこう</span></div></div>`;
+    return;
+  }
+  editing ? renderEdit(D,q) : renderView(D,q);
+}
+function renderView(D,q){
+  const p=Math.round(progress(q)*100), anc=ancestors(q), ks=kids(q.id).sort(byDue);
+  const ns=nextStep(q);
+  let h=`<button class="back" data-act="back">← 一覧へ戻る</button>
+  <div class="d-type ${q.type==='main'?'t-main':''}">${TYPES[q.type].mark} ${TYPES[q.type].label}${q.done?'　・　CLEAR':''}</div>
+  <div class="d-title">${esc(q.title||'(無題)')}</div>
+  <div class="d-meta">${stars(q.rank)}${q.deadline?`<span>期限 ${q.deadline.replace(/-/g,'/')}　${dueHtml(q.deadline)}</span>`:''}${q.reward?`<span>報酬：${esc(q.reward)}</span>`:''}</div>`;
+  if(anc.length) h+=`<div class="crumb">上位：${anc.map(a=>`<button data-act="select" data-id="${a.id}">${esc(a.title||'(無題)')}</button>`).join(' › ')}</div>`;
+  if(q.memo) h+=`<p class="memo">${esc(q.memo)}</p>`;
+  h+=`<div class="bar"><i style="width:${p}%"></i></div><div class="bar-txt">進捗 ${p}%</div>`;
+  h+=`<div class="sec-h"><span>工程</span><span>${q.steps.filter(s=>s.done).length} / ${q.steps.length}</span></div><ul class="steps">`;
+  q.steps.forEach(s=>{h+=`<li class="step ${s.done?'done':''} ${!q.done&&ns&&s.id===ns.id?'next':''}"><button class="chk" data-act="step" data-q="${q.id}" data-s="${s.id}" aria-label="完了切替"></button><span class="step-t">${esc(s.text)}</span></li>`});
+  h+=`</ul>`;
+  if(!q.done) h+=`<div class="add"><input type="text" id="quickAdd" placeholder="工程を追加（Enter／複数行を貼り付けで一括）"></div>`;
+  h+=`<div class="sec-h"><span>下位クエスト</span>${q.done?'':`<button class="btn small ghost" data-act="addchild">＋ 追加</button>`}</div>`;
+  h+=ks.length?`<div class="kids">${ks.map(k=>`<button class="kid ${k.done?'done':''}" data-act="select" data-id="${k.id}"><span>${TYPES[k.type].mark} ${esc(k.title||'(無題)')}</span><span class="k-pct">${k.done?'CLEAR':Math.round(progress(k)*100)+'%'}</span></button>`).join('')}</div>`
+             :`<div class="hint">大きすぎて工程に分けにくいときは、下位クエストに分割しよう</div>`;
+  if(!q.done && allStepsDone(q)) h+=`<div class="ready">すべての工程をクリアしました。クエスト達成を報告しよう！</div>`;
+  h+=`<div class="actions">`;
+  if(!q.done){
+    h+=`<button class="btn ${q.accepted?'on':'primary'}" data-act="accept">${q.accepted?'✓ 受注中':'受注する'}</button>`;
+    h+=`<button class="btn gold" data-act="complete">クエスト達成を報告</button>`;
+  }else{
+    h+=`<button class="btn" data-act="reopen">未達成に戻す</button>`;
+  }
+  h+=`<button class="btn ghost" data-act="edit">編集</button></div>`;
+  D.innerHTML=h;
+}
+function renderEdit(D,q){
+  const opts=state.quests.filter(o=>o.id!==q.id&&!isDesc(o.id,q.id)&&!o.done)
+    .sort((a,b)=>Object.keys(TYPES).indexOf(a.type)-Object.keys(TYPES).indexOf(b.type));
+  let h=`<button class="back" data-act="back">← 一覧へ戻る</button>
+  <div class="d-type">クエストを編集</div><div class="form" style="margin-top:10px">
+  <div class="f"><label>クエスト名</label><input type="text" data-field="title" value="${esc(q.title)}" placeholder="例：引っ越しを終わらせる"></div>
+  <div class="f2">
+    <div class="f"><label>種類</label><select data-field="type">${Object.entries(TYPES).map(([k,t])=>`<option value="${k}" ${q.type===k?'selected':''}>${t.label}（${t.hint.replace(/の.*/,'')}）</option>`).join('')}</select></div>
+    <div class="f"><label>上位クエスト</label><select data-field="parentId"><option value="">なし（いちばん上）</option>${opts.map(o=>`<option value="${o.id}" ${q.parentId===o.id?'selected':''}>${TYPES[o.type].mark} ${esc(o.title||'(無題)')}</option>`).join('')}</select></div>
+  </div>
+  <div class="f2">
+    <div class="f"><label>難易度</label><div class="rank-pick">${[1,2,3,4,5].map(r=>`<button data-act="rank" data-v="${r}" class="${r<=q.rank?'on':''}">★</button>`).join('')}</div></div>
+    <div class="f"><label>期限</label><input type="date" data-field="deadline" value="${esc(q.deadline)}"></div>
+  </div>
+  <div class="f"><label>クリア報酬（自分へのご褒美）</label><input type="text" data-field="reward" value="${esc(q.reward)}" placeholder="例：好きなケーキを買う"></div>
+  <div class="f"><label>説明・なぜやるのか</label><textarea data-field="memo" placeholder="このクエストの目的や、クリアした先の姿">${esc(q.memo)}</textarea></div>
+  <div class="f"><label>工程</label><div style="display:grid;gap:6px">`;
+  q.steps.forEach((s,i)=>{h+=`<div class="estep"><input type="text" data-steptext="${s.id}" value="${esc(s.text)}"><button class="ic" data-act="up" data-s="${s.id}" ${i?'':'disabled'}>↑</button><button class="ic" data-act="down" data-s="${s.id}" ${i<q.steps.length-1?'':'disabled'}>↓</button><button class="ic" data-act="sdel" data-s="${s.id}">✕</button></div>`});
+  h+=`<input type="text" id="quickAdd" placeholder="工程を追加（Enter／複数行を貼り付けで一括）"></div></div>
+  </div>
+  <div class="actions"><button class="btn primary" data-act="doneedit">完了</button><button class="btn danger" data-act="delete" style="margin-left:auto">削除</button></div>`;
+  D.innerHTML=h;
+}
+
+/* ---------- events ---------- */
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]'); if(!b) return;
+  const a=b.dataset.act, q=findQ(selId);
+  switch(a){
+    case 'tab': if(editing){cleanupEmpty();editing=false} tab=b.dataset.v; if(window.innerWidth<=820) selId=null; render(); break;
+    case 'select': if(editing){cleanupEmpty();editing=false} selId=b.dataset.id; render(); window.innerWidth<=820&&window.scrollTo({top:0}); break;
+    case 'back': if(editing){cleanupEmpty();editing=false} selId=null; render(); break;
+    case 'step': toggleStep(b.dataset.q,b.dataset.s); break;
+    case 'accept': q.accepted=!q.accepted; save(); render(); toast(q.accepted?'クエストを受注しました':'受注を取り消しました'); break;
+    case 'complete':
+      if(!allStepsDone(q) && !confirm('まだ終わっていない工程があります。達成を報告しますか？')) break;
+      completeQuest(q); break;
+    case 'reopen': reopen(q); break;
+    case 'edit': editing=true; render(); break;
+    case 'doneedit': if(!q.title.trim()){q.title='名もなきクエスト'} editing=false; save(); render(); break;
+    case 'delete': deleteQuest(q); break;
+    case 'addchild': newQuest(TYPES[q.type].child,q.id); break;
+    case 'rank': q.rank=+b.dataset.v; save(); renderEdit($('detail'),q); renderList(); break;
+    case 'up': case 'down': {
+      const i=q.steps.findIndex(s=>s.id===b.dataset.s), j=a==='up'?i-1:i+1;
+      if(j<0||j>=q.steps.length) break; [q.steps[i],q.steps[j]]=[q.steps[j],q.steps[i]]; save(); renderEdit($('detail'),q); break;}
+    case 'sdel': q.steps=q.steps.filter(s=>s.id!==b.dataset.s); save(); renderEdit($('detail'),q); renderList(); break;
+    case 'cleared': showCleared=!showCleared; renderList(); break;
+    case 'export': {
+      const blob=new Blob([JSON.stringify(state,null,1)],{type:'application/json'});
+      const u=URL.createObjectURL(blob), l=document.createElement('a');
+      l.href=u; l.download='questlog-'+new Date().toISOString().slice(0,10)+'.json'; document.body.appendChild(l); l.click(); l.remove();
+      setTimeout(()=>URL.revokeObjectURL(u),1000); break;}
+    case 'import': $('importFile').click(); break;
+    case 'reset':
+      if(confirm('すべてのクエストとXPを消して初期化します。元に戻せません。よろしいですか？')){state={xp:0,quests:[]};selId=null;save();render();toast('初期化しました')} break;
+  }
+});
+$('fab').addEventListener('click',()=>{if(editing)cleanupEmpty(); newQuest(TYPES[tab]?tab:'sub',null)});
+document.addEventListener('input',e=>{
+  const q=findQ(selId); if(!q) return;
+  const f=e.target.dataset.field, sid=e.target.dataset.steptext;
+  if(f){
+    let v=e.target.value;
+    if(f==='parentId') v=v||null;
+    q[f]=v; save();
+    if(f!=='memo') {renderList(); renderHud(); renderTabs();}
+  }else if(sid){
+    const s=q.steps.find(x=>x.id===sid); if(s){s.text=e.target.value; save();}
+  }
+});
+document.addEventListener('change',e=>{
+  if(e.target.dataset.field==='type'||e.target.dataset.field==='parentId'){ renderList(); }
+});
+document.addEventListener('keydown',e=>{
+  if(e.target.id!=='quickAdd'||e.key!=='Enter'||e.isComposing||e.keyCode===229) return;
+  e.preventDefault();
+  const q=findQ(selId), v=e.target.value; if(!q||!v.trim()) return;
+  addSteps(q,v);
+  const n=$('quickAdd'); n&&n.focus();
+});
+document.addEventListener('paste',e=>{
+  if(e.target.id!=='quickAdd') return;
+  const t=(e.clipboardData||window.clipboardData).getData('text');
+  if(!/\n/.test(t)) return;
+  e.preventDefault(); const q=findQ(selId); if(!q) return;
+  addSteps(q,t); const n=$('quickAdd'); n&&n.focus();
+});
+$('importFile').addEventListener('change',e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{
+    try{const s=JSON.parse(r.result); if(!s||!Array.isArray(s.quests)) throw 0;
+      if(!confirm(`${s.quests.length}件のクエストを読み込みます。今のデータは上書きされます。よろしいですか？`)) return;
+      state={xp:+s.xp||0,quests:s.quests}; selId=null; editing=false; save(); render(); toast('読み込みました');
+    }catch(err){alert('読み込めませんでした。クエストログで書き出したJSONファイルを選んでください。')}
+    e.target.value='';
+  };
+  r.readAsText(f);
+});
+
+render();
+})();
+</script>
+</body>
+</html>
