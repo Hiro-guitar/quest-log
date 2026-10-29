@@ -359,7 +359,7 @@ function migrate(){
 migrate(); save();
 function save(){ if(window.__qlReady) stamp(); try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){} if(window.__qlReady){ syncScan(); schedulePush(); } }
 
-let tab='active', selId=null, editing=false, showCleared=false;
+let tab='active', selId=null, editing=false, showCleared=false, miniOpen=false;
 
 /* ---------- helpers ---------- */
 const findQ=id=>state.quests.find(q=>q.id===id);
@@ -552,10 +552,10 @@ function renderList(){
       let done=qs.filter(q=>q.done).sort((a,b)=>(b.doneAt||0)-(a.doneAt||0));
       const hidden=t==='mini'&&!showCleared ? Math.max(0,done.length-5) : 0; if(hidden) done=done.slice(0,5);
       h+=`<section class="sec sec-${t}"><div class="sec-bg">${SECBG[t]}</div>
-        <div class="sec-head">${ico(t)}<span class="sec-title">${names[t]}</span><span class="sec-count">${qs.length-open.length} / ${qs.length}</span>${t==='mini'?'':`<button class="sec-add" data-act="new" data-type="${t}" title="${names[t]}を追加">＋</button>`}</div>`;
-      if(t==='mini') h+=`<div class="mini-add"><input type="text" id="miniAdd" placeholder="ミニチャレンジを追加（Enter／複数行を貼ると一括）"></div>`;
+        <div class="sec-head">${ico(t)}<span class="sec-title">${names[t]}</span><span class="sec-count">${qs.length-open.length} / ${qs.length}</span><button class="sec-add" data-act="${t==='mini'?'miniopen':'new'}" data-type="${t}" title="${names[t]}を追加">＋</button></div>`;
+      if(t==='mini'&&miniOpen) h+=`<div class="mini-add"><input type="text" id="miniAdd" placeholder="ミニチャレンジを追加（Enter で続けて追加）"></div>`;
       h+=open.map(q=>row(q)).join('');
-      if(!qs.length) h+=`<div class="sec-empty">${t==='main'?'人生のシナリオを2〜3個立てよう':t==='challenge'?'大事なことをここに':'雑用はここに放り込もう'}</div>`;
+      if(!qs.length) h+=`<div class="sec-empty">${t==='main'?'人生のシナリオを2〜3個立てよう':t==='challenge'?'大事なことをここに':'雑用は＋から放り込もう'}</div>`;
       h+=done.map(q=>row(q)).join('');
       if(hidden) h+=`<button class="toggle" data-act="cleared">ほかにクリア済み ${hidden}件</button>`;
       if(t==='mini'&&showCleared&&done.length>5) h+=`<button class="toggle" data-act="cleared">クリア済みをたたむ</button>`;
@@ -689,6 +689,7 @@ document.addEventListener('click',e=>{
     case 'back': if(editing){cleanupEmpty();editing=false} selId=null; render(); break;
     case 'step': toggleStep(b.dataset.q,b.dataset.s); break;
     case 'new': newQuest(b.dataset.type,null); break;
+    case 'miniopen': miniOpen=true; renderList(); setTimeout(()=>{const el=$('miniAdd'); el&&el.focus()},20); break;
     case 'quickdone': { const m=findQ(b.dataset.id); if(m){ const row=b.closest('.row'); row&&row.classList.add('vanish'); setTimeout(()=>completeQuest(m),260); } break; }
     case 'accept': q.accepted=!q.accepted; save(); render(); toast(q.accepted?'チャレンジを受注しました':'受注を取り消しました'); break;
     case 'complete':
@@ -764,7 +765,11 @@ document.addEventListener('change',e=>{
   if(e.target.dataset.moveto&&e.target.value){const q=findQ(selId); q&&moveStep(q,e.target.dataset.moveto,e.target.value); return;}
   if(e.target.dataset.field==='type'||e.target.dataset.field==='parentId'){ renderList(); }
 });
+document.addEventListener('focusout',e=>{
+  if(e.target.id==='miniAdd'&&!e.target.value.trim()) setTimeout(()=>{ if(document.activeElement&&document.activeElement.id==='miniAdd') return; miniOpen=false; renderList(); },150);
+});
 document.addEventListener('keydown',e=>{
+  if(e.target.id==='miniAdd'&&e.key==='Escape'){ e.target.value=''; e.target.blur(); return; }
   if(e.target.id==='miniAdd'&&e.key==='Enter'&&!e.isComposing&&e.keyCode!==229){ e.preventDefault(); addMinis(e.target.value); return; }
   if(e.target.id!=='quickAdd'||e.key!=='Enter'||e.isComposing||e.keyCode===229) return;
   e.preventDefault();
