@@ -15,6 +15,9 @@ function doPost(e) {
     const props = PropertiesService.getScriptProperties();
     // 読むだけの処理は順番待ちしない
     if (req.action === 'load') { const d = loadData_(props); return out_({ ok: true, rev: d.rev, data: d.data }); }
+    if (req.action === 'backups') return out_({ ok: true, list: listBackups_(props) });
+    if (req.action === 'restore') return out_({ ok: true, data: readBackup_(props, req.id) });
+    if (req.action === 'backupnow') { dailyBackup(); return out_({ ok: true }); }
     const cal = cal_(props);
     if (req.action === 'ping') return out_({ ok: true, calendar: cal.getName() });
     if (req.action === 'pull') return out_({ ok: true, dates: pull_(cal, props) });
@@ -137,4 +140,50 @@ function saveData_(props, data) {
   obj.data_n = String(n); obj.data_rev = String(rev);
   props.setProperties(obj);
   return rev;
+}
+
+// ---- 毎日のバックアップ（Googleドライブの「クエストログのバックアップ」フォルダに30日分） ----
+function dailyBackup() {
+  const props = PropertiesService.getScriptProperties();
+  const d = loadData_(props);
+  if (!d.data) return;
+  const folder = backupFolder_(props);
+  const name = 'questlog-' + Utilities.formatDate(new Date(), JST, 'yyyy-MM-dd') + '.json';
+  const body = JSON.stringify(d.data);
+  const same = folder.getFilesByName(name);
+  if (same.hasNext()) same.next().setContent(body); else folder.createFile(name, body, 'application/json');
+  const limit = Date.now() - 31 * 86400000, all = folder.getFiles();
+  while (all.hasNext()) { const f = all.next(); if (f.getDateCreated().getTime() < limit) f.setTrashed(true); }
+}
+
+function backupFolder_(props) {
+  const id = props.getProperty('BK_FOLDER');
+  let f = null;
+  if (id) { try { f = DriveApp.getFolderById(id); if (f.isTrashed()) f = null; } catch (_) { f = null; } }
+  if (!f) { f = DriveApp.createFolder('クエストログのバックアップ'); props.setProperty('BK_FOLDER', f.getId()); }
+  return f;
+}
+
+function listBackups_(props) {
+  const out = [], it = backupFolder_(props).getFiles();
+  while (it.hasNext()) { const f = it.next(); out.push({ id: f.getId(), name: f.getName(), at: f.getLastUpdated().getTime() }); }
+  out.sort(function (a, b) { return b.name < a.name ? -1 : 1; });
+  return out;
+}
+
+function readBackup_(props, id) {
+  const folder = backupFolder_(props), f = DriveApp.getFileById(id);
+  const parents = f.getParents();
+  let ok = false;
+  while (parents.hasNext()) { if (parents.next().getId() === folder.getId()) ok = true; }
+  if (!ok) throw new Error('バックアップのファイルではありません');
+  return JSON.parse(f.getBlob().getDataAsString());
+}
+
+// 初回だけエディタで実行：毎日3時のバックアップ設定＋1回目のバックアップ
+function setupBackup() {
+  ScriptApp.getProjectTriggers().forEach(function (t) { if (t.getHandlerFunction() === 'dailyBackup') ScriptApp.deleteTrigger(t); });
+  ScriptApp.newTrigger('dailyBackup').timeBased().everyDays(1).atHour(3).inTimezone(JST).create();
+  dailyBackup();
+  Logger.log('バックアップ準備OK：毎日3時に保存します');
 }
