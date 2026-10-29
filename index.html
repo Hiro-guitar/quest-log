@@ -156,14 +156,15 @@ select option{background:var(--panel-solid)}
 .d-empty{color:var(--dim);display:grid;place-items:center;min-height:240px;text-align:center;font-size:14px;line-height:2}
 
 /* 編集フォーム */
-.form{display:grid;gap:12px}
+.form{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
 .f label{display:block;font-size:11px;letter-spacing:.15em;color:var(--muted);margin-bottom:4px}
-.f2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.f2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
 .rank-pick{display:flex;gap:2px}
 .rank-pick button{font-size:20px;color:var(--dim);padding:0 2px;line-height:1}
 .rank-pick button.on{color:var(--orange);text-shadow:0 0 8px rgba(240,166,64,.6)}
 .estep{display:flex;gap:6px;align-items:center}
-.estep input{flex:1}
+.estep input,.estep select{flex:1;min-width:0}
+select{max-width:100%;text-overflow:ellipsis}
 .estep .ic{color:var(--dim);width:26px;height:30px;font-size:13px;border-radius:3px}
 .estep .ic:hover{color:var(--text);background:rgba(255,255,255,.06)}
 .hint{font-size:12px;color:var(--dim)}
@@ -208,7 +209,7 @@ body.is-dragging,body.is-dragging *{cursor:grabbing!important;user-select:none;-
 @keyframes flash{0%{background:rgba(95,212,239,.25)}100%{background:transparent}}
 
 @media (max-width:820px){
-  .split{grid-template-columns:1fr}
+  .split{grid-template-columns:minmax(0,1fr)}
   .detail{display:none;position:static}
   .split.has-sel .list-wrap{display:none}
   .split.has-sel .detail{display:block}
@@ -216,7 +217,7 @@ body.is-dragging,body.is-dragging *{cursor:grabbing!important;user-select:none;-
   .lv{min-width:0}
   .brand b{font-size:19px}
   .hud-q{max-width:45%}
-  .f2{grid-template-columns:1fr}
+  .f2{grid-template-columns:minmax(0,1fr)}
 }
 </style>
 </head>
@@ -233,10 +234,10 @@ body.is-dragging,body.is-dragging *{cursor:grabbing!important;user-select:none;-
     <aside class="detail" id="detail"></aside>
   </div>
 </div>
-<button class="fab" id="fab">＋ 新しいクエスト</button>
+<button class="fab" id="fab">＋ 新しいチャレンジ</button>
 <div class="toast" id="toast"></div>
 <div class="clear" id="clear"><div class="clear-in">
-  <div class="clear-k">QUEST</div>
+  <div class="clear-k">CHALLENGE</div>
   <div class="clear-big">CLEAR</div>
   <div class="clear-line"></div>
   <div class="clear-t" id="clearT"></div>
@@ -248,9 +249,8 @@ body.is-dragging,body.is-dragging *{cursor:grabbing!important;user-select:none;-
 (function(){
 const KEY='questlog-v1';
 const TYPES={
-  main:{label:'メインクエスト',hint:'人生・数年がかりの大目標',mark:'◆',child:'challenge'},
-  challenge:{label:'チャレンジ',hint:'数ヶ月かけて攻略する目標',mark:'◈',child:'sub'},
-  sub:{label:'サブクエスト',hint:'数日〜数週間で片づく用事',mark:'◇',child:'sub'}
+  main:{label:'メインチャレンジ',hint:'人生のシナリオ。数年〜ずっと続く大きな目標',mark:'◆',child:'challenge'},
+  challenge:{label:'チャレンジ',hint:'やること。大きければ工程に分けよう',mark:'◇',child:'challenge'}
 };
 const TITLES=['旅立ったばかり','見習い','駆け出しの冒険者','一人前','腕利き','歴戦の勇士','英傑','伝説'];
 const DAY=864e5;
@@ -263,14 +263,15 @@ const $=id=>document.getElementById(id);
 function sample(){
   const now=Date.now(), d=n=>new Date(now+n*DAY).toISOString().slice(0,10);
   const a=uid(), b=uid();
+  const c=uid();
   return {xp:0,quests:[
-    {id:uid(),title:'クエストログの使い方を覚える',type:'sub',parentId:null,rank:1,deadline:d(3),reward:'',memo:'まずはこのクエストをクリアしてみよう。\n終わったら削除してOK。',
-     steps:[st('右下の「＋ 新しいクエスト」で作ってみる'),st('工程を追加する（複数行を貼り付けると一括で追加される）'),st('「受注する」を押すと、上の「現在の目標」に次の一手が出る'),st('受注は3つまでに絞るのがおすすめ'),st('全工程が終わったら「クエスト達成を報告」')],
+    {id:uid(),title:'クエストログの使い方を覚える',type:'challenge',parentId:null,rank:1,deadline:d(3),reward:'',memo:'まずはこのチャレンジをクリアしてみよう。\n終わったら削除してOK。',
+     steps:[st('右下の「＋ 新しいチャレンジ」で作ってみる'),st('工程を追加する（複数行を貼り付けると一括で追加される）'),st('「受注する」を押すと、上の「現在の目標」に次の一手が出る'),st('大きすぎる工程は、編集画面の「格上げ」でチャレンジにできる'),st('全工程が終わったら「チャレンジ達成を報告」')],
      accepted:true,done:false,created:now},
-    {id:a,title:'理想の暮らしを手に入れる',type:'main',parentId:null,rank:5,deadline:'',reward:'家族で記念旅行',memo:'人生のシナリオ（サンプル）。\nチャレンジやサブクエストを作るときに「どのメインのため？」でこれを選ぶと、ここに並んでいく。',steps:[],accepted:false,done:false,created:now-3},
-    {id:b,title:'収入の柱をもう一本つくる',type:'challenge',parentId:a,rank:4,deadline:d(90),reward:'',memo:'サンプル。数ヶ月かけて攻略する目標。',
-     steps:[st('アイデアを3つ書き出す'),st('一番やれそうなものを選ぶ'),st('最初の小さな一歩を決める')],accepted:false,done:false,created:now-2},
-    {id:uid(),title:'市場調査をする',type:'sub',parentId:b,rank:2,deadline:d(14),reward:'',memo:'',steps:[st('似たサービスを5つ調べる'),st('気づいたことをメモする')],accepted:false,done:false,created:now-1}
+    {id:a,title:'理想の暮らしを手に入れる',type:'main',parentId:null,rank:5,deadline:'',reward:'家族で記念旅行',memo:'人生のシナリオ（サンプル）。\nチャレンジを作るときに「どのメインのため？」でこれを選ぶと、ここに並んでいく。',steps:[],accepted:false,done:false,created:now-3},
+    {id:b,title:'収入の柱をもう一本つくる',type:'challenge',parentId:a,rank:4,deadline:d(90),reward:'',memo:'サンプル。工程の中に「市場調査をする」というチャレンジが入っている。',
+     steps:[st('アイデアを3つ書き出す'),{id:uid(),text:'市場調査をする',done:false,qref:c},st('一番やれそうなものを選ぶ'),st('最初の小さな一歩を決める')],accepted:false,done:false,created:now-2},
+    {id:c,title:'市場調査をする',type:'challenge',parentId:a,rank:2,deadline:d(14),reward:'',memo:'',steps:[st('似たサービスを5つ調べる'),st('気づいたことをメモする')],accepted:false,done:false,created:now-1}
   ]};
 }
 function load(){
@@ -280,10 +281,18 @@ function load(){
 let state=load();
 function canLink(child,parent){
   if(!child||!parent||child.id===parent.id) return false;
-  return (parent.type==='main'&&child.type!=='main') || (parent.type==='challenge'&&child.type==='sub');
+  return parent.type==='main'&&child.type==='challenge';
 }
 function migrate(){
   const by=id=>state.quests.find(q=>q.id===id);
+  state.quests.forEach(q=>{
+    if(q.type==='sub'){
+      const p=by(q.parentId);
+      if(p&&p.type==='challenge'&&!p.steps.some(x=>x.qref===q.id)) p.steps.push({id:uid(),text:q.title,done:false,qref:q.id});
+      q.type='challenge';
+    }
+    if(!TYPES[q.type]) q.type='challenge';
+  });
   state.quests.forEach(q=>{
     let p=by(q.parentId),g=0;
     while(p&&!canLink(q,p)&&g++<50)p=by(p.parentId);
@@ -347,7 +356,7 @@ function toggleStep(qid,sid){
   save(); render();
   if(s.done){
     toast(`工程クリア  +${10*q.rank} XP`);
-    if(allStepsDone(q)) setTimeout(()=>toast('全工程クリア！ クエスト達成を報告しよう'),1400);
+    if(allStepsDone(q)) setTimeout(()=>toast('全工程クリア！ チャレンジ達成を報告しよう'),1400);
   }
 }
 function completeQuest(q){
@@ -371,22 +380,45 @@ function cleanupEmpty(){
     state.quests=state.quests.filter(x=>x!==q); selId=null; save();
   }
 }
+function contains(x,target,g=0){
+  if(!x||g>30) return false; if(x.id===target.id) return true;
+  return x.steps.some(s=>s.qref&&contains(findQ(s.qref),target,g+1));
+}
 function promoteStep(q,sid){
   const s=q.steps.find(x=>x.id===sid); if(!s||s.qref) return;
-  const n={id:uid(),title:s.text,type:'sub',parentId:null,rank:Math.max(1,q.rank-1),deadline:'',reward:'',memo:'',steps:[],accepted:false,done:!!s.done,doneAt:s.done?Date.now():null,created:Date.now()};
+  const n={id:uid(),title:s.text,type:'challenge',parentId:null,rank:Math.max(1,q.rank-1),deadline:'',reward:'',memo:'',steps:[],accepted:false,done:!!s.done,doneAt:s.done?Date.now():null,created:Date.now()};
   if(canLink(n,q)) n.parentId=q.id; else if(canLink(n,findQ(q.parentId))) n.parentId=q.parentId;
   state.quests.push(n); s.qref=n.id; save();
   renderEdit($('detail'),q); renderList(); renderTabs(); renderHud();
-  toast('サブクエストに格上げしました');
+  toast('チャレンジに格上げしました');
 }
 function insertRef(q,id){
-  const r=findQ(id); if(!r||q.steps.some(s=>s.qref===id)) return;
+  const r=findQ(id); if(!r||q.steps.some(s=>s.qref===id)||contains(r,q)) return;
   q.steps.push({id:uid(),text:r.title,done:false,qref:id});
   if(!r.parentId&&canLink(r,q)) r.parentId=q.id;
   save(); renderEdit($('detail'),q); renderList();
 }
+function demoteStep(q,sid){
+  const i=q.steps.findIndex(x=>x.id===sid), s=q.steps[i], r=refQ(s); if(!r) return;
+  if(r.steps.length && !confirm(`「${r.title}」を工程に戻します。\n中の工程${r.steps.length}個は、そのすぐ後ろに並びます。`)) return;
+  s.qref=null; s.text=r.title; s.done=!!r.done;
+  q.steps.splice(i+1,0,...r.steps.map(x=>({...x,id:uid()})));
+  state.quests.forEach(o=>o.steps.forEach(x=>{if(x.qref===r.id){x.qref=null;x.text=r.title;x.done=!!r.done}}));
+  state.quests=state.quests.filter(o=>o!==r);
+  save(); renderEdit($('detail'),q); renderList(); renderTabs(); renderHud();
+  toast('工程に戻しました');
+}
+let moveSid=null;
+function moveStep(q,sid,tid){
+  const t=findQ(tid), i=q.steps.findIndex(x=>x.id===sid); if(!t||i<0) return;
+  const s=q.steps[i], r=refQ(s);
+  if(r&&(r.id===t.id||contains(r,t))){toast('そこには移せません');return}
+  q.steps.splice(i,1); t.steps.push(s); moveSid=null;
+  save(); renderEdit($('detail'),q); renderList(); renderHud();
+  toast(`「${t.title||'(無題)'}」に移しました`);
+}
 function deleteQuest(q){
-  if(!confirm(`「${q.title||'(無題)'}」を削除する？\n下位クエストは1つ上の階層に移動します。`)) return;
+  if(!confirm(`「${q.title||'(無題)'}」を削除する？`)) return;
   kids(q.id).forEach(k=>k.parentId=canLink(k,findQ(q.parentId))?q.parentId:null);
   state.quests.forEach(o=>o.steps.forEach(x=>{if(x.qref===q.id){x.qref=null;x.text=q.title||x.text;x.done=!!q.done}}));
   state.quests=state.quests.filter(x=>x!==q); selId=null; editing=false; save(); render();
@@ -410,7 +442,7 @@ function renderLv(){
 function renderHud(){
   const act=state.quests.filter(q=>q.accepted&&!q.done).sort(byDue);
   let h=`<div class="hud-label">現在の目標</div>`;
-  if(!act.length) h+=`<div class="hud-empty">受注中のクエストはありません。クエストを開いて「受注する」を押そう。</div>`;
+  if(!act.length) h+=`<div class="hud-empty">受注中のチャレンジはありません。チャレンジを開いて「受注する」を押そう。</div>`;
   act.slice(0,3).forEach(q=>{
     const n=nextAction(q);
     h+=`<button class="hud-item" data-act="select" data-id="${q.id}"><span class="hud-q">${esc(q.title||'(無題)')}</span><span class="hud-next">${esc(n||(allStepsDone(q)?'達成を報告しよう':'工程を分けよう'))}</span></button>`;
@@ -421,7 +453,7 @@ function renderHud(){
 function renderTabs(){
   const open=t=>state.quests.filter(q=>q.type===t&&!q.done).length;
   const acc=state.quests.filter(q=>q.accepted&&!q.done).length;
-  const tabs=[['active','受注中',acc],['main','メイン',open('main')],['challenge','チャレンジ',open('challenge')],['sub','サブ',open('sub')],['log','達成記録',state.quests.filter(q=>q.done).length],['tools','道具',null]];
+  const tabs=[['active','受注中',acc],['main','メイン',open('main')],['challenge','チャレンジ',open('challenge')],['log','達成記録',state.quests.filter(q=>q.done).length],['tools','道具',null]];
   $('tabs').innerHTML=tabs.map(([k,l,n])=>`<button class="tab ${tab===k?'on':''}" data-act="tab" data-v="${k}">${l}${n!==null?`<span class="n">${n}</span>`:''}</button>`).join('');
 }
 function row(q,subOverride){
@@ -438,12 +470,12 @@ function renderList(){
   const L=$('list'); let h='';
   if(tab==='active'){
     const act=state.quests.filter(q=>q.accepted&&!q.done).sort(byDue);
-    h=act.length?act.map(q=>row(q)).join(''):`<div class="empty">受注中のクエストはまだありません。<br>メイン・チャレンジ・サブの各タブからクエストを選んで「受注する」を押すと、ここに並びます。</div>`;
+    h=act.length?act.map(q=>row(q)).join(''):`<div class="empty">受注中のチャレンジはまだありません。<br>「メイン」「チャレンジ」タブから選んで「受注する」を押すと、ここに並びます。</div>`;
   }else if(TYPES[tab]){
     let qs=state.quests.filter(q=>q.type===tab);
     const open=qs.filter(q=>!q.done).sort(byDue), done=qs.filter(q=>q.done).sort((a,b)=>(b.doneAt||0)-(a.doneAt||0));
     h=`<div class="group-h">${TYPES[tab].hint}</div>`;
-    h+=open.length?open.map(q=>row(q)).join(''):`<div class="empty">まだありません。右下の「＋ 新しいクエスト」から追加しよう。</div>`;
+    h+=open.length?open.map(q=>row(q)).join(''):`<div class="empty">まだありません。右下の「＋ 新しいチャレンジ」から追加しよう。</div>`;
     if(done.length){
       h+=`<button class="toggle" data-act="cleared">${showCleared?'▾':'▸'} クリア済み ${done.length}件</button>`;
       if(showCleared) h+=done.map(q=>row(q)).join('');
@@ -452,7 +484,7 @@ function renderList(){
     const done=state.quests.filter(q=>q.done).sort((a,b)=>(b.doneAt||0)-(a.doneAt||0));
     const steps=state.quests.reduce((n,q)=>n+q.steps.filter(s=>!s.qref&&s.done).length,0);
     h=`<div class="group-h">達成 ${done.length}件 ・ クリアした工程 ${steps}個 ・ 累計 ${state.xp} XP</div>`;
-    h+=done.length?done.map(q=>row(q)).join(''):`<div class="empty">まだ達成したクエストはありません。最初の1つを目指そう。</div>`;
+    h+=done.length?done.map(q=>row(q)).join(''):`<div class="empty">まだ達成したチャレンジはありません。最初の1つを目指そう。</div>`;
   }else if(tab==='tools'){
     h=`<div class="tools">
       <p>データはこのブラウザの中だけに保存されています。スマホとPCで使う場合や、念のためのバックアップには書き出し／読み込みを使ってください。</p>
@@ -467,7 +499,7 @@ function renderList(){
 function renderDetail(){
   const D=$('detail'); const q=findQ(selId);
   if(!q){
-    D.innerHTML=`<div class="d-empty"><div>クエストを選ぶと、ここに詳細が表示されます<br><span style="font-size:12px">人生のシナリオは「メイン」に。日々の冒険は「チャレンジ」「サブ」で作って、どのメインのためかを選ぼう</span></div></div>`;
+    D.innerHTML=`<div class="d-empty"><div>チャレンジを選ぶと、ここに詳細が表示されます<br><span style="font-size:12px">人生のシナリオは「メイン」に。やることは「チャレンジ」で作って、大きい工程は「格上げ」しよう</span></div></div>`;
     return;
   }
   editing ? renderEdit(D,q) : renderView(D,q);
@@ -479,7 +511,7 @@ function renderView(D,q){
   <div class="d-type ${q.type==='main'?'t-main':''}">${TYPES[q.type].mark} ${TYPES[q.type].label}${q.done?'　・　CLEAR':''}</div>
   <div class="d-title">${esc(q.title||'(無題)')}</div>
   <div class="d-meta">${stars(q.rank)}${q.deadline?`<span>期限 ${q.deadline.replace(/-/g,'/')}　${dueHtml(q.deadline)}</span>`:''}${q.reward?`<span>報酬：${esc(q.reward)}</span>`:''}</div>`;
-  if(anc.length) h+=`<div class="crumb link">${anc.map(a=>`${TYPES[a.type].mark} <button data-act="select" data-id="${a.id}">${esc(a.title||'(無題)')}</button>`).join('　›　')}　につながる冒険</div>`;
+  if(anc.length) h+=`<div class="crumb link">${anc.map(a=>`${TYPES[a.type].mark} <button data-act="select" data-id="${a.id}">${esc(a.title||'(無題)')}</button>`).join('　›　')}　のためのチャレンジ</div>`;
   if(q.memo) h+=`<p class="memo">${esc(q.memo)}</p>`;
   h+=`<div class="bar"><i style="width:${p}%"></i></div><div class="bar-txt">進捗 ${p}%</div>`;
   h+=`<div class="sec-h"><span>工程</span><span>${q.steps.filter(stepDone).length} / ${q.steps.length}</span></div><ul class="steps" data-sortable>`;
@@ -487,27 +519,26 @@ function renderView(D,q){
     const r=refQ(s), dn=stepDone(s), isNext=!q.done&&ns&&s.id===ns.id;
     if(r){
       const na=!dn&&isNext?nextAction(r):null;
-      h+=`<li class="step qstep ${dn?'done':''} ${isNext?'next':''}" data-sid="${s.id}"><button class="qico" data-act="select" data-id="${r.id}" aria-label="サブクエストを開く">◇</button><span class="step-t"><button class="qlink" data-act="select" data-id="${r.id}">${esc(r.title||'(無題)')}</button><span class="qpct">${dn?'CLEAR':Math.round(progress(r)*100)+'%'}</span>${na?`<span class="qnext">▸ ${esc(na)}</span>`:''}</span><span class="drag" data-drag title="ドラッグで並び替え">⋮⋮</span></li>`;
+      h+=`<li class="step qstep ${dn?'done':''} ${isNext?'next':''}" data-sid="${s.id}"><button class="qico" data-act="select" data-id="${r.id}" aria-label="チャレンジを開く">◇</button><span class="step-t"><button class="qlink" data-act="select" data-id="${r.id}">${esc(r.title||'(無題)')}</button><span class="qpct">${dn?'CLEAR':Math.round(progress(r)*100)+'%'}</span>${na?`<span class="qnext">▸ ${esc(na)}</span>`:''}</span><span class="drag" data-drag title="ドラッグで並び替え">⋮⋮</span></li>`;
     }else{
       h+=`<li class="step ${dn?'done':''} ${isNext?'next':''}" data-sid="${s.id}"><button class="chk" data-act="step" data-q="${q.id}" data-s="${s.id}" aria-label="完了切替"></button><span class="step-t">${esc(s.text)}</span><span class="drag" data-drag title="ドラッグで並び替え">⋮⋮</span></li>`;
     }
   });
   h+=`</ul>`;
   if(!q.done) h+=`<div class="add"><input type="text" id="quickAdd" placeholder="工程を追加（Enter／複数行を貼り付けで一括）"></div>`;
-  if(q.type!=='sub'){
-    const isMain=q.type==='main';
+  if(q.type==='main'){
     const kidRow=k=>`<button class="kid ${k.done?'done':''}" data-act="select" data-id="${k.id}"><span>${TYPES[k.type].mark} ${esc(k.title||'(無題)')}</span><span class="k-pct">${k.done?'CLEAR':Math.round(progress(k)*100)+'%'}</span></button>`;
     const open=ks.filter(k=>!k.done&&!q.steps.some(s=>s.qref===k.id)), done=ks.filter(k=>k.done);
-    h+=`<div class="sec-h"><span>${isMain?'このシナリオ':'このチャレンジ'}につながる冒険</span>${q.done?'':`<button class="btn small ghost" data-act="addchild">＋ ${isMain?'チャレンジ':'サブクエスト'}を追加</button>`}</div>`;
+    h+=`<div class="sec-h"><span>このシナリオのためのチャレンジ</span>${q.done?'':`<button class="btn small ghost" data-act="addchild">＋ チャレンジを追加</button>`}</div>`;
     h+=open.length?`<div class="kids">${open.map(kidRow).join('')}</div>`
-                  :`<div class="hint">${isMain?'このメインのためのチャレンジやサブクエストを作ると、ここに並びます':'このチャレンジのためのサブクエストを作ると、ここに並びます。工程が細かくなりすぎたら、サブクエストに分けよう'}</div>`;
-    if(done.length) h+=`<div class="sec-h"><span>達成した冒険</span><span>${done.length}</span></div><div class="kids">${done.map(kidRow).join('')}</div>`;
+                  :`<div class="hint">チャレンジを作るときに、このメインを選ぶとここに並びます</div>`;
+    if(done.length) h+=`<div class="sec-h"><span>達成したチャレンジ</span><span>${done.length}</span></div><div class="kids">${done.map(kidRow).join('')}</div>`;
   }
-  if(!q.done && allStepsDone(q)) h+=`<div class="ready">すべての工程をクリアしました。クエスト達成を報告しよう！</div>`;
+  if(!q.done && allStepsDone(q)) h+=`<div class="ready">すべての工程をクリアしました。チャレンジ達成を報告しよう！</div>`;
   h+=`<div class="actions">`;
   if(!q.done){
     h+=`<button class="btn ${q.accepted?'on':'primary'}" data-act="accept">${q.accepted?'✓ 受注中':'受注する'}</button>`;
-    h+=`<button class="btn gold" data-act="complete">クエスト達成を報告</button>`;
+    h+=`<button class="btn gold" data-act="complete">チャレンジ達成を報告</button>`;
   }else{
     h+=`<button class="btn" data-act="reopen">未達成に戻す</button>`;
   }
@@ -517,34 +548,40 @@ function renderView(D,q){
 function renderEdit(D,q){
   const cands=t=>state.quests.filter(o=>o.type===t&&canLink(q,o)&&(!o.done||o.id===q.parentId)).sort(byDue);
   const opt=o=>`<option value="${o.id}" ${q.parentId===o.id?'selected':''}>${TYPES[o.type].mark} ${esc(o.title||'(無題)')}</option>`;
-  const mains=cands('main'), chals=q.type==='sub'?cands('challenge'):[];
+  const mains=cands('main'), chals=[];
   const linkSel=`<select data-field="parentId"><option value="">とくになし</option>${chals.length?`<optgroup label="チャレンジ">${chals.map(opt).join('')}</optgroup>`:''}${mains.length?`<optgroup label="メインクエスト">${mains.map(opt).join('')}</optgroup>`:''}</select>`;
   let h=`<button class="back" data-act="back">← 一覧へ戻る</button>
-  <div class="d-type">クエストを編集</div><div class="form" style="margin-top:10px">
-  <div class="f"><label>クエスト名</label><input type="text" data-field="title" value="${esc(q.title)}" placeholder="例：引っ越しを終わらせる"></div>
+  <div class="d-type">編集</div><div class="form" style="margin-top:10px">
+  <div class="f"><label>名前</label><input type="text" data-field="title" value="${esc(q.title)}" placeholder="例：引っ越しを終わらせる"></div>
   <div class="f2">
     <div class="f"><label>種類</label><select data-field="type">${Object.entries(TYPES).map(([k,t])=>`<option value="${k}" ${q.type===k?'selected':''}>${t.label}</option>`).join('')}</select></div>
     ${q.type==='main'
-      ? `<div class="f"><label>&nbsp;</label><div class="hint">メインクエストは人生のシナリオ。ほかの冒険がここにつながります</div></div>`
-      : `<div class="f"><label>${q.type==='sub'?'どのチャレンジ／メインのため？（任意）':'どのメインクエストのため？（任意）'}</label>${linkSel}</div>`}
+      ? `<div class="f"><label>&nbsp;</label><div class="hint">メインチャレンジは人生のシナリオ。ほかのチャレンジがここにつながります</div></div>`
+      : `<div class="f"><label>どのメインのため？（任意）</label>${linkSel}</div>`}
   </div>
   <div class="f2">
     <div class="f"><label>難易度</label><div class="rank-pick">${[1,2,3,4,5].map(r=>`<button data-act="rank" data-v="${r}" class="${r<=q.rank?'on':''}">★</button>`).join('')}</div></div>
     <div class="f"><label>期限</label><input type="date" data-field="deadline" value="${esc(q.deadline)}"></div>
   </div>
   <div class="f"><label>クリア報酬（自分へのご褒美）</label><input type="text" data-field="reward" value="${esc(q.reward)}" placeholder="例：好きなケーキを買う"></div>
-  <div class="f"><label>説明・なぜやるのか</label><textarea data-field="memo" placeholder="このクエストの目的や、クリアした先の姿">${esc(q.memo)}</textarea></div>
-  <div class="f"><label>工程（⋮⋮ をつまんで並び替え）</label><div style="display:grid;gap:6px" data-sortable>`;
+  <div class="f"><label>説明・なぜやるのか</label><textarea data-field="memo" placeholder="このチャレンジの目的や、クリアした先の姿">${esc(q.memo)}</textarea></div>
+  <div class="f"><label>工程（⋮⋮ をつまんで並び替え）</label><div style="display:grid;grid-template-columns:minmax(0,1fr);gap:6px" data-sortable>`;
   q.steps.forEach((s,i)=>{
     const r=refQ(s);
-    const mid=r?`<span class="eref">◇ ${esc(r.title||'(無題)')}<small>サブクエスト</small></span>`:`<input type="text" data-steptext="${s.id}" value="${esc(s.text)}">`;
-    const up=r?'':`<button class="ic promote" data-act="promote" data-s="${s.id}" title="サブクエストに格上げ">格上げ</button>`;
-    h+=`<div class="estep" data-sid="${s.id}"><span class="drag" data-drag title="ドラッグで並び替え">⋮⋮</span>${mid}${up}<button class="ic" data-act="up" data-s="${s.id}" ${i?'':'disabled'}>↑</button><button class="ic" data-act="down" data-s="${s.id}" ${i<q.steps.length-1?'':'disabled'}>↓</button><button class="ic" data-act="sdel" data-s="${s.id}" title="${r?'工程から外す（サブクエストは残ります）':'削除'}">✕</button></div>`;
+    const mid=r?`<span class="eref">◇ ${esc(r.title||'(無題)')}<small>チャレンジ</small></span>`:`<input type="text" data-steptext="${s.id}" value="${esc(s.text)}">`;
+    const up=r?`<button class="ic promote" data-act="demote" data-s="${s.id}" title="ただの工程に戻す">戻す</button>`:`<button class="ic promote" data-act="promote" data-s="${s.id}" title="チャレンジに格上げ">格上げ</button>`;
+    const mv=`<button class="ic promote" data-act="move" data-s="${s.id}" title="別のチャレンジの工程にする">移す</button>`;
+    if(moveSid===s.id){
+      const tg=state.quests.filter(o=>o.id!==q.id&&!o.done&&!(r&&(o.id===r.id||contains(r,o)))).sort((a,b)=>(a.type==='main')-(b.type==='main')||byDue(a,b));
+      h+=`<div class="estep" data-sid="${s.id}"><span class="drag" data-drag>⋮⋮</span><select data-moveto="${s.id}"><option value="">「${esc(stepText(s))}」をどこに移す？</option>${tg.map(o=>`<option value="${o.id}">${TYPES[o.type].mark} ${esc(o.title||'(無題)')}</option>`).join('')}</select><button class="ic" data-act="movecancel" title="やめる">✕</button></div>`;
+      return;
+    }
+    h+=`<div class="estep" data-sid="${s.id}"><span class="drag" data-drag title="ドラッグで並び替え">⋮⋮</span>${mid}${up}${mv}<button class="ic" data-act="sdel" data-s="${s.id}" title="${r?'工程から外す（チャレンジ自体は残ります）':'削除'}">✕</button></div>`;
   });
-  const insCands=state.quests.filter(o=>o.type==='sub'&&o.id!==q.id&&!q.steps.some(s=>s.qref===o.id)&&!(o.done&&o.parentId!==q.id)).sort(byDue);
+  const insCands=state.quests.filter(o=>o.type==='challenge'&&o.id!==q.id&&!o.done&&!q.steps.some(s=>s.qref===o.id)&&!contains(o,q)).sort(byDue);
   h+=`<input type="text" id="quickAdd" placeholder="工程を追加（Enter／複数行を貼り付けで一括）"></div>
-  <div class="hint" style="margin-top:6px">「格上げ」を押すと、その工程がサブクエストになります（中身が大きい工程向け）</div>
-  ${insCands.length?`<select id="insRef" style="margin-top:8px"><option value="">＋ 既存のサブクエストを工程に差し込む</option>${insCands.map(o=>`<option value="${o.id}">◇ ${esc(o.title||'(無題)')}</option>`).join('')}</select>`:''}
+  <div class="hint" style="margin-top:6px">「格上げ」で工程をチャレンジに、「戻す」でチャレンジを工程に。「移す」で別のチャレンジへ</div>
+  ${insCands.length?`<select id="insRef" style="margin-top:8px"><option value="">＋ 既存のチャレンジを工程に差し込む</option>${insCands.map(o=>`<option value="${o.id}">◇ ${esc(o.title||'(無題)')}</option>`).join('')}</select>`:''}
   </div>
   </div>
   <div class="actions"><button class="btn primary" data-act="doneedit">完了</button><button class="btn danger" data-act="delete" style="margin-left:auto">削除</button></div>`;
@@ -560,13 +597,13 @@ document.addEventListener('click',e=>{
     case 'select': if(editing){cleanupEmpty();editing=false} selId=b.dataset.id; render(); window.innerWidth<=820&&window.scrollTo({top:0}); break;
     case 'back': if(editing){cleanupEmpty();editing=false} selId=null; render(); break;
     case 'step': toggleStep(b.dataset.q,b.dataset.s); break;
-    case 'accept': q.accepted=!q.accepted; save(); render(); toast(q.accepted?'クエストを受注しました':'受注を取り消しました'); break;
+    case 'accept': q.accepted=!q.accepted; save(); render(); toast(q.accepted?'チャレンジを受注しました':'受注を取り消しました'); break;
     case 'complete':
       if(!allStepsDone(q) && !confirm('まだ終わっていない工程があります。達成を報告しますか？')) break;
       completeQuest(q); break;
     case 'reopen': reopen(q); break;
-    case 'edit': editing=true; render(); break;
-    case 'doneedit': if(!q.title.trim()){q.title='名もなきクエスト'} editing=false; save(); render(); break;
+    case 'edit': editing=true; moveSid=null; render(); break;
+    case 'doneedit': if(!q.title.trim()){q.title='名もなきチャレンジ'} editing=false; save(); render(); break;
     case 'delete': deleteQuest(q); break;
     case 'addchild': newQuest(TYPES[q.type].child,q.id); break;
     case 'rank': q.rank=+b.dataset.v; save(); renderEdit($('detail'),q); renderList(); break;
@@ -574,6 +611,9 @@ document.addEventListener('click',e=>{
       const i=q.steps.findIndex(s=>s.id===b.dataset.s), j=a==='up'?i-1:i+1;
       if(j<0||j>=q.steps.length) break; [q.steps[i],q.steps[j]]=[q.steps[j],q.steps[i]]; save(); renderEdit($('detail'),q); break;}
     case 'promote': promoteStep(q,b.dataset.s); break;
+    case 'demote': demoteStep(q,b.dataset.s); break;
+    case 'move': moveSid=b.dataset.s; renderEdit($('detail'),q); break;
+    case 'movecancel': moveSid=null; renderEdit($('detail'),q); break;
     case 'sdel': q.steps=q.steps.filter(s=>s.id!==b.dataset.s); save(); renderEdit($('detail'),q); renderList(); break;
     case 'cleared': showCleared=!showCleared; renderList(); break;
     case 'export': {
@@ -583,10 +623,10 @@ document.addEventListener('click',e=>{
       setTimeout(()=>URL.revokeObjectURL(u),1000); break;}
     case 'import': $('importFile').click(); break;
     case 'reset':
-      if(confirm('すべてのクエストとXPを消して初期化します。元に戻せません。よろしいですか？')){state={xp:0,quests:[]};selId=null;save();render();toast('初期化しました')} break;
+      if(confirm('すべてのチャレンジとXPを消して初期化します。元に戻せません。よろしいですか？')){state={xp:0,quests:[]};selId=null;save();render();toast('初期化しました')} break;
   }
 });
-$('fab').addEventListener('click',()=>{if(editing)cleanupEmpty(); newQuest(TYPES[tab]?tab:'sub',null)});
+$('fab').addEventListener('click',()=>{if(editing)cleanupEmpty(); newQuest(TYPES[tab]?tab:'challenge',null)});
 document.addEventListener('input',e=>{
   const q=findQ(selId); if(!q) return;
   const f=e.target.dataset.field, sid=e.target.dataset.steptext;
@@ -603,6 +643,7 @@ document.addEventListener('input',e=>{
 });
 document.addEventListener('change',e=>{
   if(e.target.id==='insRef'&&e.target.value){const q=findQ(selId); q&&insertRef(q,e.target.value); return;}
+  if(e.target.dataset.moveto&&e.target.value){const q=findQ(selId); q&&moveStep(q,e.target.dataset.moveto,e.target.value); return;}
   if(e.target.dataset.field==='type'||e.target.dataset.field==='parentId'){ renderList(); }
 });
 document.addEventListener('keydown',e=>{
@@ -657,7 +698,7 @@ $('importFile').addEventListener('change',e=>{
   const r=new FileReader();
   r.onload=()=>{
     try{const s=JSON.parse(r.result); if(!s||!Array.isArray(s.quests)) throw 0;
-      if(!confirm(`${s.quests.length}件のクエストを読み込みます。今のデータは上書きされます。よろしいですか？`)) return;
+      if(!confirm(`${s.quests.length}件のチャレンジを読み込みます。今のデータは上書きされます。よろしいですか？`)) return;
       state={xp:+s.xp||0,quests:s.quests}; selId=null; editing=false; save(); render(); toast('読み込みました');
     }catch(err){alert('読み込めませんでした。クエストログで書き出したJSONファイルを選んでください。')}
     e.target.value='';
