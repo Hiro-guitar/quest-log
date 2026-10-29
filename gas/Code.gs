@@ -66,10 +66,13 @@ function event_(cal, props, id) {
 function upsert_(cal, props, q) {
   const title = (q.done ? '✓ ' : '◇ ') + q.title;
   let ev = event_(cal, props, q.id);
+  const oldLen = ev && !ev.isAllDayEvent() ? (ev.getEndTime().getTime() - ev.getStartTime().getTime()) : null;
   if (ev && ev.isAllDayEvent() !== !q.time) { ev.deleteEvent(); ev = null; }
+  // 未達成はカレンダー本来の色に戻す（個別の色は作り直さないと消せないため）
+  if (ev && !q.done && ev.getColor()) { ev.deleteEvent(); ev = null; }
   if (q.time) {
     const start = Utilities.parseDate(q.date + ' ' + q.time, JST, 'yyyy-MM-dd HH:mm');
-    const len = ev ? (ev.getEndTime().getTime() - ev.getStartTime().getTime()) : 60 * 60000;
+    const len = ev ? (ev.getEndTime().getTime() - ev.getStartTime().getTime()) : (oldLen || 60 * 60000);
     const end = new Date(start.getTime() + len);
     if (ev) ev.setTime(start, end); else ev = cal.createEvent(title, start, end);
   } else {
@@ -78,7 +81,7 @@ function upsert_(cal, props, q) {
   }
   ev.setTitle(title);
   ev.setDescription(desc_(q));
-  ev.setColor(q.done ? CalendarApp.EventColor.GRAY : CalendarApp.EventColor.CYAN);
+  if (q.done) ev.setColor(CalendarApp.EventColor.GRAY);
   props.setProperty('ev_' + q.id, ev.getId());
 }
 

@@ -852,13 +852,13 @@ function syncStatusText(){
 }
 function calPayload(q){
   const m=ancestors(q).find(a=>a.type==='main');
-  return {v:2,id:q.id,title:q.title||'(無題)',date:q.doDate,time:q.doTime||'',done:!!q.done,
+  return {v:3,id:q.id,title:q.title||'(無題)',date:q.doDate,time:q.doTime||'',done:!!q.done,
     main:m?(m.title||''):'',memo:q.memo||'',steps:q.steps.map(s=>({t:stepText(s),d:stepDone(s)})),
     link:location.origin+location.pathname+'#q='+q.id};
 }
 function stepPayload(q,s){
   const m=q.type==='main'?q:ancestors(q).find(a=>a.type==='main');
-  return {v:2,id:q.id+'~'+s.id,title:`${s.text}｜${q.title||'(無題)'}`,date:s.doDate,time:s.doTime||'',done:!!s.done,
+  return {v:3,id:q.id+'~'+s.id,title:`${s.text}｜${q.title||'(無題)'}`,date:s.doDate,time:s.doTime||'',done:!!s.done,
     main:m?(m.title||''):'',memo:`「${q.title||'(無題)'}」の工程`,steps:[],link:location.origin+location.pathname+'#q='+q.id};
 }
 function calEntities(){
