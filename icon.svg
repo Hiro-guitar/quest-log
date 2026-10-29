@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="38%" r="75%">
+      <stop offset="0" stop-color="#16303a"/>
+      <stop offset="0.55" stop-color="#0b161c"/>
+      <stop offset="1" stop-color="#05080a"/>
+    </radialGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#5fd4ef" stop-opacity=".55"/>
+      <stop offset="1" stop-color="#5fd4ef" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="gem" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#bff3ff"/>
+      <stop offset="1" stop-color="#3fb6d8"/>
+    </linearGradient>
+    <filter id="blur"><feGaussianBlur stdDeviation="6"/></filter>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <!-- 外周の円環と目盛り（方位磁針モチーフ） -->
+  <circle cx="256" cy="256" r="196" fill="none" stroke="#f2ecd6" stroke-opacity=".22" stroke-width="3"/>
+  <circle cx="256" cy="256" r="172" fill="none" stroke="#f2ecd6" stroke-opacity=".5" stroke-width="2" stroke-dasharray="2 14"/>
+  <g stroke="#f2ecd6" stroke-width="5" stroke-linecap="round" opacity=".85">
+    <line x1="256" y1="52" x2="256" y2="84"/><line x1="256" y1="428" x2="256" y2="460"/>
+    <line x1="52" y1="256" x2="84" y2="256"/><line x1="428" y1="256" x2="460" y2="256"/>
+  </g>
+  <!-- 光 -->
+  <circle cx="256" cy="256" r="150" fill="url(#glow)"/>
+  <!-- 星型の針 -->
+  <path d="M256 92 L284 228 L420 256 L284 284 L256 420 L228 284 L92 256 L228 228 Z" fill="#f2ecd6" opacity=".14"/>
+  <path d="M256 128 L276 236 L384 256 L276 276 L256 384 L236 276 L128 256 L236 236 Z" fill="none" stroke="#f2ecd6" stroke-width="3" stroke-opacity=".7"/>
+  <!-- 中央の菱形の結晶 -->
+  <path d="M256 178 L322 256 L256 334 L190 256 Z" fill="#5fd4ef" filter="url(#blur)" opacity=".8"/>
+  <path d="M256 178 L322 256 L256 334 L190 256 Z" fill="url(#gem)"/>
+  <path d="M256 178 L322 256 L256 256 Z" fill="#ffffff" opacity=".35"/>
+  <path d="M256 334 L190 256 L256 256 Z" fill="#0b3a48" opacity=".35"/>
+  <!-- 北のオレンジの目印 -->
+  <path d="M256 104 L268 132 L256 126 L244 132 Z" fill="#f0a640"/>
+</svg>
