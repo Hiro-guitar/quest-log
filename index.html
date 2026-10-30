@@ -404,6 +404,27 @@ body{background:#050607}
   .book{order:2}
   .hints{left:0;right:0;bottom:0;padding:10px 14px calc(10px + env(safe-area-inset-bottom));justify-content:flex-end;gap:16px;background:linear-gradient(transparent,rgba(0,0,0,.85) 35%);flex-wrap:wrap}
 }
+
+/* ---- 冒険手帳の大枠・行の見た目（公式映像に合わせる） ---- */
+.book{padding:22px 24px;background:rgba(150,160,170,.13);border:1px solid rgba(242,236,214,.16);border-radius:6px;box-shadow:0 8px 30px rgba(0,0,0,.25);align-items:start}
+.panel{background:rgba(8,10,12,.42);border:1px solid rgba(242,236,214,.55)}
+.row{background:rgba(120,128,136,.26);border:1px solid rgba(255,255,255,.06);box-shadow:none}
+.row .r-title{color:rgba(255,255,255,.62)}
+.row .r-mark .ico{opacity:.6}
+.row:hover{background:rgba(120,128,136,.36)}
+.row.sel{padding:8px 0 8px 12px;border:1px solid rgba(255,255,255,.28);box-shadow:0 0 10px rgba(0,0,0,.35);
+  background:
+   linear-gradient(#fff,#fff) left top/12px 2px no-repeat, linear-gradient(#fff,#fff) left top/2px 12px no-repeat,
+   linear-gradient(#fff,#fff) right top/12px 2px no-repeat, linear-gradient(#fff,#fff) right top/2px 12px no-repeat,
+   linear-gradient(#fff,#fff) left bottom/12px 2px no-repeat, linear-gradient(#fff,#fff) left bottom/2px 12px no-repeat,
+   linear-gradient(#fff,#fff) right bottom/12px 2px no-repeat, linear-gradient(#fff,#fff) right bottom/2px 12px no-repeat,
+   rgba(6,8,10,.88)}
+.row.sel .r-title{color:#fff}.row.sel .r-mark .ico{opacity:1}
+.row.sel .r-notch{margin:-8px 0;background:transparent;border-left-color:rgba(255,255,255,.12)}
+.add-row{background:rgba(120,128,136,.14)}
+.r-sub.place,.p-place{color:#f2c230!important}
+.p-next{margin-top:1.1em!important;color:#f6f1de}
+@media (max-width:820px){ .book{padding:12px 10px;border-radius:4px} }
 </style>
 </head>
 <body>
@@ -684,10 +705,11 @@ function renderTabs(){
   $('tabs').innerHTML=`<span class="tb-key">L</span>`+tabs.map(([k,l])=>`<button class="tab ${tab===k?'on':''}" data-act="tab" data-v="${k}">${l}</button>`).join('')+`<span class="tb-key">R</span>`;
 }
 function row(q){
-  const sub=(q.place&&!q.done) ? q.place : (q.done ? (q.doneAt?new Date(q.doneAt).toLocaleDateString('ja-JP')+' 達成':'') : (nextAction(q)||(findQ(q.parentId)?.title||'')));
+  const isPlace=!!(q.place&&!q.done);
+  const sub=isPlace ? q.place : (q.done ? (q.doneAt?new Date(q.doneAt).toLocaleDateString('ja-JP')+' 達成':'') : (nextAction(q)||(findQ(q.parentId)?.title||'')));
   const mark=q.type==='mini'&&!q.done?`<span class="r-mark qcheck" data-act="quickdone" data-id="${q.id}" title="クリア">${ico('mini')}</span>`:`<span class="r-mark">${ico(q.type,q.done)}</span>`;
   return `<button class="row ${q.id===selId?'sel':''} ${q.done?'done':''}" data-act="select" data-id="${q.id}">
-    ${mark}<span class="r-main"><span class="r-title">${esc(q.title||'(無題)')}</span>${sub?`<span class="r-sub">${esc(sub)}</span>`:''}</span>
+    ${mark}<span class="r-main"><span class="r-title">${esc(q.title||'(無題)')}</span>${sub?`<span class="r-sub ${isPlace?'place':''}">${esc(sub)}</span>`:''}</span>
     <span class="r-side">${q.done?'<span class="r-clear">COMPLETE</span>':`${q.accepted?'<span class="r-dest" title="目的地に設定中">◎</span>':''}${q.doDate?`<span class="do">${doLabel(q,true)}${carryHtml(q)}</span>`:''}${dueHtml(q.deadline)}`}</span><span class="r-notch"></span>
   </button>`;
 }
@@ -793,7 +815,7 @@ function renderView(D,q){
   ${q.done?'<div class="stamp">COMPLETE</div>':''}
   <h2 class="p-title">${esc(q.title||'(無題)')}</h2>
   <div class="p-giver"><span>${q.giver?`<i class="giver-mark">!</i>${esc(q.giver)}`:''}</span><span class="p-place">${esc(q.place||'')}</span></div>
-  <div class="p-desc">${q.memo?esc(q.memo).split('\n').map(l=>`<p>${l||'&nbsp;'}</p>`).join(''):'<p class="empty-memo">説明はまだありません。「編集」で、なぜやるのか・どうなったらクリアかを書いておこう。</p>'}</div>`;
+  <div class="p-desc">${q.memo?esc(q.memo).split('\n').map(l=>`<p>${l||'&nbsp;'}</p>`).join(''):'<p class="empty-memo">説明はまだありません。「編集」で、なぜやるのか・どうなったらクリアかを書いておこう。</p>'}${(()=>{ if(q.done) return ''; const na=nextAction(q); return na?`<p class="p-next">次は 「${esc(na)}」 に取りかかるのが良さそうだ</p>`:(q.steps.length||kids(q.id).length?'':`<p class="p-next">まずは 最初の工程を書き出してみよう</p>`); })()}</div>`;
   const meta=[q.rank?stars(q.rank):'', q.doDate?`<span class="do">やる日 ${doLabel(q)}${q.carry&&!q.done?`<span class="carry">↻${q.carry}回持ち越し</span>`:''}</span>`:'', q.deadline?`<span>期限 ${q.deadline.replace(/-/g,'/')} ${dueHtml(q.deadline)}</span>`:'', q.reward?`<span>報酬：${esc(q.reward)}</span>`:''].filter(Boolean).join('');
   if(meta) h+=`<div class="p-meta">${meta}</div>`;
   if(anc.length) h+=`<div class="crumb link">${anc.map(a=>`${ico(a.type)} <button data-act="select" data-id="${a.id}">${esc(a.title||'(無題)')}</button>`).join('　›　')}　のためのチャレンジ</div>`;
