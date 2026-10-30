@@ -174,6 +174,10 @@ button{cursor:pointer;background:none;border:0;padding:0}
 .stars .off{color:var(--dim)}
 .due.soon{color:var(--orange)}
 .do{color:var(--blue)}
+@keyframes slideL{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:none}}
+@keyframes slideR{from{opacity:0;transform:translateX(-28px)}to{opacity:1;transform:none}}
+#list.slide-l .rows,#list.slide-l .week,#list.slide-l .day-h{animation:slideL .22s ease-out}
+#list.slide-r .rows,#list.slide-r .week,#list.slide-r .day-h{animation:slideR .22s ease-out}
 .week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin:0 0 10px}
 .wd{display:grid;justify-items:center;gap:1px;padding:6px 0 4px;border:1.5px solid transparent;border-radius:6px;font-size:11px;color:var(--muted);background:rgba(0,0,0,.18)}
 .wd b{font-size:16px;color:var(--text);font-weight:700}
@@ -1385,6 +1389,26 @@ if('serviceWorker' in navigator && location.protocol==='https:'){
     setTimeout(()=>{ (r.active||navigator.serviceWorker.controller)?.postMessage({type:'precache',urls:bgUpcoming()}); },4000);
   }).catch(()=>{});
 }
+
+/* ---------- 指スワイプで隣の区分へ（左右） ---------- */
+function stepCat(dir){
+  const i=CATS.indexOf(listCat); listCat=CATS[(i+(dir>0?1:CATS.length-1))%CATS.length];
+  showCleared=false; miniOpen=false; selId=null; if(listCat==='today') dayView=ymd(); render();
+  const L=$('list'); if(L){ L.classList.remove('slide-l','slide-r'); void L.offsetWidth; L.classList.add(dir>0?'slide-l':'slide-r'); }
+}
+(function(){
+  let sx=0, sy=0, st=0, ok=false;
+  const col=$('leftCol'); if(!col) return;
+  col.addEventListener('touchstart',e=>{
+    const t=e.touches[0]; ok = e.touches.length===1 && tab==='list' && !editing && !e.target.closest('input,textarea,select,[data-drag],.week');
+    sx=t.clientX; sy=t.clientY; st=Date.now();
+  },{passive:true});
+  col.addEventListener('touchend',e=>{
+    if(!ok) return; ok=false;
+    const t=e.changedTouches[0], dx=t.clientX-sx, dy=t.clientY-sy;
+    if(Date.now()-st<700 && Math.abs(dx)>60 && Math.abs(dy)<Math.abs(dx)*0.6) stepCat(dx<0?1:-1);
+  },{passive:true});
+})();
 
 /* ---------- キーボード操作（←→で区分、↑↓で選択、Escで閉じる） ---------- */
 document.addEventListener('keydown',e=>{
