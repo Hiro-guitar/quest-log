@@ -524,7 +524,7 @@ function migrate(){
   });
 }
 migrate(); save();
-function save(){ if(window.__qlReady) stamp(); try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){} if(window.__qlReady){ syncScan(); schedulePush(); } }
+function save(){ sortAllSteps(); if(window.__qlReady) stamp(); try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){} if(window.__qlReady){ syncScan(); schedulePush(); } }
 
 let tab='list', selId=null, editing=false, showCleared=false, miniOpen=false, listCat='today', dayView=ymd();
 
@@ -581,6 +581,17 @@ function doLabel(q,short){
   const t=`${d.getMonth()+1}/${d.getDate()}（${w}）${q.doTime?' '+q.doTime:''}`;
   return short ? (rel?rel+(q.doTime?' '+q.doTime:'')+' やる':t+' やる') : t+(rel?`　${rel}`:'');
 }
+// やる日が入っているものを上に、日付・時刻の早い順に
+function doKey(o){return o&&o.doDate?o.doDate+' '+(o.doTime||'99:99'):null}
+function byDo(a,b){const ka=doKey(a),kb=doKey(b); if(ka&&kb&&ka!==kb) return ka<kb?-1:1; if(!!ka!==!!kb) return ka?-1:1; return byDue(a,b)}
+function stepKey(s){const r=s.qref?state.quests.find(q=>q.id===s.qref):null; return doKey(r||s)}
+function sortSteps(q){
+  const ks=q.steps.map(stepKey), idx=q.steps.map((_,i)=>i);
+  idx.sort((i,j)=>{const a=ks[i],b=ks[j]; if(a&&b&&a!==b) return a<b?-1:1; if(!!a!==!!b) return a?-1:1; return i-j;});
+  if(idx.every((v,i)=>v===i)) return false;
+  q.steps=idx.map(i=>q.steps[i]); return true;
+}
+function sortAllSteps(){ (state.quests||[]).forEach(q=>{ if(Array.isArray(q.steps)) sortSteps(q); }); }
 function byDue(a,b){const da=a.deadline||'9999',db=b.deadline||'9999';return da<db?-1:da>db?1:a.created-b.created}
 function lvInfo(xp){let lv=1,need=100,rest=xp;while(rest>=need){rest-=need;lv++;need=100+(lv-1)*40}return{lv,rest,need}}
 function allStepsDone(q){return !q.done && (q.steps.length||kids(q.id).length) && q.steps.every(stepDone) && kids(q.id).every(k=>k.done)}
@@ -686,7 +697,7 @@ function addSteps(q,text){
 const CAT_NAMES={today:'今日の冒険',main:'メインチャレンジ',challenge:'チャレンジ',mini:'ミニチャレンジ'};
 const CATS=['today','main','challenge','mini'];
 let toolSel='sync', bkList=null;
-function render(){renderLv();renderHud();renderTabs();renderList();renderDetail();renderHints();
+function render(){sortAllSteps();renderLv();renderHud();renderTabs();renderList();renderDetail();renderHints();
   $('split').classList.toggle('has-sel',!!selId||(tab==='tools'&&toolPicked));
 }
 let toolPicked=false;
@@ -758,7 +769,7 @@ function renderList(){
   if(tab!=='tools'&&listCat==='today'){ L.innerHTML=todayList(); return; }
   if(tab!=='tools'){
     const t=listCat, qs=state.quests.filter(q=>q.type===t);
-    const open=qs.filter(q=>!q.done).sort(byDue);
+    const open=qs.filter(q=>!q.done).sort(byDo);
     let done=qs.filter(q=>q.done).sort((a,b)=>(b.doneAt||0)-(a.doneAt||0));
     const lim=t==='mini'?5:20, hidden=!showCleared?Math.max(0,done.length-lim):0; if(hidden) done=done.slice(0,lim);
     h=`<div class="cat-bar"><div class="cat-name">${CAT_NAMES[t]}</div>
@@ -810,7 +821,7 @@ function renderDetail(){
   editing ? renderEdit(D,q) : renderView(D,q);
 }
 function renderView(D,q){
-  const p=Math.round(progress(q)*100), anc=ancestors(q), ks=kids(q.id).sort(byDue);
+  const p=Math.round(progress(q)*100), anc=ancestors(q), ks=kids(q.id).sort(byDo);
   const ns=nextStep(q);
   let h=`<div class="panel"><div class="p-wm">${SECBG[q.type]}</div><button class="back" data-act="back">‹ 一覧へ</button>
   ${q.done?'<div class="stamp">COMPLETE</div>':''}
