@@ -375,7 +375,8 @@ body{background:#050607}
 .row.sel{border:2px solid #f8f4e4;box-shadow:0 0 12px rgba(255,255,240,.45),inset 0 0 8px rgba(255,255,240,.12);padding:7px 0 7px 11px;background:rgba(10,12,14,.62)}
 .r-mark{width:24px;display:flex;justify-content:center;flex:none}
 .r-mark .ico{width:18px;height:18px;color:var(--text)}.r-mark .ico-main{width:24px;color:var(--text)}
-.r-title{font-size:14.5px;font-weight:900;color:#fff;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.r-title{font-size:14.5px;font-weight:900;color:#fff;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:clip}
+.r-title.two{white-space:normal;line-height:1.3;overflow:visible;word-break:break-all}
 .r-sub{font-size:11px;color:#d8d0b4;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
 .r-side{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted);flex:none;margin-left:auto}
 .r-dest{color:var(--orange);font-size:13px}
@@ -826,9 +827,20 @@ function todayList(){
   return h;
 }
 function connectBanner(){ return (!sync.url&&state.pristine&&tab!=='tools')?`<button class="row conn-row" data-act="goconnect"><span class="r-mark">⇄</span><span class="r-main"><span class="r-title">ほかの端末のデータを使う</span><span class="r-sub">PCなどで出した「つなぐコード」を貼るとつながります</span></span><span class="r-notch"></span></button>`:''; }
+// 名前が枠に収まらないときは「…」で切らずに、文字を少し詰めて全部見せる（それでも長ければ2行に）
+function fitTitles(){
+  document.querySelectorAll('#list .r-title').forEach(el=>{
+    el.style.fontSize=''; el.classList.remove('two');
+    const w=el.clientWidth; if(!w||el.scrollWidth<=w) return;
+    const base=parseFloat(getComputedStyle(el).fontSize), r=w/el.scrollWidth;
+    if(r>=0.8){ el.style.fontSize=(base*r*0.99).toFixed(1)+'px'; }
+    else { el.style.fontSize=(base*0.86).toFixed(1)+'px'; el.classList.add('two'); }
+  });
+}
+window.addEventListener('resize',()=>{ clearTimeout(fitTitles._t); fitTitles._t=setTimeout(fitTitles,150); });
 function renderList(){
   const L=$('list'); let h='';
-  if(tab!=='tools'&&listCat==='today'){ L.innerHTML=connectBanner()+todayList(); return; }
+  if(tab!=='tools'&&listCat==='today'){ L.innerHTML=connectBanner()+todayList(); fitTitles(); return; }
   if(tab!=='tools'){
     const t=listCat, qs=state.quests.filter(q=>q.type===t);
     const open=qs.filter(q=>!q.done).sort(byDo);
@@ -850,7 +862,7 @@ function renderList(){
     h=`<div class="cat-bar"><div class="cat-name">道具</div><div class="cat-icons"><span class="cat on" style="cursor:default">✦</span></div></div><div class="rows">`+
       tools.map(([k,l])=>`<button class="row ${toolSel===k&&toolPicked?'sel':''}" data-act="tool" data-v="${k}"><span class="r-mark">✦</span><span class="r-main"><span class="r-title">${l}</span></span><span class="r-notch"></span></button>`).join('')+`</div>`;
   }
-  L.innerHTML=connectBanner()+h;
+  L.innerHTML=connectBanner()+h; fitTitles();
 }
 function toolPanel(){
   if(toolSel==='sync') return `<h2 class="p-title">PCとスマホの同期</h2>
