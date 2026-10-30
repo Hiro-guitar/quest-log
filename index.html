@@ -1423,9 +1423,11 @@ function stepCat(dir){
 }
 (function(){
   let sx=0, sy=0, st=0, ok=false;
-  const col=$('leftCol'); if(!col) return;
+  // 画面のどこをスワイプしても切り替わる（説明パネルを開いている時・入力中は除く）
+  const col=document;
   col.addEventListener('touchstart',e=>{
-    const t=e.touches[0]; ok = e.touches.length===1 && tab==='list' && !editing && !e.target.closest('input,textarea,select,[data-drag],.week');
+    const t=e.touches[0], mobile=window.innerWidth<=820;
+    ok = e.touches.length===1 && tab==='list' && !editing && !(mobile&&selId) && !e.target.closest('#detail,.hints,input,textarea,select,[data-drag],.week');
     sx=t.clientX; sy=t.clientY; st=Date.now();
   },{passive:true});
   col.addEventListener('touchend',e=>{
