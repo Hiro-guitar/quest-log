@@ -1317,7 +1317,7 @@ function bgScene(){ return BG_SCENES[bgIndex()%BG_SCENES.length]; }
 function paintBg(){
   const h=new Date().getHours(), qs=new URLSearchParams(location.search); let t=h>=5&&h<10?'morning':h>=10&&h<16?'day':h>=16&&h<19?'evening':'night';
   const bg=$('bg'); if(!bg) return;
-  let bi=bgIndex(); if(qs.has('bg')) bi=(+qs.get('bg'))%BG_PHOTOS.length; let sc=BG_SCENES[bi%BG_SCENES.length]; const place=BG_PHOTOS[bi], real=!!place[t], v=place[t]||place.day, ph={name:v.name||place.name,by:v.by,lic:v.lic,src:commonsSrc(v.file),page:commonsPage(v.file)}; if(BG_TIME[qs.get('bt')]) t=qs.get('bt');
+  if(BG_TIME[qs.get('bt')]) t=qs.get('bt'); let bi=bgIndex(); if(qs.has('bg')) bi=(+qs.get('bg'))%BG_PHOTOS.length; let sc=BG_SCENES[bi%BG_SCENES.length]; const place=BG_PHOTOS[bi], real=!!place[t], v=place[t]||place.day, ph={name:v.name||place.name,by:v.by,lic:v.lic,src:commonsSrc(v.file),page:commonsPage(v.file)};
   const key=bi+t; if(key===bgKey) return; bgKey=key;
   bg.className='bg t-'+t;
   const sunY={morning:400,day:150,evening:430,night:150}[t], sunX={morning:260,day:900,evening:1250,night:1180}[t];
