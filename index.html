@@ -426,11 +426,14 @@ body{background:#050607}
 .r-sub.place,.p-place{color:#f2c230!important}
 .p-next{margin-top:1.1em!important;color:#f6f1de}
 @media (max-width:820px){ .book{padding:12px 10px;border-radius:4px} }
+.bg-name{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:2;font-size:11px;letter-spacing:.2em;color:rgba(242,236,214,.45);text-shadow:0 1px 4px rgba(0,0,0,.7);pointer-events:none;white-space:nowrap}
+@media (max-width:820px){.bg-name{bottom:auto;top:6px;font-size:10px}}
 </style>
 </head>
 <body>
 <div id="bg" class="bg" aria-hidden="true"></div>
 <div class="veil" aria-hidden="true"></div>
+<div class="bg-name" id="bgName"></div>
 <div class="app">
   <header class="topbar">
     <div class="tb-left" id="lv"></div>
@@ -1195,21 +1198,87 @@ async function pull(){
 }
 document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible'&&sync.url){ pull(); flush(); } });
 
-/* ---------- 背景：時間で変わるぼかした景色 ---------- */
+/* ---------- 背景：地球の絶景（1時間ごとに入れ替わり、時間帯で空と色が変わる） ---------- */
+const BG_TIME={
+  morning:{sky:'#f3dcc0',tint:'#f7d9b6',a:.16},
+  day:{sky:'#bfe0ef',tint:'#ffffff',a:0},
+  evening:{sky:'#e88a4a',tint:'#6e3a3c',a:.42},
+  night:{sky:'#1d2a4a',tint:'#0a1120',a:.74}
+};
+function hexMix(a,b,t){const p=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16)), x=p(a), y=p(b);return '#'+x.map((v,i)=>Math.round(v+(y[i]-v)*t).toString(16).padStart(2,'0')).join('')}
+// 地面の色：遠いほど空の色に溶ける（haze）→ 時間帯の色をかぶせる
+function bgC(tm,hex,haze=0){const T=BG_TIME[tm]; let c=hexMix(hex,T.sky,haze); return hexMix(c,T.tint,T.a)}
+const mirror=(y,inner,op=.4)=>`<g transform="translate(0 ${2*y}) scale(1 -1)" opacity="${op}">${inner}</g>`;
+const water=(y)=>`<rect y="${y}" width="1600" height="${900-y}" fill="url(#skyR)"/><rect y="${y}" width="1600" height="${900-y}" fill="#06202e" opacity=".18"/>`;
+const BG_SCENES=[
+ {name:'富士山と湖', draw:(c)=>{ const fuji=`<path d="M430 560 L760 236 Q800 222 840 236 L1170 560Z" fill="${c('#5d7391',.35)}"/><path d="M690 306 L760 236 Q800 222 840 236 L910 306 L880 298 L852 326 L824 296 L796 330 L770 298 L742 324 L718 300Z" fill="${c('#f2f5f8',.15)}"/>`;
+   return `<path d="M0 520 C200 470 330 500 470 520 S1300 470 1600 510 V560 H0Z" fill="${c('#6f8a8a',.55)}"/>${fuji}<path d="M0 548 C300 530 500 556 800 548 S1300 530 1600 552 V566 H0Z" fill="${c('#3f5a45',.2)}"/>${water(562)}${mirror(562,fuji,.35)}<path d="M0 760 C200 730 330 750 420 780 L420 900 H0Z" fill="${c('#25362a')}"/><path d="M60 760 l16 -70 16 70z M110 752 l20 -90 20 90z M170 770 l14 -60 14 60z" fill="${c('#1c2b20')}"/>`;}},
+ {name:'ウユニ塩湖', noClouds:true, draw:(c,stars)=>{ const cl=`<ellipse cx="420" cy="300" rx="190" ry="34" fill="#fff" opacity=".55"/><ellipse cx="1180" cy="230" rx="240" ry="40" fill="#fff" opacity=".5"/><ellipse cx="900" cy="380" rx="150" ry="22" fill="#fff" opacity=".45"/>`;
+   return `<g style="opacity:calc(1 - var(--st)*.9)">${cl}</g><path d="M0 492 C260 480 420 486 600 490 S1100 478 1600 488 V500 H0Z" fill="${c('#8a8fa0',.6)}"/>${water(498)}<rect y="498" width="1600" height="402" fill="${c('#ffffff')}" opacity=".06"/>${mirror(498,`<g style="opacity:calc(1 - var(--st)*.9)">${cl}</g>${stars}`,.55)}<path d="M760 498 v-22 M790 498 v-20" stroke="${c('#2a2a33')}" stroke-width="7" stroke-linecap="round"/>`;}},
+ {name:'グランドキャニオン', draw:(c)=>`<path d="M0 470 H220 L240 450 H520 L545 470 H900 L920 448 H1260 L1280 470 H1600 V560 H0Z" fill="${c('#c08a6a',.55)}"/>
+   <path d="M0 540 H160 L190 505 H430 L470 545 H700 L730 500 H1040 L1080 548 H1300 L1330 512 H1600 V650 H0Z" fill="${c('#c46e43',.3)}"/>
+   <path d="M0 520 H1600" stroke="${c('#e2b08a',.3)}" stroke-width="5" opacity=".6"/>
+   <path d="M0 640 L120 600 H380 L420 650 H620 L660 590 H980 L1030 660 H1250 L1290 610 H1600 V900 H0Z" fill="${c('#9d4d2c',.1)}"/>
+   <path d="M0 760 L260 700 L520 760 L800 720 L1100 780 L1400 710 L1600 750 V900 H0Z" fill="${c('#6a3220')}"/>`},
+ {name:'ノルウェーのフィヨルド', draw:(c)=>{ const cl=`<path d="M0 230 C140 250 260 360 380 560 H0Z" fill="${c('#3f5a4c',.15)}"/><path d="M1600 180 C1420 220 1300 360 1180 560 H1600Z" fill="${c('#3a5446',.15)}"/>`;
+   return `<path d="M420 560 L560 380 L700 430 L820 330 L960 420 L1120 560Z" fill="${c('#7d9196',.55)}"/><path d="M790 352 L820 330 L850 352Z" fill="${c('#eef2f4',.4)}"/>${cl}${water(560)}${mirror(560,cl,.45)}<path d="M180 560 v-38 M200 560 v-30" stroke="${c('#c94a3a')}" stroke-width="10"/>`;}},
+ {name:'サハラ砂漠', draw:(c)=>`<path d="M0 560 C220 500 380 470 560 520 S900 560 1080 500 S1420 470 1600 520 V900 H0Z" fill="${c('#e0b077',.35)}"/>
+   <path d="M0 640 C260 560 480 560 640 620 C760 580 900 540 1100 600 S1450 640 1600 600 V900 H0Z" fill="${c('#d49a5a',.12)}"/>
+   <path d="M640 620 C760 580 900 540 1100 600 L1100 900 H640Z" fill="${c('#b47a42')}" opacity=".55"/>
+   <path d="M0 760 C300 690 520 700 760 760 S1300 820 1600 740 V900 H0Z" fill="${c('#c88a4c')}"/>
+   <path d="M1180 590 q14 -12 26 0 q12 -10 22 2" stroke="${c('#5a4030')}" stroke-width="4" fill="none"/>`},
+ {name:'ハロン湾', draw:(c)=>{ const k=(x,w,h,col,hz)=>`<path d="M${x} 560 C${x} ${560-h*.6} ${x+w*.1} ${560-h} ${x+w*.5} ${560-h} S${x+w} ${560-h*.6} ${x+w} 560Z" fill="${c(col,hz)}"/>`;
+   const far=k(120,120,170,'#6c8a86',.6)+k(300,90,210,'#6c8a86',.6)+k(980,140,190,'#6c8a86',.6)+k(1380,110,230,'#6c8a86',.6);
+   const near=k(470,170,300,'#3f6152',.25)+k(700,110,220,'#3f6152',.25)+k(1180,190,330,'#355646',.2);
+   return far+near+water(560)+mirror(560,far+near,.35)+`<path d="M880 640 h90 l-10 16 h-70z" fill="${c('#4a2f22')}"/><path d="M905 640 l18 -60 l22 60z" fill="${c('#b5523a')}"/>`;}},
+ {name:'マッターホルン', draw:(c)=>`<path d="M0 470 L220 380 L420 450 L560 400 L700 470 L1000 420 L1200 360 L1400 440 L1600 400 V600 H0Z" fill="${c('#8a9aaa',.55)}"/>
+   <path d="M600 600 L760 330 L800 190 L840 200 L880 330 L1060 600Z" fill="${c('#6e6a68',.25)}"/><path d="M745 360 L800 190 L840 200 L862 300 L835 288 L812 330 L790 296 L768 350Z" fill="${c('#f3f5f7',.15)}"/>
+   <path d="M0 640 C300 590 600 600 900 640 S1400 600 1600 630 V900 H0Z" fill="${c('#6f9a55',.08)}"/>
+   <path d="M0 760 C400 710 800 740 1600 720 V900 H0Z" fill="${c('#4f7a3c')}"/><path d="M1180 690 h70 v-40 l-35 -26 l-35 26z" fill="${c('#7a4a30')}"/>`},
+ {name:'モニュメントバレー', draw:(c)=>{ const b=(x,w,h,col,hz,ww=22)=>`<path d="M${x-ww*2} 600 L${x} ${600-h*.35} V${600-h} H${x+w} V${600-h*.35} L${x+w+ww*2} 600Z" fill="${c(col,hz)}"/>`;
+   return `<path d="M0 560 H1600 V620 H0Z" fill="${c('#c48a66',.55)}"/>`+b(260,160,250,'#a8502e',.3)+b(700,46,300,'#a24a2a',.3,14)+b(820,40,270,'#a24a2a',.3,12)+b(1120,240,230,'#9c4627',.3)+`<path d="M0 600 H1600 V900 H0Z" fill="${c('#c66d3e',.05)}"/><path d="M760 900 L800 600 L820 600 L900 900Z" fill="${c('#9b8e84')}" opacity=".6"/>`;}},
+ {name:'張家界', draw:(c)=>{ let h=''; const p=(x,w,top,col,hz)=>`<path d="M${x} 900 V${top+30} Q${x} ${top} ${x+w/2} ${top} Q${x+w} ${top} ${x+w} ${top+30} V900Z" fill="${c(col,hz)}"/><ellipse cx="${x+w/2}" cy="${top+6}" rx="${w*.6}" ry="14" fill="${c('#4f7a46',hz)}"/>`;
+   [[80,70,300],[260,60,240],[420,90,330],[640,55,220],[900,80,280],[1100,60,250],[1280,95,320],[1470,70,260]].forEach(([x,w,t])=>h+=p(x,w,t,'#8b8f86',.55));
+   h+=`<rect y="520" width="1600" height="90" fill="${c('#ffffff',.2)}" opacity=".35"/>`;
+   [[160,110,420],[520,90,380],[780,120,460],[1180,100,400],[1420,120,450]].forEach(([x,w,t])=>h+=p(x,w,t,'#5e6458',.2));
+   return h+`<rect y="700" width="1600" height="80" fill="${c('#ffffff',.2)}" opacity=".22"/>`;}},
+ {name:'モルディブ', draw:(c)=>`<rect y="500" width="1600" height="400" fill="${c('#2a8fb0',.2)}"/><path d="M0 500 H1600 V560 H0Z" fill="${c('#1f6f98',.35)}"/>
+   <ellipse cx="820" cy="650" rx="520" ry="70" fill="${c('#58d0d0',.1)}"/><ellipse cx="820" cy="640" rx="260" ry="28" fill="${c('#f2e3bd',.1)}"/>
+   <path d="M760 630 q-10 -70 4 -110 M860 628 q14 -60 0 -100" stroke="${c('#6a4a30')}" stroke-width="7" fill="none"/>
+   <path d="M764 520 q-50 -10 -70 20 M764 520 q40 -20 70 6 M764 520 q-20 -40 -60 -40 M860 528 q-46 -14 -66 14 M860 528 q40 -20 66 4" stroke="${c('#2f7a3e')}" stroke-width="12" fill="none" stroke-linecap="round"/>
+   <g fill="${c('#8a6a4a')}"><path d="M1120 700 h70 l-35 -26z M1230 712 h70 l-35 -26z M1340 724 h70 l-35 -26z"/></g><path d="M1120 700 h290" stroke="${c('#6a5040')}" stroke-width="4"/>`},
+ {name:'パタゴニア', draw:(c)=>{ const tw=`<path d="M600 520 L640 300 L660 250 L690 300 L700 520Z M720 520 L750 260 L775 200 L800 262 L820 520Z M850 520 L875 300 L895 255 L920 300 L940 520Z" fill="${c('#8a8a90',.3)}"/>`;
+   return `<path d="M0 520 L300 400 L520 470 L600 420 L960 420 L1100 470 L1300 380 L1600 470 V600 H0Z" fill="${c('#6c7a88',.5)}"/><path d="M1260 400 L1300 380 L1340 404Z M260 416 L300 400 L340 418Z" fill="${c('#eef2f6',.4)}"/>${tw}<path d="M0 560 C300 520 600 540 900 560 S1400 520 1600 556 V600 H0Z" fill="${c('#7b6a4a',.2)}"/>${water(596)}<rect y="596" width="1600" height="304" fill="${c('#2fb0b0')}" opacity=".25"/>${mirror(596,tw,.3)}<path d="M0 780 C300 740 520 760 760 800 L760 900 H0Z" fill="${c('#8a6a3c')}"/>`;}},
+ {name:'アイスランドの滝とオーロラ', draw:(c)=>`<g style="opacity:var(--st)"><path d="M100 260 C400 140 700 320 1000 180 S1450 120 1600 220" stroke="#6dffb0" stroke-width="70" fill="none" opacity=".35"/><path d="M0 330 C300 230 650 380 1000 260 S1400 230 1600 300" stroke="#4fe0a0" stroke-width="40" fill="none" opacity=".3"/></g>
+   <path d="M0 500 L260 380 L480 440 L700 360 L940 450 L1200 370 L1600 470 V620 H0Z" fill="${c('#4a5866',.45)}"/><path d="M660 380 L700 360 L740 384 L716 380 L700 394Z M1160 388 L1200 370 L1240 392Z" fill="${c('#f0f4f7',.35)}"/>
+   <path d="M0 620 L600 560 H900 L1600 600 V900 H0Z" fill="${c('#3c4a3c',.1)}"/><rect x="720" y="560" width="80" height="220" fill="${c('#e8f2f6',.1)}" opacity=".85"/><ellipse cx="760" cy="780" rx="140" ry="26" fill="${c('#ffffff')}" opacity=".35"/>
+   <path d="M0 800 C400 760 900 790 1600 770 V900 H0Z" fill="${c('#2c3a30')}"/>`},
+ {name:'棚田', draw:(c)=>{ let h=`<path d="M0 470 C300 420 600 450 900 420 S1400 440 1600 430 V600 H0Z" fill="${c('#6d8a78',.55)}"/>`;
+   for(let i=0;i<9;i++){ const y=520+i*45; h+=`<path d="M0 ${y} C300 ${y-40+i*3} 600 ${y+30} 900 ${y-10} S1400 ${y+20} 1600 ${y-20} V900 H0Z" fill="${c(i%2?'#5f9a48':'#79b058',.3-i*.03)}"/><path d="M0 ${y} C300 ${y-40+i*3} 600 ${y+30} 900 ${y-10} S1400 ${y+20} 1600 ${y-20}" stroke="${c('#c8e0b0',.2)}" stroke-width="3" fill="none" opacity=".6"/>`; }
+   return h;}},
+ {name:'カッパドキア', draw:(c)=>{ const ch=(x,h,w)=>`<path d="M${x-w} 640 Q${x-w*.4} ${640-h*.6} ${x-w*.2} ${640-h} H${x+w*.2} Q${x+w*.4} ${640-h*.6} ${x+w} 640Z" fill="${c('#d2b38c',.2)}"/><ellipse cx="${x}" cy="${640-h}" rx="${w*.42}" ry="12" fill="${c('#8a6a52',.2)}"/>`;
+   const bl=(x,y,r,col)=>`<ellipse cx="${x}" cy="${y}" rx="${r}" ry="${r*1.15}" fill="${c(col,.15)}"/><rect x="${x-r*.25}" y="${y+r*1.3}" width="${r*.5}" height="${r*.4}" fill="${c('#6a4a30',.15)}"/>`;
+   return `<path d="M0 540 C300 500 600 520 900 500 S1400 520 1600 510 V640 H0Z" fill="${c('#b89a80',.55)}"/>`+bl(300,260,34,'#d9483a')+bl(560,190,26,'#f0b23a')+bl(1040,240,40,'#3a7ad9')+bl(1300,160,22,'#e0703a')+bl(820,330,18,'#7a4ab0')+ch(260,170,60)+ch(420,230,70)+ch(980,200,64)+ch(1200,250,76)+ch(1420,160,56)+`<path d="M0 640 H1600 V900 H0Z" fill="${c('#a88a6a',.05)}"/>`;}}
+];
+let bgKey='';
+function bgScene(){ const d=new Date(), n=Math.floor((d.getTime()+9*3600e3)/3600e3); return BG_SCENES[(n*5)%BG_SCENES.length]; }
 function paintBg(){
-  const h=new Date().getHours(), t=h>=5&&h<10?'morning':h>=10&&h<16?'day':h>=16&&h<19?'evening':'night';
-  const bg=$('bg'); if(!bg) return; bg.className='bg t-'+t;
-  const sunY={morning:430,day:150,evening:470,night:170}[t], sunX={morning:260,day:900,evening:1250,night:1180}[t];
-  let stars=''; for(let i=0;i<60;i++){ const x=(i*263)%1600, y=(i*137)%420; stars+=`<circle cx="${x}" cy="${y}" r="${(i%3)+1}" fill="#fff" style="opacity:calc(var(--st)*.8)"/>`; }
-  bg.innerHTML=`<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--s1)"/><stop offset="1" style="stop-color:var(--s2)"/></linearGradient><radialGradient id="glow"><stop offset="0" style="stop-color:var(--sun);stop-opacity:.9"/><stop offset="1" style="stop-color:var(--sun);stop-opacity:0"/></radialGradient></defs>
+  const h=new Date().getHours(), qs=new URLSearchParams(location.search); let t=h>=5&&h<10?'morning':h>=10&&h<16?'day':h>=16&&h<19?'evening':'night';
+  const bg=$('bg'); if(!bg) return;
+  let sc=bgScene(); if(qs.has('bg')) sc=BG_SCENES[+qs.get('bg')]||sc; if(BG_TIME[qs.get('bt')]) t=qs.get('bt');
+  const key=sc.name+t; if(key===bgKey) return; bgKey=key;
+  bg.className='bg t-'+t;
+  const sunY={morning:400,day:150,evening:430,night:150}[t], sunX={morning:260,day:900,evening:1250,night:1180}[t];
+  let stars=''; for(let i=0;i<70;i++){ const x=(i*263)%1600, y=(i*137)%440; stars+=`<circle cx="${x}" cy="${y}" r="${(i%3)+1}" fill="#fff" style="opacity:calc(var(--st)*.8)"/>`; }
+  const c=(hex,hz)=>bgC(t,hex,hz);
+  bg.innerHTML=`<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--s1)"/><stop offset="1" style="stop-color:var(--s2)"/></linearGradient><linearGradient id="skyR" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--s2)"/><stop offset="1" style="stop-color:var(--s1)"/></linearGradient><radialGradient id="vg" cx=".5" cy=".45" r=".75"><stop offset=".6" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".25"/></radialGradient><radialGradient id="glow"><stop offset="0" style="stop-color:var(--sun);stop-opacity:.9"/><stop offset="1" style="stop-color:var(--sun);stop-opacity:0"/></radialGradient></defs>
   <rect width="1600" height="900" fill="url(#sky)"/>${stars}
   <circle cx="${sunX}" cy="${sunY}" r="260" fill="url(#glow)"/><circle cx="${sunX}" cy="${sunY}" r="${t==='night'?36:50}" style="fill:var(--sun)"/>
-  <path d="M0 520 L140 430 L260 470 L420 360 L560 450 L700 400 L860 300 L1010 420 L1150 380 L1300 450 L1450 360 L1600 430 V900 H0Z" style="fill:var(--m1)"/>
-  <path d="M0 600 C200 540 380 580 560 560 S900 500 1100 560 S1420 600 1600 560 V900 H0Z" style="fill:var(--m2)"/>
-  <path d="M0 700 C260 650 520 690 800 670 S1300 640 1600 690 V900 H0Z" style="fill:var(--m3)"/>
-  <g style="fill:var(--m3)"><path d="M1180 668 l18 -70 18 70z"/><rect x="1194" y="660" width="8" height="22"/><path d="M1230 672 l14 -52 14 52z"/><path d="M300 690 l20 -80 20 80z"/><rect x="316" y="682" width="8" height="24"/></g></svg>`;
+  ${sc.noClouds?'':`<g style="opacity:calc((1 - var(--st)*.85)*.5)" fill="${t==='evening'?'#ffd2b0':'#ffffff'}"><ellipse cx="260" cy="190" rx="220" ry="26"/><ellipse cx="360" cy="170" rx="120" ry="30"/><ellipse cx="1320" cy="120" rx="200" ry="22"/><ellipse cx="1240" cy="104" rx="100" ry="26"/><ellipse cx="760" cy="290" rx="160" ry="16"/></g>`}
+  ${sc.draw(c,stars)}<rect width="1600" height="900" fill="url(#vg)"/></svg>`;
+  const lb=$('bgName'); if(lb) lb.textContent='景色：'+sc.name;
 }
-paintBg(); setInterval(paintBg,10*60*1000);
+paintBg(); setInterval(paintBg,60*1000);
 
 /* ---------- キーボード操作（←→で区分、↑↓で選択、Escで閉じる） ---------- */
 document.addEventListener('keydown',e=>{
@@ -1285,7 +1354,7 @@ setInterval(()=>{ if(ymd()!==carryDay) runCarry(); if(document.visibilityState==
 document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible'){ if(ymd()!==carryDay) runCarry(); loadData(); } });
 
 // #q=ID で開いたら、そのチャレンジを表示
-(function(){ const m=location.hash.match(/^#q=([\w-]+)/); const q=m&&findQ(m[1]); if(q){ selId=q.id; tab='list'; listCat=q.type; } })();
+(function(){ const m=location.hash.match(/^#q=([\w-]+)/); const q=m&&findQ(m[1]); if(q){ selId=q.id; tab='list'; listCat=q.type; } if(m){ try{ history.replaceState(null,'',location.pathname+location.search); }catch(e){} } })();
 
 stamp(); window.__qlReady=true;
 render(); runCarry();
