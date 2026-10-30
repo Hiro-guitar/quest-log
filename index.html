@@ -564,7 +564,7 @@ function migrate(){
   });
 }
 migrate(); save();
-function save(){ sortAllSteps(); if(window.__qlReady) stamp(); try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){} if(window.__qlReady){ syncScan(); schedulePush(); } }
+function save(){ moveDoToSteps(); sortAllSteps(); if(window.__qlReady) stamp(); try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){} if(window.__qlReady){ syncScan(); schedulePush(); } }
 
 let tab='list', selId=null, editing=false, showCleared=false, miniOpen=false, listCat='today', dayView=ymd();
 
@@ -599,7 +599,7 @@ function carryOver(){
   const t=ymd(); let n=0;
   state.quests.forEach(q=>{
     if(q.done) return;
-    if(q.doDate&&q.doDate<t){ q.doDate=t; q.carry=(q.carry||0)+1; n++; }
+    if(!(q.steps&&q.steps.length)&&q.doDate&&q.doDate<t){ q.doDate=t; q.carry=(q.carry||0)+1; n++; }
     (q.steps||[]).forEach(st=>{ if(!st.qref&&!st.done&&st.doDate&&st.doDate<t){ st.doDate=t; st.carry=(st.carry||0)+1; n++; } });
   });
   return n;
@@ -623,7 +623,26 @@ function doLabel(q,short){
 }
 // やる日が入っているものを上に、日付・時刻の早い順に
 function doKey(o){return o&&o.doDate?o.doDate+' '+(o.doTime||'99:99'):null}
-function byDo(a,b){const ka=doKey(a),kb=doKey(b); if(ka&&kb&&ka!==kb) return ka<kb?-1:1; if(!!ka!==!!kb) return ka?-1:1; return byDue(a,b)}
+// チャレンジのやる日：工程があれば「まだ終わっていない工程のいちばん近い日付」、工程がなければチャレンジ自身の日付
+function effDo(q){
+  if(!q) return null;
+  if(!(q.steps&&q.steps.length)) return q.doDate?{doDate:q.doDate,doTime:q.doTime||'',carry:q.carry||0,own:true}:null;
+  let best=null;
+  q.steps.forEach(st=>{ const r=st.qref?state.quests.find(x=>x.id===st.qref):null; const o=r?effDo(r):st; if(!o||!o.doDate) return; if(r?r.done:st.done) return; const k=doKey(o); if(!best||k<best.k) best={k,doDate:o.doDate,doTime:o.doTime||'',carry:o.carry||0}; });
+  return best;
+}
+// 工程があるのにチャレンジ自身にも日付が入っていたら、その日付を次の一手の工程へ移す
+function moveDoToSteps(){
+  let n=0;
+  state.quests.forEach(q=>{
+    if(!(q.steps&&q.steps.length)||!q.doDate) return;
+    const tg=q.steps.find(st=>!st.qref&&!st.done);
+    if(tg&&!tg.doDate){ tg.doDate=q.doDate; tg.doTime=q.doTime||''; tg.carry=q.carry||0; }
+    q.doDate=''; q.doTime=''; q.carry=0; n++;
+  });
+  return n;
+}
+function byDo(a,b){const ka=doKey(effDo(a)),kb=doKey(effDo(b)); if(ka&&kb&&ka!==kb) return ka<kb?-1:1; if(!!ka!==!!kb) return ka?-1:1; return byDue(a,b)}
 function stepKey(s){const r=s.qref?state.quests.find(q=>q.id===s.qref):null; return doKey(r||s)}
 function sortSteps(q){
   const ks=q.steps.map(stepKey), idx=q.steps.map((_,i)=>i);
@@ -762,7 +781,7 @@ function row(q){
   const mark=q.type==='mini'&&!q.done?`<span class="r-mark qcheck" data-act="quickdone" data-id="${q.id}" title="クリア">${ico('mini')}</span>`:`<span class="r-mark">${ico(q.type,q.done)}</span>`;
   return `<button class="row ${q.id===selId?'sel':''} ${q.done?'done':''}" data-act="select" data-id="${q.id}">
     ${mark}<span class="r-main"><span class="r-title">${esc(q.title||'(無題)')}</span>${sub?`<span class="r-sub ${isPlace?'place':''}">${esc(sub)}</span>`:''}</span>
-    <span class="r-side">${q.done?'<span class="r-clear">COMPLETE</span>':`${q.accepted?'<span class="r-dest" title="目的地に設定中">◎</span>':''}${q.doDate?`<span class="do">${doLabel(q,true)}${carryHtml(q)}</span>`:''}${dueHtml(q.deadline)}`}</span><span class="r-notch"></span>
+    <span class="r-side">${q.done?'<span class="r-clear">COMPLETE</span>':`${q.accepted?'<span class="r-dest" title="目的地に設定中">◎</span>':''}${(()=>{const e=effDo(q); return e?`<span class="do">${doLabel(e,true)}${carryHtml(e)}</span>`:'';})()}${false?`<span class="do">${doLabel(q,true)}${carryHtml(q)}</span>`:''}${dueHtml(q.deadline)}`}</span><span class="r-notch"></span>
   </button>`;
 }
 function catBar(t){
@@ -773,7 +792,7 @@ function catBar(t){
 function dayItems(d){
   const out=[];
   state.quests.forEach(q=>{
-    if(q.doDate===d) out.push({q,time:q.doTime||''});
+    if(!(q.steps&&q.steps.length)&&q.doDate===d) out.push({q,time:q.doTime||''});
     if(q.done) return;
     (q.steps||[]).forEach(st=>{ if(!st.qref&&st.doDate===d) out.push({q,s:st,time:st.doTime||''}); });
   });
@@ -911,7 +930,7 @@ function renderView(D,q){
   <h2 class="p-title">${esc(q.title||'(無題)')}</h2>
   <div class="p-giver"><span>${q.giver?`<i class="giver-mark">!</i>${esc(q.giver)}`:''}</span><span class="p-place">${esc(q.place||'')}</span></div>
   <div class="p-desc">${q.memo?esc(q.memo).split('\n').map(l=>`<p>${l||'&nbsp;'}</p>`).join(''):'<p class="empty-memo">説明はまだありません。「編集」で、なぜやるのか・どうなったらクリアかを書いておこう。</p>'}${(()=>{ if(q.done) return ''; const na=nextAction(q); return na?`<p class="p-next">次は 「${esc(na)}」 に取りかかるのが良さそうだ</p>`:(q.steps.length||kids(q.id).length?'':`<p class="p-next">まずは 最初の工程を書き出してみよう</p>`); })()}</div>`;
-  const meta=[q.rank?stars(q.rank):'', q.doDate?`<span class="do">やる日 ${doLabel(q)}${q.carry&&!q.done?`<span class="carry">↻${q.carry}回持ち越し</span>`:''}</span>`:'', q.deadline?`<span>期限 ${q.deadline.replace(/-/g,'/')} ${dueHtml(q.deadline)}</span>`:'', q.reward?`<span>報酬：${esc(q.reward)}</span>`:''].filter(Boolean).join('');
+  const meta=[q.rank?stars(q.rank):'', (()=>{const e=effDo(q); if(!e||q.done) return ''; return `<span class="do">やる日 ${doLabel(e)}${e.own?'':'<small class="hint">（工程の日付）</small>'}${e.carry?`<span class="carry">↻${e.carry}回持ち越し</span>`:''}</span>`;})(), q.deadline?`<span>期限 ${q.deadline.replace(/-/g,'/')} ${dueHtml(q.deadline)}</span>`:'', q.reward?`<span>報酬：${esc(q.reward)}</span>`:''].filter(Boolean).join('');
   if(meta) h+=`<div class="p-meta">${meta}</div>`;
   if(anc.length) h+=`<div class="crumb link">${anc.map(a=>`${ico(a.type)} <button data-act="select" data-id="${a.id}">${esc(a.title||'(無題)')}</button>`).join('　›　')}　のためのチャレンジ</div>`;
   if(q.steps.length||!q.done){
@@ -975,10 +994,10 @@ function renderEdit(D,q){
     <div class="f"><label>難易度</label><div class="rank-pick">${[1,2,3,4,5].map(r=>`<button data-act="rank" data-v="${r}" class="${r<=q.rank?'on':''}">★</button>`).join('')}</div></div>
     <div class="f"><label>期限</label><input type="date" data-field="deadline" value="${esc(q.deadline)}"></div>
   </div>
-  <div class="f2">
+  ${q.steps.length?`<div class="f"><label>やる日</label><p class="hint" style="margin:2px 0 0">工程があるチャレンジは、やる日を工程ごとに入れます（チャレンジのやる日は、いちばん近い工程の日付になります）</p></div>`:`<div class="f2">
     <div class="f"><label>やる日</label><input type="date" data-field="doDate" value="${esc(q.doDate||'')}"></div>
     <div class="f"><label>時間（任意・空なら終日）</label><input type="time" data-field="doTime" value="${esc(q.doTime||'')}"></div>
-  </div>
+  </div>`}
   <div class="f"><label>クリア報酬（自分へのご褒美）</label><input type="text" data-field="reward" value="${esc(q.reward)}" placeholder="例：好きなケーキを買う"></div>
   <div class="f"><label>説明・なぜやるのか</label><textarea data-field="memo" placeholder="このチャレンジの目的や、クリアした先の姿">${esc(q.memo)}</textarea></div>
   <div class="f"><label>工程（⋮⋮ をつまんで並び替え）</label><div style="display:grid;grid-template-columns:minmax(0,1fr);gap:6px" data-sortable>`;
@@ -1556,7 +1575,7 @@ function applyState(ns){
   syncScan();
   if(selId&&!findQ(selId)){ selId=null; editing=false; }
   if(editing){ renderLv(); renderHud(); renderTabs(); renderList(); } else render();
-  if(window.__qlReady&&carryOver()){ save(); render(); }
+  if(window.__qlReady&&(carryOver()+moveDoToSteps())){ save(); render(); }
 }
 let pushT=null, pushing=false, pushAgain=false;
 function schedulePush(ms=1500){ if(!sync.url) return; clearTimeout(pushT); pushT=setTimeout(pushData,ms); }
@@ -1592,7 +1611,7 @@ document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==
 (function(){ const m=location.hash.match(/^#q=([\w-]+)/); const q=m&&findQ(m[1]); if(q){ selId=q.id; tab='list'; listCat=q.type; } if(m){ try{ history.replaceState(null,'',location.pathname+location.search); }catch(e){} } })();
 
 stamp(); window.__qlReady=true;
-render(); runCarry();
+render(); if(moveDoToSteps()){ save(); render(); } runCarry();
 if(sync.url){ syncScan(); flush(); loadData().then(pull); }
 })();
 </script>
