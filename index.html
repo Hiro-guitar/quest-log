@@ -174,6 +174,7 @@ button{cursor:pointer;background:none;border:0;padding:0}
 .stars .off{color:var(--dim)}
 .due.soon{color:var(--orange)}
 .do{color:var(--blue)}
+.conn-row{margin-bottom:10px;border-color:rgba(95,212,239,.5)!important}.conn-row .r-mark{color:var(--blue);font-size:16px}
 @keyframes slideL{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:none}}
 @keyframes slideR{from{opacity:0;transform:translateX(-28px)}to{opacity:1;transform:none}}
 #list.slide-l .rows,#list.slide-l .week,#list.slide-l .day-h{animation:slideL .22s ease-out}
@@ -792,9 +793,10 @@ function todayList(){
   h+=`<button class="row add-row" data-act="newcur"><span class="r-mark">＋</span><span class="r-main"><span class="r-title">この日にチャレンジを追加</span></span><span class="r-notch"></span></button></div>`;
   return h;
 }
+function connectBanner(){ return (!sync.url&&state.pristine&&tab!=='tools')?`<button class="row conn-row" data-act="goconnect"><span class="r-mark">⇄</span><span class="r-main"><span class="r-title">ほかの端末のデータを使う</span><span class="r-sub">PCなどで出した「つなぐコード」を貼るとつながります</span></span><span class="r-notch"></span></button>`:''; }
 function renderList(){
   const L=$('list'); let h='';
-  if(tab!=='tools'&&listCat==='today'){ L.innerHTML=todayList(); return; }
+  if(tab!=='tools'&&listCat==='today'){ L.innerHTML=connectBanner()+todayList(); return; }
   if(tab!=='tools'){
     const t=listCat, qs=state.quests.filter(q=>q.type===t);
     const open=qs.filter(q=>!q.done).sort(byDo);
@@ -816,7 +818,7 @@ function renderList(){
     h=`<div class="cat-bar"><div class="cat-name">道具</div><div class="cat-icons"><span class="cat on" style="cursor:default">✦</span></div></div><div class="rows">`+
       tools.map(([k,l])=>`<button class="row ${toolSel===k&&toolPicked?'sel':''}" data-act="tool" data-v="${k}"><span class="r-mark">✦</span><span class="r-main"><span class="r-title">${l}</span></span><span class="r-notch"></span></button>`).join('')+`</div>`;
   }
-  L.innerHTML=h;
+  L.innerHTML=connectBanner()+h;
 }
 function toolPanel(){
   if(toolSel==='sync') return `<h2 class="p-title">PCとスマホの同期</h2>
@@ -826,7 +828,10 @@ function toolPanel(){
       <div class="f"><label>合言葉</label><div style="display:flex;gap:8px"><input type="text" id="gasToken" value="${esc(sync.token||'')}" autocomplete="off" placeholder="「作る」を押すと自動で入ります"><button class="btn small" data-act="gasgen">作る</button><button class="btn small" data-act="gascopy">コピー</button></div></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" data-act="gassave">保存して接続テスト</button>${sync.url?'<button class="btn" data-act="gassync">今すぐ同期</button><button class="btn ghost" data-act="gasoff">連携を解除</button>':''}</div>
       <p class="hint" id="syncStatus">${syncStatusText()}</p>
-    </div>`;
+    </div>
+    <div class="sec-h" style="margin-top:18px"><span>つなぐコード（かんたん接続）</span></div>
+    <div class="p-desc"><p>${sync.url?'ホーム画面に追加したアプリや別のブラウザは保存場所が別なので、最初に一度だけつなぐ必要があります。このコードをコピーして、つなぎたい側の「つなぐコードを貼る」に貼ってください。':'つながっている端末（PCなど）の 道具 →「PCとスマホの同期」→「つなぐコードをコピー」で出したコードを、ここに貼るとつながります。'}</p></div>
+    ${sync.url?`<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" data-act="codecopy">つなぐコードをコピー</button></div><input type="text" id="codeOut" readonly style="margin-top:8px;opacity:.6" placeholder="（コピーできないときはここに出ます）">`:`<div class="form"><div class="f"><input type="text" id="codeIn" autocomplete="off" placeholder="QL1- から始まるコードを貼る"></div><div><button class="btn primary" data-act="codeuse">つなぐ</button></div></div>`}`;
   if(toolSel==='restore'){
     if(!sync.url) return `<h2 class="p-title">バックアップから戻す</h2><div class="p-desc"><p>先に「PCとスマホの同期」をつないでください。つなぐと、毎日3時にGoogleドライブの「クエストログのバックアップ」フォルダへ自動で保存されます（30日分）。</p></div>`;
     return `<h2 class="p-title">バックアップから戻す</h2>
@@ -1015,6 +1020,15 @@ document.addEventListener('click',e=>{
       l.href=u; l.download='questlog-'+ymd()+'.json'; document.body.appendChild(l); l.click(); l.remove();
       setTimeout(()=>URL.revokeObjectURL(u),1000); break;}
     case 'import': $('importFile').click(); break;
+    case 'goconnect': tab='tools'; toolSel='sync'; toolPicked=true; render(); setTimeout(()=>{const el=$('codeIn'); el&&el.focus();},50); break;
+    case 'codecopy': {
+      if(!sync.url){toast('先にこの端末をつないでください');break}
+      const code=makeConnectCode();
+      (navigator.clipboard?navigator.clipboard.writeText(code):Promise.reject()).then(()=>toast('つなぐコードをコピーしました')).catch(()=>{ const el=$('codeOut'); if(el){el.value=code; el.select();} toast('表示されたコードをコピーしてください'); }); break;}
+    case 'codeuse': {
+      const o=readConnectCode(($('codeIn')||{}).value||''); if(!o){toast('つなぐコードが読み取れませんでした');break}
+      $('gasUrl').value=o.u; $('gasToken').value=o.t; }
+      // fallthrough: そのまま接続
     case 'gassave': {
       const u=$('gasUrl').value.trim(), t=$('gasToken').value.trim();
       if(!/^https:\/\/script\.google\.com\//.test(u)){toast('スクリプトのURLを確認してください');break}
@@ -1137,6 +1151,9 @@ var sync=(()=>{try{return JSON.parse(localStorage.getItem(SKEY))||{}}catch(e){re
 sync.sigs=sync.sigs||{}; sync.pending=sync.pending||{};
 function saveSync(){try{localStorage.setItem(SKEY,JSON.stringify(sync))}catch(e){}}
 const pad=n=>String(n).padStart(2,'0');
+// つなぐコード：URLと合言葉を1つの文字列にまとめたもの（ホーム画面のアプリなど、別の保存場所へ設定を移す用）
+function makeConnectCode(){ return 'QL1-'+btoa(unescape(encodeURIComponent(JSON.stringify({u:sync.url,t:sync.token||''})))); }
+function readConnectCode(c){ try{ const m=String(c).trim().match(/QL1-([A-Za-z0-9+/=]+)/); if(!m) return null; const o=JSON.parse(decodeURIComponent(escape(atob(m[1])))); return o&&/^https:\/\/script\.google\.com\//.test(o.u)?o:null; }catch(e){ return null; } }
 function syncStatusText(){
   if(!sync.url) return '未接続です。設定方法はClaudeに聞いてください。';
   const pend=Object.keys(sync.pending||{}).length;
