@@ -177,8 +177,8 @@ button{cursor:pointer;background:none;border:0;padding:0}
 .conn-row{margin-bottom:10px;border-color:rgba(95,212,239,.5)!important}.conn-row .r-mark{color:var(--blue);font-size:16px}
 @keyframes slideL{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:none}}
 @keyframes slideR{from{opacity:0;transform:translateX(-28px)}to{opacity:1;transform:none}}
-#list.slide-l .rows,#list.slide-l .week,#list.slide-l .day-h{animation:slideL .22s ease-out}
-#list.slide-r .rows,#list.slide-r .week,#list.slide-r .day-h{animation:slideR .22s ease-out}
+#list.slide-l .rows,#list.slide-l .week,#list.slide-l .day-h,#list.slide-l .cat-bar{animation:slideL .22s ease-out}
+#list.slide-r .rows,#list.slide-r .week,#list.slide-r .day-h,#list.slide-r .cat-bar{animation:slideR .22s ease-out}
 .week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin:0 0 10px}
 .wd{display:grid;justify-items:center;gap:1px;padding:6px 0 4px;border:1.5px solid transparent;border-radius:6px;font-size:11px;color:var(--muted);background:rgba(0,0,0,.18)}
 .wd b{font-size:16px;color:var(--text);font-weight:700}
@@ -1422,17 +1422,23 @@ function stepCat(dir){
   const L=$('list'); if(L){ L.classList.remove('slide-l','slide-r'); void L.offsetWidth; L.classList.add(dir>0?'slide-l':'slide-r'); }
 }
 (function(){
-  let sx=0, sy=0, st=0, ok=false;
+  let sx=0, sy=0, st=0, ok=false, top=false;
   // 画面のどこをスワイプしても切り替わる（説明パネルを開いている時・入力中は除く）
   const col=document;
   col.addEventListener('touchstart',e=>{
     const t=e.touches[0], mobile=window.innerWidth<=820;
-    ok = e.touches.length===1 && tab==='list' && !editing && !(mobile&&selId) && !e.target.closest('#detail,.hints,input,textarea,select,[data-drag],.week');
+    top = e.touches.length===1 && !editing && !!e.target.closest('.topbar');
+    ok = !top && e.touches.length===1 && tab==='list' && !editing && !(mobile&&selId) && !e.target.closest('#detail,.hints,input,textarea,select,[data-drag],.week');
     sx=t.clientX; sy=t.clientY; st=Date.now();
   },{passive:true});
   col.addEventListener('touchend',e=>{
-    if(!ok) return; ok=false;
+    if(!ok&&!top) return;
     const t=e.changedTouches[0], dx=t.clientX-sx, dy=t.clientY-sy;
+    if(top){ top=false; ok=false;
+      // 上の「冒険手帳／道具」の帯を左右に払うと、冒険手帳と道具が切り替わる
+      if(Date.now()-st<700 && Math.abs(dx)>50 && Math.abs(dy)<Math.abs(dx)*0.8){ const nt=dx<0?'tools':'list'; if(nt!==tab){ tab=nt; if(window.innerWidth<=820) selId=null; render(); const L=$('list'); if(L){ L.classList.remove('slide-l','slide-r'); void L.offsetWidth; L.classList.add(dx<0?'slide-l':'slide-r'); } } }
+      return; }
+    ok=false;
     if(Date.now()-st<700 && Math.abs(dx)>60 && Math.abs(dy)<Math.abs(dx)*0.6) stepCat(dx<0?1:-1);
   },{passive:true});
 })();
