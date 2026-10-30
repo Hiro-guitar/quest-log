@@ -315,19 +315,21 @@ body{background:#050607}
 .bg-photo.ok{opacity:1}
 .bg-photo img{width:100%;height:100%;object-fit:cover;display:block}
 .bg-tint{position:absolute;inset:0}
-.t-morning .bg-photo.tinted img{filter:saturate(1.08) sepia(.12) brightness(1.02)}
-.t-morning .tinted .bg-tint{background:linear-gradient(160deg,rgba(255,196,150,.28),rgba(255,230,200,0) 60%);mix-blend-mode:soft-light}
+.t-morning .bg-photo.tinted img{filter:sepia(.3) saturate(1.25) brightness(.93) hue-rotate(-10deg)}
+.t-morning .tinted .bg-tint{background:linear-gradient(180deg,rgba(255,150,110,.55) 0%,rgba(255,200,150,.25) 45%,rgba(110,130,190,.25) 100%);mix-blend-mode:overlay}
 .t-day .bg-photo.tinted img{filter:saturate(1.12) contrast(1.04)}
 .t-evening .bg-photo.tinted img{filter:saturate(1.25) sepia(.35) brightness(.8) hue-rotate(-10deg)}
 .t-evening .tinted .bg-tint{background:linear-gradient(180deg,rgba(255,120,60,.38),rgba(90,30,70,.4));mix-blend-mode:multiply}
-.t-night .bg-photo.tinted img{filter:brightness(.42) saturate(.55) contrast(1.05)}
+.t-night .bg-photo.tinted img{filter:brightness(.42) saturate(.45) contrast(1.1)}
 .t-night .bg-photo.real img{filter:brightness(.85)}
 .t-evening .bg-photo.real img{filter:saturate(1.1)}
 .bg-stars{position:absolute;left:0;top:0;width:100%;height:100%;-webkit-mask-image:linear-gradient(#000 0,#000 30%,transparent 55%);mask-image:linear-gradient(#000 0,#000 30%,transparent 55%)}
-.bg-stars circle{animation:twinkle 4.2s ease-in-out infinite;opacity:.85}
+.bg-stars circle{animation:twinkle 4.2s ease-in-out infinite;opacity:1}
 @keyframes twinkle{50%{opacity:.25}}
 .bg-sun{position:absolute;inset:0;background:radial-gradient(circle at 80% 30%,rgba(255,220,150,.75) 0,rgba(255,170,90,.35) 12%,transparent 38%);mix-blend-mode:screen}
-.t-night .tinted .bg-tint{background:radial-gradient(circle at 78% 14%,rgba(220,230,255,.22),transparent 30%),linear-gradient(180deg,rgba(30,50,130,.55),rgba(10,20,60,.55));mix-blend-mode:multiply}
+.t-night .tinted .bg-tint{background:linear-gradient(180deg,rgba(40,70,190,.85),rgba(20,35,110,.85));mix-blend-mode:multiply}
+.bg-rise{position:absolute;inset:0;background:radial-gradient(circle at 12% 40%,rgba(255,225,170,.8) 0,rgba(255,170,110,.35) 14%,transparent 40%);mix-blend-mode:screen}
+.bg-moon{position:absolute;inset:0;background:radial-gradient(circle at 82% 14%,rgba(230,238,255,.55) 0,rgba(180,200,255,.18) 8%,transparent 26%);mix-blend-mode:screen}
 .bg svg{width:100%;height:100%;display:block}
 .bg.t-morning{--s1:#9fc3d6;--s2:#f3dcc0;--sun:#fff3d6;--m1:#7d95a3;--m2:#5d7a6a;--m3:#3d5644;--st:0}
 .bg.t-day{--s1:#4f8fc9;--s2:#bfe0ef;--sun:#fffbe8;--m1:#6e8fa5;--m2:#5b8a5c;--m3:#3e6a3e;--st:0}
@@ -1344,6 +1346,8 @@ function paintBg(){
   clearTimeout(paintBg._fb); paintBg._fb=setTimeout(()=>{ if(!pl.classList.contains('ok')) bg.classList.add('fallback'); },8000); im.src=ph.src; pl.appendChild(im); let fx='<i class="bg-tint"></i>';
   if(!real&&t==='night'){ let st=''; for(let i=0;i<90;i++){ const x=(i*263+37)%1600, y=(i*137+11)%330, r=(i%4===0)?1.8:(i%3?0.9:1.3); st+=`<circle cx="${x}" cy="${y}" r="${r}" fill="#fff" style="animation-delay:${(i%7)*.6}s"/>`; } fx+=`<svg class="bg-stars" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">${st}</svg>`; }
   if(!real&&t==='evening') fx+='<i class="bg-sun"></i>';
+  if(!real&&t==='morning') fx+='<i class="bg-rise"></i>';
+  if(!real&&t==='night') fx+='<i class="bg-moon"></i>';
   pl.insertAdjacentHTML('beforeend',fx); bg.appendChild(pl);
   bgNow=ph;
 }
