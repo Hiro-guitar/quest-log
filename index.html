@@ -1311,8 +1311,10 @@ const BG_PHOTOS=[
  {name:'カッパドキア', day:P_('Cappadocia Chimneys Wikimedia Commons.jpg','Benh LIEU SONG','CC BY-SA 3.0'),
    evening:P_('Cappadocia, Turkey, 2015-06-09 (Unsplash).jpg','Daniela Cuevas','CC0'), night:P_('Night at Urgup, Nevsehir.jpg','İmmortalance','CC0','ユルギュップの夜（カッパドキア）')}
 ];
-const BG_W=(Math.max(screen.width,screen.height)*(window.devicePixelRatio||1))>1400?1920:1280;
-const commonsSrc=f=>'https://commons.wikimedia.org/wiki/Special:FilePath/'+encodeURIComponent(f.replace(/ /g,'_'))+'?width='+BG_W;
+const BG_HASH={"039 Northern lights over Mývatn (Iceland) Photo by Giles Laurent.jpg": "9/99", "1 zhangjiajie huangshizhai wulingyuan panorama 2012.jpg": "6/62", "August 2009, sunrise seen from top of Mount Fuji -63946.jpeg": "2/29", "Banaue at night.jpg": "5/55", "CH.VS.Zermatt 2021-10-17 Matterhorn 8726.jpg": "c/c9", "Cappadocia Chimneys Wikimedia Commons.jpg": "a/ae", "Cappadocia, Turkey, 2015-06-09 (Unsplash).jpg": "1/1a", "Caravan in the desert.jpg": "c/c6", "Cuernos del Paine in Torres del Paine National Park.jpg": "7/76", "Diamonds Thudufushi Beach and Water Villas, May 2017 -02.jpg": "a/ac", "Diamonds Thudufushi Beach and Water Villas, May 2017 -03.jpg": "c/c7", "Find47 Niigata-Early summer awakening (Yamakoshi's rice terraces and ponds)-m.jpg": "2/24", "Fiordo de Geiranger desde Flydalsjuvet, Noruega, 2019-09-07, DD 59.jpg": "7/77", "Geirangerfjord vest.jpg": "d/d8", "Grand Canyon (Arizona, USA), South Rim nahe Tusayan -- 2012 -- 6066.jpg": "0/0e", "Grand Canyon South Rim at Sunset.jpg": "1/12", "Grand Canyon West – panoramic view from Guano Point.jpg": "f/f6", "Ha Long Bay (53457640639).jpg": "4/43", "Ha Long Bay, sunset.jpg": "b/b5", "Ha-Long-Bay3.jpg": "7/7b", "Longsheng Rice Terraces November 2017 014.jpg": "d/df", "Los Cuernos (23955453536).jpg": "4/4a", "Matterhorn reflection in the Riffelsee at sunrise.jpg": "b/b4", "Matterhorn sunset 2016 (Unsplash).jpg": "2/21", "Milky way over the Stellisee and view of the Matterhorn.jpg": "d/de", "Monument Valley Sunset MC.jpg": "5/57", "Monumentvalley.jpg": "a/a1", "Mount Fuji at night.jpg": "1/12", "Mount Fuji at sunset, March 2025.jpg": "6/66", "Night at Urgup, Nevsehir.jpg": "6/67", "Paradise Sunrise - Maldives.jpg": "f/f0", "Sahara-Sunrise.jpg": "e/e4", "Salar de Uyuni, Bolivia, 2016-02-04, DD 16-18 HDR.JPG": "3/37", "Skógafoss July 2014.JPG": "9/98", "Sunrise, Halong Bay (5678869517).jpg": "d/d2", "Sunset at Salar de Uyuni - 23421270294.jpg": "1/15", "Torres del Paine - Janvier 2010.jpg": "8/82", "Torres del Paine en Invierno.jpg": "b/bd", "View of sunset over Eyjafjörður in Svalbarðsstrandarhreppur commune, Iceland, 20240715 2237 1028.jpg": "b/bb", "View towards Mount Fuji from Arakurayama Sengen Park in Fujiyoshida, Yamanashi, Japan, 2024 May - 2.jpg": "a/a2", "Watch the Grand Canyon Night Sky Video 27 (16296358164).jpg": "4/41", "Watching the sunset in the Sahara - Morocco.jpg": "5/5a"};
+// 転送なしで画像サーバーから直接（ぼかすので1280pxで十分）
+const commonsSrc=f=>{ const n=f.replace(/ /g,'_'), e=encodeURIComponent(n); return BG_HASH[f]?`https://upload.wikimedia.org/wikipedia/commons/thumb/${BG_HASH[f]}/${e}/1280px-${e}`:'https://commons.wikimedia.org/wiki/Special:FilePath/'+e+'?width=1280'; };
+const BG_ALL=()=>{ const o=[]; BG_PHOTOS.forEach(pl=>['day','morning','evening','night'].forEach(k=>{ if(pl[k]) o.push(commonsSrc(pl[k].file)); })); return o; };
 const commonsPage=f=>'https://commons.wikimedia.org/wiki/File:'+encodeURIComponent(f.replace(/ /g,'_'));
 let bgKey='';
 function bgIndex(){ const n=Math.floor((Date.now()+9*3600e3)/3600e3); return (n*5)%BG_PHOTOS.length; }
@@ -1341,6 +1343,12 @@ function paintBg(){
   const lb=$('bgName'); if(lb){ lb.innerHTML=`景色：${ph.name}<small>　写真：${esc(ph.by)} / ${ph.lic}</small>`; lb.href=ph.page; }
 }
 paintBg(); setInterval(paintBg,60*1000);
+// 景色の写真を端末に保存しておき、次からはすぐ表示する
+if('serviceWorker' in navigator && location.protocol==='https:'){
+  navigator.serviceWorker.register('sw.js').then(()=>navigator.serviceWorker.ready).then(r=>{
+    setTimeout(()=>{ (r.active||navigator.serviceWorker.controller)?.postMessage({type:'precache',urls:BG_ALL()}); },4000);
+  }).catch(()=>{});
+}
 
 /* ---------- キーボード操作（←→で区分、↑↓で選択、Escで閉じる） ---------- */
 document.addEventListener('keydown',e=>{
