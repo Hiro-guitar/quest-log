@@ -308,7 +308,9 @@ body.is-dragging,body.is-dragging *{cursor:grabbing!important;user-select:none;-
 
 /* ================= 冒険手帳スタイル ================= */
 body{background:#050607}
-.bg{position:fixed;inset:0;z-index:0}
+.bg{position:fixed;inset:0;z-index:0;background:#0d1216}
+.bg>svg{opacity:0;transition:opacity .6s}
+.bg.fallback>svg{opacity:1}
 .bg-photo{position:absolute;inset:-24px;opacity:0;transition:opacity .8s;filter:blur(3.5px) saturate(1.28) contrast(.9) brightness(1.06)}
 .bg-photo.ok{opacity:1}
 .bg-photo img{width:100%;height:100%;object-fit:cover;display:block}
@@ -1309,7 +1311,8 @@ const BG_PHOTOS=[
  {name:'カッパドキア', day:P_('Cappadocia Chimneys Wikimedia Commons.jpg','Benh LIEU SONG','CC BY-SA 3.0'),
    evening:P_('Cappadocia, Turkey, 2015-06-09 (Unsplash).jpg','Daniela Cuevas','CC0'), night:P_('Night at Urgup, Nevsehir.jpg','İmmortalance','CC0','ユルギュップの夜（カッパドキア）')}
 ];
-const commonsSrc=f=>'https://commons.wikimedia.org/wiki/Special:FilePath/'+encodeURIComponent(f.replace(/ /g,'_'))+'?width=1920';
+const BG_W=(Math.max(screen.width,screen.height)*(window.devicePixelRatio||1))>1400?1920:1280;
+const commonsSrc=f=>'https://commons.wikimedia.org/wiki/Special:FilePath/'+encodeURIComponent(f.replace(/ /g,'_'))+'?width='+BG_W;
 const commonsPage=f=>'https://commons.wikimedia.org/wiki/File:'+encodeURIComponent(f.replace(/ /g,'_'));
 let bgKey='';
 function bgIndex(){ const n=Math.floor((Date.now()+9*3600e3)/3600e3); return (n*5)%BG_PHOTOS.length; }
@@ -1330,7 +1333,8 @@ function paintBg(){
   ${sc.draw(c,stars)}<rect width="1600" height="900" fill="url(#vg)"/></svg>`;
   // 写真（読み込めないときは上の絵がそのまま出る）
   const pl=document.createElement('div'); pl.className='bg-photo '+(real?'real':'tinted'); const im=new Image(); im.alt=''; im.decoding='async';
-  im.onload=()=>pl.classList.add('ok'); im.onerror=()=>pl.remove(); im.src=ph.src; pl.appendChild(im); let fx='<i class="bg-tint"></i>';
+  im.onload=()=>{ pl.classList.add('ok'); bg.classList.remove('fallback'); clearTimeout(paintBg._fb); }; im.onerror=()=>{ pl.remove(); bg.classList.add('fallback'); };
+  clearTimeout(paintBg._fb); paintBg._fb=setTimeout(()=>{ if(!pl.classList.contains('ok')) bg.classList.add('fallback'); },8000); im.src=ph.src; pl.appendChild(im); let fx='<i class="bg-tint"></i>';
   if(!real&&t==='night'){ let st=''; for(let i=0;i<90;i++){ const x=(i*263+37)%1600, y=(i*137+11)%330, r=(i%4===0)?1.8:(i%3?0.9:1.3); st+=`<circle cx="${x}" cy="${y}" r="${r}" fill="#fff" style="animation-delay:${(i%7)*.6}s"/>`; } fx+=`<svg class="bg-stars" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">${st}</svg>`; }
   if(!real&&t==='evening') fx+='<i class="bg-sun"></i>';
   pl.insertAdjacentHTML('beforeend',fx); bg.appendChild(pl);
