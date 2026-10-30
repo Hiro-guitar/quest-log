@@ -453,7 +453,6 @@ body{background:#050607}
 <body>
 <div id="bg" class="bg" aria-hidden="true"></div>
 <div class="veil" aria-hidden="true"></div>
-<a class="bg-name" id="bgName" target="_blank" rel="noopener"></a>
 <div class="app">
   <header class="topbar">
     <div class="tb-left" id="lv"></div>
@@ -807,7 +806,7 @@ function renderList(){
     else if(showCleared&&qs.filter(q=>q.done).length>lim) h+=`<button class="toggle" data-act="cleared">たたむ</button>`;
     h+=`</div>`;
   }else{
-    const tools=[['sync','PCとスマホの同期'],['restore','バックアップから戻す'],['backup','データの書き出し・読み込み'],['reset','初期化']];
+    const tools=[['sync','PCとスマホの同期'],['restore','バックアップから戻す'],['backup','データの書き出し・読み込み'],['credits','景色の写真について'],['reset','初期化']];
     h=`<div class="cat-bar"><div class="cat-name">道具</div><div class="cat-icons"><span class="cat on" style="cursor:default">✦</span></div></div><div class="rows">`+
       tools.map(([k,l])=>`<button class="row ${toolSel===k&&toolPicked?'sel':''}" data-act="tool" data-v="${k}"><span class="r-mark">✦</span><span class="r-main"><span class="r-title">${l}</span></span><span class="r-notch"></span></button>`).join('')+`</div>`;
   }
@@ -828,6 +827,12 @@ function toolPanel(){
     <div class="p-desc"><p>毎日3時に、Googleドライブの「クエストログのバックアップ」フォルダへ自動で保存しています（30日分）。間違って消したときは、戻したい日を選んでください。戻す直前の状態もバックアップしてから戻すので、やり直しもできます。</p></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"><button class="btn primary" data-act="bklist">バックアップの一覧を見る</button><button class="btn" data-act="bknow">今すぐバックアップ</button></div>
     <div class="kids" id="bkList">${bkList?(bkList.length?bkList.map(b=>`<div class="kid"><span>${esc(b.name.replace('questlog-','').replace('.json',''))}</span><button class="btn small" data-act="bkrestore" data-id="${esc(b.id)}" data-name="${esc(b.name)}">この日に戻す</button></div>`).join(''):'<div class="hint">まだバックアップがありません</div>'):''}</div>`;
+  }
+  if(toolSel==='credits'){
+    const rows=[]; BG_PHOTOS.forEach(pl=>[['day','昼'],['morning','朝'],['evening','夕'],['night','夜']].forEach(([k,l])=>{ const v=pl[k]; if(v) rows.push(`<div class="kid"><span>${esc(v.name||pl.name)}（${l}）<br><small class="hint">写真：${esc(v.by)} / ${esc(v.lic)}</small></span><a class="btn small ghost" href="${commonsPage(v.file)}" target="_blank" rel="noopener">元の写真</a></div>`); }));
+    return `<h2 class="p-title">景色の写真について</h2>
+    <div class="p-desc"><p>背景の景色は、Wikimedia Commons で公開されている写真を使わせてもらっています。1時間ごとに場所が変わり、朝・夕・夜はその時間の写真になります。</p>${bgNow?`<p>いまの景色：${esc(bgNow.name)}（写真：${esc(bgNow.by)} / ${esc(bgNow.lic)}）</p>`:''}</div>
+    <div class="kids">${rows.join('')}</div>`;
   }
   if(toolSel==='backup') return `<h2 class="p-title">データの書き出し・読み込み</h2>
     <div class="p-desc"><p>念のためのバックアップや、別のブラウザに移すときに使います。</p></div>
@@ -1316,7 +1321,7 @@ const BG_HASH={"039 Northern lights over Mývatn (Iceland) Photo by Giles Lauren
 const commonsSrc=f=>{ const n=f.replace(/ /g,'_'), e=encodeURIComponent(n); return BG_HASH[f]?`https://upload.wikimedia.org/wikipedia/commons/thumb/${BG_HASH[f]}/${e}/1280px-${e}`:'https://commons.wikimedia.org/wiki/Special:FilePath/'+e+'?width=1280'; };
 const BG_ALL=()=>{ const o=[]; BG_PHOTOS.forEach(pl=>['day','morning','evening','night'].forEach(k=>{ if(pl[k]) o.push(commonsSrc(pl[k].file)); })); return o; };
 const commonsPage=f=>'https://commons.wikimedia.org/wiki/File:'+encodeURIComponent(f.replace(/ /g,'_'));
-let bgKey='';
+let bgKey='', bgNow=null;
 function bgIndex(){ const n=Math.floor((Date.now()+9*3600e3)/3600e3); return (n*5)%BG_PHOTOS.length; }
 function bgScene(){ return BG_SCENES[bgIndex()%BG_SCENES.length]; }
 function paintBg(){
@@ -1340,7 +1345,7 @@ function paintBg(){
   if(!real&&t==='night'){ let st=''; for(let i=0;i<90;i++){ const x=(i*263+37)%1600, y=(i*137+11)%330, r=(i%4===0)?1.8:(i%3?0.9:1.3); st+=`<circle cx="${x}" cy="${y}" r="${r}" fill="#fff" style="animation-delay:${(i%7)*.6}s"/>`; } fx+=`<svg class="bg-stars" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">${st}</svg>`; }
   if(!real&&t==='evening') fx+='<i class="bg-sun"></i>';
   pl.insertAdjacentHTML('beforeend',fx); bg.appendChild(pl);
-  const lb=$('bgName'); if(lb){ lb.innerHTML=`景色：${ph.name}<small>　写真：${esc(ph.by)} / ${ph.lic}</small>`; lb.href=ph.page; }
+  bgNow=ph;
 }
 paintBg(); setInterval(paintBg,60*1000);
 // 景色の写真を端末に保存しておき、次からはすぐ表示する
