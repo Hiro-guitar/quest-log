@@ -886,7 +886,7 @@ function toolPanel(){
   if(toolSel==='credits'){
     const rows=[]; BG_PHOTOS.forEach(pl=>[['day','昼'],['morning','朝'],['evening','夕'],['night','夜']].forEach(([k,l])=>{ const v=pl[k]; if(v) rows.push(`<div class="kid"><span>${esc(v.name||pl.name)}（${l}）<br><small class="hint">写真：${esc(v.by)} / ${esc(v.lic)}</small></span><a class="btn small ghost" href="${commonsPage(v.file)}" target="_blank" rel="noopener">元の写真</a></div>`); }));
     return `<h2 class="p-title">景色の写真について</h2>
-    <div class="p-desc"><p>背景の景色は、Wikimedia Commons で公開されている写真を使わせてもらっています。1時間ごとに場所が変わり、朝・夕・夜はその時間の写真になります。</p>${bgNow?`<p>いまの景色：${esc(bgNow.name)}（写真：${esc(bgNow.by)} / ${esc(bgNow.lic)}）</p>`:''}</div>
+    <div class="p-desc"><p>背景の景色は、Wikimedia Commons で公開されている写真を使わせてもらっています。1時間ごとに場所が変わり、朝・夕・夜はその時間の写真になります。</p>${bgNow?`<p>いまの景色：${esc(bgNow.name)}（写真：${esc(bgNow.by)} / ${esc(bgNow.lic)}）</p><p><a class="btn small" href="${bgNow.page}" target="_blank" rel="noopener">いまの景色の写真を見る</a></p>`:''}</div>
     <div class="kids">${rows.join('')}</div>`;
   }
   if(toolSel==='backup') return `<h2 class="p-title">データの書き出し・読み込み</h2>
