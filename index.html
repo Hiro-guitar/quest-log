@@ -313,13 +313,19 @@ body{background:#050607}
 .bg-photo.ok{opacity:1}
 .bg-photo img{width:100%;height:100%;object-fit:cover;display:block}
 .bg-tint{position:absolute;inset:0}
-.t-morning .bg-photo img{filter:saturate(1.08) sepia(.12) brightness(1.02)}
-.t-morning .bg-tint{background:linear-gradient(160deg,rgba(255,196,150,.28),rgba(255,230,200,0) 60%);mix-blend-mode:soft-light}
-.t-day .bg-photo img{filter:saturate(1.12) contrast(1.04)}
-.t-evening .bg-photo img{filter:saturate(1.25) sepia(.35) brightness(.8) hue-rotate(-10deg)}
-.t-evening .bg-tint{background:linear-gradient(180deg,rgba(255,120,60,.38),rgba(90,30,70,.4));mix-blend-mode:multiply}
-.t-night .bg-photo img{filter:brightness(.42) saturate(.55) contrast(1.05)}
-.t-night .bg-tint{background:radial-gradient(circle at 78% 14%,rgba(220,230,255,.22),transparent 30%),linear-gradient(180deg,rgba(30,50,130,.55),rgba(10,20,60,.55));mix-blend-mode:multiply}
+.t-morning .bg-photo.tinted img{filter:saturate(1.08) sepia(.12) brightness(1.02)}
+.t-morning .tinted .bg-tint{background:linear-gradient(160deg,rgba(255,196,150,.28),rgba(255,230,200,0) 60%);mix-blend-mode:soft-light}
+.t-day .bg-photo.tinted img{filter:saturate(1.12) contrast(1.04)}
+.t-evening .bg-photo.tinted img{filter:saturate(1.25) sepia(.35) brightness(.8) hue-rotate(-10deg)}
+.t-evening .tinted .bg-tint{background:linear-gradient(180deg,rgba(255,120,60,.38),rgba(90,30,70,.4));mix-blend-mode:multiply}
+.t-night .bg-photo.tinted img{filter:brightness(.42) saturate(.55) contrast(1.05)}
+.t-night .bg-photo.real img{filter:brightness(.85)}
+.t-evening .bg-photo.real img{filter:saturate(1.1)}
+.bg-stars{position:absolute;left:0;top:0;width:100%;height:100%;-webkit-mask-image:linear-gradient(#000 0,#000 30%,transparent 55%);mask-image:linear-gradient(#000 0,#000 30%,transparent 55%)}
+.bg-stars circle{animation:twinkle 4.2s ease-in-out infinite;opacity:.85}
+@keyframes twinkle{50%{opacity:.25}}
+.bg-sun{position:absolute;inset:0;background:radial-gradient(circle at 80% 30%,rgba(255,220,150,.75) 0,rgba(255,170,90,.35) 12%,transparent 38%);mix-blend-mode:screen}
+.t-night .tinted .bg-tint{background:radial-gradient(circle at 78% 14%,rgba(220,230,255,.22),transparent 30%),linear-gradient(180deg,rgba(30,50,130,.55),rgba(10,20,60,.55));mix-blend-mode:multiply}
 .bg svg{width:100%;height:100%;display:block}
 .bg.t-morning{--s1:#9fc3d6;--s2:#f3dcc0;--sun:#fff3d6;--m1:#7d95a3;--m2:#5d7a6a;--m3:#3d5644;--st:0}
 .bg.t-day{--s1:#4f8fc9;--s2:#bfe0ef;--sun:#fffbe8;--m1:#6e8fa5;--m2:#5b8a5c;--m3:#3e6a3e;--st:0}
@@ -1272,29 +1278,46 @@ const BG_SCENES=[
    const bl=(x,y,r,col)=>`<ellipse cx="${x}" cy="${y}" rx="${r}" ry="${r*1.15}" fill="${c(col,.15)}"/><rect x="${x-r*.25}" y="${y+r*1.3}" width="${r*.5}" height="${r*.4}" fill="${c('#6a4a30',.15)}"/>`;
    return `<path d="M0 540 C300 500 600 520 900 500 S1400 520 1600 510 V640 H0Z" fill="${c('#b89a80',.55)}"/>`+bl(300,260,34,'#d9483a')+bl(560,190,26,'#f0b23a')+bl(1040,240,40,'#3a7ad9')+bl(1300,160,22,'#e0703a')+bl(820,330,18,'#7a4ab0')+ch(260,170,60)+ch(420,230,70)+ch(980,200,64)+ch(1200,250,76)+ch(1420,160,56)+`<path d="M0 640 H1600 V900 H0Z" fill="${c('#a88a6a',.05)}"/>`;}}
 ];
+// 景色の写真（Wikimedia Commons）。朝・夕・夜の写真がある場所はそれを使い、ない時間帯は昼の写真の色味を変えて使う
+const P_=(file,by,lic,name)=>({file,by,lic,name});
 const BG_PHOTOS=[
- ['富士山','View towards Mount Fuji from Arakurayama Sengen Park in Fujiyoshida, Yamanashi, Japan, 2024 May - 2.jpg','Ximonic (Simo Räsänen)','CC BY-SA 4.0'],
- ['ウユニ塩湖','Salar de Uyuni, Bolivia, 2016-02-04, DD 16-18 HDR.JPG','Diego Delso','CC BY-SA 4.0'],
- ['グランドキャニオン','Grand Canyon West – panoramic view from Guano Point.jpg','Krigore','CC BY-SA 4.0'],
- ['ガイランゲルフィヨルド','Fiordo de Geiranger desde Flydalsjuvet, Noruega, 2019-09-07, DD 59.jpg','Diego Delso','CC BY-SA 4.0'],
- ['サハラ砂漠','Caravan in the desert.jpg','Sergey Pesterev','CC BY-SA 4.0'],
- ['ハロン湾','Ha-Long-Bay3.jpg','Steven C. Price','CC BY-SA 4.0'],
- ['マッターホルン','CH.VS.Zermatt 2021-10-17 Matterhorn 8726.jpg','Roy Egloff','CC BY-SA 4.0'],
- ['モニュメントバレー','Monumentvalley.jpg','Moritz Zimmermann','CC BY-SA 3.0'],
- ['張家界','1 zhangjiajie huangshizhai wulingyuan panorama 2012.jpg','chensiyuan','CC BY-SA 4.0'],
- ['モルディブ','Diamonds Thudufushi Beach and Water Villas, May 2017 -03.jpg','Martin Falbisoner','CC BY-SA 4.0'],
- ['トレス・デル・パイネ','Torres del Paine - Janvier 2010.jpg','Martin St-Amant (S23678)','CC BY-SA 3.0'],
- ['スコゥガフォス（アイスランド）','Skógafoss July 2014.JPG','Martin Falbisoner','CC BY-SA 4.0'],
- ['龍脊の棚田','Longsheng Rice Terraces November 2017 014.jpg','King of Hearts','CC BY-SA 4.0'],
- ['カッパドキア','Cappadocia Chimneys Wikimedia Commons.jpg','Benh LIEU SONG','CC BY-SA 3.0']
-].map(([name,file,by,lic])=>({name,file,by,lic,src:'https://commons.wikimedia.org/wiki/Special:FilePath/'+encodeURIComponent(file.replace(/ /g,'_'))+'?width=1920',page:'https://commons.wikimedia.org/wiki/File:'+encodeURIComponent(file.replace(/ /g,'_'))}));
+ {name:'富士山', day:P_('View towards Mount Fuji from Arakurayama Sengen Park in Fujiyoshida, Yamanashi, Japan, 2024 May - 2.jpg','Ximonic (Simo Räsänen)','CC BY-SA 4.0'),
+   morning:P_('August 2009, sunrise seen from top of Mount Fuji -63946.jpeg','Syced','CC0','富士山頂のご来光'), evening:P_('Mount Fuji at sunset, March 2025.jpg','Romain Guy','CC0'), night:P_('Mount Fuji at night.jpg','muroi8210','CC BY-SA 2.0')},
+ {name:'ウユニ塩湖', day:P_('Salar de Uyuni, Bolivia, 2016-02-04, DD 16-18 HDR.JPG','Diego Delso','CC BY-SA 4.0'),
+   evening:P_('Sunset at Salar de Uyuni - 23421270294.jpg','SqueakyMarmot','CC BY-SA 2.0')},
+ {name:'グランドキャニオン', day:P_('Grand Canyon West – panoramic view from Guano Point.jpg','Krigore','CC BY-SA 4.0'),
+   morning:P_('Grand Canyon (Arizona, USA), South Rim nahe Tusayan -- 2012 -- 6066.jpg','Dietmar Rabich','CC BY-SA 4.0'), evening:P_('Grand Canyon South Rim at Sunset.jpg','Mgimelfarb','CC0'), night:P_('Watch the Grand Canyon Night Sky Video 27 (16296358164).jpg','Grand Canyon National Park','CC BY 2.0','グランドキャニオンの星空')},
+ {name:'ガイランゲルフィヨルド', day:P_('Fiordo de Geiranger desde Flydalsjuvet, Noruega, 2019-09-07, DD 59.jpg','Diego Delso','CC BY-SA 4.0'),
+   morning:P_('Geirangerfjord vest.jpg','color line from Norway','CC BY 2.0')},
+ {name:'サハラ砂漠', day:P_('Caravan in the desert.jpg','Sergey Pesterev','CC BY-SA 4.0'),
+   morning:P_('Sahara-Sunrise.jpg','Allen Lubitz','Public domain'), evening:P_('Watching the sunset in the Sahara - Morocco.jpg','Mustang Joe','CC0')},
+ {name:'ハロン湾', day:P_('Ha-Long-Bay3.jpg','Steven C. Price','CC BY-SA 4.0'),
+   morning:P_('Sunrise, Halong Bay (5678869517).jpg','Andrea Schaffer','CC BY 2.0'), evening:P_('Ha Long Bay, sunset.jpg','Andrew Crump','CC BY 2.0'), night:P_('Ha Long Bay (53457640639).jpg','Radek Kucharski','CC BY 2.0')},
+ {name:'マッターホルン', day:P_('CH.VS.Zermatt 2021-10-17 Matterhorn 8726.jpg','Roy Egloff','CC BY-SA 4.0'),
+   morning:P_('Matterhorn reflection in the Riffelsee at sunrise.jpg','Deralpinbergsteiger','CC BY-SA 4.0'), evening:P_('Matterhorn sunset 2016 (Unsplash).jpg','Sam Ferrara','CC0'), night:P_('Milky way over the Stellisee and view of the Matterhorn.jpg','Jean Schmitt','CC BY-SA 4.0','天の川とマッターホルン')},
+ {name:'モニュメントバレー', day:P_('Monumentvalley.jpg','Moritz Zimmermann','CC BY-SA 3.0'),
+   evening:P_('Monument Valley Sunset MC.jpg','Christian Mehlführer','CC BY 2.5')},
+ {name:'張家界', day:P_('1 zhangjiajie huangshizhai wulingyuan panorama 2012.jpg','chensiyuan','CC BY-SA 4.0')},
+ {name:'モルディブ', day:P_('Diamonds Thudufushi Beach and Water Villas, May 2017 -03.jpg','Martin Falbisoner','CC BY-SA 4.0'),
+   morning:P_('Paradise Sunrise - Maldives.jpg','Simone Lovati','CC BY-SA 2.0'), evening:P_('Diamonds Thudufushi Beach and Water Villas, May 2017 -02.jpg','Martin Falbisoner','CC BY-SA 4.0')},
+ {name:'トレス・デル・パイネ', day:P_('Torres del Paine - Janvier 2010.jpg','Martin St-Amant (S23678)','CC BY-SA 3.0'),
+   morning:P_('Cuernos del Paine in Torres del Paine National Park.jpg','Pedro Szekely','CC BY-SA 2.0'), evening:P_('Torres del Paine en Invierno.jpg','Harold Durán','CC BY-SA 3.0'), night:P_('Los Cuernos (23955453536).jpg','Marco Nürnberger','CC BY 2.0')},
+ {name:'スコゥガフォス（アイスランド）', day:P_('Skógafoss July 2014.JPG','Martin Falbisoner','CC BY-SA 4.0'),
+   evening:P_('View of sunset over Eyjafjörður in Svalbarðsstrandarhreppur commune, Iceland, 20240715 2237 1028.jpg','Jakub Hałun','CC BY 4.0','エイヤフィヨルズルの夕日（アイスランド）'), night:P_('039 Northern lights over Mývatn (Iceland) Photo by Giles Laurent.jpg','Giles Laurent','CC BY-SA 4.0','ミーヴァトン湖のオーロラ（アイスランド）')},
+ {name:'龍脊の棚田', day:P_('Longsheng Rice Terraces November 2017 014.jpg','King of Hearts','CC BY-SA 4.0'),
+   morning:P_('Find47 Niigata-Early summer awakening (Yamakoshi\'s rice terraces and ponds)-m.jpg','Koichi_Hayakawa','CC BY 4.0','山古志の棚田（新潟）'), night:P_('Banaue at night.jpg','John.and.Steven','CC BY-SA 4.0','バナウェの棚田（フィリピン）')},
+ {name:'カッパドキア', day:P_('Cappadocia Chimneys Wikimedia Commons.jpg','Benh LIEU SONG','CC BY-SA 3.0'),
+   evening:P_('Cappadocia, Turkey, 2015-06-09 (Unsplash).jpg','Daniela Cuevas','CC0'), night:P_('Night at Urgup, Nevsehir.jpg','İmmortalance','CC0','ユルギュップの夜（カッパドキア）')}
+];
+const commonsSrc=f=>'https://commons.wikimedia.org/wiki/Special:FilePath/'+encodeURIComponent(f.replace(/ /g,'_'))+'?width=1920';
+const commonsPage=f=>'https://commons.wikimedia.org/wiki/File:'+encodeURIComponent(f.replace(/ /g,'_'));
 let bgKey='';
 function bgIndex(){ const n=Math.floor((Date.now()+9*3600e3)/3600e3); return (n*5)%BG_PHOTOS.length; }
 function bgScene(){ return BG_SCENES[bgIndex()%BG_SCENES.length]; }
 function paintBg(){
   const h=new Date().getHours(), qs=new URLSearchParams(location.search); let t=h>=5&&h<10?'morning':h>=10&&h<16?'day':h>=16&&h<19?'evening':'night';
   const bg=$('bg'); if(!bg) return;
-  let bi=bgIndex(); if(qs.has('bg')) bi=(+qs.get('bg'))%BG_PHOTOS.length; let sc=BG_SCENES[bi%BG_SCENES.length]; const ph=BG_PHOTOS[bi]; if(BG_TIME[qs.get('bt')]) t=qs.get('bt');
+  let bi=bgIndex(); if(qs.has('bg')) bi=(+qs.get('bg'))%BG_PHOTOS.length; let sc=BG_SCENES[bi%BG_SCENES.length]; const place=BG_PHOTOS[bi], real=!!place[t], v=place[t]||place.day, ph={name:v.name||place.name,by:v.by,lic:v.lic,src:commonsSrc(v.file),page:commonsPage(v.file)}; if(BG_TIME[qs.get('bt')]) t=qs.get('bt');
   const key=bi+t; if(key===bgKey) return; bgKey=key;
   bg.className='bg t-'+t;
   const sunY={morning:400,day:150,evening:430,night:150}[t], sunX={morning:260,day:900,evening:1250,night:1180}[t];
@@ -1306,8 +1329,11 @@ function paintBg(){
   ${sc.noClouds?'':`<g style="opacity:calc((1 - var(--st)*.85)*.5)" fill="${t==='evening'?'#ffd2b0':'#ffffff'}"><ellipse cx="260" cy="190" rx="220" ry="26"/><ellipse cx="360" cy="170" rx="120" ry="30"/><ellipse cx="1320" cy="120" rx="200" ry="22"/><ellipse cx="1240" cy="104" rx="100" ry="26"/><ellipse cx="760" cy="290" rx="160" ry="16"/></g>`}
   ${sc.draw(c,stars)}<rect width="1600" height="900" fill="url(#vg)"/></svg>`;
   // 写真（読み込めないときは上の絵がそのまま出る）
-  const pl=document.createElement('div'); pl.className='bg-photo'; const im=new Image(); im.alt=''; im.decoding='async';
-  im.onload=()=>pl.classList.add('ok'); im.onerror=()=>pl.remove(); im.src=ph.src; pl.appendChild(im); pl.insertAdjacentHTML('beforeend','<i class="bg-tint"></i>'); bg.appendChild(pl);
+  const pl=document.createElement('div'); pl.className='bg-photo '+(real?'real':'tinted'); const im=new Image(); im.alt=''; im.decoding='async';
+  im.onload=()=>pl.classList.add('ok'); im.onerror=()=>pl.remove(); im.src=ph.src; pl.appendChild(im); let fx='<i class="bg-tint"></i>';
+  if(!real&&t==='night'){ let st=''; for(let i=0;i<90;i++){ const x=(i*263+37)%1600, y=(i*137+11)%330, r=(i%4===0)?1.8:(i%3?0.9:1.3); st+=`<circle cx="${x}" cy="${y}" r="${r}" fill="#fff" style="animation-delay:${(i%7)*.6}s"/>`; } fx+=`<svg class="bg-stars" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">${st}</svg>`; }
+  if(!real&&t==='evening') fx+='<i class="bg-sun"></i>';
+  pl.insertAdjacentHTML('beforeend',fx); bg.appendChild(pl);
   const lb=$('bgName'); if(lb){ lb.innerHTML=`景色：${ph.name}<small>　写真：${esc(ph.by)} / ${ph.lic}</small>`; lb.href=ph.page; }
 }
 paintBg(); setInterval(paintBg,60*1000);
