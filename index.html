@@ -481,7 +481,7 @@ body{background:#050607}
 .mem-row .r-sub i{opacity:.6}
 .mem-form{display:grid;gap:8px;margin-bottom:10px}.mem-form textarea{min-height:84px}
 .mem-text{border-left:2px solid rgba(242,236,214,.3);padding-left:12px}
-.hint-b.rest span{color:#f0c38a}.hint-b.rest span::before{content:'🔥 '}
+.rest-link{font-size:11px;color:var(--dim);letter-spacing:0;margin-right:12px;padding:0 2px;opacity:.8}.rest-link:hover{color:#f0c38a}
 /* 赤い月 */
 .moon{position:fixed;inset:0;z-index:60;display:none;overflow:auto;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);background:radial-gradient(circle at 50% 12%,rgba(170,24,32,.97),rgba(48,6,10,.98) 50%,rgba(10,2,4,.99));padding:24px 16px calc(24px + env(safe-area-inset-bottom))}
 .moon.show{display:block;animation:moonIn .6s ease}
@@ -893,7 +893,7 @@ function restToday(){
 function todayList(){
   const items=dayItems(dayView), d=new Date(dayView+'T00:00:00');
   let h=catBar('today')+weekStrip();
-  h+=`<div class="day-h"><span>${dayView===ymd()?'今日':''}　${d.getMonth()+1}/${d.getDate()}（${'日月火水木金土'[d.getDay()]}）${holiday(dayView)?`<b class="hol">${holiday(dayView)}</b>`:''}</span><span>${items.filter(x=>x.s?x.s.done:x.q.done).length} / ${items.length}</span></div><div class="rows">`;
+  h+=`<div class="day-h"><span>${dayView===ymd()?'今日':''}　${d.getMonth()+1}/${d.getDate()}（${'日月火水木金土'[d.getDay()]}）${holiday(dayView)?`<b class="hol">${holiday(dayView)}</b>`:''}</span><span>${dayView===ymd()&&!(state.rested||{})[dayView]&&items.some(x=>!(x.s?x.s.done:x.q.done))?`<button class="rest-link" data-act="rest">🔥 休む</button>`:''}${items.filter(x=>x.s?x.s.done:x.q.done).length} / ${items.length}</span></div><div class="rows">`;
   if((state.rested||{})[dayView]) h+=`<div class="sec-empty">🔥 この日は焚き火で休みました</div>`;
   h+=items.map(x=>x.s?stepRowToday(x.q,x.s):row(x.q)).join('');
   if(!items.length) h+=`<div class="sec-empty">この日の予定はまだありません。チャレンジや工程に「やる日」を入れると、ここに並びます</div>`;
@@ -1033,7 +1033,7 @@ function renderHints(){
   const q=tab!=='tools'?findQ(selId):null; let h='';
   if(tab==='tools'){ h=toolPicked?hint('back','閉じる','B'):''; }
   else if(!q&&listCat==='memory'){ h=''; }
-  else if(!q){ h=(listCat==='today'&&dayView===ymd()&&!(state.rested||{})[dayView]&&dayItems(dayView).some(x=>!(x.s?x.s.done:x.q.done))?hint('rest','焚き火で休む','','rest'):'')+hint('newcur',listCat==='today'?'この日にチャレンジを追加':`新しい${CAT_NAMES[listCat]}`,'X'); }
+  else if(!q){ h=hint('newcur',listCat==='today'?'この日にチャレンジを追加':`新しい${CAT_NAMES[listCat]}`,'X'); }
   else if(editing){ h=hint('delete','削除','','danger')+hint('doneedit','完了','A'); }
   else if(q.done){ h=hint('back','閉じる','B')+hint('edit','編集','Y')+hint('reopen','未達成に戻す',''); }
   else { h=hint('back','閉じる','B')+hint('edit','編集','Y')+hint('complete','達成を報告','X','gold')+hint('accept',q.accepted?'目的地を解除':'目的地を設定','A',q.accepted?'on':''); }
@@ -1108,7 +1108,7 @@ document.addEventListener('click',e=>{
     case 'tool': if(b.dataset.v==='moon'){ openMoon(); break; } toolSel=b.dataset.v; toolPicked=true; render(); break;
     case 'memedit': memEdit=q.id; renderDetail(); setTimeout(()=>{const t=$('memIn'); t&&t.focus();},30); break;
     case 'memsave': { const v=($('memIn')||{}).value||''; q.memory=v.trim(); memEdit=null; save(); render(); toast(q.memory?'思い出に残しました':'思い出を消しました'); break; }
-    case 'rest': restToday(); break;
+    case 'rest': if(confirm('焚き火で休みますか？\n今日の分を明日に回します（持ち越しには数えません）')) restToday(); break;
     case 'moonclose': $('moon').classList.remove('show'); break;
     case 'moonfinish': state.moonDone=moonKey()||ymd(); save(); $('moon').classList.remove('show'); toast('赤い月が沈んだ。新しい一週間の始まり'); break;
     case 'moonundate': { const mq=findQ(b.dataset.q); const o=b.dataset.s?mq&&mq.steps.find(x=>x.id===b.dataset.s):mq; if(o){ o.doDate=''; o.doTime=''; o.carry=0; save(); render(); renderMoon(); } break; }
