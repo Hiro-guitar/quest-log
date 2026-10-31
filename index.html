@@ -494,6 +494,29 @@ body{background:#050607}
 .moon h2{text-align:center;font-size:26px;margin:4px 0 2px;letter-spacing:.15em;text-shadow:0 0 20px rgba(255,80,70,.6)}
 .moon-lead{text-align:center;color:#e6c8c4;font-size:13px;margin:0 0 14px}
 .moon .kid{display:flex;justify-content:space-between;align-items:center;gap:10px}
+/* 鍛錬 */
+.tr-week{display:flex;align-items:center;justify-content:center;gap:12px;font-size:12px;letter-spacing:.1em;color:var(--muted);margin:0 0 8px}
+.tr-date{display:grid!important;justify-items:center;line-height:1.05;width:30px!important}.tr-date b{font-size:16px;color:var(--text)}.tr-date small{font-size:10px;color:var(--muted)}.tr-date.sun small{color:var(--red)}.tr-date.sat small{color:var(--blue)}
+.tr-row.today{border-color:rgba(95,212,239,.45)}.tr-row.rest .r-title{color:var(--muted)!important;font-weight:500}
+.tr-bar{display:block;height:3px;background:rgba(242,236,214,.12);border-radius:2px;margin-top:4px;overflow:hidden}.tr-bar i{display:block;height:100%;background:var(--blue)}
+.tr-ex{border-bottom:1px dashed rgba(242,236,214,.12);padding:8px 0 10px}
+.tr-ex h4{margin:0 0 2px;font-size:14.5px;display:flex;justify-content:space-between;gap:8px}.tr-ex h4 span{font-size:11.5px;color:var(--muted);font-weight:400;white-space:nowrap}
+.tr-cue{font-size:12px;color:var(--muted);margin:0 0 6px;line-height:1.6}
+.tr-prev{font-size:12px;margin:0 0 6px}.tr-prev b{color:var(--blue)}
+.tr-up{font-size:11px;padding:1px 8px;border-radius:999px;background:rgba(240,166,64,.18);color:var(--orange);margin-left:4px}
+.tr-sets{display:grid;gap:6px}.tr-set{display:flex;align-items:center;gap:6px;font-size:13px}.tr-set .n{width:4.2em;color:var(--muted)}
+.tr-set input{width:4.8em!important;padding:6px 8px!important;text-align:right}
+.tr-food{display:grid;gap:4px;font-size:13px;margin-bottom:6px}.tr-food b{display:inline-block;min-width:4.5em;color:var(--muted);font-weight:500}
+.tr-checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-bottom:6px}
+.tr-checks label{display:flex;align-items:center;gap:8px;padding:9px 10px;border:1px solid rgba(242,236,214,.12);border-radius:3px;background:rgba(0,0,0,.25);font-size:13px;cursor:pointer}
+.tr-checks input{display:none}.tr-checks i{width:12px;height:12px;border:1.4px solid var(--blue);transform:rotate(45deg);flex:none}
+.tr-checks label.on{border-color:rgba(95,212,239,.45)}.tr-checks label.on i{background:var(--blue)}
+.tr-memo{min-height:60px;margin-bottom:6px}
+.tr-bin{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}.tr-bin input{width:auto!important;flex:1;min-width:110px}
+.tr-spark{width:100%;height:150px;margin:4px 0 8px}
+.tr-stat{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.tr-stat div{background:rgba(0,0,0,.25);border-radius:3px;padding:10px 12px}.tr-stat b{display:block;font-size:22px;font-style:italic}.tr-stat span{font-size:11px;color:var(--muted)}
+.tr-plan p,.tr-plan li{font-size:13.5px;line-height:1.8}.tr-plan ul{margin:4px 0 8px;padding-left:1.2em}.tr-plan h4{margin:10px 0 2px;font-size:13.5px;color:var(--blue)}
+.tr-today .r-mark .ico{color:var(--orange)}
 </style>
 </head>
 <body>
@@ -537,6 +560,7 @@ const ICON={
   main:'<svg viewBox="0 0 24 16" aria-hidden="true"><path d="M12 14C9.5 10 5.5 8.6 1 9.4 4 7.2 7.4 6.6 10.2 7.5 7.6 5.6 4.8 3.4 3 1c3.8 1.1 7 3.3 9 7 2-3.7 5.2-5.9 9-7-1.8 2.4-4.6 4.6-7.2 6.5 2.8-.9 6.2-.3 9.2 1.9-4.5-.8-8.5.6-11 4.6Z" fill="currentColor"/></svg>',
   challenge:'<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.2 14.8 8 8 14.8 1.2 8Z" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 10.6V8.4C6.2 7 7 6.2 8 6.2S9.8 7 9.8 8.4v2.2" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>',
   mini:'<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3h11a1 1 0 0 1 1 1v6.5a1 1 0 0 1-1 1H7.2L4.4 14v-2.5H2.5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>',
+  train:'<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1 8h14" stroke="currentColor" stroke-width="1.4"/><rect x="2.5" y="4.5" width="2.2" height="7" rx=".6" fill="none" stroke="currentColor" stroke-width="1.3"/><rect x="11.3" y="4.5" width="2.2" height="7" rx=".6" fill="none" stroke="currentColor" stroke-width="1.3"/><rect x="4.7" y="5.8" width="1.4" height="4.4" fill="currentColor"/><rect x="9.9" y="5.8" width="1.4" height="4.4" fill="currentColor"/></svg>',
   memory:'<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="3" width="13" height="10" rx="1" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M1.5 5.5h13M1.5 10.5h13" stroke="currentColor" stroke-width="1.1"/><path d="M4 3v2.5M7 3v2.5M10 3v2.5M13 3v2.5M4 10.5V13M7 10.5V13M10 10.5V13M13 10.5V13" stroke="currentColor" stroke-width="1"/></svg>',
   miniDone:'<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3h11a1 1 0 0 1 1 1v6.5a1 1 0 0 1-1 1H7.2L4.4 14v-2.5H2.5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" fill="currentColor"/><path d="M5 7.3 7 9.2 11 5.4" fill="none" stroke="var(--bg)" stroke-width="1.5"/></svg>'
 };
@@ -546,6 +570,7 @@ const SECBG={
   challenge:'<svg viewBox="0 0 200 130" aria-hidden="true"><rect x="10" y="10" width="180" height="110" rx="14" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="30" y="26" width="140" height="78" rx="4" fill="none" stroke="currentColor" stroke-width="1"/><path d="M10 40H2M10 90H2M190 40h8M190 90h8" stroke="currentColor" stroke-width="1.5"/></svg>',
   mini:'<svg viewBox="0 0 150 70" aria-hidden="true"><circle cx="30" cy="38" r="22" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="75" cy="30" r="22" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="120" cy="38" r="22" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="30" cy="38" r="14" fill="none" stroke="currentColor" stroke-width=".8"/><circle cx="75" cy="30" r="14" fill="none" stroke="currentColor" stroke-width=".8"/><circle cx="120" cy="38" r="14" fill="none" stroke="currentColor" stroke-width=".8"/></svg>'
 };
+SECBG.train='<svg viewBox="0 0 220 100" aria-hidden="true"><path d="M10 50h200" stroke="currentColor" stroke-width="4"/><rect x="30" y="18" width="18" height="64" rx="4" fill="none" stroke="currentColor" stroke-width="2"/><rect x="52" y="28" width="12" height="44" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><rect x="172" y="18" width="18" height="64" rx="4" fill="none" stroke="currentColor" stroke-width="2"/><rect x="156" y="28" width="12" height="44" rx="3" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
 SECBG.memory='<svg viewBox="0 0 200 120" aria-hidden="true"><rect x="10" y="14" width="180" height="92" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10 32h180M10 88h180" stroke="currentColor"/><rect x="40" y="40" width="52" height="40" fill="none" stroke="currentColor"/><rect x="108" y="40" width="52" height="40" fill="none" stroke="currentColor"/></svg>';
 const ico=(t,done)=>`<span class="ico ico-${t}">${t==='mini'&&done?ICON.miniDone:ICON[t]}</span>`;
 const TITLES=['旅立ったばかり','見習い','駆け出しの冒険者','一人前','腕利き','歴戦の勇士','英傑','伝説'];
@@ -799,11 +824,11 @@ function addSteps(q,text){
 }
 
 /* ---------- render ---------- */
-const CAT_NAMES={today:'今日の冒険',main:'メインチャレンジ',challenge:'チャレンジ',mini:'ミニチャレンジ',memory:'思い出'};
-const CATS=['today','main','challenge','mini','memory'];
+const CAT_NAMES={today:'今日の冒険',main:'メインチャレンジ',challenge:'チャレンジ',mini:'ミニチャレンジ',train:'鍛錬',memory:'思い出'};
+const CATS=['today','main','challenge','mini','train','memory'];
 let toolSel='sync', bkList=null, memEdit=null;
 function render(){sortAllSteps();renderLv();renderHud();renderTabs();renderList();renderDetail();renderHints();
-  $('split').classList.toggle('has-sel',!!selId||(tab==='tools'&&toolPicked));
+  $('split').classList.toggle('has-sel',!!selId||(tab==='tools'&&toolPicked)||(tab==='list'&&listCat==='train'&&!!trSel));
 }
 let toolPicked=false;
 function renderLv(){ setTimeout(syncBadge,0);
@@ -897,6 +922,7 @@ function todayList(){
   let h=catBar('today')+weekStrip();
   h+=`<div class="day-h"><span>${dayView===ymd()?'今日':''}　${d.getMonth()+1}/${d.getDate()}（${'日月火水木金土'[d.getDay()]}）${holiday(dayView)?`<b class="hol">${holiday(dayView)}</b>`:''}</span><span>${items.filter(x=>x.s?x.s.done:x.q.done).length} / ${items.length}</span></div><div class="rows">`;
   if((state.rested||{})[dayView]) h+=`<div class="sec-empty">🔥 この日は焚き火で休みました</div>`;
+  { const tt=trType(dayView); if(tt&&tt!=='R'){ const dn=trDone(dayView), tot=trChecks(dayView).length; h+=`<button class="row tr-today ${dn===tot?'done':''}" data-act="trday" data-v="${dayView}"><span class="r-mark">${ico('train')}</span><span class="r-main"><span class="r-title">鍛錬：${TR_NAME[tt]}</span><span class="r-sub">チェック ${dn}/${tot}</span></span><span class="r-side">${dn===tot?'<span class="r-clear">CLEAR</span>':''}</span><span class="r-notch"></span></button>`; } }
   h+=items.map(x=>x.s?stepRowToday(x.q,x.s):row(x.q)).join('');
   if(!items.length) h+=`<div class="sec-empty">この日の予定はまだありません。チャレンジや工程に「やる日」を入れると、ここに並びます</div>`;
   h+=`<button class="row add-row" data-act="newcur"><span class="r-mark">＋</span><span class="r-main"><span class="r-title">この日にチャレンジを追加</span></span><span class="r-notch"></span></button></div>`;
@@ -921,6 +947,7 @@ window.addEventListener('load',()=>setTimeout(fitTitles,50));
 function renderList(){
   const L=$('list'); let h='';
   if(tab!=='tools'&&listCat==='today'){ L.innerHTML=connectBanner()+todayList(); fitTitles(); return; }
+  if(tab!=='tools'&&listCat==='train'){ L.innerHTML=connectBanner()+trList(); fitTitles(); return; }
   if(tab!=='tools'&&listCat==='memory'){
     const ms=state.quests.filter(q=>q.done&&q.type!=='mini').sort((a,b)=>(b.doneAt||0)-(a.doneAt||0));
     let m=catBar('memory')+'<div class="rows">';
@@ -992,6 +1019,7 @@ function toolPanel(){
 function renderDetail(){
   const D=$('detail');
   if(tab==='tools'){ D.innerHTML=`<div class="panel"><button class="back" data-act="back">‹ 一覧へ</button>${toolPanel()}</div>`; return; }
+  if(tab==='list'&&listCat==='train'){ D.innerHTML=trPanel(); return; }
   const q=findQ(selId);
   if(!q){ D.innerHTML=`<div class="panel p-empty"><div class="p-wm">${SECBG[listCat]}</div><p>左のリストから選ぶと、ここに説明が表示されます</p></div>`; return; }
   editing ? renderEdit(D,q) : renderView(D,q);
@@ -1045,6 +1073,7 @@ function renderHints(){
   const q=tab!=='tools'?findQ(selId):null; let h='';
   if(tab==='tools'){ h=toolPicked?hint('back','閉じる','B'):''; }
   else if(!q&&listCat==='memory'){ h=''; }
+  else if(!q&&listCat==='train'){ h=trSel?hint('trback','閉じる','B'):''; }
   else if(!q){ h=hint('newcur',listCat==='today'?'この日にチャレンジを追加':`新しい${CAT_NAMES[listCat]}`,'X'); }
   else if(editing){ h=hint('delete','削除','','danger')+hint('doneedit','完了','A'); }
   else if(q.done){ h=hint('back','閉じる','B')+hint('edit','編集','Y')+hint('reopen','未達成に戻す',''); }
@@ -1111,6 +1140,12 @@ document.addEventListener('click',e=>{
     case 'tab': if(editing){cleanupEmpty();editing=false} tab=b.dataset.v; if(window.innerWidth<=820) selId=null; render(); break;
     case 'select': dateSid=null; if(editing){cleanupEmpty();editing=false} selId=b.dataset.id; render(); window.innerWidth<=820&&window.scrollTo({top:0}); break;
     case 'back': if(editing){cleanupEmpty();editing=false} selId=null; toolPicked=false; render(); break;
+    case 'trday': selId=null; trSel=b.dataset.v; tab='list'; if(listCat!=='train'){ listCat='train'; } if(/^\d/.test(trSel)) trWeek=trWeekStart(trSel); render(); window.innerWidth<=820&&window.scrollTo({top:0}); break;
+    case 'trweek': { const d=new Date((trWeek||trWeekStart(trDefaultDay()))+'T00:00:00'); d.setDate(d.getDate()+7*(+b.dataset.v)); const k=ymd(d); if(k<=TR_END&&ymd(new Date(d.getTime()+6*DAY))>=TR_START) trWeek=k; renderList(); break; }
+    case 'trback': trSel=null; render(); break;
+    case 'trsw': { const H=hm(); H.ovr={...H.ovr,[trSel]:b.dataset.v}; hmTouch('ovr',trSel); save(); render(); break; }
+    case 'trbody': { const d=$('trBd').value, kg=parseFloat($('trKg').value), cm=parseFloat($('trCm').value); if(!d||!(kg>40||cm>50)){ toast('体重かお腹まわりを入れてください'); break; } const H=hm(); H.body={...H.body,[d]:{...(H.body[d]||{}),...(kg>40&&kg<120?{kg:Math.round(kg*10)/10}:{}),...(cm>50&&cm<130?{cm:Math.round(cm*2)/2}:{})}}; hmTouch('body',d); save(); renderDetail(); toast('記録しました'); break; }
+    case 'trbdel': { const H=hm(); const o={...H.body}; delete o[b.dataset.v]; H.body=o; hmTouch('body',b.dataset.v); save(); renderDetail(); break; }
     case 'step': toggleStep(b.dataset.q,b.dataset.s); break;
     case 'new': newQuest(b.dataset.type,null); break;
     case 'day': dayView=b.dataset.v; if(!editing) selId=null; render(); break;
@@ -1219,6 +1254,7 @@ document.addEventListener('input',e=>{
   }
 });
 document.addEventListener('change',e=>{
+  if(trOnChange(e)) return;
   if(e.target.dataset.sdate||e.target.dataset.stime){
     const q=findQ(selId), sid=e.target.dataset.sdate||e.target.dataset.stime, st=q&&q.steps.find(x=>x.id===sid); if(!st) return;
     if(e.target.dataset.sdate) st.doDate=e.target.value; else { st.doTime=e.target.value; if(!st.doDate) st.doDate=ymd(); }
@@ -1601,6 +1637,166 @@ if('serviceWorker' in navigator && location.protocol==='https:'){
   }).catch(()=>{});
 }
 
+/* ---------- 鍛錬（細マッチョ計画）：日ごとの筋トレ・食事・チェック・記録 ---------- */
+const TR_START='2026-11-01', TR_END='2026-12-31';
+const EX={
+ gs:{n:'ゴブレットスクワット',r:'8〜12回',hi:12,kg:1,cue:'ダンベル1個を胸の前で縦に持つ。足は肩幅で、太ももが床と平行になるまでしゃがむ。かかとは浮かせない'},
+ pu:{n:'腕立て伏せ',r:'限界の2回手前まで',hi:20,kg:0,cue:'頭からかかとまで一直線。胸が床に近づくまで下ろす。きつければ膝つきでOK。全セット20回を超えたら足を椅子に乗せる'},
+ row:{n:'ダンベルロウ（片手ずつ）',r:'左右8〜12回',hi:12,kg:1,cue:'片手と片ひざを椅子かソファについて、背中を平らに。ダンベルを脇腹に向かって引き上げる'},
+ sp:{n:'ショルダープレス（座って）',r:'8〜12回',hi:12,kg:1,cue:'ダンベルを肩の高さから真上に押し上げる。腰は反らせない'},
+ ab:{n:'腹筋ローラー（膝つき）',r:'8〜12回',hi:12,kg:0,cue:'お腹に力を入れたまま、腰が反らない所まで転がして戻る。全セット12回できたら転がす距離を伸ばす'},
+ bs:{n:'ブルガリアンスクワット',r:'左右8〜12回',hi:12,kg:1,cue:'後ろ足の甲を椅子に乗せ、前足で上下する。最初はダンベルなし（0kg）でOK'},
+ fp:{n:'ダンベルフロアプレス',r:'8〜12回',hi:12,kg:1,cue:'床にあおむけで膝を立てる。肘が床に軽く触れるまで下ろし、真上に押し上げる'},
+ rdl:{n:'ルーマニアンデッドリフト',r:'8〜12回',hi:12,kg:1,cue:'膝を軽く曲げたまま、お尻を後ろに引いて上体を倒す。背中は丸めない。太ももの裏が伸びる所まで'},
+ cu:{n:'ダンベルカール',r:'10〜15回',hi:15,kg:1,cue:'肘を脇につけたまま持ち上げる。反動は使わない'},
+ fr:{n:'フレンチプレス',r:'10〜15回',hi:15,kg:1,cue:'ダンベル1個を両手で持ち、頭の後ろに下ろして肘から先だけで上げる'},
+ lr:{n:'レッグレイズ',r:'10〜15回',hi:15,kg:0,cue:'あおむけで脚をそろえて上げ下げ。腰が浮くなら膝を曲げて'}
+};
+const TR_MENU={P:['fp','sp','fr'],L1:['gs','rdl','ab'],L2:['bs','rdl','lr'],U:['row','cu','pu']};
+const TR_NAME={P:'押す（胸・肩・腕の裏）',L1:'脚・お腹',L2:'脚・お腹',U:'引く（背中・力こぶ）＋腕立て',R:'休み'};
+const TR_SHORT={P:'押す',L1:'脚',L2:'脚',U:'引く',R:'休み'};
+const TR_WEEK=['P','L1','U','P','L2','U','R']; // 月〜日
+const trSets=k=>k<'2026-11-16'?2:3;
+let trSel=null, trWeek=null;
+function hm(){ state.hm=state.hm||{}; ['days','lift','ovr','body','u'].forEach(k=>{ if(!state.hm[k]||typeof state.hm[k]!=='object') state.hm[k]={}; }); return state.hm; }
+function hmTouch(kind,k){ hm().u[kind+':'+k]=Date.now(); }
+function trType(k){ if(k<TR_START||k>TR_END) return null; const H=hm(), wd=(new Date(k+'T00:00:00').getDay()+6)%7; let t=H.ovr[k]||TR_WEEK[wd]; if(!TR_MENU[t]&&t!=='R') t=TR_WEEK[wd]; return t; }
+const trChecks=k=>[...(trType(k)!=='R'?[['train','筋トレ']]:[]),['bfast','朝：卵・納豆'],['prot','プロテイン'],['rice','夜ごはん200g'],['walk','散歩・自転車'],['sleep','7時間寝た'],['grip','握力（ついでに）']];
+const trDone=k=>{ const d=hm().days[k]||{}; return trChecks(k).filter(([c])=>d[c]).length; };
+function trPhase(k){
+  if(k<'2026-11-16') return '最初の2週間は慣らし：各種目2セット。重さは「あと3〜4回できる」くらいで、フォームを覚える';
+  if(k>='2026-12-28') return '年末：できる日にやればOK。体重とお腹まわりを測って、ここまでを振り返る';
+  return '3週目から本番：各種目3セット。毎回、前回より1回でも多く、または少し重く';
+}
+// 別ページ（細マッチョ計画）のこの端末の記録を、最初の一度だけ取り込む
+function trImport(){
+  const H=hm(); if(H.imported) return false;
+  let n=0; const get=k=>{ try{ const v=localStorage.getItem(k); return v?JSON.parse(v):null; }catch(e){ return null; } };
+  [['days','hm-days'],['lift','hm-lift'],['ovr','hm-ovr'],['body','hm-body']].forEach(([kind,key])=>{ const o=get(key); if(o&&typeof o==='object') Object.keys(o).forEach(d=>{ if(!H[kind][d]){ H[kind][d]=o[d]; hmTouch(kind,d); n++; } }); });
+  H.imported=1; return n>0;
+}
+function mergeHm(a,b){
+  a=a||{}; b=b||{}; const o={days:{},lift:{},ovr:{},body:{},u:{},imported:(a.imported||b.imported)?1:0};
+  const ua=a.u||{}, ub=b.u||{};
+  ['days','lift','ovr','body'].forEach(kind=>{
+    const keys=new Set([...Object.keys((a[kind])||{}),...Object.keys((b[kind])||{}),...Object.keys(ua).concat(Object.keys(ub)).filter(x=>x.startsWith(kind+':')).map(x=>x.slice(kind.length+1))]);
+    keys.forEach(k=>{ const ta=ua[kind+':'+k]||0, tb=ub[kind+':'+k]||0, src=tb>ta?b:a, alt=tb>ta?a:b;
+      const v=(src[kind]||{})[k]!==undefined?(src[kind]||{})[k]:(Math.max(ta,tb)?undefined:(alt[kind]||{})[k]);
+      if(v!==undefined&&v!==null) o[kind][k]=v; const t=Math.max(ta,tb); if(t) o.u[kind+':'+k]=t; });
+  });
+  return o;
+}
+const hmRev=()=>{ const u=(state.hm||{}).u||{}; let m=0; for(const k in u) if(u[k]>m) m=u[k]; return m; };
+function trPrev(id,k){ const L=hm().lift; const ds=Object.keys(L).filter(d=>d<k&&L[d][id]&&L[d][id].some(s=>s&&s[1])).sort(); return ds.length?{d:ds[ds.length-1],s:L[ds[ds.length-1]][id]}:null; }
+const trFmt=(e,s)=>s.filter(x=>x&&x[1]).map(x=>(e.kg?(x[0]||0)+'kg×':'')+x[1]).join('、');
+function trWeekStart(k){ const d=new Date(k+'T00:00:00'); d.setDate(d.getDate()-((d.getDay()+6)%7)); return ymd(d); }
+function trDefaultDay(){ const t=ymd(); return t<TR_START?TR_START:t>TR_END?TR_END:t; }
+function trList(){
+  if(!trWeek) trWeek=trWeekStart(trDefaultDay());
+  const ws=new Date(trWeek+'T00:00:00'), we=new Date(ws.getTime()+6*DAY);
+  let h=catBar('train');
+  h+=`<div class="tr-week"><button class="cat-arrow" data-act="trweek" data-v="-1" aria-label="前の週">‹</button><span>${ws.getMonth()+1}/${ws.getDate()} 〜 ${we.getMonth()+1}/${we.getDate()}</span><button class="cat-arrow" data-act="trweek" data-v="1" aria-label="次の週">›</button></div><div class="rows">`;
+  for(let i=0;i<7;i++){
+    const d=new Date(ws.getTime()+i*DAY), k=ymd(d), t=trType(k); if(!t) continue;
+    const dn=trDone(k), tot=trChecks(k).length, isT=k===ymd(), w=d.getDay();
+    h+=`<button class="row tr-row ${trSel===k?'sel':''} ${t==='R'?'rest':''} ${isT?'today':''}" data-act="trday" data-v="${k}">
+      <span class="r-mark tr-date ${w===0||holiday(k)?'sun':w===6?'sat':''}"><b>${d.getDate()}</b><small>${'日月火水木金土'[w]}</small></span>
+      <span class="r-main"><span class="r-title">${t==='R'?'休みの日':'鍛錬：'+TR_NAME[t]}</span><span class="r-sub">${isT?'今日　':''}チェック ${dn}/${tot}</span><i class="tr-bar"><i style="width:${Math.round(dn/tot*100)}%"></i></i></span>
+      <span class="r-side">${dn===tot?'<span class="r-clear">CLEAR</span>':''}</span><span class="r-notch"></span></button>`;
+  }
+  h+=`</div><div class="rows" style="margin-top:12px">`;
+  h+=`<button class="row ${trSel==='log'?'sel':''}" data-act="trday" data-v="log"><span class="r-mark">📈</span><span class="r-main"><span class="r-title">記録（体重・種目ごとの伸び）</span></span><span class="r-notch"></span></button>`;
+  h+=`<button class="row ${trSel==='plan'?'sel':''}" data-act="trday" data-v="plan"><span class="r-mark">📜</span><span class="r-main"><span class="r-title">計画（見通し・食事・ルール）</span></span><span class="r-notch"></span></button></div>`;
+  return h;
+}
+function trExHtml(id,k){
+  const e=EX[id], ns=trSets(k), cur=(hm().lift[k]||{})[id]||[], pv=trPrev(id,k);
+  let tip='';
+  if(pv){ const ok=pv.s.filter(x=>x&&x[1]).length>=ns&&pv.s.slice(0,ns).every(x=>x&&+x[1]>=e.hi);
+    tip=`<p class="tr-prev">前回（${pv.d.slice(5).replace('-','/')}）：<b>${trFmt(e,pv.s)}</b> ${ok?`<span class="tr-up">${e.kg?'重さを1〜2kg上げよう':'次の段階へ'}</span>`:''}</p>`; }
+  const lastKg=pv?(pv.s.find(x=>x&&x[0])||[''])[0]:'';
+  let rows='';
+  for(let i=0;i<ns;i++){ const s=cur[i]||[];
+    rows+=`<div class="tr-set"><span class="n">${i+1}セット</span>${e.kg?`<input type="number" inputmode="decimal" step="0.5" min="0" max="80" data-trex="${id}" data-i="${i}" data-f="0" value="${s[0]??''}" placeholder="${lastKg||'kg'}">kg`:''}<input type="number" inputmode="numeric" min="0" max="100" data-trex="${id}" data-i="${i}" data-f="1" value="${s[1]??''}" placeholder="回">回</div>`; }
+  return `<div class="tr-ex"><h4>${esc(e.n)}<span>${ns}セット・${e.r}</span></h4><p class="tr-cue">${esc(e.cue)}</p>${tip}<div class="tr-sets">${rows}</div></div>`;
+}
+function trDayPanel(k){
+  const t=trType(k), d=new Date(k+'T00:00:00'), dd=hm().days[k]||{};
+  let h=`<div class="panel tr-panel"><div class="p-wm">${SECBG.train}</div><button class="back" data-act="trback">‹ 一覧へ</button>
+  <h2 class="p-title">${d.getMonth()+1}月${d.getDate()}日（${'日月火水木金土'[d.getDay()]}）${t==='R'?'休みの日':'鍛錬：'+TR_SHORT[t]}</h2>
+  <div class="p-giver"><span>${t==='R'?'':`<i class="giver-mark">!</i>${TR_NAME[t]}（約${trSets(k)===2?15:20}分）`}</span><span class="p-place">家</span></div>
+  <div class="p-desc"><p>${trPhase(k)}</p></div>`;
+  if(t==='R'){
+    h+=`<div class="sec-h"><span>休みの日</span></div><p class="hint">散歩や自転車はいつもどおり。できなかった鍛錬をここでやるなら：${['P','L1','U'].map(x=>`<button class="btn small ghost" data-act="trsw" data-v="${x}">${TR_SHORT[x]}</button>`).join(' ')}</p>`;
+  } else {
+    h+=`<div class="sec-h"><span>筋トレ</span><button class="btn small ghost" data-act="trsw" data-v="R">今日は休みにする</button></div><p class="hint" style="margin:0 0 6px">ダンベルの重さは片手1個あたり。セットの間は1〜2分休む。</p>${TR_MENU[t].map(id=>trExHtml(id,k)).join('')}`;
+  }
+  h+=`<div class="sec-h"><span>食事</span><span>約2,100〜2,200 kcal・たんぱく質約120g</span></div><div class="tr-food">
+    <div><b>朝</b>プロテイン1杯＋ごはん150g＋納豆＋卵2個</div><div><b>昼</b>約600kcalまで。たんぱく質20g以上（サラダチキン、鮭おにぎり＋ゆで卵など）</div><div><b>夜</b>奥さんと同じおかず1人前＋もち麦ごはん200g</div>${t!=='R'?'<div><b>筋トレ後</b>プロテイン1杯</div>':''}</div>`;
+  h+=`<div class="sec-h"><span>今日のチェック</span><span>${trDone(k)} / ${trChecks(k).length}</span></div><div class="tr-checks">${trChecks(k).map(([c,l])=>`<label class="${dd[c]?'on':''}"><input type="checkbox" data-trc="${c}"${dd[c]?' checked':''}><i></i>${l}</label>`).join('')}</div>`;
+  h+=`<div class="sec-h"><span>メモ（体調・痛み・サッカーなど）</span></div><textarea id="trMemo" class="tr-memo">${esc(dd.memo||'')}</textarea></div>`;
+  return h;
+}
+function trSpark(ws){
+  const W_=600,H_=150,P=28,t0=new Date(ws[0][0]).getTime(),t1=new Date(ws[ws.length-1][0]).getTime();
+  const vs=ws.map(x=>+x[1]); const lo=Math.floor(Math.min(...vs)-0.5), hi=Math.ceil(Math.max(...vs)+0.5);
+  const X=t=>P+(W_-2*P)*((t-t0)/((t1-t0)||1)), Y=v=>H_-P-(H_-2*P)*(v-lo)/((hi-lo)||1);
+  const pts=ws.map(([d,v])=>X(new Date(d).getTime()).toFixed(1)+','+Y(+v).toFixed(1)).join(' ');
+  return `<svg class="tr-spark" viewBox="0 0 ${W_} ${H_}"><line x1="${P}" x2="${W_-P}" y1="${Y(lo)}" y2="${Y(lo)}" stroke="rgba(242,236,214,.15)"/><line x1="${P}" x2="${W_-P}" y1="${Y(hi)}" y2="${Y(hi)}" stroke="rgba(242,236,214,.15)"/><text x="2" y="${Y(hi)+4}" font-size="11" fill="#8e9894">${hi}</text><text x="2" y="${Y(lo)+4}" font-size="11" fill="#8e9894">${lo}</text><polyline points="${pts}" fill="none" stroke="#5fd4ef" stroke-width="2.5"/>${ws.map(([d,v])=>`<circle cx="${X(new Date(d).getTime()).toFixed(1)}" cy="${Y(+v).toFixed(1)}" r="3.5" fill="#5fd4ef"/>`).join('')}</svg>`;
+}
+function trLogPanel(){
+  const H=hm(), bs=Object.entries(H.body).sort((a,b)=>a[0]<b[0]?-1:1), t=ymd();
+  let h=`<div class="panel tr-panel"><div class="p-wm">${SECBG.train}</div><button class="back" data-act="trback">‹ 一覧へ</button><h2 class="p-title">記録</h2>
+  <div class="sec-h"><span>体重とお腹まわり</span></div><p class="hint" style="margin:0 0 8px">週1回、日曜の朝（起きてトイレのあと・食べる前）に。お腹まわりはおへその高さで。最初の記録：65.7kg（10月末）。</p>
+  <div class="tr-bin"><input type="date" id="trBd" value="${t<TR_START?TR_START:t}"><input type="number" id="trKg" step="0.1" min="40" max="120" placeholder="体重 kg" inputmode="decimal"><input type="number" id="trCm" step="0.5" min="50" max="130" placeholder="お腹 cm" inputmode="decimal"><button class="btn primary small" data-act="trbody">記録する</button></div>`;
+  const ws=[['2026-10-29',65.7],...bs.filter(([,v])=>v&&v.kg).map(([d,v])=>[d,v.kg])];
+  if(ws.length>=2) h+=trSpark(ws);
+  h+=bs.length?`<div class="kids">${bs.slice().reverse().map(([d,v])=>`<div class="kid"><span>${d.slice(5).replace('-','/')}　${v.kg?v.kg.toFixed(1)+' kg':''}　${v.cm?v.cm+' cm':''}</span><button class="btn small ghost" data-act="trbdel" data-v="${d}">消す</button></div>`).join('')}</div>`:'<p class="hint">まだ記録はありません。</p>';
+  h+=`<div class="sec-h"><span>種目ごとの伸び（いちばん良かったセット）</span></div><div class="kids">`;
+  Object.entries(EX).forEach(([id,e])=>{ const L=H.lift, ds=Object.keys(L).filter(d=>L[d][id]&&L[d][id].some(s=>s&&s[1])).sort();
+    const best=d=>{ const s=L[d][id].filter(x=>x&&x[1]).sort((a,b)=>((b[0]||0)-(a[0]||0))||(b[1]-a[1]))[0]; return (e.kg?(s[0]||0)+'kg×':'')+s[1]+'回'; };
+    h+=`<div class="kid"><span>${esc(e.n)}</span><span class="hint">${ds.length?best(ds[0]):'—'}　→　<b style="color:var(--blue)">${ds.length>1?best(ds[ds.length-1]):'—'}</b></span></div>`; });
+  const tr=Object.keys(H.days).filter(k=>k<=t&&(H.days[k]||{}).train).length;
+  let pl=0; for(let d=new Date(TR_START+'T00:00:00'); ymd(d)<=t&&ymd(d)<=TR_END; d.setDate(d.getDate()+1)) if(trType(ymd(d))!=='R') pl++;
+  h+=`</div><div class="tr-stat"><div><b>${tr}</b><span>筋トレした日</span></div><div><b>${pl}</b><span>今日までの予定の回数</span></div></div></div>`;
+  return h;
+}
+function trPlanPanel(){
+  const list=t=>'<ul>'+TR_MENU[t].map(id=>`<li><b>${EX[id].n}</b>（${EX[id].r}）</li>`).join('')+'</ul>';
+  return `<div class="panel tr-panel tr-plan"><div class="p-wm">${SECBG.train}</div><button class="back" data-act="trback">‹ 一覧へ</button><h2 class="p-title">計画</h2>
+  <div class="p-giver"><span><i class="giver-mark">!</i>細マッチョになる</span><span class="p-place">2026/11/1〜12/31</span></div>
+  <div class="sec-h"><span>見通し</span></div><p>年末までの2か月で、脂肪を2〜3kg落としながら筋肉をつける。体重は65.7kgから63〜64kgくらい、お腹まわりは2〜3cm細くなる見込み。肩・胸・腕にハリが出て、Tシャツ姿が変わるのが年末の目標。</p>
+  <ul class="hint"><li>身長172cm・体重65.7kg・30代と仮定。1日の消費は、ふだんの散歩込みで約2,500〜2,600kcal</li><li>腹筋がはっきり割れて見えるのは体脂肪率10〜12%くらいから。そこまでは続けて4〜6か月（来年3〜4月）が目安</li><li>筋トレを始めて最初の数か月は、いちばん筋肉がつきやすい時期</li></ul>
+  <div class="sec-h"><span>食事</span></div><p>1日約2,100〜2,200kcal、たんぱく質は約120g（体重1kgあたり1.8g）。おかずは奥さんと同じ1人前のまま、ごはんとたんぱく質を足す。</p>
+  <div class="tr-food"><div><b>朝</b>プロテイン1杯＋ごはん150g＋納豆＋卵2個（約650kcal）</div><div><b>昼</b>好きなもの。たんぱく質20g以上（約600kcal）</div><div><b>夜</b>奥さんと同じおかず1人前＋もち麦ごはん200g（約700〜850kcal）</div><div><b>筋トレ後</b>プロテイン1杯（約120kcal）</div></div>
+  <ul class="hint"><li>プロテインは一般的なホエイで1杯約110〜120kcal・たんぱく質20〜24g。VERIFYSTの袋の1食分の表示で確かめる</li><li>夜がパスタなどごはんのない日は、おかずと別にごはん100gか、卵・豆腐を足す</li><li>お酒や甘いものを食べた日は、昼か夜のごはんを少し減らす</li></ul>
+  <div class="sec-h"><span>筋トレのルール</span></div><p>1回20分・3種目だけ。月〜土に「押す→脚→引く」を2周して、日曜は休み。1回を短くして回数を増やすので、週の合計量は1回40分×週3回と同じくらい。できなかった日は日曜にずらしてOK（休みの日から選べる）。</p>
+  <ul><li>最初の2週間（11/15まで）は各種目2セット。「あと3〜4回できる」重さでフォームを覚える</li><li>11/16からは3セット。毎セット「あと1〜2回できる」所まで追い込む</li><li><b>重さの上げ方</b>：全セットで回数の上限（12回や15回）に届いたら、次回は1〜2kg重くする。「重さを上げよう」と出る</li><li>同じ筋肉を続けて使わない順番にしてある。痛みが出たら、その種目は休む</li><li>握力の道具は、テレビや動画を見ながらのついででOK</li></ul>
+  <div class="sec-h"><span>メニュー</span></div><h4>月・木：押す（胸・肩・腕の裏）</h4>${list('P')}<h4>火：脚・お腹</h4>${list('L1')}<h4>金：脚・お腹</h4>${list('L2')}<h4>水・土：引く（背中・力こぶ）＋腕立て</h4>${list('U')}<p class="hint">ダンベルは片手1個ずつで使う。バーベルの形には組み替えなくていい。</p>
+  <div class="sec-h"><span>見直すタイミング</span></div><ul><li>体重が1週間で0.7kg以上落ちる：筋肉も落ちやすいので、ごはんを1日100g増やす</li><li>2週間たっても体重もお腹まわりも変わらない：昼を100〜200kcal減らす</li><li>同じ重さ・回数から3回続けて伸びない：その種目だけ1週間軽くしてから戻す</li><li>サッカーの日は筋トレを休みにしてOK。前日が脚の日なら軽めに</li></ul></div>`;
+}
+function trPanel(){
+  if(trSel==='log') return trLogPanel();
+  if(trSel==='plan') return trPlanPanel();
+  if(trSel&&trType(trSel)) return trDayPanel(trSel);
+  return `<div class="panel p-empty"><div class="p-wm">${SECBG.train}</div><p>日付を選ぶと、その日の鍛錬メニューとチェックが表示されます</p></div>`;
+}
+// 鍛錬の入力（チェック・重さと回数・メモ）
+function trOnChange(e){
+  const el=e.target, k=trSel; if(!k||!trType(k)) return false;
+  const H=hm();
+  if(el.dataset.trc){ const c=el.dataset.trc, was=!!(H.days[k]||{})[c]; H.days[k]={...(H.days[k]||{}),[c]:el.checked}; hmTouch('days',k);
+    if(el.checked&&!was){ gain(c==='train'?30:5); if(c==='train'){ toast('鍛錬クリア  +30 XP'); maybeSeed(); } if(trDone(k)===trChecks(k).length) setTimeout(()=>banner('accept','今日のチェック制覇',`${k.slice(5).replace('-','/')}　全${trChecks(k).length}項目`),400); }
+    else if(!el.checked&&was) gain(c==='train'?-30:-5);
+    save(); renderList(); renderDetail(); return true; }
+  if(el.dataset.trex){ const id=el.dataset.trex, ix=+el.dataset.i, f=+el.dataset.f, v=el.value===''?null:Math.max(0,parseFloat(el.value));
+    const day={...(H.lift[k]||{})}, arr=(day[id]||[]).slice(), s=(arr[ix]||[null,null]).slice(); s[f]=v; arr[ix]=s; day[id]=arr; H.lift[k]=day; hmTouch('lift',k);
+    if(f===1&&v&&!(H.days[k]||{}).train){ H.days[k]={...(H.days[k]||{}),train:true}; hmTouch('days',k); gain(30); toast('鍛錬クリア  +30 XP'); maybeSeed(); }
+    save(); renderList(); renderDetail(); return true; }
+  if(el.id==='trMemo'){ H.days[k]={...(H.days[k]||{}),memo:el.value.slice(0,500)}; hmTouch('days',k); save(); return true; }
+  return false;
+}
+
 /* ---------- 赤い月：週に一度の見直し（日曜18時〜月曜12時に一度だけ出る。道具からいつでも開ける） ---------- */
 function moonKey(){ const d=new Date(), w=d.getDay(), h=d.getHours(); if(w===0&&h>=18) return ymd(d); if(w===1&&h<12) return ymd(new Date(d.getTime()-DAY)); return null; }
 function renderMoon(){
@@ -1674,7 +1870,7 @@ function stamp(){
   state.quests.forEach(q=>{ const {u,...rest}=q; const sg=JSON.stringify(rest); cur[q.id]=sg;
     if(qSigs&&qSigs[q.id]!==sg){ q.u=now; state.pristine=false; } if(!q.u) q.u=q.created||now; });
   if(qSigs) Object.keys(qSigs).forEach(id=>{ if(!cur[id]){ state.deleted[id]=now; state.pristine=false; } });
-  const ex=[state.xp,state.seeds||0,state.moonDone||'',Object.keys(state.rested||{}).length].join('|');
+  const ex=[state.xp,state.seeds||0,state.moonDone||'',Object.keys(state.rested||{}).length,hmRev()].join('|');
   if(qSigs&&ex!==stamp.ex) state.pristine=false;
   stamp.ex=ex;
   Object.keys(state.deleted).forEach(id=>{ if(now-state.deleted[id]>90*DAY) delete state.deleted[id]; });
@@ -1686,9 +1882,9 @@ function mergeStates(a,b){
   const map={};
   [...(a.quests||[]),...(b.quests||[])].forEach(q=>{ const e=map[q.id]; if(!e||(q.u||0)>(e.u||0)) map[q.id]=q; });
   const quests=Object.values(map).filter(q=>!(del[q.id]&&del[q.id]>=(q.u||0)));
-  return {xp:Math.max(a.xp||0,b.xp||0),seeds:Math.max(a.seeds||0,b.seeds||0),rested:{...(a.rested||{}),...(b.rested||{})},moonDone:[a.moonDone||'',b.moonDone||''].sort().pop(),quests,deleted:del,pristine:false};
+  return {xp:Math.max(a.xp||0,b.xp||0),seeds:Math.max(a.seeds||0,b.seeds||0),rested:{...(a.rested||{}),...(b.rested||{})},hm:mergeHm(a.hm,b.hm),moonDone:[a.moonDone||'',b.moonDone||''].sort().pop(),quests,deleted:del,pristine:false};
 }
-function fingerprint(st){ return JSON.stringify([(st.quests||[]).map(q=>q.id+':'+(q.u||0)).sort(),st.xp||0,st.seeds||0,Object.keys(st.rested||{}).length,st.moonDone||'']); }
+function fingerprint(st){ return JSON.stringify([(st.quests||[]).map(q=>q.id+':'+(q.u||0)).sort(),st.xp||0,st.seeds||0,Object.keys(st.rested||{}).length,st.moonDone||'',(()=>{const u=(st.hm||{}).u||{};let m=0;for(const k in u)if(u[k]>m)m=u[k];return m})()]); }
 function applyState(ns){
   state=ns; if(!Array.isArray(state.quests)) state.quests=[];
   migrate(); qSigs=null; stamp();
@@ -1732,7 +1928,7 @@ document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==
 (function(){ const m=location.hash.match(/^#q=([\w-]+)/); const q=m&&findQ(m[1]); if(q){ selId=q.id; tab='list'; listCat=q.type; } if(m){ try{ history.replaceState(null,'',location.pathname+location.search); }catch(e){} } })();
 
 stamp(); window.__qlReady=true;
-render(); if(moveDoToSteps()){ save(); render(); } runCarry();
+render(); if(moveDoToSteps()){ save(); render(); } if(trImport()){ state.pristine=false; save(); render(); } runCarry();
 if(sync.url){ syncScan(); flush(); loadData().then(pull); }
 })();
 </script>
