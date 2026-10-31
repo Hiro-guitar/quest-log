@@ -893,7 +893,7 @@ function restToday(){
 function todayList(){
   const items=dayItems(dayView), d=new Date(dayView+'T00:00:00');
   let h=catBar('today')+weekStrip();
-  h+=`<div class="day-h"><span>${dayView===ymd()?'今日':''}　${d.getMonth()+1}/${d.getDate()}（${'日月火水木金土'[d.getDay()]}）${holiday(dayView)?`<b class="hol">${holiday(dayView)}</b>`:''}</span><span>${dayView===ymd()&&!(state.rested||{})[dayView]&&items.some(x=>!(x.s?x.s.done:x.q.done))?`<button class="rest-link" data-act="rest">🔥 休む</button>`:''}${items.filter(x=>x.s?x.s.done:x.q.done).length} / ${items.length}</span></div><div class="rows">`;
+  h+=`<div class="day-h"><span>${dayView===ymd()?'今日':''}　${d.getMonth()+1}/${d.getDate()}（${'日月火水木金土'[d.getDay()]}）${holiday(dayView)?`<b class="hol">${holiday(dayView)}</b>`:''}</span><span>${items.filter(x=>x.s?x.s.done:x.q.done).length} / ${items.length}</span></div><div class="rows">`;
   if((state.rested||{})[dayView]) h+=`<div class="sec-empty">🔥 この日は焚き火で休みました</div>`;
   h+=items.map(x=>x.s?stepRowToday(x.q,x.s):row(x.q)).join('');
   if(!items.length) h+=`<div class="sec-empty">この日の予定はまだありません。チャレンジや工程に「やる日」を入れると、ここに並びます</div>`;
@@ -939,7 +939,7 @@ function renderList(){
     else if(showCleared&&qs.filter(q=>q.done).length>lim) h+=`<button class="toggle" data-act="cleared">たたむ</button>`;
     h+=`</div>`;
   }else{
-    const tools=[['sync','PCとスマホの同期'],['restore','バックアップから戻す'],['backup','データの書き出し・読み込み'],['moon','赤い月（週の見直し）'],['credits','景色の写真について'],['reset','初期化']];
+    const tools=[['sync','PCとスマホの同期'],['restore','バックアップから戻す'],['backup','データの書き出し・読み込み'],['rest','焚き火で休む'],['moon','赤い月（週の見直し）'],['credits','景色の写真について'],['reset','初期化']];
     h=`<div class="cat-bar"><div class="cat-name">道具</div><div class="cat-icons"><span class="cat on" style="cursor:default">✦</span></div></div><div class="rows">`+
       tools.map(([k,l])=>`<button class="row ${toolSel===k&&toolPicked?'sel':''}" data-act="tool" data-v="${k}"><span class="r-mark">✦</span><span class="r-main"><span class="r-title">${l}</span></span><span class="r-notch"></span></button>`).join('')+`</div>`;
   }
@@ -963,6 +963,12 @@ function toolPanel(){
     <div class="p-desc"><p>毎日3時に、Googleドライブの「クエストログのバックアップ」フォルダへ自動で保存しています（30日分）。間違って消したときは、戻したい日を選んでください。戻す直前の状態もバックアップしてから戻すので、やり直しもできます。</p></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"><button class="btn primary" data-act="bklist">バックアップの一覧を見る</button><button class="btn" data-act="bknow">今すぐバックアップ</button></div>
     <div class="kids" id="bkList">${bkList?(bkList.length?bkList.map(b=>`<div class="kid"><span>${esc(b.name.replace('questlog-','').replace('.json',''))}</span><button class="btn small" data-act="bkrestore" data-id="${esc(b.id)}" data-name="${esc(b.name)}">この日に戻す</button></div>`).join(''):'<div class="hint">まだバックアップがありません</div>'):''}</div>`;
+  }
+  if(toolSel==='rest'){
+    const t=ymd(), rested=(state.rested||{})[t], n=dayItems(t).filter(x=>!(x.s?x.s.done:x.q.done)).length;
+    return `<h2 class="p-title">焚き火で休む</h2>
+    <div class="p-desc"><p>疲れた日や体調が悪い日は、焚き火で休もう。今日やる予定だったもの（まだ終わっていないもの）を、まとめて明日に回します。休んだだけなので、持ち越しの回数（↻）は増えません。</p></div>
+    ${rested?'<p class="hint">🔥 今日はもう焚き火で休みました。ゆっくりしよう</p>':n?`<p class="hint">今日の残り：${n}件</p><button class="btn primary" data-act="rest">焚き火で休む</button>`:'<p class="hint">今日の残りはありません</p>'}`;
   }
   if(toolSel==='credits'){
     const rows=[]; BG_PHOTOS.forEach(pl=>[['day','昼'],['morning','朝'],['evening','夕'],['night','夜']].forEach(([k,l])=>{ (pl.v&&pl.v[k]||[]).forEach(v=>rows.push(`<div class="kid"><span>${esc(v.name||pl.name)}（${l}・縦）<br><small class="hint">写真：${esc(v.by)} / ${esc(v.lic)}</small></span><a class="btn small ghost" href="${commonsPage(v.file)}" target="_blank" rel="noopener">元の写真</a></div>`)); const v=pl[k]; if(v) rows.push(`<div class="kid"><span>${esc(v.name||pl.name)}（${l}）<br><small class="hint">写真：${esc(v.by)} / ${esc(v.lic)}</small></span><a class="btn small ghost" href="${commonsPage(v.file)}" target="_blank" rel="noopener">元の写真</a></div>`); }));
@@ -1108,7 +1114,7 @@ document.addEventListener('click',e=>{
     case 'tool': if(b.dataset.v==='moon'){ openMoon(); break; } toolSel=b.dataset.v; toolPicked=true; render(); break;
     case 'memedit': memEdit=q.id; renderDetail(); setTimeout(()=>{const t=$('memIn'); t&&t.focus();},30); break;
     case 'memsave': { const v=($('memIn')||{}).value||''; q.memory=v.trim(); memEdit=null; save(); render(); toast(q.memory?'思い出に残しました':'思い出を消しました'); break; }
-    case 'rest': if(confirm('焚き火で休みますか？\n今日の分を明日に回します（持ち越しには数えません）')) restToday(); break;
+    case 'rest': if(confirm('焚き火で休みますか？\n今日の分を明日に回します（持ち越しには数えません）')){ restToday(); renderDetail(); } break;
     case 'moonclose': $('moon').classList.remove('show'); break;
     case 'moonfinish': state.moonDone=moonKey()||ymd(); save(); $('moon').classList.remove('show'); toast('赤い月が沈んだ。新しい一週間の始まり'); break;
     case 'moonundate': { const mq=findQ(b.dataset.q); const o=b.dataset.s?mq&&mq.steps.find(x=>x.id===b.dataset.s):mq; if(o){ o.doDate=''; o.doTime=''; o.carry=0; save(); render(); renderMoon(); } break; }
