@@ -493,8 +493,8 @@ body{background:#050607}
 .moon.show{display:block;animation:moonIn .8s ease}
 @keyframes moonIn{from{opacity:0}to{opacity:1}}
 .moon-in{max-width:620px;margin:0 auto;position:relative}
-.moon-orb{width:110px;height:110px;margin:4px auto 10px;border-radius:50%;background:radial-gradient(circle at 38% 34%,#ffe9d2 0,#f2b98c 30%,#c9785a 62%,#8a4a42 100%);box-shadow:0 0 30px 8px rgba(242,170,120,.35),0 0 90px 30px rgba(200,120,110,.18);animation:orb 6s ease-in-out infinite}
-@keyframes orb{50%{box-shadow:0 0 38px 12px rgba(242,170,120,.45),0 0 110px 40px rgba(200,120,110,.22)}}
+.moon-orb{display:block;width:190px;height:190px;margin:0 auto 6px;object-fit:cover;border-radius:50%;-webkit-mask-image:radial-gradient(circle,#000 52%,transparent 71%);mask-image:radial-gradient(circle,#000 52%,transparent 71%);filter:drop-shadow(0 0 26px rgba(242,150,90,.45));animation:orb 7s ease-in-out infinite}
+@keyframes orb{50%{filter:drop-shadow(0 0 40px rgba(242,150,90,.6))}}
 .moon-x{position:absolute;right:0;top:0;font-size:18px;color:var(--muted)}
 .moon-k{font-size:11px;letter-spacing:.5em;color:#f0b48a;text-align:center}
 .moon h2{text-align:center;font-size:24px;margin:4px 0 2px;letter-spacing:.15em;text-shadow:0 0 18px rgba(242,180,140,.5)}
@@ -1025,7 +1025,7 @@ function toolPanel(){
     const rows=[]; BG_PHOTOS.forEach(pl=>[['day','昼'],['morning','朝'],['evening','夕'],['night','夜']].forEach(([k,l])=>{ (pl.v&&pl.v[k]||[]).forEach(v=>rows.push(`<div class="kid"><span>${esc(v.name||pl.name)}（${l}・縦）<br><small class="hint">写真：${esc(v.by)} / ${esc(v.lic)}</small></span><a class="btn small ghost" href="${commonsPage(v.file)}" target="_blank" rel="noopener">元の写真</a></div>`)); const v=pl[k]; if(v) rows.push(`<div class="kid"><span>${esc(v.name||pl.name)}（${l}）<br><small class="hint">写真：${esc(v.by)} / ${esc(v.lic)}</small></span><a class="btn small ghost" href="${commonsPage(v.file)}" target="_blank" rel="noopener">元の写真</a></div>`); }));
     return `<h2 class="p-title">景色の写真について</h2>
     <div class="p-desc"><p>背景の景色は、Wikimedia Commons で公開されている写真を使わせてもらっています。1時間ごとに場所が変わり、朝・夕・夜はその時間の写真になります。</p>${bgNow?`<p>いまの景色：${esc(bgNow.name)}（写真：${esc(bgNow.by)} / ${esc(bgNow.lic)}）</p><p><a class="btn small" href="${bgNow.page}" target="_blank" rel="noopener">いまの景色の写真を見る</a></p>`:''}</div>
-    <div class="kids">${rows.join('')}</div>`;
+    <div class="kids">${rows.join('')}<div class="kid"><span>赤い月（皆既月食）<br><small class="hint">写真：Robert Jay GaBany / CC BY-SA 3.0</small></span><a class="btn small ghost" href="https://commons.wikimedia.org/wiki/File:Lunar_eclipse_04-15-2014_by_R_Jay_GaBany.jpg" target="_blank" rel="noopener">元の写真</a></div></div>`;
   }
   if(toolSel==='backup') return `<h2 class="p-title">データの書き出し・読み込み</h2>
     <div class="p-desc"><p>念のためのバックアップや、別のブラウザに移すときに使います。</p></div>
@@ -1833,7 +1833,7 @@ function renderMoon(){
   stuck.sort((a,b)=>(b.o.carry||0)-(a.o.carry||0));
   const nodate=state.quests.filter(q=>!q.done&&q.type!=='mini').reduce((n,q)=>n+(q.steps||[]).filter(st=>!st.qref&&!st.done&&!st.doDate).length,0);
   M.innerHTML=`<div class="moon-in"><button class="moon-x" data-act="moonclose" aria-label="閉じる">✕</button>
-    <div class="moon-orb"></div><div class="moon-k">RED MOON</div><h2>赤い月の夜</h2><p class="moon-lead">今週の冒険をふり返って、持ち越しを見直そう</p>
+    <img class="moon-orb" src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/46/Lunar_eclipse_04-15-2014_by_R_Jay_GaBany.jpg/500px-Lunar_eclipse_04-15-2014_by_R_Jay_GaBany.jpg" alt="皆既月食の月" onerror="this.style.display=\'none\'"><div class="moon-k">RED MOON</div><h2>赤い月の夜</h2><p class="moon-lead">今週の冒険をふり返って、持ち越しを見直そう</p>
     <div class="sec-h"><span>今週クリアしたもの</span><span>${done.length}件</span></div>
     ${done.length?`<div class="kids">${done.slice(0,10).map(q=>`<div class="kid"><span>${ico(q.type,true)} ${esc(q.title||'(無題)')}</span></div>`).join('')}</div>`:'<p class="hint">今週はまだクリアがありません。来週はひとつだけでも進めよう</p>'}
     <div class="sec-h"><span>何度も持ち越しているもの</span><span>${stuck.length}件</span></div>
