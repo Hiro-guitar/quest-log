@@ -467,6 +467,31 @@ body{background:#050607}
   .hints{padding-left:26px;padding-right:26px;gap:14px}
 }
 @media (max-width:820px){ input,select,textarea{font-size:16px} }
+/* 帯の演出（受注・実・休む） */
+.banner{position:fixed;left:0;right:0;top:38%;z-index:55;pointer-events:none;opacity:0;display:flex;justify-content:center}
+.banner.show{animation:bnIn 2.2s ease forwards}
+.bn-in{width:100%;text-align:center;padding:14px 16px;background:linear-gradient(90deg,transparent,rgba(5,8,10,.82) 18%,rgba(5,8,10,.82) 82%,transparent);border-top:1px solid rgba(242,236,214,.35);border-bottom:1px solid rgba(242,236,214,.35)}
+.bn-k{font-size:11px;letter-spacing:.5em;color:var(--orange)}
+.bn-big{font-size:clamp(22px,5vw,34px);font-weight:900;letter-spacing:.12em;text-shadow:0 0 18px rgba(242,236,214,.55)}
+.bn-sub{font-size:13px;color:#d9d3be;margin-top:2px}
+.banner.seed .bn-k{color:var(--green);font-size:18px;letter-spacing:0}.banner.seed .bn-big{font-size:clamp(18px,4vw,26px)}
+.banner.rest .bn-k{color:#f0a640}
+@keyframes bnIn{0%{opacity:0;transform:scaleY(.6)}12%{opacity:1;transform:none}78%{opacity:1}100%{opacity:0}}
+.seed{display:inline-flex;align-items:center;gap:3px;color:var(--green);font-size:13px;margin-right:12px;text-shadow:0 0 6px rgba(159,217,138,.5)}.seed b{color:var(--text);font-size:14px}
+.mem-row .r-sub i{opacity:.6}
+.mem-form{display:grid;gap:8px;margin-bottom:10px}.mem-form textarea{min-height:84px}
+.mem-text{border-left:2px solid rgba(242,236,214,.3);padding-left:12px}
+.rest-row .r-title{color:#f0c38a}
+/* 赤い月 */
+.moon{position:fixed;inset:0;z-index:60;display:none;overflow:auto;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);background:radial-gradient(circle at 50% 12%,rgba(170,24,32,.97),rgba(48,6,10,.98) 50%,rgba(10,2,4,.99));padding:24px 16px calc(24px + env(safe-area-inset-bottom))}
+.moon.show{display:block;animation:moonIn .6s ease}
+@keyframes moonIn{from{opacity:0}to{opacity:1}}
+.moon-in{max-width:620px;margin:0 auto;position:relative}
+.moon-x{position:absolute;right:0;top:0;font-size:18px;color:var(--muted)}
+.moon-k{font-size:11px;letter-spacing:.5em;color:#ff7a6e;text-align:center;margin-top:8px}
+.moon h2{text-align:center;font-size:26px;margin:4px 0 2px;letter-spacing:.15em;text-shadow:0 0 20px rgba(255,80,70,.6)}
+.moon-lead{text-align:center;color:#e6c8c4;font-size:13px;margin:0 0 14px}
+.moon .kid{display:flex;justify-content:space-between;align-items:center;gap:10px}
 </style>
 </head>
 <body>
@@ -486,6 +511,8 @@ body{background:#050607}
   <footer class="hints" id="hints"></footer>
 </div>
 <div class="toast" id="toast"></div>
+<div class="banner" id="banner"></div>
+<div class="moon" id="moon"></div>
 <div class="clear" id="clear"><div class="clear-in">
   <div class="clear-k">CHALLENGE</div>
   <div class="clear-big">CLEAR</div>
@@ -508,6 +535,7 @@ const ICON={
   main:'<svg viewBox="0 0 24 16" aria-hidden="true"><path d="M12 14C9.5 10 5.5 8.6 1 9.4 4 7.2 7.4 6.6 10.2 7.5 7.6 5.6 4.8 3.4 3 1c3.8 1.1 7 3.3 9 7 2-3.7 5.2-5.9 9-7-1.8 2.4-4.6 4.6-7.2 6.5 2.8-.9 6.2-.3 9.2 1.9-4.5-.8-8.5.6-11 4.6Z" fill="currentColor"/></svg>',
   challenge:'<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.2 14.8 8 8 14.8 1.2 8Z" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 10.6V8.4C6.2 7 7 6.2 8 6.2S9.8 7 9.8 8.4v2.2" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>',
   mini:'<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3h11a1 1 0 0 1 1 1v6.5a1 1 0 0 1-1 1H7.2L4.4 14v-2.5H2.5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>',
+  memory:'<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="3" width="13" height="10" rx="1" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M1.5 5.5h13M1.5 10.5h13" stroke="currentColor" stroke-width="1.1"/><path d="M4 3v2.5M7 3v2.5M10 3v2.5M13 3v2.5M4 10.5V13M7 10.5V13M10 10.5V13M13 10.5V13" stroke="currentColor" stroke-width="1"/></svg>',
   miniDone:'<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3h11a1 1 0 0 1 1 1v6.5a1 1 0 0 1-1 1H7.2L4.4 14v-2.5H2.5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" fill="currentColor"/><path d="M5 7.3 7 9.2 11 5.4" fill="none" stroke="var(--bg)" stroke-width="1.5"/></svg>'
 };
 const SECBG={
@@ -516,6 +544,7 @@ const SECBG={
   challenge:'<svg viewBox="0 0 200 130" aria-hidden="true"><rect x="10" y="10" width="180" height="110" rx="14" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="30" y="26" width="140" height="78" rx="4" fill="none" stroke="currentColor" stroke-width="1"/><path d="M10 40H2M10 90H2M190 40h8M190 90h8" stroke="currentColor" stroke-width="1.5"/></svg>',
   mini:'<svg viewBox="0 0 150 70" aria-hidden="true"><circle cx="30" cy="38" r="22" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="75" cy="30" r="22" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="120" cy="38" r="22" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="30" cy="38" r="14" fill="none" stroke="currentColor" stroke-width=".8"/><circle cx="75" cy="30" r="14" fill="none" stroke="currentColor" stroke-width=".8"/><circle cx="120" cy="38" r="14" fill="none" stroke="currentColor" stroke-width=".8"/></svg>'
 };
+SECBG.memory='<svg viewBox="0 0 200 120" aria-hidden="true"><rect x="10" y="14" width="180" height="92" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10 32h180M10 88h180" stroke="currentColor"/><rect x="40" y="40" width="52" height="40" fill="none" stroke="currentColor"/><rect x="108" y="40" width="52" height="40" fill="none" stroke="currentColor"/></svg>';
 const ico=(t,done)=>`<span class="ico ico-${t}">${t==='mini'&&done?ICON.miniDone:ICON[t]}</span>`;
 const TITLES=['旅立ったばかり','見習い','駆け出しの冒険者','一人前','腕利き','歴戦の勇士','英傑','伝説'];
 const DAY=864e5;
@@ -656,6 +685,12 @@ function byDue(a,b){const da=a.deadline||'9999',db=b.deadline||'9999';return da<
 function lvInfo(xp){let lv=1,need=100,rest=xp;while(rest>=need){rest-=need;lv++;need=100+(lv-1)*40}return{lv,rest,need}}
 function allStepsDone(q){return !q.done && (q.steps.length||kids(q.id).length) && q.steps.every(stepDone) && kids(q.id).every(k=>k.done)}
 
+// ゼルダ風の帯（受注・実の発見など）
+function banner(kind,big,sub){
+  const b=$('banner'); if(!b) return;
+  b.className='banner '+kind; b.innerHTML=`<div class="bn-in"><div class="bn-k">${{accept:'CHALLENGE',seed:'✿',rest:'REST'}[kind]||''}</div><div class="bn-big">${esc(big)}</div>${sub?`<div class="bn-sub">${esc(sub)}</div>`:''}</div>`;
+  void b.offsetWidth; b.classList.add('show');
+}
 function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('show'),2200)}
 function gain(n){
   const before=lvInfo(state.xp).lv;
@@ -670,18 +705,26 @@ function toggleStep(qid,sid){
   s.done=!s.done; gain((s.done?1:-1)*10*q.rank);
   save(); render();
   if(s.done){
-    toast(`工程クリア  +${10*q.rank} XP`);
+    toast(`工程クリア  +${10*q.rank} XP`); maybeSeed();
     if(allStepsDone(q)) setTimeout(()=>toast('全工程クリア！ チャレンジ達成を報告しよう'),1400);
   }
+}
+// 森の精の実：ときどき見つかる小さなごほうび（工程・ミニチャレンジを終えたとき、約6回に1回）
+function maybeSeed(){
+  if(Math.random()>=1/6) return false;
+  state.seeds=(state.seeds||0)+1; save(); renderLv();
+  setTimeout(()=>banner('seed','森の精の実を見つけた',`${state.seeds}個目`),350);
+  return true;
 }
 function xpFor(q){return (q.type==='mini'?15:50)*q.rank}
 function completeQuest(q){
   q.done=true; q.doneAt=Date.now(); q.accepted=false;
   const xp=xpFor(q); gain(xp); save();
-  if(q.type==='mini'){ render(); toast(`ミニチャレンジ達成  +${xp} XP`); return; }
+  if(q.type==='mini'){ render(); toast(`ミニチャレンジ達成  +${xp} XP`); maybeSeed(); return; }
   $('clearT').textContent=q.title; $('clearXp').textContent=`+${xp} XP${q.reward?'　報酬：'+q.reward:''}`;
   const c=$('clear'); c.classList.remove('show'); void c.offsetWidth; c.classList.add('show');
-  render();
+  selId=q.id; editing=false; memEdit=q.id; render();
+  setTimeout(()=>toast('思い出にひとこと残せます'),2700);
 }
 function reopen(q){q.done=false;q.doneAt=null;gain(-xpFor(q));save();render()}
 function addMinis(text){
@@ -754,9 +797,9 @@ function addSteps(q,text){
 }
 
 /* ---------- render ---------- */
-const CAT_NAMES={today:'今日の冒険',main:'メインチャレンジ',challenge:'チャレンジ',mini:'ミニチャレンジ'};
-const CATS=['today','main','challenge','mini'];
-let toolSel='sync', bkList=null;
+const CAT_NAMES={today:'今日の冒険',main:'メインチャレンジ',challenge:'チャレンジ',mini:'ミニチャレンジ',memory:'思い出'};
+const CATS=['today','main','challenge','mini','memory'];
+let toolSel='sync', bkList=null, memEdit=null;
 function render(){sortAllSteps();renderLv();renderHud();renderTabs();renderList();renderDetail();renderHints();
   $('split').classList.toggle('has-sel',!!selId||(tab==='tools'&&toolPicked));
 }
@@ -764,7 +807,7 @@ let toolPicked=false;
 function renderLv(){ setTimeout(syncBadge,0);
   const {lv,rest,need}=lvInfo(state.xp);
   $('lv').innerHTML=`<div class="lv-row"><span class="lv-num"><small>Lv.</small>${lv}</span><span class="lv-title">${TITLES[Math.min(lv-1,TITLES.length-1)]}</span></div><div class="xp"><i style="width:${rest/need*100}%"></i></div>`;
-  $('xp').innerHTML=`<span class="gem">✦</span><span class="xp-num">${state.xp}</span><span id="syncBadge" class="sbadge"></span>`;
+  $('xp').innerHTML=`${state.seeds?`<span class="seed" title="森の精の実">✿<b>${state.seeds}</b></span>`:''}<span class="gem">✦</span><span class="xp-num">${state.xp}</span><span id="syncBadge" class="sbadge"></span>`;
 }
 function renderHud(){
   const act=state.quests.filter(q=>q.accepted&&!q.done).sort(byDue);
@@ -837,10 +880,22 @@ function stepRowToday(q,st){
     <span class="r-main"><span class="r-title">${esc(st.text)}</span><span class="r-sub">${TYPES[q.type].mark} ${esc(q.title||'(無題)')} の工程</span></span>
     <span class="r-side">${st.done?'<span class="r-clear">CLEAR</span>':`${st.doTime?`<span class="do">${st.doTime}</span>`:''}${carryHtml(st)}`}</span><span class="r-notch"></span></button>`;
 }
+// 焚き火で休む：今日の分を明日に回す（持ち越し回数は増やさない）
+function restToday(){
+  const t=ymd(), tm=ymd(new Date(Date.now()+DAY)); let n=0;
+  state.quests.forEach(q=>{
+    if(!q.done&&!(q.steps&&q.steps.length)&&q.doDate===t){ q.doDate=tm; n++; }
+    (q.steps||[]).forEach(st=>{ if(!st.qref&&!st.done&&st.doDate===t){ st.doDate=tm; n++; } });
+  });
+  state.rested={...(state.rested||{}),[t]:1}; save(); render();
+  banner('rest','焚き火で休んだ',n?`今日の${n}件は明日に回しました`:'ゆっくり休もう');
+}
 function todayList(){
   const items=dayItems(dayView), d=new Date(dayView+'T00:00:00');
   let h=catBar('today')+weekStrip();
   h+=`<div class="day-h"><span>${dayView===ymd()?'今日':''}　${d.getMonth()+1}/${d.getDate()}（${'日月火水木金土'[d.getDay()]}）${holiday(dayView)?`<b class="hol">${holiday(dayView)}</b>`:''}</span><span>${items.filter(x=>x.s?x.s.done:x.q.done).length} / ${items.length}</span></div><div class="rows">`;
+  if(dayView===ymd()&&items.some(x=>!(x.s?x.s.done:x.q.done))&&!(state.rested||{})[dayView]) h+=`<button class="row rest-row" data-act="rest"><span class="r-mark">🔥</span><span class="r-main"><span class="r-title">焚き火で休む</span><span class="r-sub">疲れた日は、今日の分を明日に回そう（持ち越しには数えません）</span></span><span class="r-notch"></span></button>`;
+  if((state.rested||{})[dayView]) h+=`<div class="sec-empty">🔥 この日は焚き火で休みました</div>`;
   h+=items.map(x=>x.s?stepRowToday(x.q,x.s):row(x.q)).join('');
   if(!items.length) h+=`<div class="sec-empty">この日の予定はまだありません。チャレンジや工程に「やる日」を入れると、ここに並びます</div>`;
   h+=`<button class="row add-row" data-act="newcur"><span class="r-mark">＋</span><span class="r-main"><span class="r-title">この日にチャレンジを追加</span></span><span class="r-notch"></span></button></div>`;
@@ -861,6 +916,13 @@ window.addEventListener('resize',()=>{ clearTimeout(fitTitles._t); fitTitles._t=
 function renderList(){
   const L=$('list'); let h='';
   if(tab!=='tools'&&listCat==='today'){ L.innerHTML=connectBanner()+todayList(); fitTitles(); return; }
+  if(tab!=='tools'&&listCat==='memory'){
+    const ms=state.quests.filter(q=>q.done&&q.type!=='mini').sort((a,b)=>(b.doneAt||0)-(a.doneAt||0));
+    let m=catBar('memory')+'<div class="rows">';
+    m+=ms.map(q=>`<button class="row mem-row ${q.id===selId?'sel':''}" data-act="select" data-id="${q.id}"><span class="r-mark">${ico(q.type)}</span><span class="r-main"><span class="r-title">${esc(q.title||'(無題)')}</span><span class="r-sub">${q.doneAt?new Date(q.doneAt).toLocaleDateString('ja-JP')+'　':''}${q.memory?esc(q.memory.split('\n')[0]):'<i>ひとことはまだありません</i>'}</span></span><span class="r-notch"></span></button>`).join('');
+    if(!ms.length) m+='<div class="sec-empty">チャレンジを達成すると、ここに思い出として残ります</div>';
+    L.innerHTML=connectBanner()+m+'</div>'; fitTitles(); return;
+  }
   if(tab!=='tools'){
     const t=listCat, qs=state.quests.filter(q=>q.type===t);
     const open=qs.filter(q=>!q.done).sort(byDo);
@@ -878,7 +940,7 @@ function renderList(){
     else if(showCleared&&qs.filter(q=>q.done).length>lim) h+=`<button class="toggle" data-act="cleared">たたむ</button>`;
     h+=`</div>`;
   }else{
-    const tools=[['sync','PCとスマホの同期'],['restore','バックアップから戻す'],['backup','データの書き出し・読み込み'],['credits','景色の写真について'],['reset','初期化']];
+    const tools=[['sync','PCとスマホの同期'],['restore','バックアップから戻す'],['backup','データの書き出し・読み込み'],['moon','赤い月（週の見直し）'],['credits','景色の写真について'],['reset','初期化']];
     h=`<div class="cat-bar"><div class="cat-name">道具</div><div class="cat-icons"><span class="cat on" style="cursor:default">✦</span></div></div><div class="rows">`+
       tools.map(([k,l])=>`<button class="row ${toolSel===k&&toolPicked?'sel':''}" data-act="tool" data-v="${k}"><span class="r-mark">✦</span><span class="r-main"><span class="r-title">${l}</span></span><span class="r-notch"></span></button>`).join('')+`</div>`;
   }
@@ -957,6 +1019,11 @@ function renderView(D,q){
     h+=open.length?`<div class="kids">${open.map(kidRow).join('')}</div>`:`<div class="hint">チャレンジを作るときに、このメインを選ぶとここに並びます</div>`;
     if(done.length) h+=`<div class="kids">${done.map(kidRow).join('')}</div>`;
   }
+  if(q.done&&q.type!=='mini'){
+    h+=`<div class="sec-h"><span>思い出</span>${q.memory&&memEdit!==q.id?`<button class="btn small ghost" data-act="memedit">書き直す</button>`:''}</div>`;
+    if(q.memory&&memEdit!==q.id) h+=`<div class="p-desc mem-text">${esc(q.memory).split('\n').map(l=>`<p>${l||'&nbsp;'}</p>`).join('')}</div>`;
+    else h+=`<div class="mem-form"><textarea id="memIn" placeholder="ひとこと残そう（何がうれしかった？ 何を学んだ？ 次はどうしたい？）">${esc(q.memory||'')}</textarea><button class="btn primary small" data-act="memsave">思い出に残す</button></div>`;
+  }
   if(!q.done && allStepsDone(q)) h+=`<div class="ready">すべての工程をクリアしました。達成を報告しよう！</div>`;
   { const all=state.quests.filter(x=>x.type===q.type); h+=`<div class="p-count">${TYPES[q.type].label}クリア　${all.filter(x=>x.done).length}/${all.length}</div>`; }
   h+=`</div>`;
@@ -966,6 +1033,7 @@ function hint(act,label,key,cls=''){return `<button class="hint-b ${cls}" data-a
 function renderHints(){
   const q=tab!=='tools'?findQ(selId):null; let h='';
   if(tab==='tools'){ h=toolPicked?hint('back','閉じる','B'):''; }
+  else if(!q&&listCat==='memory'){ h=''; }
   else if(!q){ h=hint('newcur',listCat==='today'?'この日にチャレンジを追加':`新しい${CAT_NAMES[listCat]}`,'X'); }
   else if(editing){ h=hint('delete','削除','','danger')+hint('doneedit','完了','A'); }
   else if(q.done){ h=hint('back','閉じる','B')+hint('edit','編集','Y')+hint('reopen','未達成に戻す',''); }
@@ -1038,7 +1106,14 @@ document.addEventListener('click',e=>{
     case 'cat': listCat=b.dataset.v; if(listCat==='today') dayView=ymd(); showCleared=false; miniOpen=false; if(!editing){selId=null;} render(); break;
     case 'catprev': case 'catnext': { const i=CATS.indexOf(listCat); listCat=CATS[(i+(a==='catnext'?1:CATS.length-1))%CATS.length]; showCleared=false; miniOpen=false; if(!editing) selId=null; render(); break; }
     case 'newcur': if(listCat==='today'){ newQuest('challenge',null); const nq=findQ(selId); if(nq){ nq.doDate=dayView; listCat='today'; save(); render(); } break; } if(listCat==='mini'){ miniOpen=true; renderList(); setTimeout(()=>{const el=$('miniAdd'); el&&el.focus()},20);} else newQuest(listCat,null); break;
-    case 'tool': toolSel=b.dataset.v; toolPicked=true; render(); break;
+    case 'tool': if(b.dataset.v==='moon'){ openMoon(); break; } toolSel=b.dataset.v; toolPicked=true; render(); break;
+    case 'memedit': memEdit=q.id; renderDetail(); setTimeout(()=>{const t=$('memIn'); t&&t.focus();},30); break;
+    case 'memsave': { const v=($('memIn')||{}).value||''; q.memory=v.trim(); memEdit=null; save(); render(); toast(q.memory?'思い出に残しました':'思い出を消しました'); break; }
+    case 'rest': restToday(); break;
+    case 'moonclose': $('moon').classList.remove('show'); break;
+    case 'moonfinish': state.moonDone=moonKey()||ymd(); save(); $('moon').classList.remove('show'); toast('赤い月が沈んだ。新しい一週間の始まり'); break;
+    case 'moonundate': { const mq=findQ(b.dataset.q); const o=b.dataset.s?mq&&mq.steps.find(x=>x.id===b.dataset.s):mq; if(o){ o.doDate=''; o.doTime=''; o.carry=0; save(); render(); renderMoon(); } break; }
+    case 'moonopen': $('moon').classList.remove('show'); { const mq=findQ(b.dataset.q); if(mq){ tab='list'; listCat=mq.type; selId=mq.id; editing=false; render(); } } break;
     case 'bklist': toast('読み込み中…'); gas({action:'backups'}).then(j=>{bkList=j.list; renderDetail(); toast(`${j.list.length}件のバックアップ`);}).catch(err=>toast('読み込めませんでした：'+err.message)); break;
     case 'bknow': toast('バックアップ中…'); pushData().then(()=>gas({action:'backupnow'})).then(()=>{toast('バックアップしました'); bkList=null; renderDetail();}).catch(err=>toast('失敗しました：'+err.message)); break;
     case 'bkrestore': {
@@ -1056,7 +1131,7 @@ document.addEventListener('click',e=>{
       break;}
     case 'miniopen': miniOpen=true; renderList(); setTimeout(()=>{const el=$('miniAdd'); el&&el.focus()},20); break;
     case 'quickdone': { const m=findQ(b.dataset.id); if(m){ const row=b.closest('.row'); row&&row.classList.add('vanish'); setTimeout(()=>completeQuest(m),260); } break; }
-    case 'accept': q.accepted=!q.accepted; save(); render(); toast(q.accepted?'目的地に設定しました':'目的地を解除しました'); break;
+    case 'accept': q.accepted=!q.accepted; save(); render(); if(q.accepted) banner('accept','チャレンジ受注',q.title||'(無題)'); else toast('目的地を解除しました'); break;
     case 'complete':
       if(!allStepsDone(q) && !confirm('まだ終わっていない工程があります。達成を報告しますか？')) break;
       completeQuest(q); break;
@@ -1515,6 +1590,31 @@ if('serviceWorker' in navigator && location.protocol==='https:'){
   }).catch(()=>{});
 }
 
+/* ---------- 赤い月：週に一度の見直し（日曜18時〜月曜12時に一度だけ出る。道具からいつでも開ける） ---------- */
+function moonKey(){ const d=new Date(), w=d.getDay(), h=d.getHours(); if(w===0&&h>=18) return ymd(d); if(w===1&&h<12) return ymd(new Date(d.getTime()-DAY)); return null; }
+function renderMoon(){
+  const M=$('moon'); if(!M) return;
+  const wk=Date.now()-7*DAY;
+  const done=state.quests.filter(q=>q.done&&(q.doneAt||0)>=wk).sort((a,b)=>(b.doneAt||0)-(a.doneAt||0));
+  const stuck=[];
+  state.quests.forEach(q=>{ if(q.done) return;
+    if(!(q.steps&&q.steps.length)&&(q.carry||0)>=2) stuck.push({q,o:q,label:q.title||'(無題)'});
+    (q.steps||[]).forEach(st=>{ if(!st.qref&&!st.done&&(st.carry||0)>=2) stuck.push({q,o:st,s:st.id,label:st.text,sub:q.title}); });
+  });
+  stuck.sort((a,b)=>(b.o.carry||0)-(a.o.carry||0));
+  const nodate=state.quests.filter(q=>!q.done&&q.type!=='mini').reduce((n,q)=>n+(q.steps||[]).filter(st=>!st.qref&&!st.done&&!st.doDate).length,0);
+  M.innerHTML=`<div class="moon-in"><button class="moon-x" data-act="moonclose" aria-label="閉じる">✕</button>
+    <div class="moon-k">BLOOD MOON</div><h2>赤い月の夜</h2><p class="moon-lead">今週の冒険をふり返って、持ち越しを見直そう</p>
+    <div class="sec-h"><span>今週クリアしたもの</span><span>${done.length}件</span></div>
+    ${done.length?`<div class="kids">${done.slice(0,10).map(q=>`<div class="kid"><span>${ico(q.type,true)} ${esc(q.title||'(無題)')}</span></div>`).join('')}</div>`:'<p class="hint">今週はまだクリアがありません。来週はひとつだけでも進めよう</p>'}
+    <div class="sec-h"><span>何度も持ち越しているもの</span><span>${stuck.length}件</span></div>
+    ${stuck.length?`<p class="hint">工程を小さく分けるか、日付を外して「いつかやる」に戻すのもひとつの手です</p><div class="kids">${stuck.map(x=>`<div class="kid"><span>${esc(x.label)}<span class="carry">↻${x.o.carry}</span>${x.sub?`<br><small class="hint">${esc(x.sub)}</small>`:''}</span><span style="display:flex;gap:6px"><button class="btn small ghost" data-act="moonundate" data-q="${x.q.id}"${x.s?` data-s="${x.s}"`:''}>日付を外す</button><button class="btn small" data-act="moonopen" data-q="${x.q.id}">開く</button></span></div>`).join('')}</div>`:'<p class="hint">何度も持ち越しているものはありません</p>'}
+    ${nodate?`<div class="sec-h"><span>日付のない工程</span><span>${nodate}件</span></div><p class="hint">来週やりたいものがあれば、日付を入れておこう</p>`:''}
+    <div style="margin-top:18px;text-align:center"><button class="btn primary" data-act="moonfinish">見直しを終える</button></div></div>`;
+}
+function openMoon(){ renderMoon(); $('moon').classList.add('show'); }
+setTimeout(()=>{ const k=moonKey(); if(k&&state.moonDone!==k&&!state.pristine) openMoon(); },1800);
+
 /* ---------- 指スワイプで隣の区分へ（左右） ---------- */
 function stepCat(dir){
   const i=CATS.indexOf(listCat); listCat=CATS[(i+(dir>0?1:CATS.length-1))%CATS.length];
@@ -1563,8 +1663,9 @@ function stamp(){
   state.quests.forEach(q=>{ const {u,...rest}=q; const sg=JSON.stringify(rest); cur[q.id]=sg;
     if(qSigs&&qSigs[q.id]!==sg){ q.u=now; state.pristine=false; } if(!q.u) q.u=q.created||now; });
   if(qSigs) Object.keys(qSigs).forEach(id=>{ if(!cur[id]){ state.deleted[id]=now; state.pristine=false; } });
-  if(qSigs&&state.xp!==stamp.xp) state.pristine=false;
-  stamp.xp=state.xp;
+  const ex=[state.xp,state.seeds||0,state.moonDone||'',Object.keys(state.rested||{}).length].join('|');
+  if(qSigs&&ex!==stamp.ex) state.pristine=false;
+  stamp.ex=ex;
   Object.keys(state.deleted).forEach(id=>{ if(now-state.deleted[id]>90*DAY) delete state.deleted[id]; });
   qSigs=cur;
 }
@@ -1574,9 +1675,9 @@ function mergeStates(a,b){
   const map={};
   [...(a.quests||[]),...(b.quests||[])].forEach(q=>{ const e=map[q.id]; if(!e||(q.u||0)>(e.u||0)) map[q.id]=q; });
   const quests=Object.values(map).filter(q=>!(del[q.id]&&del[q.id]>=(q.u||0)));
-  return {xp:Math.max(a.xp||0,b.xp||0),quests,deleted:del,pristine:false};
+  return {xp:Math.max(a.xp||0,b.xp||0),seeds:Math.max(a.seeds||0,b.seeds||0),rested:{...(a.rested||{}),...(b.rested||{})},moonDone:[a.moonDone||'',b.moonDone||''].sort().pop(),quests,deleted:del,pristine:false};
 }
-function fingerprint(st){ return JSON.stringify([(st.quests||[]).map(q=>q.id+':'+(q.u||0)).sort(),st.xp||0]); }
+function fingerprint(st){ return JSON.stringify([(st.quests||[]).map(q=>q.id+':'+(q.u||0)).sort(),st.xp||0,st.seeds||0,Object.keys(st.rested||{}).length,st.moonDone||'']); }
 function applyState(ns){
   state=ns; if(!Array.isArray(state.quests)) state.quests=[];
   migrate(); qSigs=null; stamp();
