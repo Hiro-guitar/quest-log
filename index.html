@@ -508,7 +508,7 @@ body{background:#050607}
 .tr-up{font-size:11px;padding:1px 8px;border-radius:999px;background:rgba(240,166,64,.18);color:var(--orange);margin-left:4px}
 .tr-sets{display:grid;gap:6px}.tr-set{display:flex;align-items:center;gap:6px;font-size:13px}.tr-set .n{width:4.2em;color:var(--muted)}
 .tr-set input{width:4.8em!important;padding:6px 8px!important;text-align:right}
-.tr-food{display:grid;gap:4px;font-size:13px;margin-bottom:6px}.tr-food b{display:inline-block;min-width:4.5em;color:var(--muted);font-weight:500}
+.tr-food{display:grid;gap:4px;font-size:13px;margin-bottom:6px}.tr-food div{display:grid;grid-template-columns:4.5em minmax(0,1fr);gap:4px}.tr-food b{color:var(--muted);font-weight:500}
 .tr-checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-bottom:6px}
 .tr-checks label{display:flex;align-items:center;gap:8px;padding:9px 10px;border:1px solid rgba(242,236,214,.12);border-radius:3px;background:rgba(0,0,0,.25);font-size:13px;cursor:pointer}
 .tr-checks input{display:none}.tr-checks i{width:12px;height:12px;border:1.4px solid var(--blue);transform:rotate(45deg);flex:none}
@@ -1806,8 +1806,10 @@ function trOnChange(e){
     save(); renderList(); renderDetail(); return true; }
   if(el.dataset.trex){ const id=el.dataset.trex, ix=+el.dataset.i, f=+el.dataset.f, v=el.value===''?null:Math.max(0,parseFloat(el.value));
     const day={...(H.lift[k]||{})}, arr=(day[id]||[]).slice(), s=(arr[ix]||[null,null]).slice(); s[f]=v; arr[ix]=s; day[id]=arr; H.lift[k]=day; hmTouch('lift',k);
-    if(f===1&&v&&!(H.days[k]||{}).train){ H.days[k]={...(H.days[k]||{}),train:true}; hmTouch('days',k); gain(30); toast('鍛錬クリア  +30 XP'); maybeSeed(); }
-    save(); renderList(); renderDetail(); return true; }
+    if(f===1&&v&&!(H.days[k]||{}).train){ H.days[k]={...(H.days[k]||{}),train:true}; hmTouch('days',k); gain(30); toast('鍛錬クリア  +30 XP'); maybeSeed();
+      const cb=document.querySelector('input[data-trc=train]'); if(cb){ cb.checked=true; cb.closest('label').classList.add('on'); } }
+    // 入力中の欄が消えないよう、右の画面は描き直さない
+    save(); renderList(); renderLv(); return true; }
   if(el.id==='trMemo'){ H.days[k]={...(H.days[k]||{}),memo:el.value.slice(0,500)}; hmTouch('days',k); save(); return true; }
   return false;
 }
