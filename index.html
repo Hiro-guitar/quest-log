@@ -1838,7 +1838,7 @@ function trDayPanel(k){
     h+=`<div class="sec-h"><span>筋トレ</span><button class="btn small ghost" data-act="trsw" data-v="R">今日は休みにする</button></div><p class="hint" style="margin:0 0 6px">ダンベルの重さは片手1個あたり。セットの間は1〜2分休む。</p>${TR_MENU[t].map(id=>trExHtml(id,k)).join('')}`;
   }
   h+=`<div class="sec-h"><span>食事</span><span>約2,100〜2,200 kcal・たんぱく質約120g</span></div><div class="tr-food">
-    <div><b>朝</b>プロテイン1杯＋ごはん150g＋納豆＋卵2個</div><div><b>昼</b>約600kcalまで。たんぱく質20g以上（サラダチキン、鮭おにぎり＋ゆで卵など）</div><div><b>夜</b>奥さんと同じおかず1人前＋もち麦ごはん200g</div>${t!=='R'?'<div><b>筋トレ後</b>プロテイン1杯</div>':''}</div>`;
+    <div><b>朝</b>プロテイン1杯＋ごはん150g＋納豆＋卵2個</div><div><b>昼</b>約600kcalまで。たんぱく質20g以上（サラダチキン、鮭おにぎり＋ゆで卵など）</div><div><b>夜</b>奥さんと同じおかず1人前＋ごはん200g</div>${t!=='R'?'<div><b>筋トレ後</b>プロテイン1杯</div>':''}</div>`;
   h+=`<div class="sec-h"><span>今日のチェック</span><span>${trDone(k)} / ${trChecks(k).length}</span></div><div class="tr-checks">${trChecks(k).map(([c,l])=>`<label class="${dd[c]?'on':''}"><input type="checkbox" data-trc="${c}"${dd[c]?' checked':''}><i></i>${l}</label>`).join('')}</div>`;
   h+=`<div class="sec-h"><span>メモ（体調・痛み・サッカーなど）</span></div><textarea id="trMemo" class="tr-memo">${esc(dd.memo||'')}</textarea></div>`;
   return h;
@@ -1874,7 +1874,7 @@ function trPlanPanel(){
   <div class="sec-h"><span>見通し</span></div><p>年末までの2か月で、脂肪を2〜3kg落としながら筋肉をつける。体重は65.7kgから63〜64kgくらい、お腹まわりは2〜3cm細くなる見込み。肩・胸・腕にハリが出て、Tシャツ姿が変わるのが年末の目標。</p>
   <ul class="hint"><li>身長172cm・体重65.7kg・30代と仮定。1日の消費は、ふだんの散歩込みで約2,500〜2,600kcal</li><li>腹筋がはっきり割れて見えるのは体脂肪率10〜12%くらいから。そこまでは続けて4〜6か月（来年3〜4月）が目安</li><li>筋トレを始めて最初の数か月は、いちばん筋肉がつきやすい時期</li></ul>
   <div class="sec-h"><span>食事</span></div><p>1日約2,100〜2,200kcal、たんぱく質は約120g（体重1kgあたり1.8g）。おかずは奥さんと同じ1人前のまま、ごはんとたんぱく質を足す。</p>
-  <div class="tr-food"><div><b>朝</b>プロテイン1杯＋ごはん150g＋納豆＋卵2個（約650kcal）</div><div><b>昼</b>好きなもの。たんぱく質20g以上（約600kcal）</div><div><b>夜</b>奥さんと同じおかず1人前＋もち麦ごはん200g（約700〜850kcal）</div><div><b>筋トレ後</b>プロテイン1杯（約120kcal）</div></div>
+  <div class="tr-food"><div><b>朝</b>プロテイン1杯＋ごはん150g＋納豆＋卵2個（約650kcal）</div><div><b>昼</b>好きなもの。たんぱく質20g以上（約600kcal）</div><div><b>夜</b>奥さんと同じおかず1人前＋ごはん200g（約700〜850kcal）</div><div><b>筋トレ後</b>プロテイン1杯（約120kcal）</div></div>
   <ul class="hint"><li>プロテインは一般的なホエイで1杯約110〜120kcal・たんぱく質20〜24g。VERIFYSTの袋の1食分の表示で確かめる</li><li>夜がパスタなどごはんのない日は、おかずと別にごはん100gか、卵・豆腐を足す</li><li>お酒や甘いものを食べた日は、昼か夜のごはんを少し減らす</li></ul>
   <div class="sec-h"><span>筋トレのルール</span></div><p>1回20分・3種目だけ。月〜土に「押す→脚→引く」を2周して、日曜は休み。1回を短くして回数を増やすので、週の合計量は1回40分×週3回と同じくらい。できなかった日は日曜にずらしてOK（休みの日から選べる）。</p>
   <ul><li>最初の2週間（11/15まで）は各種目2セット。「あと3〜4回できる」重さでフォームを覚える</li><li>11/16からは3セット。毎セット「あと1〜2回できる」所まで追い込む</li><li><b>重さの上げ方</b>：全セットで回数の上限（12回や15回）に届いたら、次回は1〜2kg重くする。「重さを上げよう」と出る</li><li>同じ筋肉を続けて使わない順番にしてある。痛みが出たら、その種目は休む</li><li>握力の道具は、テレビや動画を見ながらのついででOK</li></ul>
