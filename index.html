@@ -375,7 +375,7 @@ body{background:#050607}
 .row.sel{border:2px solid #f8f4e4;box-shadow:0 0 12px rgba(255,255,240,.45),inset 0 0 8px rgba(255,255,240,.12);padding:7px 0 7px 11px;background:rgba(10,12,14,.62)}
 .r-mark{width:24px;display:flex;justify-content:center;flex:none}
 .r-mark .ico{width:18px;height:18px;color:var(--text)}.r-mark .ico-main{width:24px;color:var(--text)}
-.r-title{font-size:14.5px;font-weight:900;color:#fff;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:clip}
+.r-title{font-size:14.5px;font-weight:900;color:#fff;letter-spacing:.02em;white-space:normal;overflow:visible;word-break:break-all;line-height:1.35}
 .r-title.two{white-space:normal;line-height:1.3;overflow:visible;word-break:break-all}
 .r-sub{font-size:11px;color:#d8d0b4;opacity:.85;white-space:normal;overflow:visible;word-break:break-all;line-height:1.4;margin-top:1px}
 .r-side{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted);flex:none;margin-left:auto}
@@ -906,14 +906,18 @@ function connectBanner(){ return (!sync.url&&state.pristine&&tab!=='tools')?`<bu
 // 名前が枠に収まらないときは「…」で切らずに、文字を少し詰めて全部見せる（それでも長ければ2行に）
 function fitTitles(){
   document.querySelectorAll('#list .r-title').forEach(el=>{
-    el.style.fontSize=''; el.classList.remove('two');
-    const w=el.clientWidth; if(!w||el.scrollWidth<=w) return;
+    el.style.fontSize=''; el.classList.remove('two'); el.style.whiteSpace='nowrap'; el.style.overflow='hidden';
+    const w=el.clientWidth; if(!w){ el.style.whiteSpace=''; el.style.overflow=''; return; }
+    if(el.scrollWidth<=w){ el.style.overflow=''; return; } // 1行に収まる
+    el.style.overflow='';
     const base=parseFloat(getComputedStyle(el).fontSize), r=w/el.scrollWidth;
-    if(r>=0.8){ el.style.fontSize=(base*r*0.99).toFixed(1)+'px'; }
-    else { el.style.fontSize=(base*0.86).toFixed(1)+'px'; el.classList.add('two'); }
+    if(r>=0.8){ el.style.fontSize=(base*r*0.97).toFixed(1)+'px'; if(el.scrollWidth>el.clientWidth) el.style.whiteSpace=''; }
+    else { el.style.fontSize=(base*0.86).toFixed(1)+'px'; el.style.whiteSpace=''; el.classList.add('two'); }
   });
 }
 window.addEventListener('resize',()=>{ clearTimeout(fitTitles._t); fitTitles._t=setTimeout(fitTitles,150); });
+try{ document.fonts&&document.fonts.ready.then(()=>fitTitles()); }catch(e){}
+window.addEventListener('load',()=>setTimeout(fitTitles,50));
 function renderList(){
   const L=$('list'); let h='';
   if(tab!=='tools'&&listCat==='today'){ L.innerHTML=connectBanner()+todayList(); fitTitles(); return; }
