@@ -170,7 +170,7 @@ button{cursor:pointer;background:none;border:0;padding:0}
 .d-type .ico{width:15px;height:15px;margin-right:2px}.d-type.t-main .ico{width:20px}
 .d-title{font-size:24px;font-weight:900;line-height:1.35;margin:4px 0 10px;font-style:italic;letter-spacing:.02em}
 .d-meta{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--muted);margin-bottom:12px}
-.stars{color:var(--orange);letter-spacing:1px}
+.stars{color:#d9d3be;letter-spacing:1px}
 .stars .off{color:var(--dim)}
 .due.soon{color:var(--orange)}
 .do{color:var(--blue)}
@@ -197,7 +197,7 @@ button{cursor:pointer;background:none;border:0;padding:0}
 .step:hover .sdate,.sdate:focus{border-color:var(--line);color:var(--muted)}
 .sdate.on{color:var(--blue);border-color:rgba(95,212,239,.35)}
 .step.done .sdate.on{color:var(--dim);border-color:transparent}
-@media (hover:none){.sdate{border-color:var(--line)}}
+@media (hover:none){.step.pick .sdate{border-color:var(--line)}}
 .sdate-row{display:flex;gap:8px;align-items:center;padding:6px 0 10px 28px;flex-wrap:wrap}
 .sdate-row input{width:auto;flex:1;min-width:120px;background:rgba(0,0,0,.35);border:1px solid var(--line);border-radius:3px;padding:7px 10px;outline:none}
 .sdate-row input:focus{border-color:var(--blue)}
@@ -383,7 +383,7 @@ body{background:#050607}
 .r-notch{align-self:stretch;width:9px;flex:none;margin:-8px 0;border-left:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.35);border-radius:0 3px 3px 0}
 .row.sel .r-notch{margin:-7px 0}
 .row.done{opacity:.6}.row.done .r-title{color:#cfc8b2}
-.r-clear{font-size:11px;font-style:italic;font-weight:900;letter-spacing:.05em;color:#e9c46a;transform:rotate(-6deg);text-shadow:0 0 6px rgba(233,196,106,.35)}
+.r-clear{font-size:11px;font-style:italic;font-weight:900;letter-spacing:.05em;color:#f0a640;transform:rotate(-6deg);text-shadow:0 0 6px rgba(240,166,64,.35)}
 .add-row{background:rgba(10,12,14,.35);border-style:dashed}
 .add-row .r-title{color:var(--muted);font-weight:700}.add-row .r-mark{color:var(--muted);font-size:16px}
 .add-row:hover .r-title,.add-row:hover .r-mark{color:var(--text)}
@@ -403,14 +403,14 @@ body{background:#050607}
 .empty-memo{color:var(--muted)!important;font-size:13px}
 .p-meta{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--muted);margin-bottom:10px}
 .p-count{margin-top:auto;padding-top:16px;text-align:right;font-size:12px;letter-spacing:.1em;color:#e8e1c8}
-.stamp{position:absolute!important;right:22px;top:16px;transform:rotate(-8deg);font-size:26px;font-weight:900;font-style:italic;letter-spacing:.06em;color:#e9c46a;opacity:.85;text-shadow:0 0 12px rgba(233,196,106,.45);pointer-events:none;z-index:3}
+.stamp{position:absolute!important;right:22px;top:16px;transform:rotate(-8deg);font-size:26px;font-weight:900;font-style:italic;letter-spacing:.06em;color:#f0a640;opacity:.85;text-shadow:0 0 12px rgba(240,166,64,.45);pointer-events:none;z-index:3}
 .panel .sec-h{color:rgba(242,236,214,.55)}
 .panel .back{display:none}
 .hints{position:fixed;right:28px;bottom:18px;z-index:5;display:flex;gap:22px;align-items:center}
 .hint-b{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:700;color:var(--text);text-shadow:0 1px 4px rgba(0,0,0,.8)}
 .hint-b i{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:rgba(242,236,214,.92);color:#111;font-size:11px;font-style:normal;font-weight:900}
 .hint-b:hover span{text-decoration:underline;text-underline-offset:4px}
-.hint-b.gold span{color:#f0c25a}.hint-b.on span{color:var(--orange)}.hint-b.danger span{color:var(--red)}
+.hint-b.gold span{color:var(--orange)}.hint-b.on span{color:var(--orange)}.hint-b.danger span{color:var(--red)}
 .dest{position:fixed;left:28px;bottom:16px;z-index:5;display:grid;gap:3px;max-width:42vw}
 .dest:empty{display:none}
 .dest-h{font-size:10px;letter-spacing:.25em;color:var(--orange)}
@@ -474,7 +474,7 @@ body{background:#050607}
 .bn-k{font-size:11px;letter-spacing:.5em;color:var(--orange)}
 .bn-big{font-size:clamp(22px,5vw,34px);font-weight:900;letter-spacing:.12em;text-shadow:0 0 18px rgba(242,236,214,.55)}
 .bn-sub{font-size:13px;color:#d9d3be;margin-top:2px}
-.banner.seed .bn-k{color:var(--green);font-size:18px;letter-spacing:0}.banner.seed .bn-big{font-size:clamp(18px,4vw,26px)}
+.banner.seed .bn-k{color:var(--text);font-size:18px;letter-spacing:0}.banner.seed .bn-big{font-size:clamp(18px,4vw,26px)}
 .banner.rest .bn-k{color:#f0a640}
 @keyframes bnIn{0%{opacity:0;transform:scaleY(.6)}12%{opacity:1;transform:none}78%{opacity:1}100%{opacity:0}}
 .seed{display:inline-flex;align-items:center;gap:3px;color:var(--green);font-size:13px;margin-right:12px;text-shadow:0 0 6px rgba(159,217,138,.5)}.seed b{color:var(--text);font-size:14px}
@@ -524,16 +524,16 @@ body{background:#050607}
 .tr-stat{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.tr-stat div{background:rgba(0,0,0,.25);border-radius:3px;padding:10px 12px}.tr-stat b{display:block;font-size:22px;font-style:italic}.tr-stat span{font-size:11px;color:var(--muted)}
 .tr-plan p,.tr-plan li{font-size:13.5px;line-height:1.8}.tr-plan ul{margin:4px 0 8px;padding-left:1.2em}.tr-plan h4{margin:10px 0 2px;font-size:13.5px;color:var(--blue)}
 .tr-today .r-mark .ico{color:var(--orange)}
-.vit{display:flex;align-items:center;gap:2px;margin-top:6px;flex-wrap:wrap;max-width:240px}.vit .hrt{width:15px;height:13px;filter:drop-shadow(0 0 3px rgba(232,112,95,.5))}.stms{display:inline-flex;gap:2px;margin-left:6px}.stm{width:16px;height:16px}
+.vit{display:flex;align-items:center;gap:2px;margin-top:2px;flex-wrap:wrap;max-width:240px}.vit .hrt{width:15px;height:13px;filter:drop-shadow(0 0 3px rgba(232,112,95,.5))}.stms{display:inline-flex;gap:2px;margin-left:6px}.stm{width:16px;height:16px}
 @media (max-width:820px){.vit{max-width:200px}.vit .hrt{width:13px;height:11px}.stm{width:14px;height:14px}}
 .proofs{border:1px solid rgba(242,236,214,.14);background:rgba(0,0,0,.25);border-radius:3px;padding:8px 12px;margin:0 0 10px}
-.pf-h{font-size:11px;letter-spacing:.3em;color:var(--orange);margin-bottom:4px}
+.pf-h{font-size:11px;letter-spacing:.3em;color:var(--muted);margin-bottom:4px}
 .pf{display:grid;grid-template-columns:minmax(0,1fr) auto 3.5em;align-items:center;gap:8px;font-size:12.5px;padding:2px 0}.pf small{color:var(--muted);text-align:right}
-.pf-d{display:flex;gap:5px}.pf-d i{width:9px;height:9px;border:1.3px solid var(--orange);transform:rotate(45deg)}.pf-d i.on{background:var(--orange);box-shadow:0 0 6px rgba(240,166,64,.6)}
+.pf-d{display:flex;gap:5px}.pf-d i{width:8px;height:8px;border:1.3px solid #d9d3be;transform:rotate(45deg);opacity:.7}.pf-d i.on{background:#f2ecd6;opacity:1;box-shadow:0 0 6px rgba(242,236,214,.5)}
 .pf-note{font-size:10.5px;color:var(--dim);margin-top:4px}
-.banner.pr .bn-k,.banner.shrine .bn-k{color:#6fe0ff}.banner.reward .bn-k{color:#3fbf63}
+.banner.shrine .bn-k{color:#6fe0ff}.banner.pr .bn-k,.banner.reward .bn-k{color:var(--orange)}
 .banner.heart .bn-k::before{content:'♥';color:#e8705f;font-size:20px;letter-spacing:0}.banner.stamina .bn-k::before{content:'◔';color:#9fd98a;font-size:20px;letter-spacing:0}
-.rupee{display:inline-flex;align-items:center;gap:3px;margin-right:12px;font-size:14px}.rupee b{font-weight:900}.rp{width:9px;height:14px;filter:drop-shadow(0 0 3px rgba(63,191,99,.6));vertical-align:-2px}
+.rupee{display:inline-flex;align-items:center;gap:3px;margin-right:12px;font-size:14px}.rupee b{font-weight:900}.rp{width:9px;height:14px;filter:drop-shadow(0 0 3px rgba(240,166,64,.6));vertical-align:-2px}
 .sensor{display:inline-flex;align-items:center;gap:4px;margin-right:14px;font-size:12px;color:#e9e4cf;text-shadow:0 1px 3px rgba(0,0,0,.7)}.sensor b{font-weight:700}.sn-t{color:var(--muted);font-variant-numeric:tabular-nums}
 @media (max-width:820px){.sensor{margin-right:8px;font-size:11px}.rupee{margin-right:8px}.seed{margin-right:8px}}
 .eq{font-size:11px;color:var(--muted);margin-left:4px}
@@ -542,6 +542,16 @@ body{background:#050607}
 .shop-it .rp{width:8px;height:12px}.shop-add{display:flex;gap:6px;flex-wrap:wrap}.shop-add #shopName{flex:2;min-width:150px}.shop-add #shopCost{flex:1;min-width:80px}
 .btn[disabled]{opacity:.4;cursor:default}
 .kid.locked{opacity:.5}
+.p-desc:empty{display:none}.rec-lv .lv-title{display:inline!important}
+.proofs.one{display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;padding:7px 12px}.proofs.one .pf-h{margin:0}.proofs.one .pf{display:inline-flex;gap:7px;padding:0;font-size:12px}
+.rec-lv{display:flex;align-items:baseline;gap:10px;margin-top:6px}.rec-lv .lv-num{font-size:30px}.rec-lv .lv-title{font-size:13px;opacity:.9}.rec-xp{margin-top:8px}
+.mems{display:grid;gap:8px;margin-top:10px}.mem{display:block;text-align:left;width:100%;border:1px solid var(--line);background:rgba(0,0,0,.22);border-radius:3px;padding:10px 12px}.mem:hover{border-color:rgba(242,236,214,.35)}
+.mem-h{display:flex;align-items:center;gap:8px}.mem-h b{flex:1;min-width:0}.mem-h small{color:var(--muted);font-size:11px}.mem-t{display:block;margin-top:6px;font-size:13px;color:#d9d3be;line-height:1.7}.mem-t i{color:var(--dim)}
+.step-t[data-act]{cursor:pointer}
+.sdate:not(.on){visibility:hidden}.step:hover .sdate,.step.pick .sdate,.sdate:focus{visibility:visible}
+.p-acts{gap:10px;margin-top:16px;flex-wrap:wrap}.p-acts .btn{flex:1}
+.m-only{display:none}
+@media (max-width:820px){.m-only{display:flex}.hint-b.pc-only{display:none}}
 .rec-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:6px;margin-bottom:8px}.rec-grid div{background:rgba(0,0,0,.25);border:1px solid rgba(242,236,214,.08);border-radius:3px;padding:8px 10px}.rec-grid b{display:block;font-size:20px;font-style:italic}.rec-grid span{font-size:11px;color:var(--muted)}
 .shrine-row{list-style:none;padding:0 0 8px 28px}.shrine-row button{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;color:#8fe8ff;border:1px solid rgba(111,224,255,.35);background:rgba(10,40,60,.45);border-radius:3px;padding:5px 12px}.shrine-row button:hover{box-shadow:0 0 10px rgba(111,224,255,.35)}.shrine-row small{color:var(--muted);font-size:11px}
 .sh-ico{width:10px;height:10px;border:1.5px solid #6fe0ff;transform:rotate(45deg);box-shadow:0 0 6px rgba(111,224,255,.6)}
@@ -663,7 +673,7 @@ function migrate(){
 migrate(); save();
 function save(){ moveDoToSteps(); sortAllSteps(); if(window.__qlReady) stamp(); try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){} if(window.__qlReady){ syncScan(); schedulePush(); } }
 
-let tab='list', selId=null, editing=false, showCleared=false, miniOpen=false, listCat='today', dayView=ymd();
+let tab='list', selId=null, editing=false, showCleared=false, miniOpen=false, listCat='today', dayView=ymd(), pickSid=null;
 
 /* ---------- helpers ---------- */
 const findQ=id=>state.quests.find(q=>q.id===id);
@@ -756,9 +766,9 @@ function allStepsDone(q){return !q.done && (q.steps.length||kids(q.id).length) &
 function banner(kind,big,sub){
   const b=$('banner'); if(!b) return;
   b.className='banner '+kind; b.innerHTML=`<div class="bn-in"><div class="bn-k">${{accept:'CHALLENGE',seed:'✿',rest:'REST',pr:'NEW RECORD',train:'TRAINING',reward:'REWARD',shrine:'SHRINE'}[kind]||''}</div><div class="bn-big">${esc(big)}</div>${sub?`<div class="bn-sub">${esc(sub)}</div>`:''}</div>`;
-  void b.offsetWidth; b.classList.add('show');
+  void b.offsetWidth; b.classList.add('show'); banner._until=Date.now()+2300;
 }
-function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('show'),2200)}
+function toast(msg){ const w=(banner._until||0)-Date.now(); if(w>0){ setTimeout(()=>toast(msg),w+150); return; } const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('show'),2200)}
 function gain(n){
   const before=lvInfo(state.xp).lv;
   state.xp=Math.max(0,state.xp+n);
@@ -865,7 +875,7 @@ function addSteps(q,text){
 
 /* ---------- render ---------- */
 const CAT_NAMES={today:'今日の冒険',main:'メインチャレンジ',challenge:'チャレンジ',mini:'ミニチャレンジ',train:'鍛錬',memory:'思い出'};
-const CATS=['today','main','challenge','mini','train','memory'];
+const CATS=['today','main','challenge','mini','train'];
 let toolSel='sync', bkList=null, memEdit=null;
 function render(){sortAllSteps();renderLv();renderHud();renderTabs();renderList();renderDetail();renderHints();
   $('split').classList.toggle('has-sel',!!selId||(tab==='tools'&&toolPicked)||(tab==='pouch'&&!!pouchSel)||(tab==='list'&&listCat==='train'&&!!trSel));
@@ -873,8 +883,8 @@ function render(){sortAllSteps();renderLv();renderHud();renderTabs();renderList(
 let toolPicked=false;
 function renderLv(){ setTimeout(syncBadge,0); setTimeout(wxRender,0);
   const {lv,rest,need}=lvInfo(state.xp);
-  $('lv').innerHTML=`<div class="lv-row"><span class="lv-num"><small>Lv.</small>${lv}</span><span class="lv-title">${TITLES[Math.min(lv-1,TITLES.length-1)]}<span class="eq">・${equipNow().name}</span></span></div><div class="xp"><i style="width:${rest/need*100}%"></i></div>${(()=>{ const v=trVessels(); let hh=''; for(let i=0;i<v.hearts;i++) hh+=heartSvg(1); return `<div class="vit" title="ハート ${v.hearts}・がんばり ${v.stamina/5}周">${hh}<span class="stms">${staminaSvg(v.stamina)}</span></div>`; })()}`;
-  $('xp').innerHTML=`<span class="sensor" id="sensor"></span><span class="rupee" title="ルピー">${rupeeSvg}<b>${rupeeBal()}</b></span>${state.seeds?`<span class="seed" title="森の精の実">✿<b>${state.seeds}</b></span>`:''}<span class="gem">✦</span><span class="xp-num">${state.xp}</span><span id="syncBadge" class="sbadge"></span>`;
+  $('lv').innerHTML=`${(()=>{ const v=trVessels(); let hh=''; for(let i=0;i<v.hearts;i++) hh+=heartSvg(1); return `<div class="vit" title="ハート ${v.hearts}・がんばり ${v.stamina/5}周">${hh}<span class="stms">${staminaSvg(v.stamina)}</span></div>`; })()}`;
+  $('xp').innerHTML=`<span class="sensor" id="sensor"></span><span class="rupee" title="ルピー">${rupeeSvg}<b>${rupeeBal()}</b></span><span id="syncBadge" class="sbadge"></span>`;
 }
 function renderHud(){
   const act=state.quests.filter(q=>q.accepted&&!q.done).sort(byDue);
@@ -950,7 +960,7 @@ function stepRowToday(q,st){
 // 焚き火で休む：今日の分を明日に回す（持ち越し回数は増やさない）
 let pouchSel=null;
 function pouchList(){
-  const it=[['shop','ごほうびの店',`${rupeeSvg} ${rupeeBal()} ルピー`],['records','冒険の記録',`実 ${state.seeds||0}・祠 ${state.shrines||0}`],['equip','装備',equipNow().name]];
+  const it=[['shop','ごほうびの店',`${rupeeSvg} ${rupeeBal()} ルピー`],['records','冒険の記録',(()=>{const L=lvInfo(state.xp); return `Lv.${L.lv} ${TITLES[Math.min(L.lv-1,TITLES.length-1)]}・✿ ${state.seeds||0}`;})()],['memory','思い出',`${state.quests.filter(q=>q.done&&q.type!=='mini').length}件の達成`],['equip','装備',equipNow().name]];
   return `<div class="cat-bar"><div class="cat-name">ポーチ</div><div class="cat-icons"><span class="cat on" style="cursor:default">${ICON.pouch}</span></div></div><div class="rows">`+
     it.map(([k,l,sub])=>`<button class="row ${pouchSel===k?'sel':''}" data-act="pouch" data-v="${k}"><span class="r-mark">✦</span><span class="r-main"><span class="r-title">${l}</span><span class="r-sub">${sub}</span></span><span class="r-notch"></span></button>`).join('')+'</div>';
 }
@@ -960,10 +970,16 @@ function equipPanel(){
   <div class="shop-bal"><b style="font-size:22px">${e.name}</b><span>鍛錬した日：${e.n}日</span></div>
   <div class="kids">${EQUIP.map(([n,nm])=>`<div class="kid ${e.n>=n?'':'locked'}"><span>${e.n>=n?'✦':'◇'} ${nm}</span><span class="hint">${n?n+'日の鍛錬':'はじめから'}${e.n>=n?'':`（あと${n-e.n}日）`}</span></div>`).join('')}</div>`;
 }
+function memoryPanel(){
+  const ms=state.quests.filter(q=>q.done&&q.type!=='mini').sort((a,b)=>(b.doneAt||0)-(a.doneAt||0));
+  return `<h2 class="p-title">思い出</h2><div class="p-desc"><p>達成したチャレンジと、そのときのひとこと。</p></div>`+
+    (ms.length?`<div class="mems">${ms.map(q=>`<button class="mem" data-act="openq" data-id="${q.id}"><span class="mem-h">${ico(q.type,true)}<b>${esc(q.title||'(無題)')}</b><small>${q.doneAt?new Date(q.doneAt).toLocaleDateString('ja-JP'):''}</small></span><span class="mem-t">${q.memory?esc(q.memory).split('\n').join('<br>'):'<i>ひとことはまだありません（開いて書けます）</i>'}</span></button>`).join('')}</div>`:'<p class="hint">チャレンジを達成すると、ここに思い出として残ります</p>');
+}
 function pouchPanel(){
   if(pouchSel==='shop') return shopPanel();
   if(pouchSel==='records') return recordsPanel();
   if(pouchSel==='equip') return equipPanel();
+  if(pouchSel==='memory') return memoryPanel();
   return '';
 }
 function restList(){
@@ -1104,8 +1120,8 @@ function renderView(D,q){
   let h=`<div class="panel"><div class="p-wm">${SECBG[q.type]}</div><button class="back" data-act="back">‹ 一覧へ</button>
   ${q.done?'<div class="stamp">COMPLETE</div>':''}
   <h2 class="p-title">${esc(q.title||'(無題)')}</h2>
-  <div class="p-giver"><span>${q.giver?`<i class="giver-mark">!</i>${esc(q.giver)}`:''}</span><span class="p-place">${esc(q.place||'')}</span></div>
-  <div class="p-desc">${q.memo?esc(q.memo).split('\n').map(l=>`<p>${l||'&nbsp;'}</p>`).join(''):'<p class="empty-memo">説明はまだありません。「編集」で、なぜやるのか・どうなったらクリアかを書いておこう。</p>'}${(()=>{ if(q.done) return ''; const na=nextAction(q); return na?`<p class="p-next">次は 「${esc(na)}」 に取りかかるのが良さそうだ</p>`:(q.steps.length||kids(q.id).length?'':`<p class="p-next">まずは 最初の工程を書き出してみよう</p>`); })()}</div>`;
+  ${q.giver||q.place?`<div class="p-giver"><span>${q.giver?`<i class="giver-mark">!</i>${esc(q.giver)}`:''}</span><span class="p-place">${esc(q.place||'')}</span></div>`:''}
+  <div class="p-desc">${q.memo?esc(q.memo).split('\n').map(l=>`<p>${l||'&nbsp;'}</p>`).join(''):''}${(()=>{ if(q.done||q.steps.length||kids(q.id).length) return ''; return `<p class="p-next">まずは 最初の工程を書き出してみよう</p>`; })()}</div>`;
   const meta=[q.rank?stars(q.rank):'', (()=>{const e=effDo(q); if(!e||q.done) return ''; return `<span class="do">やる日 ${doLabel(e)}${e.own?'':'<small class="hint">（工程の日付）</small>'}${e.carry?`<span class="carry">↻${e.carry}回持ち越し</span>`:''}</span>`;})(), q.deadline?`<span>期限 ${q.deadline.replace(/-/g,'/')} ${dueHtml(q.deadline)}</span>`:'', q.reward?`<span>報酬：${esc(q.reward)}</span>`:''].filter(Boolean).join('');
   if(meta) h+=`<div class="p-meta">${meta}</div>`;
   if(anc.length) h+=`<div class="crumb link">${anc.map(a=>`${ico(a.type)} <button data-act="select" data-id="${a.id}">${esc(a.title||'(無題)')}</button>`).join('　›　')}　のためのチャレンジ</div>`;
@@ -1118,8 +1134,8 @@ function renderView(D,q){
         h+=`<li class="step qstep ${dn?'done':''} ${isNext?'next':''}" data-sid="${s.id}"><button class="qico" data-act="select" data-id="${r.id}" aria-label="チャレンジを開く">${ico(r.type,dn)}</button><span class="step-t"><button class="qlink" data-act="select" data-id="${r.id}">${esc(r.title||'(無題)')}</button><span class="qpct">${dn?'COMPLETE':Math.round(progress(r)*100)+'%'}</span>${na?`<span class="qnext">▸ ${esc(na)}</span>`:''}</span><span class="drag" data-drag title="ドラッグで並び替え">⋮⋮</span></li>`;
       }else{
         const chip=s.doDate?`<button class="sdate on" data-act="sdate" data-s="${s.id}">${doLabel(s,true).replace(' やる','')}${carryHtml(s)}</button>`:`<button class="sdate" data-act="sdate" data-s="${s.id}" title="日付を入れる">日付</button>`;
-        h+=`<li class="step ${dn?'done':''} ${isNext?'next':''}" data-sid="${s.id}"><button class="chk" data-act="step" data-q="${q.id}" data-s="${s.id}" aria-label="完了切替"></button><span class="step-t">${esc(s.text)}</span>${chip}<span class="drag" data-drag title="ドラッグで並び替え">⋮⋮</span></li>`;
-        if(isNext&&!dn&&!q.done) h+=`<li class="shrine-row"><button data-act="shrine" data-q="${q.id}" data-s="${s.id}"><i class="sh-ico"></i>この工程で祠に挑む<small>25分だけ集中</small></button></li>`;
+        h+=`<li class="step ${dn?'done':''} ${isNext?'next':''} ${pickSid===s.id?'pick':''}" data-sid="${s.id}"><button class="chk" data-act="step" data-q="${q.id}" data-s="${s.id}" aria-label="完了切替"></button><span class="step-t" data-act="pickstep" data-s="${s.id}">${esc(s.text)}</span>${chip}<span class="drag" data-drag title="ドラッグで並び替え">⋮⋮</span></li>`;
+        if(pickSid===s.id&&!dn&&!q.done) h+=`<li class="shrine-row"><button data-act="shrine" data-q="${q.id}" data-s="${s.id}"><i class="sh-ico"></i>この工程で祠に挑む<small>25分だけ集中</small></button></li>`;
         if(dateSid===s.id) h+=`<li class="sdate-row"><input type="date" data-sdate="${s.id}" value="${esc(s.doDate||'')}"><input type="time" data-stime="${s.id}" value="${esc(s.doTime||'')}"><button class="btn small ghost" data-act="sdateclear" data-s="${s.id}">消す</button><button class="btn small" data-act="sdateclose">OK</button></li>`;
       }
     });
@@ -1138,6 +1154,7 @@ function renderView(D,q){
     if(q.memory&&memEdit!==q.id) h+=`<div class="p-desc mem-text">${esc(q.memory).split('\n').map(l=>`<p>${l||'&nbsp;'}</p>`).join('')}</div>`;
     else h+=`<div class="mem-form"><textarea id="memIn" placeholder="ひとこと残そう（何がうれしかった？ 何を学んだ？ 次はどうしたい？）">${esc(q.memory||'')}</textarea><button class="btn primary small" data-act="memsave">思い出に残す</button></div>`;
   }
+  h+=q.done?`<div class="p-acts m-only"><button class="btn" data-act="reopen">未達成に戻す</button></div>`:`<div class="p-acts m-only"><button class="btn gold" data-act="complete">達成を報告</button><button class="btn ${q.accepted?'on':''}" data-act="accept">${q.accepted?'目的地を解除':'目的地を設定'}</button></div>`;
   if(!q.done && allStepsDone(q)) h+=`<div class="ready">すべての工程をクリアしました。達成を報告しよう！</div>`;
   { const all=state.quests.filter(x=>x.type===q.type); h+=`<div class="p-count">${TYPES[q.type].label}クリア　${all.filter(x=>x.done).length}/${all.length}</div>`; }
   h+=`</div>`;
@@ -1153,8 +1170,8 @@ function renderHints(){
   else if(!q&&listCat==='train'){ h=trSel?hint('trback','閉じる','B'):''; }
   else if(!q){ h=hint('newcur',listCat==='today'?'この日にチャレンジを追加':`新しい${CAT_NAMES[listCat]}`,'X'); }
   else if(editing){ h=hint('delete','削除','','danger')+hint('doneedit','完了','A'); }
-  else if(q.done){ h=hint('back','閉じる','B')+hint('edit','編集','Y')+hint('reopen','未達成に戻す',''); }
-  else { h=hint('back','閉じる','B')+hint('edit','編集','Y')+hint('complete','達成を報告','X','gold')+hint('accept',q.accepted?'目的地を解除':'目的地を設定','A',q.accepted?'on':''); }
+  else if(q.done){ h=hint('back','閉じる','B')+hint('edit','編集','Y')+hint('reopen','未達成に戻す','','pc-only'); }
+  else { h=hint('back','閉じる','B')+hint('edit','編集','Y')+hint('complete','達成を報告','X','gold pc-only')+hint('accept',q.accepted?'目的地を解除':'目的地を設定','A',(q.accepted?'on ':'')+'pc-only'); }
   $('hints').innerHTML=h;
 }
 function renderEdit(D,q){
@@ -1215,7 +1232,9 @@ document.addEventListener('click',e=>{
   const a=b.dataset.act, q=findQ(selId);
   switch(a){
     case 'tab': if(editing){cleanupEmpty();editing=false} tab=b.dataset.v; if(window.innerWidth<=820) selId=null; render(); break;
-    case 'select': dateSid=null; if(editing){cleanupEmpty();editing=false} selId=b.dataset.id; render(); window.innerWidth<=820&&window.scrollTo({top:0}); break;
+    case 'openq': { const t=findQ(b.dataset.id); if(!t) break; tab='list'; listCat=t.type; selId=t.id; pouchSel=null; editing=false; render(); window.scrollTo({top:0}); break; }
+    case 'pickstep': pickSid=pickSid===b.dataset.s?null:b.dataset.s; renderDetail(); break;
+    case 'select': dateSid=null; pickSid=null; if(editing){cleanupEmpty();editing=false} selId=b.dataset.id; render(); window.innerWidth<=820&&window.scrollTo({top:0}); break;
     case 'back': if(editing){cleanupEmpty();editing=false} selId=null; toolPicked=false; pouchSel=null; render(); break;
     case 'pouch': pouchSel=b.dataset.v; render(); window.innerWidth<=820&&window.scrollTo({top:0}); break;
     case 'trday': selId=null; trSel=b.dataset.v; tab='list'; if(listCat!=='train'){ listCat='train'; } if(/^\d/.test(trSel)) trWeek=trWeekStart(trSel); render(); window.innerWidth<=820&&window.scrollTo({top:0}); break;
@@ -1781,7 +1800,7 @@ function trList(){
   const ws=new Date(trWeek+'T00:00:00'), we=new Date(ws.getTime()+6*DAY);
   let h=catBar('train');
   { const v=trVessels(), dots=n=>{ const r=n%4; let o=''; for(let i=0;i<4;i++) o+=`<i class="${i<r?'on':''}"></i>`; return o; };
-    h+=`<div class="proofs"><div class="pf-h">克服の証</div>${['push','pull','legs'].map(p=>`<div class="pf"><span>${PART_NAME[p]}</span><span class="pf-d">${dots(v.c[p])}</span><small>${v.c[p]}個</small></div>`).join('')}<div class="pf-note">押す・引くの証4つでハート、脚の証4つでがんばりの器</div>${(()=>{const e=equipNow(); return `<div class="pf-eq">装備：<b>${e.name}</b>${e.next?`　あと${e.next[0]-e.n}日の鍛錬で「${e.next[1]}」`:''}</div>`;})()}</div>`; }
+    h+=`<div class="proofs one" title="押す・引くの証4つでハート、脚の証4つでがんばりの器"><span class="pf-h">克服の証</span>${[['push','押す'],['pull','引く'],['legs','脚']].map(([p,l])=>`<span class="pf"><span>${l}</span><span class="pf-d">${dots(v.c[p])}</span></span>`).join('')}</div>`; }
   h+=`<div class="tr-week"><button class="cat-arrow" data-act="trweek" data-v="-1" aria-label="前の週">‹</button><span>${ws.getMonth()+1}/${ws.getDate()} 〜 ${we.getMonth()+1}/${we.getDate()}</span><button class="cat-arrow" data-act="trweek" data-v="1" aria-label="次の週">›</button></div><div class="rows">`;
   for(let i=0;i<7;i++){
     const d=new Date(ws.getTime()+i*DAY), k=ymd(d), t=trType(k); if(!t) continue;
@@ -1911,7 +1930,7 @@ function trOnChange(e){
 }
 
 /* ---------- ルピー（ためて、ごほうびの店で使う） ---------- */
-const rupeeSvg=`<svg viewBox="0 0 10 16" class="rp" aria-hidden="true"><path d="M5 .8 9.2 4.5v7L5 15.2.8 11.5v-7Z" fill="#3fbf63" stroke="#c8ffd0" stroke-width=".8"/><path d="M5 .8v14.4M.8 4.5 5 7l4.2-2.5" stroke="#c8ffd0" stroke-width=".5" fill="none" opacity=".7"/></svg>`;
+const rupeeSvg=`<svg viewBox="0 0 10 16" class="rp" aria-hidden="true"><path d="M5 .8 9.2 4.5v7L5 15.2.8 11.5v-7Z" fill="#f0a640" stroke="#ffe2b0" stroke-width=".8"/><path d="M5 .8v14.4M.8 4.5 5 7l4.2-2.5" stroke="#c8ffd0" stroke-width=".5" fill="none" opacity=".7"/></svg>`;
 const rupeeBal=()=>(state.rupeeEarned||0)-Object.values(state.purchases||{}).reduce((n,p)=>n+(+p.cost||0),0);
 function earnRupee(n){ if(n>0) state.rupeeEarned=(state.rupeeEarned||0)+n; }
 function shopItems(){ return Object.entries(state.shop||{}).filter(([,v])=>v&&!v.del).map(([id,v])=>({id,...v})).sort((a,b)=>a.cost-b.cost); }
@@ -1936,8 +1955,11 @@ function recordsPanel(){
   const Q=state.quests, done=t=>Q.filter(q=>q.type===t&&q.done).length, steps=Q.reduce((n,q)=>n+(q.steps||[]).filter(s=>!s.qref&&s.done).length,0);
   const v=trVessels(), eq=equipNow();
   const cell=(n,l)=>`<div><b>${n}</b><span>${l}</span></div>`;
-  return `<h2 class="p-title">冒険の記録</h2><div class="p-desc"><p>これまでの冒険のあゆみ。</p></div>
-  <div class="sec-h"><span>冒険</span></div><div class="rec-grid">${cell(lvInfo(state.xp).lv,'レベル')+cell(state.xp,'XP')+cell(done('main'),'メインクリア')+cell(done('challenge'),'チャレンジクリア')+cell(done('mini'),'ミニチャレンジクリア')+cell(steps,'工程クリア')+cell(state.shrines||0,'祠の試練')+cell(Q.filter(q=>q.done&&q.memory).length,'思い出')}</div>
+  const L=lvInfo(state.xp);
+  return `<h2 class="p-title">冒険の記録</h2>
+  <div class="rec-lv"><span class="lv-num"><small>Lv.</small>${L.lv}</span><span class="lv-title">${TITLES[Math.min(L.lv-1,TITLES.length-1)]}・${eq.name}</span></div>
+  <div class="xp rec-xp"><i style="width:${L.rest/L.need*100}%"></i></div><p class="hint">次のレベルまで ${L.need-L.rest} XP</p>
+  <div class="sec-h"><span>冒険</span></div><div class="rec-grid">${cell(state.xp,'これまでのXP')+cell(done('main'),'メインクリア')+cell(done('challenge'),'チャレンジクリア')+cell(done('mini'),'ミニチャレンジクリア')+cell(steps,'工程クリア')+cell(state.shrines||0,'祠の試練')+cell(Q.filter(q=>q.done&&q.memory).length,'思い出')}</div>
   <div class="sec-h"><span>集めたもの</span></div><div class="rec-grid">${cell(state.seeds||0,'森の精の実')+cell(state.rupeeEarned||0,'これまでのルピー')+cell(Object.keys(state.purchases||{}).length,'買ったごほうび')+cell(Object.keys(state.rested||{}).length,'焚き火で休んだ日')}</div>
   <div class="sec-h"><span>鍛錬</span></div><div class="rec-grid">${cell(eq.n,'鍛錬した日')+cell(v.hearts,'ハート')+cell((v.stamina/5).toFixed(1),'がんばり（周）')+cell(v.c.push,'押すの証')+cell(v.c.pull,'引くの証')+cell(v.c.legs,'脚の証')}</div>
   <p class="hint">いまの装備：<b>${eq.name}</b>${eq.next?`（あと${eq.next[0]-eq.n}日の鍛錬で「${eq.next[1]}」）`:'（最高の装備）'}</p>`;
