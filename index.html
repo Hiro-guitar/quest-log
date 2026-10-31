@@ -542,7 +542,8 @@ body{background:#050607}
 .shop-it .rp{width:8px;height:12px}.shop-add{display:flex;gap:6px;flex-wrap:wrap}.shop-add #shopName{flex:2;min-width:150px}.shop-add #shopCost{flex:1;min-width:80px}
 .btn[disabled]{opacity:.4;cursor:default}
 .rec-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:6px;margin-bottom:8px}.rec-grid div{background:rgba(0,0,0,.25);border:1px solid rgba(242,236,214,.08);border-radius:3px;padding:8px 10px}.rec-grid b{display:block;font-size:20px;font-style:italic}.rec-grid span{font-size:11px;color:var(--muted)}
-.shrine-b{flex:none;font-size:11px;color:#6fe0ff;border:1px solid rgba(111,224,255,.4);border-radius:3px;padding:0 6px;margin:2px 4px 0 0;opacity:.75}.shrine-b:hover{opacity:1;box-shadow:0 0 8px rgba(111,224,255,.4)}
+.shrine-row{list-style:none;padding:0 0 8px 28px}.shrine-row button{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;color:#8fe8ff;border:1px solid rgba(111,224,255,.35);background:rgba(10,40,60,.45);border-radius:3px;padding:5px 12px}.shrine-row button:hover{box-shadow:0 0 10px rgba(111,224,255,.35)}.shrine-row small{color:var(--muted);font-size:11px}
+.sh-ico{width:10px;height:10px;border:1.5px solid #6fe0ff;transform:rotate(45deg);box-shadow:0 0 6px rgba(111,224,255,.6)}
 .shrine{position:fixed;inset:0;z-index:62;display:none;overflow:auto;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);background:radial-gradient(circle at 50% 40%,#123a55,#040c16 70%);padding:calc(30px + env(safe-area-inset-top)) 16px calc(30px + env(safe-area-inset-bottom))}
 .shrine.show{display:block;animation:moonIn .6s ease}
 .sh-in{max-width:520px;margin:0 auto;text-align:center}
@@ -1095,7 +1096,8 @@ function renderView(D,q){
         h+=`<li class="step qstep ${dn?'done':''} ${isNext?'next':''}" data-sid="${s.id}"><button class="qico" data-act="select" data-id="${r.id}" aria-label="チャレンジを開く">${ico(r.type,dn)}</button><span class="step-t"><button class="qlink" data-act="select" data-id="${r.id}">${esc(r.title||'(無題)')}</button><span class="qpct">${dn?'COMPLETE':Math.round(progress(r)*100)+'%'}</span>${na?`<span class="qnext">▸ ${esc(na)}</span>`:''}</span><span class="drag" data-drag title="ドラッグで並び替え">⋮⋮</span></li>`;
       }else{
         const chip=s.doDate?`<button class="sdate on" data-act="sdate" data-s="${s.id}">${doLabel(s,true).replace(' やる','')}${carryHtml(s)}</button>`:`<button class="sdate" data-act="sdate" data-s="${s.id}" title="日付を入れる">日付</button>`;
-        h+=`<li class="step ${dn?'done':''} ${isNext?'next':''}" data-sid="${s.id}"><button class="chk" data-act="step" data-q="${q.id}" data-s="${s.id}" aria-label="完了切替"></button><span class="step-t">${esc(s.text)}</span>${chip}${!dn&&!q.done?`<button class="shrine-b" data-act="shrine" data-q="${q.id}" data-s="${s.id}" title="祠に挑む（25分集中）">祠</button>`:''}<span class="drag" data-drag title="ドラッグで並び替え">⋮⋮</span></li>`;
+        h+=`<li class="step ${dn?'done':''} ${isNext?'next':''}" data-sid="${s.id}"><button class="chk" data-act="step" data-q="${q.id}" data-s="${s.id}" aria-label="完了切替"></button><span class="step-t">${esc(s.text)}</span>${chip}<span class="drag" data-drag title="ドラッグで並び替え">⋮⋮</span></li>`;
+        if(isNext&&!dn&&!q.done) h+=`<li class="shrine-row"><button data-act="shrine" data-q="${q.id}" data-s="${s.id}"><i class="sh-ico"></i>この工程で祠に挑む<small>25分だけ集中</small></button></li>`;
         if(dateSid===s.id) h+=`<li class="sdate-row"><input type="date" data-sdate="${s.id}" value="${esc(s.doDate||'')}"><input type="time" data-stime="${s.id}" value="${esc(s.doTime||'')}"><button class="btn small ghost" data-act="sdateclear" data-s="${s.id}">消す</button><button class="btn small" data-act="sdateclose">OK</button></li>`;
       }
     });
@@ -1688,7 +1690,7 @@ function paintBg(){
   pl.insertAdjacentHTML('beforeend',fx); bg.appendChild(pl);
   bgNow=ph;
 }
-paintBg(); setInterval(paintBg,60*1000); setInterval(wxRender,60*1000); setInterval(wxFetch,30*60*1000); setTimeout(wxFetch,500); setTimeout(()=>{ if(shrineGet()) shrineShow(); },600); window.addEventListener('resize',()=>{ clearTimeout(paintBg._r); paintBg._r=setTimeout(paintBg,300); });
+paintBg(); setInterval(paintBg,60*1000); setInterval(()=>{ const t=$('sensor'); if(t&&t.dataset.m!==String(new Date().getMinutes())) wxRender(); },1000); setInterval(wxFetch,10*60*1000); setTimeout(wxFetch,500); document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible'){ wxRender(); wxFetch(); } }); setTimeout(()=>{ if(shrineGet()) shrineShow(); },600); window.addEventListener('resize',()=>{ clearTimeout(paintBg._r); paintBg._r=setTimeout(paintBg,300); });
 // 景色の写真を端末に保存しておき、次からはすぐ表示する
 if('serviceWorker' in navigator && location.protocol==='https:'){
   navigator.serviceWorker.register('sw.js').then(()=>navigator.serviceWorker.ready).then(r=>{
@@ -1944,7 +1946,7 @@ function shrineClose(){ clearInterval(shrineT); shrineSet(null); const el=$('shr
 const WX_KEY='questlog-wx';
 const wxInfo=c=>c===0?['☀','快晴']:c<=2?['🌤','晴れ']:c===3?['☁','くもり']:c<=48?['🌫','霧']:c<=67?['🌧','雨']:c<=77?['❄','雪']:c<=82?['🌦','にわか雨']:c<=86?['🌨','にわか雪']:['⛈','雷雨'];
 function wxRender(){
-  const el=$('sensor'); if(!el) return; let w=null; try{ w=JSON.parse(localStorage.getItem(WX_KEY)||'null'); }catch(e){}
+  const el=$('sensor'); if(!el) return; el.dataset.m=String(new Date().getMinutes()); let w=null; try{ w=JSON.parse(localStorage.getItem(WX_KEY)||'null'); }catch(e){}
   const d=new Date(), tm=`${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
   if(w&&Date.now()-w.at<3*3600e3){ const [ic,tx]=wxInfo(w.code); el.innerHTML=`<span title="西東京の天気：${tx}">${ic}</span><b>${Math.round(w.temp)}℃</b><span class="sn-t">${tm}</span>`;
     const bg=$('bg'); if(bg){ bg.classList.toggle('rain',[51,53,55,56,57,61,63,65,66,67,80,81,82,95,96,99].includes(w.code)); bg.classList.toggle('snow',[71,73,75,77,85,86].includes(w.code)); } }
@@ -1952,7 +1954,7 @@ function wxRender(){
 }
 async function wxFetch(){
   let w=null; try{ w=JSON.parse(localStorage.getItem(WX_KEY)||'null'); }catch(e){}
-  if(w&&Date.now()-w.at<30*60e3){ wxRender(); return; }
+  if(w&&Date.now()-w.at<10*60e3){ wxRender(); return; }
   try{ const r=await fetch('https://api.open-meteo.com/v1/forecast?latitude=35.7255&longitude=139.5383&current=temperature_2m,weather_code&timezone=Asia%2FTokyo'); const j=await r.json();
     if(j&&j.current){ localStorage.setItem(WX_KEY,JSON.stringify({temp:j.current.temperature_2m,code:j.current.weather_code,at:Date.now()})); } }catch(e){}
   wxRender();
