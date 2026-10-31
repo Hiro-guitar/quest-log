@@ -481,6 +481,8 @@ body{background:#050607}
 .mem-row .r-sub i{opacity:.6}
 .mem-form{display:grid;gap:8px;margin-bottom:10px}.mem-form textarea{min-height:84px}
 .mem-text{border-left:2px solid rgba(242,236,214,.3);padding-left:12px}
+.tab-rest{margin-left:14px;font-size:13px;font-weight:700;color:#f0c38a;opacity:.85;white-space:nowrap}.tab-rest.done{opacity:.6;font-weight:500}
+@media (max-width:820px){.topbar{grid-template-columns:1fr auto!important;grid-template-areas:'lv xp' 'tabs tabs';row-gap:6px}.tb-left{grid-area:lv}.tb-right{grid-area:xp}.tb-tabs{grid-area:tabs;justify-self:center!important}.tab-rest{margin-left:10px;font-size:13px}}
 .rest-link{font-size:11px;color:var(--dim);letter-spacing:0;margin-right:12px;padding:0 2px;opacity:.8}.rest-link:hover{color:#f0c38a}
 /* 赤い月 */
 .moon{position:fixed;inset:0;z-index:60;display:none;overflow:auto;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);background:radial-gradient(circle at 50% 12%,rgba(170,24,32,.97),rgba(48,6,10,.98) 50%,rgba(10,2,4,.99));padding:24px 16px calc(24px + env(safe-area-inset-bottom))}
@@ -817,7 +819,7 @@ function renderHud(){
 }
 function renderTabs(){
   const tabs=[['list','冒険手帳'],['tools','道具']];
-  $('tabs').innerHTML=`<span class="tb-key">L</span>`+tabs.map(([k,l])=>`<button class="tab ${tab===k?'on':''}" data-act="tab" data-v="${k}">${l}</button>`).join('')+`<span class="tb-key">R</span>`;
+  $('tabs').innerHTML=`<span class="tb-key">L</span>`+tabs.map(([k,l])=>`<button class="tab ${tab===k?'on':''}" data-act="tab" data-v="${k}">${l}</button>`).join('')+`<span class="tb-key">R</span>`+((state.rested||{})[ymd()]?`<span class="tab-rest done">🔥 休息中</span>`:`<button class="tab-rest" data-act="rest">🔥 焚き火で休む</button>`);
 }
 function row(q){
   const isPlace=!!(q.place&&!q.done);
@@ -939,7 +941,7 @@ function renderList(){
     else if(showCleared&&qs.filter(q=>q.done).length>lim) h+=`<button class="toggle" data-act="cleared">たたむ</button>`;
     h+=`</div>`;
   }else{
-    const tools=[['sync','PCとスマホの同期'],['restore','バックアップから戻す'],['backup','データの書き出し・読み込み'],['rest','焚き火で休む'],['moon','赤い月（週の見直し）'],['credits','景色の写真について'],['reset','初期化']];
+    const tools=[['sync','PCとスマホの同期'],['restore','バックアップから戻す'],['backup','データの書き出し・読み込み'],['moon','赤い月（週の見直し）'],['credits','景色の写真について'],['reset','初期化']];
     h=`<div class="cat-bar"><div class="cat-name">道具</div><div class="cat-icons"><span class="cat on" style="cursor:default">✦</span></div></div><div class="rows">`+
       tools.map(([k,l])=>`<button class="row ${toolSel===k&&toolPicked?'sel':''}" data-act="tool" data-v="${k}"><span class="r-mark">✦</span><span class="r-main"><span class="r-title">${l}</span></span><span class="r-notch"></span></button>`).join('')+`</div>`;
   }
@@ -1114,7 +1116,7 @@ document.addEventListener('click',e=>{
     case 'tool': if(b.dataset.v==='moon'){ openMoon(); break; } toolSel=b.dataset.v; toolPicked=true; render(); break;
     case 'memedit': memEdit=q.id; renderDetail(); setTimeout(()=>{const t=$('memIn'); t&&t.focus();},30); break;
     case 'memsave': { const v=($('memIn')||{}).value||''; q.memory=v.trim(); memEdit=null; save(); render(); toast(q.memory?'思い出に残しました':'思い出を消しました'); break; }
-    case 'rest': if(confirm('焚き火で休みますか？\n今日の分を明日に回します（持ち越しには数えません）')){ restToday(); renderDetail(); } break;
+    case 'rest': if(confirm('焚き火で休みますか？\n今日の分を明日に回します（持ち越しには数えません）')){ restToday(); render(); } break;
     case 'moonclose': $('moon').classList.remove('show'); break;
     case 'moonfinish': state.moonDone=moonKey()||ymd(); save(); $('moon').classList.remove('show'); toast('赤い月が沈んだ。新しい一週間の始まり'); break;
     case 'moonundate': { const mq=findQ(b.dataset.q); const o=b.dataset.s?mq&&mq.steps.find(x=>x.id===b.dataset.s):mq; if(o){ o.doDate=''; o.doTime=''; o.carry=0; save(); render(); renderMoon(); } break; }
