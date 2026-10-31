@@ -531,8 +531,28 @@ body{background:#050607}
 .pf{display:grid;grid-template-columns:minmax(0,1fr) auto 3.5em;align-items:center;gap:8px;font-size:12.5px;padding:2px 0}.pf small{color:var(--muted);text-align:right}
 .pf-d{display:flex;gap:5px}.pf-d i{width:9px;height:9px;border:1.3px solid var(--orange);transform:rotate(45deg)}.pf-d i.on{background:var(--orange);box-shadow:0 0 6px rgba(240,166,64,.6)}
 .pf-note{font-size:10.5px;color:var(--dim);margin-top:4px}
-.banner.pr .bn-k{color:var(--blue)}
+.banner.pr .bn-k,.banner.shrine .bn-k{color:#6fe0ff}.banner.reward .bn-k{color:#3fbf63}
 .banner.heart .bn-k::before{content:'♥';color:#e8705f;font-size:20px;letter-spacing:0}.banner.stamina .bn-k::before{content:'◔';color:#9fd98a;font-size:20px;letter-spacing:0}
+.rupee{display:inline-flex;align-items:center;gap:3px;margin-right:12px;font-size:14px}.rupee b{font-weight:900}.rp{width:9px;height:14px;filter:drop-shadow(0 0 3px rgba(63,191,99,.6));vertical-align:-2px}
+.sensor{display:inline-flex;align-items:center;gap:4px;margin-right:14px;font-size:12px;color:#e9e4cf;text-shadow:0 1px 3px rgba(0,0,0,.7)}.sensor b{font-weight:700}.sn-t{color:var(--muted);font-variant-numeric:tabular-nums}
+@media (max-width:820px){.sensor{margin-right:8px;font-size:11px}.rupee{margin-right:8px}.seed{margin-right:8px}}
+.eq{font-size:11px;color:var(--muted);margin-left:4px}
+.pf-eq{font-size:11.5px;margin-top:6px;color:var(--muted)}.pf-eq b{color:#f0c38a}
+.shop-bal{display:flex;align-items:center;gap:8px;margin:4px 0 10px}.shop-bal .rp{width:14px;height:22px}.shop-bal b{font-size:26px;font-style:italic}.shop-bal span{color:var(--muted);font-size:12px}
+.shop-it .rp{width:8px;height:12px}.shop-add{display:flex;gap:6px;flex-wrap:wrap}.shop-add #shopName{flex:2;min-width:150px}.shop-add #shopCost{flex:1;min-width:80px}
+.btn[disabled]{opacity:.4;cursor:default}
+.rec-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:6px;margin-bottom:8px}.rec-grid div{background:rgba(0,0,0,.25);border:1px solid rgba(242,236,214,.08);border-radius:3px;padding:8px 10px}.rec-grid b{display:block;font-size:20px;font-style:italic}.rec-grid span{font-size:11px;color:var(--muted)}
+.shrine-b{flex:none;font-size:11px;color:#6fe0ff;border:1px solid rgba(111,224,255,.4);border-radius:3px;padding:0 6px;margin:2px 4px 0 0;opacity:.75}.shrine-b:hover{opacity:1;box-shadow:0 0 8px rgba(111,224,255,.4)}
+.shrine{position:fixed;inset:0;z-index:62;display:none;overflow:auto;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);background:radial-gradient(circle at 50% 40%,#123a55,#040c16 70%);padding:calc(30px + env(safe-area-inset-top)) 16px calc(30px + env(safe-area-inset-bottom))}
+.shrine.show{display:block;animation:moonIn .6s ease}
+.sh-in{max-width:520px;margin:0 auto;text-align:center}
+.sh-k{font-size:11px;letter-spacing:.5em;color:#6fe0ff}.shrine h2{font-size:24px;letter-spacing:.2em;margin:4px 0 10px;text-shadow:0 0 16px rgba(111,224,255,.6)}
+.sh-t{font-size:16px;font-weight:700;margin:0}.sh-q{font-size:12px;color:var(--muted);margin:2px 0 14px}
+.sh-ring{width:220px;height:220px;filter:drop-shadow(0 0 14px rgba(111,224,255,.35))}
+.sh-msg{color:#cfe8f2;font-size:13px;margin:12px 0}.sh-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.bg.rain::after,.bg.snow::after{content:'';position:absolute;inset:-20%;z-index:3;pointer-events:none;opacity:.35;background-image:repeating-linear-gradient(105deg,transparent 0 18px,rgba(200,220,255,.5) 18px 19px,transparent 19px 46px);background-size:220px 220px;animation:rain .5s linear infinite}
+.bg.snow::after{background-image:radial-gradient(2px 2px at 20px 30px,#fff,transparent),radial-gradient(2px 2px at 120px 80px,#fff,transparent),radial-gradient(1.5px 1.5px at 70px 150px,#fff,transparent),radial-gradient(2px 2px at 180px 190px,#fff,transparent);background-size:220px 220px;animation:snow 6s linear infinite;opacity:.6}
+@keyframes rain{to{background-position:-60px 220px}}@keyframes snow{to{background-position:30px 220px}}
 </style>
 </head>
 <body>
@@ -554,6 +574,7 @@ body{background:#050607}
 <div class="toast" id="toast"></div>
 <div class="banner" id="banner"></div>
 <div class="moon" id="moon"></div>
+<div class="shrine" id="shrine"></div>
 <div class="clear" id="clear"><div class="clear-in">
   <div class="clear-k">CHALLENGE</div>
   <div class="clear-big">CLEAR</div>
@@ -731,7 +752,7 @@ function allStepsDone(q){return !q.done && (q.steps.length||kids(q.id).length) &
 // ゼルダ風の帯（受注・実の発見など）
 function banner(kind,big,sub){
   const b=$('banner'); if(!b) return;
-  b.className='banner '+kind; b.innerHTML=`<div class="bn-in"><div class="bn-k">${{accept:'CHALLENGE',seed:'✿',rest:'REST',pr:'NEW RECORD',train:'TRAINING'}[kind]||''}</div><div class="bn-big">${esc(big)}</div>${sub?`<div class="bn-sub">${esc(sub)}</div>`:''}</div>`;
+  b.className='banner '+kind; b.innerHTML=`<div class="bn-in"><div class="bn-k">${{accept:'CHALLENGE',seed:'✿',rest:'REST',pr:'NEW RECORD',train:'TRAINING',reward:'REWARD',shrine:'SHRINE'}[kind]||''}</div><div class="bn-big">${esc(big)}</div>${sub?`<div class="bn-sub">${esc(sub)}</div>`:''}</div>`;
   void b.offsetWidth; b.classList.add('show');
 }
 function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('show'),2200)}
@@ -745,10 +766,10 @@ function gain(n){
 /* ---------- actions ---------- */
 function toggleStep(qid,sid){
   const q=findQ(qid), s=q&&q.steps.find(x=>x.id===sid); if(!s||s.qref) return;
-  s.done=!s.done; gain((s.done?1:-1)*10*q.rank);
+  s.done=!s.done; gain((s.done?1:-1)*10*q.rank); if(s.done) earnRupee(5);
   save(); render();
   if(s.done){
-    toast(`工程クリア  +${10*q.rank} XP`); maybeSeed();
+    toast(`工程クリア  +${10*q.rank} XP ・ +5ルピー`); maybeSeed();
     if(allStepsDone(q)) setTimeout(()=>toast('全工程クリア！ チャレンジ達成を報告しよう'),1400);
   }
 }
@@ -762,9 +783,9 @@ function maybeSeed(){
 function xpFor(q){return (q.type==='mini'?15:50)*q.rank}
 function completeQuest(q){
   q.done=true; q.doneAt=Date.now(); q.accepted=false;
-  const xp=xpFor(q); gain(xp); save();
-  if(q.type==='mini'){ render(); toast(`ミニチャレンジ達成  +${xp} XP`); maybeSeed(); return; }
-  $('clearT').textContent=q.title; $('clearXp').textContent=`+${xp} XP${q.reward?'　報酬：'+q.reward:''}`;
+  const xp=xpFor(q), rp=q.type==='mini'?10:30*(q.rank||1); gain(xp); earnRupee(rp); save();
+  if(q.type==='mini'){ render(); toast(`ミニチャレンジ達成  +${xp} XP ・ +${rp}ルピー`); maybeSeed(); return; }
+  $('clearT').textContent=q.title; $('clearXp').textContent=`+${xp} XP ・ +${rp}ルピー${q.reward?'　報酬：'+q.reward:''}`;
   const c=$('clear'); c.classList.remove('show'); void c.offsetWidth; c.classList.add('show');
   selId=q.id; editing=false; memEdit=q.id; render();
   setTimeout(()=>toast('思い出にひとこと残せます'),2700);
@@ -847,10 +868,10 @@ function render(){sortAllSteps();renderLv();renderHud();renderTabs();renderList(
   $('split').classList.toggle('has-sel',!!selId||(tab==='tools'&&toolPicked)||(tab==='list'&&listCat==='train'&&!!trSel));
 }
 let toolPicked=false;
-function renderLv(){ setTimeout(syncBadge,0);
+function renderLv(){ setTimeout(syncBadge,0); setTimeout(wxRender,0);
   const {lv,rest,need}=lvInfo(state.xp);
-  $('lv').innerHTML=`<div class="lv-row"><span class="lv-num"><small>Lv.</small>${lv}</span><span class="lv-title">${TITLES[Math.min(lv-1,TITLES.length-1)]}</span></div><div class="xp"><i style="width:${rest/need*100}%"></i></div>${(()=>{ const v=trVessels(); let hh=''; for(let i=0;i<v.hearts;i++) hh+=heartSvg(1); return `<div class="vit" title="ハート ${v.hearts}・がんばり ${v.stamina/5}周">${hh}<span class="stms">${staminaSvg(v.stamina)}</span></div>`; })()}`;
-  $('xp').innerHTML=`${state.seeds?`<span class="seed" title="森の精の実">✿<b>${state.seeds}</b></span>`:''}<span class="gem">✦</span><span class="xp-num">${state.xp}</span><span id="syncBadge" class="sbadge"></span>`;
+  $('lv').innerHTML=`<div class="lv-row"><span class="lv-num"><small>Lv.</small>${lv}</span><span class="lv-title">${TITLES[Math.min(lv-1,TITLES.length-1)]}<span class="eq">・${equipNow().name}</span></span></div><div class="xp"><i style="width:${rest/need*100}%"></i></div>${(()=>{ const v=trVessels(); let hh=''; for(let i=0;i<v.hearts;i++) hh+=heartSvg(1); return `<div class="vit" title="ハート ${v.hearts}・がんばり ${v.stamina/5}周">${hh}<span class="stms">${staminaSvg(v.stamina)}</span></div>`; })()}`;
+  $('xp').innerHTML=`<span class="sensor" id="sensor"></span><span class="rupee" title="ルピー">${rupeeSvg}<b>${rupeeBal()}</b></span>${state.seeds?`<span class="seed" title="森の精の実">✿<b>${state.seeds}</b></span>`:''}<span class="gem">✦</span><span class="xp-num">${state.xp}</span><span id="syncBadge" class="sbadge"></span>`;
 }
 function renderHud(){
   const act=state.quests.filter(q=>q.accepted&&!q.done).sort(byDue);
@@ -999,7 +1020,7 @@ function renderList(){
     else if(showCleared&&qs.filter(q=>q.done).length>lim) h+=`<button class="toggle" data-act="cleared">たたむ</button>`;
     h+=`</div>`;
   }else{
-    const tools=[['sync','PCとスマホの同期'],['restore','バックアップから戻す'],['backup','データの書き出し・読み込み'],['moon','赤い月（週の見直し）'],['credits','景色の写真について'],['reset','初期化']];
+    const tools=[['sync','PCとスマホの同期'],['restore','バックアップから戻す'],['backup','データの書き出し・読み込み'],['shop','ごほうびの店'],['records','冒険の記録'],['moon','赤い月（週の見直し）'],['credits','景色の写真について'],['reset','初期化']];
     h=`<div class="cat-bar"><div class="cat-name">道具</div><div class="cat-icons"><span class="cat on" style="cursor:default">✦</span></div></div><div class="rows">`+
       tools.map(([k,l])=>`<button class="row ${toolSel===k&&toolPicked?'sel':''}" data-act="tool" data-v="${k}"><span class="r-mark">✦</span><span class="r-main"><span class="r-title">${l}</span></span><span class="r-notch"></span></button>`).join('')+`</div>`;
   }
@@ -1030,6 +1051,8 @@ function toolPanel(){
     <div class="p-desc"><p>疲れた日や体調が悪い日は、焚き火で休もう。今日やる予定だったもの（まだ終わっていないもの）を、まとめて明日に回します。休んだだけなので、持ち越しの回数（↻）は増えません。</p></div>
     ${rested?'<p class="hint">🔥 今日はもう焚き火で休みました。ゆっくりしよう</p>':n?`<p class="hint">今日の残り：${n}件</p><button class="btn primary" data-act="rest">焚き火で休む</button>`:'<p class="hint">今日の残りはありません</p>'}`;
   }
+  if(toolSel==='shop') return shopPanel();
+  if(toolSel==='records') return recordsPanel();
   if(toolSel==='credits'){
     const rows=[]; BG_PHOTOS.forEach(pl=>[['day','昼'],['morning','朝'],['evening','夕'],['night','夜']].forEach(([k,l])=>{ (pl.v&&pl.v[k]||[]).forEach(v=>rows.push(`<div class="kid"><span>${esc(v.name||pl.name)}（${l}・縦）<br><small class="hint">写真：${esc(v.by)} / ${esc(v.lic)}</small></span><a class="btn small ghost" href="${commonsPage(v.file)}" target="_blank" rel="noopener">元の写真</a></div>`)); const v=pl[k]; if(v) rows.push(`<div class="kid"><span>${esc(v.name||pl.name)}（${l}）<br><small class="hint">写真：${esc(v.by)} / ${esc(v.lic)}</small></span><a class="btn small ghost" href="${commonsPage(v.file)}" target="_blank" rel="noopener">元の写真</a></div>`); }));
     return `<h2 class="p-title">景色の写真について</h2>
@@ -1072,7 +1095,7 @@ function renderView(D,q){
         h+=`<li class="step qstep ${dn?'done':''} ${isNext?'next':''}" data-sid="${s.id}"><button class="qico" data-act="select" data-id="${r.id}" aria-label="チャレンジを開く">${ico(r.type,dn)}</button><span class="step-t"><button class="qlink" data-act="select" data-id="${r.id}">${esc(r.title||'(無題)')}</button><span class="qpct">${dn?'COMPLETE':Math.round(progress(r)*100)+'%'}</span>${na?`<span class="qnext">▸ ${esc(na)}</span>`:''}</span><span class="drag" data-drag title="ドラッグで並び替え">⋮⋮</span></li>`;
       }else{
         const chip=s.doDate?`<button class="sdate on" data-act="sdate" data-s="${s.id}">${doLabel(s,true).replace(' やる','')}${carryHtml(s)}</button>`:`<button class="sdate" data-act="sdate" data-s="${s.id}" title="日付を入れる">日付</button>`;
-        h+=`<li class="step ${dn?'done':''} ${isNext?'next':''}" data-sid="${s.id}"><button class="chk" data-act="step" data-q="${q.id}" data-s="${s.id}" aria-label="完了切替"></button><span class="step-t">${esc(s.text)}</span>${chip}<span class="drag" data-drag title="ドラッグで並び替え">⋮⋮</span></li>`;
+        h+=`<li class="step ${dn?'done':''} ${isNext?'next':''}" data-sid="${s.id}"><button class="chk" data-act="step" data-q="${q.id}" data-s="${s.id}" aria-label="完了切替"></button><span class="step-t">${esc(s.text)}</span>${chip}${!dn&&!q.done?`<button class="shrine-b" data-act="shrine" data-q="${q.id}" data-s="${s.id}" title="祠に挑む（25分集中）">祠</button>`:''}<span class="drag" data-drag title="ドラッグで並び替え">⋮⋮</span></li>`;
         if(dateSid===s.id) h+=`<li class="sdate-row"><input type="date" data-sdate="${s.id}" value="${esc(s.doDate||'')}"><input type="time" data-stime="${s.id}" value="${esc(s.doTime||'')}"><button class="btn small ghost" data-act="sdateclear" data-s="${s.id}">消す</button><button class="btn small" data-act="sdateclose">OK</button></li>`;
       }
     });
@@ -1234,6 +1257,13 @@ document.addEventListener('click',e=>{
       l.href=u; l.download='questlog-'+ymd()+'.json'; document.body.appendChild(l); l.click(); l.remove();
       setTimeout(()=>URL.revokeObjectURL(u),1000); break;}
     case 'import': $('importFile').click(); break;
+    case 'shrine': shrineStart(b.dataset.q,b.dataset.s); break;
+    case 'shdone': { const o=shrineGet(); shrineClose(); if(o){ const sq=findQ(o.qid), st=sq&&sq.steps.find(x=>x.id===o.sid); if(st&&!st.done) toggleStep(o.qid,o.sid); } break; }
+    case 'shexit': shrineClose(); break;
+    case 'shquit': if(confirm('試練をあきらめて祠を出ますか？')) shrineClose(); break;
+    case 'shopadd': { const nm=($('shopName').value||'').trim(), c=Math.round(+$('shopCost').value); if(!nm||!(c>0)){ toast('品物の名前とルピーを入れてください'); break; } state.shop={...(state.shop||{}),[uid()]:{name:nm.slice(0,60),cost:c,u:Date.now()}}; save(); renderDetail(); toast('店に並べました'); break; }
+    case 'shopdel': { const it=(state.shop||{})[b.dataset.v]; if(it&&confirm(`「${it.name}」を店から下げますか？`)){ state.shop={...state.shop,[b.dataset.v]:{...it,del:1,u:Date.now()}}; save(); renderDetail(); } break; }
+    case 'shopbuy': { const it=(state.shop||{})[b.dataset.v]; if(!it||rupeeBal()<it.cost) break; if(!confirm(`「${it.name}」を ${it.cost} ルピーで買いますか？`)) break; state.purchases={...(state.purchases||{}),[uid()]:{item:it.name,cost:it.cost,at:Date.now()}}; save(); renderLv(); renderDetail(); banner('reward','ごほうびを手に入れた',it.name); break; }
     case 'goconnect': tab='tools'; toolSel='sync'; toolPicked=true; render(); setTimeout(()=>{const el=$('codeIn'); el&&el.focus();},50); break;
     case 'codecopy': {
       if(!sync.url){toast('先にこの端末をつないでください');break}
@@ -1658,7 +1688,7 @@ function paintBg(){
   pl.insertAdjacentHTML('beforeend',fx); bg.appendChild(pl);
   bgNow=ph;
 }
-paintBg(); setInterval(paintBg,60*1000); window.addEventListener('resize',()=>{ clearTimeout(paintBg._r); paintBg._r=setTimeout(paintBg,300); });
+paintBg(); setInterval(paintBg,60*1000); setInterval(wxRender,60*1000); setInterval(wxFetch,30*60*1000); setTimeout(wxFetch,500); setTimeout(()=>{ if(shrineGet()) shrineShow(); },600); window.addEventListener('resize',()=>{ clearTimeout(paintBg._r); paintBg._r=setTimeout(paintBg,300); });
 // 景色の写真を端末に保存しておき、次からはすぐ表示する
 if('serviceWorker' in navigator && location.protocol==='https:'){
   navigator.serviceWorker.register('sw.js').then(()=>navigator.serviceWorker.ready).then(r=>{
@@ -1725,7 +1755,7 @@ function trList(){
   const ws=new Date(trWeek+'T00:00:00'), we=new Date(ws.getTime()+6*DAY);
   let h=catBar('train');
   { const v=trVessels(), dots=n=>{ const r=n%4; let o=''; for(let i=0;i<4;i++) o+=`<i class="${i<r?'on':''}"></i>`; return o; };
-    h+=`<div class="proofs"><div class="pf-h">克服の証</div>${['push','pull','legs'].map(p=>`<div class="pf"><span>${PART_NAME[p]}</span><span class="pf-d">${dots(v.c[p])}</span><small>${v.c[p]}個</small></div>`).join('')}<div class="pf-note">押す・引くの証4つでハート、脚の証4つでがんばりの器</div></div>`; }
+    h+=`<div class="proofs"><div class="pf-h">克服の証</div>${['push','pull','legs'].map(p=>`<div class="pf"><span>${PART_NAME[p]}</span><span class="pf-d">${dots(v.c[p])}</span><small>${v.c[p]}個</small></div>`).join('')}<div class="pf-note">押す・引くの証4つでハート、脚の証4つでがんばりの器</div>${(()=>{const e=equipNow(); return `<div class="pf-eq">装備：<b>${e.name}</b>${e.next?`　あと${e.next[0]-e.n}日の鍛錬で「${e.next[1]}」`:''}</div>`;})()}</div>`; }
   h+=`<div class="tr-week"><button class="cat-arrow" data-act="trweek" data-v="-1" aria-label="前の週">‹</button><span>${ws.getMonth()+1}/${ws.getDate()} 〜 ${we.getMonth()+1}/${we.getDate()}</span><button class="cat-arrow" data-act="trweek" data-v="1" aria-label="次の週">›</button></div><div class="rows">`;
   for(let i=0;i<7;i++){
     const d=new Date(ws.getTime()+i*DAY), k=ymd(d), t=trType(k); if(!t) continue;
@@ -1838,13 +1868,13 @@ function trOnChange(e){
   const H=hm();
   const vb=trVessels();
   if(el.dataset.trc){ const c=el.dataset.trc, was=!!(H.days[k]||{})[c]; H.days[k]={...(H.days[k]||{}),[c]:el.checked}; hmTouch('days',k);
-    if(el.checked&&!was){ gain(c==='train'?30:5); if(c==='train'){ toast('鍛錬クリア  +30 XP'); maybeSeed(); } if(trDone(k)===trChecks(k).length) setTimeout(()=>banner('train','今日のチェック制覇',`${k.slice(5).replace('-','/')}　全${trChecks(k).length}項目`),400); }
+    if(el.checked&&!was){ gain(c==='train'?30:5); if(c==='train'){ earnRupee(20); toast('鍛錬クリア  +30 XP ・ +20ルピー'); maybeSeed(); } if(trDone(k)===trChecks(k).length) setTimeout(()=>banner('train','今日のチェック制覇',`${k.slice(5).replace('-','/')}　全${trChecks(k).length}項目`),400); }
     else if(!el.checked&&was) gain(c==='train'?-30:-5);
     if(c==='train'&&el.checked&&!was){ const p=TR_PART[trType(k)]; if(p) setTimeout(()=>toast(`克服の証（${PART_NAME[p]}）を手に入れた`),1300); trVesselBanner(vb); }
     save(); renderLv(); renderList(); renderDetail(); return true; }
   if(el.dataset.trex){ const id=el.dataset.trex, ix=+el.dataset.i, f=+el.dataset.f, v=el.value===''?null:Math.max(0,parseFloat(el.value));
     const day={...(H.lift[k]||{})}, arr=(day[id]||[]).slice(), s=(arr[ix]||[null,null]).slice(); s[f]=v; arr[ix]=s; day[id]=arr; H.lift[k]=day; hmTouch('lift',k);
-    if(f===1&&v&&!(H.days[k]||{}).train){ H.days[k]={...(H.days[k]||{}),train:true}; hmTouch('days',k); gain(30); toast('鍛錬クリア  +30 XP'); maybeSeed();
+    if(f===1&&v&&!(H.days[k]||{}).train){ H.days[k]={...(H.days[k]||{}),train:true}; hmTouch('days',k); gain(30); earnRupee(20); toast('鍛錬クリア  +30 XP ・ +20ルピー'); maybeSeed();
       const cb=document.querySelector('input[data-trc=train]'); if(cb){ cb.checked=true; cb.closest('label').classList.add('on'); }
       const p=TR_PART[trType(k)]; if(p) setTimeout(()=>toast(`克服の証（${PART_NAME[p]}）を手に入れた`),1300); trVesselBanner(vb); }
     if(f===1&&v) trCheckPR(id,k);
@@ -1852,6 +1882,80 @@ function trOnChange(e){
     save(); renderList(); renderLv(); return true; }
   if(el.id==='trMemo'){ H.days[k]={...(H.days[k]||{}),memo:el.value.slice(0,500)}; hmTouch('days',k); save(); return true; }
   return false;
+}
+
+/* ---------- ルピー（ためて、ごほうびの店で使う） ---------- */
+const rupeeSvg=`<svg viewBox="0 0 10 16" class="rp" aria-hidden="true"><path d="M5 .8 9.2 4.5v7L5 15.2.8 11.5v-7Z" fill="#3fbf63" stroke="#c8ffd0" stroke-width=".8"/><path d="M5 .8v14.4M.8 4.5 5 7l4.2-2.5" stroke="#c8ffd0" stroke-width=".5" fill="none" opacity=".7"/></svg>`;
+const rupeeBal=()=>(state.rupeeEarned||0)-Object.values(state.purchases||{}).reduce((n,p)=>n+(+p.cost||0),0);
+function earnRupee(n){ if(n>0) state.rupeeEarned=(state.rupeeEarned||0)+n; }
+function shopItems(){ return Object.entries(state.shop||{}).filter(([,v])=>v&&!v.del).map(([id,v])=>({id,...v})).sort((a,b)=>a.cost-b.cost); }
+function shopPanel(){
+  const items=shopItems(), bal=rupeeBal(), hist=Object.values(state.purchases||{}).sort((a,b)=>b.at-a.at).slice(0,10);
+  return `<h2 class="p-title">ごほうびの店</h2>
+  <div class="p-desc"><p>チャレンジや鍛錬でためたルピーで、自分へのごほうびを買おう。買ったら、ちゃんと実際に自分にあげること。</p></div>
+  <div class="shop-bal">${rupeeSvg}<b>${bal}</b><span>ルピー</span></div>
+  <div class="sec-h"><span>品物</span></div>
+  <div class="kids">${items.length?items.map(it=>`<div class="kid shop-it"><span>${esc(it.name)}<br><small class="hint">${rupeeSvg} ${it.cost} ルピー</small></span><span style="display:flex;gap:6px"><button class="btn small ${bal>=it.cost?'primary':'ghost'}" data-act="shopbuy" data-v="${it.id}" ${bal>=it.cost?'':'disabled'}>買う</button><button class="btn small ghost" data-act="shopdel" data-v="${it.id}">✕</button></span></div>`).join(''):'<p class="hint">まだ品物がありません。下から、自分へのごほうびを並べよう</p>'}</div>
+  <div class="sec-h"><span>品物を並べる</span></div>
+  <div class="shop-add"><input type="text" id="shopName" placeholder="例：好きなケーキを買う"><input type="number" id="shopCost" inputmode="numeric" min="1" placeholder="ルピー"><button class="btn small" data-act="shopadd">並べる</button></div>
+  <p class="hint">目安：工程1つで5、ミニチャレンジで10、鍛錬で20、祠の試練で20、チャレンジ達成で ★×30 ルピー</p>
+  ${hist.length?`<div class="sec-h"><span>買ったもの</span></div><div class="kids">${hist.map(p=>`<div class="kid"><span>${esc(p.item)}</span><span class="hint">${new Date(p.at).toLocaleDateString('ja-JP')}　${p.cost}ルピー</span></div>`).join('')}</div>`:''}`;
+}
+/* ---------- 装備（鍛錬した日数で変わる） ---------- */
+const EQUIP=[[0,'旅人の服'],[10,'修行者の道着'],[25,'戦士の鎧'],[45,'英傑の服']];
+const trCount=()=>{ const D=(state.hm||{}).days||{}; return Object.keys(D).filter(k=>D[k]&&D[k].train).length; };
+function equipNow(){ const n=trCount(); let cur=EQUIP[0], next=null; EQUIP.forEach((e,i)=>{ if(n>=e[0]){ cur=e; next=EQUIP[i+1]||null; } }); return {n,name:cur[1],next}; }
+/* ---------- 冒険の記録 ---------- */
+function recordsPanel(){
+  const Q=state.quests, done=t=>Q.filter(q=>q.type===t&&q.done).length, steps=Q.reduce((n,q)=>n+(q.steps||[]).filter(s=>!s.qref&&s.done).length,0);
+  const v=trVessels(), eq=equipNow();
+  const cell=(n,l)=>`<div><b>${n}</b><span>${l}</span></div>`;
+  return `<h2 class="p-title">冒険の記録</h2><div class="p-desc"><p>これまでの冒険のあゆみ。</p></div>
+  <div class="sec-h"><span>冒険</span></div><div class="rec-grid">${cell(lvInfo(state.xp).lv,'レベル')+cell(state.xp,'XP')+cell(done('main'),'メインクリア')+cell(done('challenge'),'チャレンジクリア')+cell(done('mini'),'ミニチャレンジクリア')+cell(steps,'工程クリア')+cell(state.shrines||0,'祠の試練')+cell(Q.filter(q=>q.done&&q.memory).length,'思い出')}</div>
+  <div class="sec-h"><span>集めたもの</span></div><div class="rec-grid">${cell(state.seeds||0,'森の精の実')+cell(state.rupeeEarned||0,'これまでのルピー')+cell(Object.keys(state.purchases||{}).length,'買ったごほうび')+cell(Object.keys(state.rested||{}).length,'焚き火で休んだ日')}</div>
+  <div class="sec-h"><span>鍛錬</span></div><div class="rec-grid">${cell(eq.n,'鍛錬した日')+cell(v.hearts,'ハート')+cell((v.stamina/5).toFixed(1),'がんばり（周）')+cell(v.c.push,'押すの証')+cell(v.c.pull,'引くの証')+cell(v.c.legs,'脚の証')}</div>
+  <p class="hint">いまの装備：<b>${eq.name}</b>${eq.next?`（あと${eq.next[0]-eq.n}日の鍛錬で「${eq.next[1]}」）`:'（最高の装備）'}</p>`;
+}
+/* ---------- 祠の試練（25分の集中タイマー） ---------- */
+const SHKEY='questlog-shrine';
+let shrineT=null;
+function shrineGet(){ try{ return JSON.parse(localStorage.getItem(SHKEY)||'null'); }catch(e){ return null; } }
+function shrineSet(o){ try{ o?localStorage.setItem(SHKEY,JSON.stringify(o)):localStorage.removeItem(SHKEY); }catch(e){} }
+function shrineStart(qid,sid){
+  const q=findQ(qid), s=q&&q.steps.find(x=>x.id===sid); if(!s) return;
+  shrineSet({qid,sid,text:s.text,quest:q.title||'',end:Date.now()+25*60e3,dur:25*60e3}); shrineShow();
+}
+function shrineShow(){
+  const o=shrineGet(), el=$('shrine'); if(!o||!el) return;
+  el.classList.add('show'); clearInterval(shrineT);
+  const tick=()=>{
+    const left=Math.max(0,o.end-Date.now()), m=Math.floor(left/60e3), sec=Math.floor(left%60e3/1000), pr=1-left/o.dur, R=88, C=2*Math.PI*R;
+    if(left<=0&&!o.cleared){ o.cleared=1; shrineSet(o); state.shrines=(state.shrines||0)+1; earnRupee(20); gain(15); save(); renderLv(); banner('shrine','試練クリア',`${o.text}　+20ルピー`); }
+    el.innerHTML=`<div class="sh-in"><div class="sh-k">SHRINE</div><h2>${o.cleared?'試練クリア':'祠の試練'}</h2><p class="sh-t">${esc(o.text)}</p><p class="sh-q">${esc(o.quest)}</p>
+      <svg class="sh-ring" viewBox="0 0 200 200"><circle cx="100" cy="100" r="${R}" fill="none" stroke="rgba(120,200,255,.15)" stroke-width="6"/><circle cx="100" cy="100" r="${R}" fill="none" stroke="${o.cleared?'#f0a640':'#6fe0ff'}" stroke-width="6" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${(C*(1-pr)).toFixed(1)}" transform="rotate(-90 100 100)"/><text x="100" y="112" text-anchor="middle" font-size="40" fill="#e9f8ff" font-weight="700">${o.cleared?'CLEAR':String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0')}</text></svg>
+      ${o.cleared?`<p class="sh-msg">おつかれさま。この工程は終わった？</p><div class="sh-btns"><button class="btn primary" data-act="shdone">工程をクリアして出る</button><button class="btn ghost" data-act="shexit">まだ。祠を出る</button></div>`
+      :`<p class="sh-msg">25分だけ、この工程に集中しよう</p><div class="sh-btns"><button class="btn primary" data-act="shdone">もう終わった（工程クリア）</button><button class="btn ghost" data-act="shquit">あきらめて出る</button></div>`}</div>`;
+    if(o.cleared) clearInterval(shrineT);
+  };
+  tick(); shrineT=setInterval(tick,1000);
+}
+function shrineClose(){ clearInterval(shrineT); shrineSet(null); const el=$('shrine'); if(el) el.classList.remove('show'); }
+/* ---------- シーカーセンサー：西東京の天気・気温・時刻 ---------- */
+const WX_KEY='questlog-wx';
+const wxInfo=c=>c===0?['☀','快晴']:c<=2?['🌤','晴れ']:c===3?['☁','くもり']:c<=48?['🌫','霧']:c<=67?['🌧','雨']:c<=77?['❄','雪']:c<=82?['🌦','にわか雨']:c<=86?['🌨','にわか雪']:['⛈','雷雨'];
+function wxRender(){
+  const el=$('sensor'); if(!el) return; let w=null; try{ w=JSON.parse(localStorage.getItem(WX_KEY)||'null'); }catch(e){}
+  const d=new Date(), tm=`${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
+  if(w&&Date.now()-w.at<3*3600e3){ const [ic,tx]=wxInfo(w.code); el.innerHTML=`<span title="西東京の天気：${tx}">${ic}</span><b>${Math.round(w.temp)}℃</b><span class="sn-t">${tm}</span>`;
+    const bg=$('bg'); if(bg){ bg.classList.toggle('rain',[51,53,55,56,57,61,63,65,66,67,80,81,82,95,96,99].includes(w.code)); bg.classList.toggle('snow',[71,73,75,77,85,86].includes(w.code)); } }
+  else el.innerHTML=`<span class="sn-t">${tm}</span>`;
+}
+async function wxFetch(){
+  let w=null; try{ w=JSON.parse(localStorage.getItem(WX_KEY)||'null'); }catch(e){}
+  if(w&&Date.now()-w.at<30*60e3){ wxRender(); return; }
+  try{ const r=await fetch('https://api.open-meteo.com/v1/forecast?latitude=35.7255&longitude=139.5383&current=temperature_2m,weather_code&timezone=Asia%2FTokyo'); const j=await r.json();
+    if(j&&j.current){ localStorage.setItem(WX_KEY,JSON.stringify({temp:j.current.temperature_2m,code:j.current.weather_code,at:Date.now()})); } }catch(e){}
+  wxRender();
 }
 
 /* ---------- 赤い月：週に一度の見直し（日曜18時〜月曜12時に一度だけ出る。道具からいつでも開ける） ---------- */
@@ -1927,7 +2031,7 @@ function stamp(){
   state.quests.forEach(q=>{ const {u,...rest}=q; const sg=JSON.stringify(rest); cur[q.id]=sg;
     if(qSigs&&qSigs[q.id]!==sg){ q.u=now; state.pristine=false; } if(!q.u) q.u=q.created||now; });
   if(qSigs) Object.keys(qSigs).forEach(id=>{ if(!cur[id]){ state.deleted[id]=now; state.pristine=false; } });
-  const ex=[state.xp,state.seeds||0,state.moonDone||'',Object.keys(state.rested||{}).length,hmRev()].join('|');
+  const ex=[state.xp,state.seeds||0,state.moonDone||'',Object.keys(state.rested||{}).length,hmRev(),state.rupeeEarned||0,state.shrines||0,Object.keys(state.purchases||{}).length,JSON.stringify(state.shop||{})].join('|');
   if(qSigs&&ex!==stamp.ex) state.pristine=false;
   stamp.ex=ex;
   Object.keys(state.deleted).forEach(id=>{ if(now-state.deleted[id]>90*DAY) delete state.deleted[id]; });
@@ -1939,9 +2043,9 @@ function mergeStates(a,b){
   const map={};
   [...(a.quests||[]),...(b.quests||[])].forEach(q=>{ const e=map[q.id]; if(!e||(q.u||0)>(e.u||0)) map[q.id]=q; });
   const quests=Object.values(map).filter(q=>!(del[q.id]&&del[q.id]>=(q.u||0)));
-  return {xp:Math.max(a.xp||0,b.xp||0),seeds:Math.max(a.seeds||0,b.seeds||0),rested:{...(a.rested||{}),...(b.rested||{})},hm:mergeHm(a.hm,b.hm),moonDone:[a.moonDone||'',b.moonDone||''].sort().pop(),quests,deleted:del,pristine:false};
+  return {xp:Math.max(a.xp||0,b.xp||0),seeds:Math.max(a.seeds||0,b.seeds||0),rested:{...(a.rested||{}),...(b.rested||{})},hm:mergeHm(a.hm,b.hm),rupeeEarned:Math.max(a.rupeeEarned||0,b.rupeeEarned||0),shrines:Math.max(a.shrines||0,b.shrines||0),purchases:{...(a.purchases||{}),...(b.purchases||{})},shop:(()=>{const o={...(a.shop||{})}; Object.entries(b.shop||{}).forEach(([k,v])=>{ if(!o[k]||(v.u||0)>(o[k].u||0)) o[k]=v; }); return o;})(),moonDone:[a.moonDone||'',b.moonDone||''].sort().pop(),quests,deleted:del,pristine:false};
 }
-function fingerprint(st){ return JSON.stringify([(st.quests||[]).map(q=>q.id+':'+(q.u||0)).sort(),st.xp||0,st.seeds||0,Object.keys(st.rested||{}).length,st.moonDone||'',(()=>{const u=(st.hm||{}).u||{};let m=0;for(const k in u)if(u[k]>m)m=u[k];return m})()]); }
+function fingerprint(st){ return JSON.stringify([(st.quests||[]).map(q=>q.id+':'+(q.u||0)).sort(),st.xp||0,st.seeds||0,Object.keys(st.rested||{}).length,st.moonDone||'',st.rupeeEarned||0,st.shrines||0,Object.keys(st.purchases||{}).length,JSON.stringify(st.shop||{}).length,(()=>{const u=(st.hm||{}).u||{};let m=0;for(const k in u)if(u[k]>m)m=u[k];return m})()]); }
 function applyState(ns){
   state=ns; if(!Array.isArray(state.quests)) state.quests=[];
   migrate(); qSigs=null; stamp();
