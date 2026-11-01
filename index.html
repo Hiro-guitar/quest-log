@@ -1056,32 +1056,48 @@ const MAT_ICONS={
  gift:['#f0a640','<rect x="4" y="9" width="16" height="11" rx="1"/><path d="M4 13h16M12 9v11M12 9c-2-4-6-4-6-1s6 1 6 1 6 2 6-1-4-3-6 1"/>'],
  bag:['#d9c49a','<path d="M5 8h14l-1 12H6z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>']
 };
-const MAT_RULES=[['egg','卵|たまご|玉子'],['milk','牛乳|ミルク|ヨーグルト|豆乳|生クリーム'],['cheese','チーズ|バター|マーガリン'],['bread','パン|食パン|ベーグル|クロワッサン'],['meat','肉|鶏|豚|牛|ひき肉|ハム|ソーセージ|ベーコン|ウインナー|から揚げ'],['fish','魚|鮭|さけ|しゃけ|さば|サバ|まぐろ|刺身|しらす|えび|海老|いか|たこ|ツナ'],['banana','バナナ'],['apple','りんご|リンゴ|林檎'],['onion','玉ねぎ|たまねぎ|玉葱|タマネギ|オニオン'],['fruit','果物|みかん|いちご|苺|ぶどう|もも|梨|キウイ|レモン|柿'],['veg','野菜|キャベツ|にんじん|人参|玉ねぎ|たまねぎ|ねぎ|ネギ|トマト|きゅうり|レタス|大根|じゃがいも|ほうれん草|ブロッコリー|もやし|ピーマン|なす|茄子|きのこ|しめじ|えのき|白菜|かぼちゃ|生姜|しょうが|にんにく|小松菜|水菜'],['tofu','豆腐|納豆|油揚げ|厚揚げ|こんにゃく'],['noodle','麺|うどん|そば|蕎麦|パスタ|ラーメン|そうめん|焼きそば'],['rice','米|ごはん|ご飯|餅|もち麦|シリアル|オートミール'],['season','醤油|しょうゆ|味噌|みそ|塩|砂糖|酢|油|みりん|ソース|ケチャップ|マヨ|だし|出汁|調味料|コショウ|胡椒|ドレッシング|カレー'],['drink','水|お茶|茶|ジュース|コーヒー|珈琲|ビール|酒|ワイン|炭酸|麦茶|紅茶'],['snack','お菓子|菓子|チョコ|アイス|クッキー|グミ|ポテチ|せんべい|おやつ|ガム'],['medicine','薬|絆創膏|ばんそうこう|マスク|目薬|湿布|体温計|サプリ'],['battery','電池|充電|バッテリー'],['soap','洗剤|シャンプー|リンス|コンディショナー|石鹸|せっけん|ソープ|柔軟剤|漂白|歯磨き|歯ブラシ|ハミガキ'],['paper','ティッシュ|トイレットペーパー|キッチンペーパー|ラップ|ゴミ袋|ごみ袋|おむつ|オムツ|おしりふき|ウェット'],['pen','ペン|ノート|文房具|のり|テープ|封筒|紙'],['tool','電球|ねじ|工具|フィルター|ハンガー|ケーブル'],['gift','プレゼント|ギフト|お土産|おみやげ']];
+const MAT_RULES=[['egg','卵|たまご|玉子'],['milk','牛乳|ミルク|ヨーグルト|豆乳|生クリーム'],['cheese','チーズ|バター|マーガリン'],['bread','パン|食パン|ベーグル|クロワッサン'],['meat','肉|鶏|豚|牛|ひき肉|ハム|ソーセージ|ベーコン|ウインナー|から揚げ'],['fish','魚|鮭|さけ|しゃけ|さば|サバ|まぐろ|刺身|しらす|えび|海老|いか|たこ|ツナ'],['banana','バナナ'],['apple','りんご|リンゴ|林檎'],['onion','玉ねぎ|たまねぎ|玉葱|タマネギ|オニオン'],['eggplant','なす|茄子|ナス'],['pepper','ピーマン|パプリカ'],['cucumber','きゅうり|胡瓜|キュウリ'],['coffee','コーヒー|珈琲'],['tea','お茶|紅茶|麦茶|緑茶|ほうじ茶|ティー'],['tape','テープ|ガムテ'],['fruit','果物|みかん|いちご|苺|ぶどう|もも|梨|キウイ|レモン|柿'],['veg','野菜|キャベツ|にんじん|人参|玉ねぎ|たまねぎ|ねぎ|ネギ|トマト|きゅうり|レタス|大根|じゃがいも|ほうれん草|ブロッコリー|もやし|ピーマン|なす|茄子|きのこ|しめじ|えのき|白菜|かぼちゃ|生姜|しょうが|にんにく|小松菜|水菜'],['tofu','豆腐|納豆|油揚げ|厚揚げ|こんにゃく'],['noodle','麺|うどん|そば|蕎麦|パスタ|ラーメン|そうめん|焼きそば'],['rice','米|ごはん|ご飯|餅|もち麦|シリアル|オートミール'],['season','醤油|しょうゆ|味噌|みそ|塩|砂糖|酢|油|みりん|ソース|ケチャップ|マヨ|だし|出汁|調味料|コショウ|胡椒|ドレッシング|カレー'],['drink','水|お茶|茶|ジュース|コーヒー|珈琲|ビール|酒|ワイン|炭酸|麦茶|紅茶'],['snack','お菓子|菓子|チョコ|アイス|クッキー|グミ|ポテチ|せんべい|おやつ|ガム'],['medicine','薬|絆創膏|ばんそうこう|マスク|目薬|湿布|体温計|サプリ'],['battery','電池|充電|バッテリー'],['soap','洗剤|シャンプー|リンス|コンディショナー|石鹸|せっけん|ソープ|柔軟剤|漂白|歯磨き|歯ブラシ|ハミガキ'],['paper','ティッシュ|トイレットペーパー|キッチンペーパー|ラップ|ゴミ袋|ごみ袋|おむつ|オムツ|おしりふき|ウェット'],['pen','ペン|ノート|文房具|のり|テープ|封筒|紙'],['tool','電球|ねじ|工具|フィルター|ハンガー|ケーブル'],['gift','プレゼント|ギフト|お土産|おみやげ']];
 function matKind(n){ for(const [k,re] of MAT_RULES) if(new RegExp(re).test(n)) return k; return 'bag'; }
 // 本物の写真から背景を抜いた素材画像（ブラウザで一度だけ作って、端末に保存）
 const MAT_PHOTOS={
- egg:['7/7b/Egg_upright.jpg',{thr:60,neu:72,nb:195},'Paolo Neo','パブリックドメイン'],
- banana:['1/10/Banana_isolated_on_white.jpg',{thr:60,neu:90,nb:100},'robin_24','CC BY 2.0'],
- apple:['e/eb/Wet_apple_isolated_on_white.jpg',{thr:60,neu:72,nb:195},'robin_24','CC BY 2.0'],
- bread:['f/f7/Breads_of_Moskovskaya_Oblast._img_006.jpg',{thr:60,neu:72,nb:195},'Dmitry Makeev','CC BY-SA 4.0'],
- onion:['2/25/Onion_on_White.JPG',{thr:60,neu:72,nb:195},'Colin','CC BY-SA 3.0']
+ egg:['7/7b/Egg_upright.jpg',{thr:60,neu:72,nb:195},'Paolo Neo','パブリックドメイン','卵'],
+ banana:['d/d1/Banana_bunch.jpeg',{nb:80,neu:100,er:2},'NW Indian Language Institute','CC BY 3.0','バナナ'],
+ apple:['e/eb/Wet_apple_isolated_on_white.jpg',{},'robin_24','CC BY 2.0','りんご'],
+ bread:['f/f7/Breads_of_Moskovskaya_Oblast._img_006.jpg',{nb:150,neu:60,er:2},'Dmitry Makeev','CC BY-SA 4.0','パン'],
+ onion:['2/25/Onion_on_White.JPG',{er:2},'Colin','CC BY-SA 3.0','玉ねぎ'],
+ fish:['0/0a/Baked_salmon_2.jpg',{er:2},'Tiia Monto','CC BY-SA 4.0','魚'],
+ meat:['a/a9/Ham_(4).jpg',{er:2},'Renee Comet','パブリックドメイン','肉'],
+ eggplant:['f/fb/Aubergine.jpg',{er:2},'Horst Frank','CC BY-SA 3.0','なす'],
+ pepper:['a/a7/Bell_pepper_3.jpg',{er:2},'Tiia Monto','CC BY-SA 3.0','ピーマン'],
+ cucumber:['e/e9/Cucumber_from_Denmark.jpg',{er:2},'WiseMan42','CC0','きゅうり'],
+ snack:["d/d1/2020-07-26_15_38_15_An_individual_Grandma's_Chocolate_Chip_cookie_in_the_Dulles_section_of_Sterling,_Loudoun_County,_Virginia.jpg",{er:2},'Famartin','CC BY-SA 4.0','お菓子'],
+ tea:['1/1a/Lipton-mug-tea.jpg',{er:2},'Evan-Amos','パブリックドメイン','お茶'],
+ coffee:['c/c9/Coffee-Beans.jpg',{er:2},'Evan-Amos','CC0','コーヒー'],
+ tool:['8/84/Claw-hammer.jpg',{er:2},'Evan-Amos','パブリックドメイン','道具'],
+ tape:['8/89/Duct-tape.jpg',{er:2},'Evan-Amos','パブリックドメイン','テープ']
 };
-const MATPH_KEY='questlog-matph-v1:', matPhBusy={};
+const MAT_ICON_ALT={eggplant:'veg',pepper:'veg',cucumber:'veg',coffee:'drink',tea:'drink',tape:'tool',apple:'fruit',onion:'fruit'};
+const MATPH_KEY='questlog-matph-v2:', matPhBusy={};
 function matPhGet(k){ try{ return localStorage.getItem(MATPH_KEY+k); }catch(e){ return null; } }
 async function matPhMake(k){
   if(matPhBusy[k]) return; matPhBusy[k]=1;
   try{
-    const [path,o]=MAT_PHOTOS[k], file=path.split('/').pop();
-    const blob=await fetch('https://upload.wikimedia.org/wikipedia/commons/thumb/'+path+'/500px-'+file,{mode:'cors'}).then(r=>{ if(!r.ok) throw 0; return r.blob(); });
-    const bm=await createImageBitmap(blob), W=bm.width, H=bm.height, c=document.createElement('canvas'); c.width=W; c.height=H;
+    const [path,o0]=MAT_PHOTOS[k], o={thr:60,neu:72,nb:195,er:1,...o0}, file=path.split('/').pop();
+    const blob=await fetch('https://upload.wikimedia.org/wikipedia/commons/thumb/'+path.split('/').slice(0,2).join('/')+'/'+encodeURIComponent(file)+'/500px-'+encodeURIComponent(file),{mode:'cors'}).then(r=>{ if(!r.ok) throw 0; return r.blob(); });
+    const bm=await createImageBitmap(blob), W=bm.width, H=bm.height, N=W*H, c=document.createElement('canvas'); c.width=W; c.height=H;
     const x=c.getContext('2d',{willReadFrequently:true}); x.drawImage(bm,0,0); const im=x.getImageData(0,0,W,H), d=im.data;
     let br=0,bg=0,bb=0; [[2,2],[W-3,2],[2,H-3],[W-3,H-3]].forEach(([px,py])=>{ const p=(py*W+px)*4; br+=d[p]/4; bg+=d[p+1]/4; bb+=d[p+2]/4; });
     const dist=p=>Math.hypot(d[p]-br,d[p+1]-bg,d[p+2]-bb), isBg=p=>{ const mx=Math.max(d[p],d[p+1],d[p+2]), mn=Math.min(d[p],d[p+1],d[p+2]); return dist(p)<=o.thr||(mx>o.nb&&(mx-mn)<o.neu); };
-    const m=new Uint8Array(W*H), st=[]; for(let i=0;i<W;i++) st.push(i,(H-1)*W+i); for(let j=0;j<H;j++) st.push(j*W,j*W+W-1);
-    while(st.length){ const i=st.pop(); if(m[i]||!isBg(i*4)) continue; m[i]=1; const px=i%W; if(px>0) st.push(i-1); if(px<W-1) st.push(i+1); if(i>=W) st.push(i-W); if(i<W*(H-1)) st.push(i+W); }
+    const nb4=(i,f)=>{ const px=i%W; if(px>0)f(i-1); if(px<W-1)f(i+1); if(i>=W)f(i-W); if(i<N-W)f(i+W); };
+    const m=new Uint8Array(N), st=[]; for(let i=0;i<W;i++) st.push(i,(H-1)*W+i); for(let j=0;j<H;j++) st.push(j*W,j*W+W-1);
+    while(st.length){ const i=st.pop(); if(m[i]||!isBg(i*4)) continue; m[i]=1; nb4(i,q=>st.push(q)); }
+    // いちばん大きいかたまりだけ残す（はみ出しや小さな点を消す）
+    const lab=new Int32Array(N); let best=0,bestN=0,id=0;
+    for(let i=0;i<N;i++){ if(m[i]||lab[i]) continue; id++; let n=0; const s2=[i]; lab[i]=id; while(s2.length){ const j=s2.pop(); n++; nb4(j,q=>{ if(!m[q]&&!lab[q]){ lab[q]=id; s2.push(q); } }); } if(n>bestN){ bestN=n; best=id; } }
+    for(let i=0;i<N;i++) if(!m[i]&&lab[i]!==best) m[i]=1;
+    for(let e=0;e<o.er;e++){ const add=[]; for(let i=0;i<N;i++){ if(m[i]) continue; let t=false; nb4(i,q=>{ if(m[q]) t=true; }); if(t) add.push(i); } add.forEach(i=>m[i]=1); }
     let x0=W,y0=H,x1=0,y1=0;
-    for(let i=0;i<W*H;i++){ const p=i*4; if(m[i]){ d[p+3]=0; continue; } const px=i%W, py=(i/W)|0;
-      if((px>0&&m[i-1])||(px<W-1&&m[i+1])||(i>=W&&m[i-W])||(i<W*(H-1)&&m[i+W])) d[p+3]=Math.round(255*Math.min(1,dist(p)/(o.thr*2.2)));
+    for(let i=0;i<N;i++){ const p=i*4; if(m[i]){ d[p+3]=0; continue; } const px=i%W, py=(i/W)|0; let t=false; nb4(i,q=>{ if(m[q]) t=true; }); if(t) d[p+3]=150;
       if(px<x0)x0=px; if(px>x1)x1=px; if(py<y0)y0=py; if(py>y1)y1=py; }
     x.putImageData(im,0,0);
     const S=160, bw=x1-x0+1, bh=y1-y0+1, sc=Math.min(S*.86/bw,S*.86/bh), out=document.createElement('canvas'); out.width=S; out.height=S;
@@ -1094,7 +1110,7 @@ async function matPhMake(k){
 const matPhMem={};
 function matSvg(n){ const kk=matKind(n);
   if(MAT_PHOTOS[kk]){ const u=matPhGet(kk)||matPhMem[kk]; if(u) return `<img class="mat-ico mat-ph" src="${u}" alt="">`; setTimeout(()=>matPhMake(kk),0); }
-  const [c,d]=MAT_ICONS[kk]||MAT_ICONS[kk==='onion'?'fruit':'fruit']; return `<svg viewBox="0 0 24 24" class="mat-ico" aria-hidden="true"><g fill="${c}" stroke="#2b2620" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" style="filter:drop-shadow(0 0 3px rgba(255,240,200,.25))">${d}</g><g fill="none" stroke="#fff" stroke-opacity=".35" stroke-width=".6" stroke-linejoin="round" transform="translate(-.4 -.4)">${d}</g></svg>`; }
+  const [c,d]=MAT_ICONS[kk]||MAT_ICONS[MAT_ICON_ALT[kk]]||MAT_ICONS.bag; return `<svg viewBox="0 0 24 24" class="mat-ico" aria-hidden="true"><g fill="${c}" stroke="#2b2620" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" style="filter:drop-shadow(0 0 3px rgba(255,240,200,.25))">${d}</g><g fill="none" stroke="#fff" stroke-opacity=".35" stroke-width=".6" stroke-linejoin="round" transform="translate(-.4 -.4)">${d}</g></svg>`; }
 let matStore='', matJust=null;
 function matsAll(){ return Object.entries(state.mats||{}).filter(([k,v])=>!v.del).map(([k,v])=>({id:k,...v})).sort((a,b)=>(a.got?1:0)-(b.got?1:0)||(a.c||0)-(b.c||0)); }
 function parseMat(t){ t=t.trim().replace(/\s+/g,' '); const m=t.match(/^(.*?)\s*[×xX＊*]\s*(\d+)$/)||t.match(/^(.*?)\s+(\d+)\s*(?:個|本|袋|パック|枚|箱)?$/); return m?{name:m[1].trim(),qty:+m[2]}:{name:t,qty:1}; }
@@ -1247,7 +1263,7 @@ function toolPanel(){
     const rows=[]; BG_PHOTOS.forEach(pl=>[['day','昼'],['morning','朝'],['evening','夕'],['night','夜']].forEach(([k,l])=>{ (pl.v&&pl.v[k]||[]).forEach(v=>rows.push(`<div class="kid"><span>${esc(v.name||pl.name)}（${l}・縦）<br><small class="hint">写真：${esc(v.by)} / ${esc(v.lic)}</small></span><a class="btn small ghost" href="${commonsPage(v.file)}" target="_blank" rel="noopener">元の写真</a></div>`)); const v=pl[k]; if(v) rows.push(`<div class="kid"><span>${esc(v.name||pl.name)}（${l}）<br><small class="hint">写真：${esc(v.by)} / ${esc(v.lic)}</small></span><a class="btn small ghost" href="${commonsPage(v.file)}" target="_blank" rel="noopener">元の写真</a></div>`); }));
     return `<h2 class="p-title">景色の写真について</h2>
     <div class="p-desc"><p>背景の景色は、Wikimedia Commons で公開されている写真を使わせてもらっています。1時間ごとに場所が変わり、朝・夕・夜はその時間の写真になります。</p>${bgNow?`<p>いまの景色：${esc(bgNow.name)}（写真：${esc(bgNow.by)} / ${esc(bgNow.lic)}）</p><p><a class="btn small" href="${bgNow.page}" target="_blank" rel="noopener">いまの景色の写真を見る</a></p>`:''}</div>
-    <div class="kids">${rows.join('')}<div class="kid"><span>赤い月（皆既月食）<br><small class="hint">写真：Robert Jay GaBany / CC BY-SA 3.0</small></span><a class="btn small ghost" href="https://commons.wikimedia.org/wiki/File:Lunar_eclipse_04-15-2014_by_R_Jay_GaBany.jpg" target="_blank" rel="noopener">元の写真</a></div>${MONTH_MOON.map((x,i)=>`<div class="kid"><span>月の振り返り ${i+1}月（${x[0]}）<br><small class="hint">写真：${x[2]} / ${x[3]}</small></span><a class="btn small ghost" href="https://commons.wikimedia.org/wiki/File:${encodeURIComponent(x[6])}" target="_blank" rel="noopener">元の写真</a></div>`).join('')}${Object.entries(MAT_PHOTOS).map(([k,x])=>`<div class="kid"><span>素材メモの写真（${({egg:'卵',banana:'バナナ',apple:'りんご',bread:'パン',onion:'玉ねぎ'})[k]||k}）<br><small class="hint">写真：${x[2]} / ${x[3]}（背景を切り抜いて表示）</small></span><a class="btn small ghost" href="https://commons.wikimedia.org/wiki/File:${encodeURIComponent(x[0].split('/').pop())}" target="_blank" rel="noopener">元の写真</a></div>`).join('')}<div class="kid"><span>1日の振り返り（その日の月）<br><small class="hint">NASA Scientific Visualization Studio「Moon Phase and Libration」（LROの観測データ・パブリックドメイン）。日本から見た傾きに回転して表示</small></span><a class="btn small ghost" href="https://svs.gsfc.nasa.gov/5587" target="_blank" rel="noopener">元の画像</a></div><div class="kid"><span>章の振り返り（地球の出）<br><small class="hint">写真：NASA / Apollo 8（パブリックドメイン）</small></span><a class="btn small ghost" href="https://commons.wikimedia.org/wiki/File:NASA-Apollo8-Dec24-Earthrise.jpg" target="_blank" rel="noopener">元の写真</a></div></div>`;
+    <div class="kids">${rows.join('')}<div class="kid"><span>赤い月（皆既月食）<br><small class="hint">写真：Robert Jay GaBany / CC BY-SA 3.0</small></span><a class="btn small ghost" href="https://commons.wikimedia.org/wiki/File:Lunar_eclipse_04-15-2014_by_R_Jay_GaBany.jpg" target="_blank" rel="noopener">元の写真</a></div>${MONTH_MOON.map((x,i)=>`<div class="kid"><span>月の振り返り ${i+1}月（${x[0]}）<br><small class="hint">写真：${x[2]} / ${x[3]}</small></span><a class="btn small ghost" href="https://commons.wikimedia.org/wiki/File:${encodeURIComponent(x[6])}" target="_blank" rel="noopener">元の写真</a></div>`).join('')}${Object.entries(MAT_PHOTOS).map(([k,x])=>`<div class="kid"><span>素材メモの写真（${x[4]||k}）<br><small class="hint">写真：${x[2]} / ${x[3]}（背景を切り抜いて表示）</small></span><a class="btn small ghost" href="https://commons.wikimedia.org/wiki/File:${encodeURIComponent(x[0].split('/').pop())}" target="_blank" rel="noopener">元の写真</a></div>`).join('')}<div class="kid"><span>1日の振り返り（その日の月）<br><small class="hint">NASA Scientific Visualization Studio「Moon Phase and Libration」（LROの観測データ・パブリックドメイン）。日本から見た傾きに回転して表示</small></span><a class="btn small ghost" href="https://svs.gsfc.nasa.gov/5587" target="_blank" rel="noopener">元の画像</a></div><div class="kid"><span>章の振り返り（地球の出）<br><small class="hint">写真：NASA / Apollo 8（パブリックドメイン）</small></span><a class="btn small ghost" href="https://commons.wikimedia.org/wiki/File:NASA-Apollo8-Dec24-Earthrise.jpg" target="_blank" rel="noopener">元の写真</a></div></div>`;
   }
   if(toolSel==='backup') return `<h2 class="p-title">データの書き出し・読み込み</h2>
     <div class="p-desc"><p>念のためのバックアップや、別のブラウザに移すときに使います。</p></div>
