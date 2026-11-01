@@ -543,6 +543,12 @@ body{background:#050607}
 .shop-it .rp{width:8px;height:12px}.shop-add{display:flex;gap:6px;flex-wrap:wrap}.shop-add #shopName{flex:2;min-width:150px}.shop-add #shopCost{flex:1;min-width:80px}
 .btn[disabled]{opacity:.4;cursor:default}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+.bulk-b{font-size:11px;color:var(--blue);border:1px solid rgba(95,212,239,.35);border-radius:10px;padding:1px 9px;margin-right:12px;letter-spacing:.04em}
+.bulk-bar{border:1px solid rgba(95,212,239,.35);background:rgba(10,40,60,.35);border-radius:3px;padding:10px 12px;margin:4px 0 8px}.bulk-bar p{margin:0 0 8px;font-size:12.5px;color:var(--muted)}
+.bulk-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.bulk-row input{flex:1;min-width:120px;background:rgba(0,0,0,.35);border:1px solid var(--line);border-radius:3px;padding:7px 10px}
+.bstep{cursor:pointer}.bchk{flex:none;width:18px;height:18px;margin-top:3px;border:1.5px solid var(--muted);border-radius:3px;position:relative}
+.bstep.bon .bchk{background:var(--blue);border-color:var(--blue)}.bstep.bon .bchk::after{content:'✓';position:absolute;inset:0;display:grid;place-items:center;color:var(--bg);font-size:13px;font-weight:900}
+.bstep.bon .step-t{color:var(--blue)}
 .kid.locked{opacity:.5}
 .chap-line{display:flex;flex-direction:column;align-items:center;gap:2px;width:100%;margin:-4px 0 10px;font-size:12px;letter-spacing:.12em;color:#d9d3be}.chap-line small{font-size:11px;letter-spacing:.04em;color:var(--muted)}.chap-line:hover span{color:var(--text)}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.chip{font-size:12px;border:1px solid var(--line);border-radius:999px;padding:4px 10px;color:var(--muted)}.chip.on,.chip:hover{border-color:var(--orange);color:var(--orange)}
@@ -687,6 +693,7 @@ function migrate(){
 migrate(); save();
 function save(){ moveDoToSteps(); sortAllSteps(); if(window.__qlReady) stamp(); try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){} if(window.__qlReady){ syncScan(); schedulePush(); } }
 
+let bulkSel=null;
 let tab='list', selId=null, editing=false, showCleared=false, miniOpen=false, listCat='today', dayView=ymd(), pickSid=null;
 
 /* ---------- helpers ---------- */
@@ -1148,7 +1155,10 @@ function renderView(D,q){
   if(meta) h+=`<div class="p-meta">${meta}</div>`;
   if(anc.length) h+=`<div class="crumb link">${anc.map(a=>`${ico(a.type)} <button data-act="select" data-id="${a.id}">${esc(a.title||'(無題)')}</button>`).join('　›　')}　のためのチャレンジ</div>`;
   if(q.steps.length||!q.done){
-    h+=`<div class="sec-h"><span>工程</span><span>${q.steps.filter(stepDone).length} / ${q.steps.length}${q.steps.length?`　・　${p}%`:''}</span></div><ul class="steps" data-sortable>`;
+    const canBulk=!q.done&&q.steps.filter(x=>!x.qref&&!stepDone(x)).length>=2;
+    h+=`<div class="sec-h"><span>工程</span><span>${canBulk&&!bulkSel?`<button class="bulk-b" data-act="bulkon">日付をまとめて入れる</button>`:''}${q.steps.filter(stepDone).length} / ${q.steps.length}${q.steps.length?`　・　${p}%`:''}</span></div>`;
+    if(bulkSel) h+=`<div class="bulk-bar"><p>日付を入れたい工程をタップして選んでください（${bulkSel.size}件選択中）</p><div class="bulk-row"><input type="date" id="bulkDate"><input type="time" id="bulkTime"><button class="btn small primary" data-act="bulkapply">選んだ工程に入れる</button><button class="btn small ghost" data-act="bulkclear">日付を外す</button><button class="btn small ghost" data-act="bulkoff">やめる</button></div></div>`;
+    h+=`<ul class="steps ${bulkSel?'bulk':''}" ${bulkSel?'':'data-sortable'}>`;
     q.steps.forEach(s=>{
       const r=refQ(s), dn=stepDone(s), isNext=!q.done&&ns&&s.id===ns.id;
       if(r){
@@ -1156,6 +1166,7 @@ function renderView(D,q){
         h+=`<li class="step qstep ${dn?'done':''} ${isNext?'next':''}" data-sid="${s.id}"><button class="qico" data-act="select" data-id="${r.id}" aria-label="チャレンジを開く">${ico(r.type,dn)}</button><span class="step-t"><button class="qlink" data-act="select" data-id="${r.id}">${esc(r.title||'(無題)')}</button><span class="qpct">${dn?'COMPLETE':Math.round(progress(r)*100)+'%'}</span>${na?`<span class="qnext">▸ ${esc(na)}</span>`:''}</span><span class="drag" data-drag title="ドラッグで並び替え">⋮⋮</span></li>`;
       }else{
         const chip=s.doDate?`<button class="sdate on" data-act="sdate" data-s="${s.id}">${doLabel(s,true).replace(' やる','')}${carryHtml(s)}</button>`:`<button class="sdate" data-act="sdate" data-s="${s.id}" title="日付を入れる">日付</button>`;
+        if(bulkSel){ if(dn) return; h+=`<li class="step bstep ${bulkSel.has(s.id)?'bon':''}" data-sid="${s.id}"><button class="bchk" data-act="bulkpick" data-s="${s.id}" aria-label="選ぶ"></button><span class="step-t" data-act="bulkpick" data-s="${s.id}">${esc(s.text)}</span>${s.doDate?`<span class="sdate on">${doLabel(s,true).replace(' やる','')}</span>`:''}</li>`; return; }
         h+=`<li class="step ${dn?'done':''} ${isNext?'next':''} ${pickSid===s.id?'pick':''}" data-sid="${s.id}"><button class="chk" data-act="step" data-q="${q.id}" data-s="${s.id}" aria-label="完了切替"></button><span class="step-t" data-act="pickstep" data-s="${s.id}">${esc(s.text)}</span>${chip}<span class="drag" data-drag title="ドラッグで並び替え">⋮⋮</span></li>`;
         if(pickSid===s.id&&!dn&&!q.done) h+=`<li class="shrine-row"><button data-act="shrine" data-q="${q.id}" data-s="${s.id}"><i class="sh-ico"></i>この工程で祠に挑む<small>25分だけ集中</small></button></li>`;
         if(dateSid===s.id) h+=`<li class="sdate-row"><input type="date" data-sdate="${s.id}" value="${esc(s.doDate||'')}"><input type="time" data-stime="${s.id}" value="${esc(s.doTime||'')}"><button class="btn small ghost" data-act="sdateclear" data-s="${s.id}">消す</button><button class="btn small" data-act="sdateclose">OK</button></li>`;
@@ -1264,9 +1275,16 @@ document.addEventListener('click',e=>{
   switch(a){
     case 'tab': if(!draftLeave()) break; if(editing){cleanupEmpty();editing=false} tab=b.dataset.v; if(window.innerWidth<=820) selId=null; render(); break;
     case 'openq': { const t=findQ(b.dataset.id); if(!t) break; tab='list'; listCat=t.type; selId=t.id; pouchSel=null; editing=false; render(); window.scrollTo({top:0}); break; }
+    case 'bulkon': bulkSel=new Set(); dateSid=null; pickSid=null; renderDetail(); break;
+    case 'bulkoff': bulkSel=null; renderDetail(); break;
+    case 'bulkpick': bulkSel&&(bulkSel.has(b.dataset.s)?bulkSel.delete(b.dataset.s):bulkSel.add(b.dataset.s)); { const d=($('bulkDate')||{}).value, t=($('bulkTime')||{}).value; renderDetail(); if($('bulkDate')){ $('bulkDate').value=d||''; $('bulkTime').value=t||''; } } break;
+    case 'bulkapply': case 'bulkclear': { if(!bulkSel||!bulkSel.size){ toast('工程を選んでください'); break; } const d=a==='bulkclear'?'':($('bulkDate')||{}).value, t=a==='bulkclear'?'':($('bulkTime')||{}).value;
+      if(a==='bulkapply'&&!d){ toast('日付を選んでください'); break; }
+      q.steps.forEach(st=>{ if(bulkSel.has(st.id)){ if(st.doDate!==d) st.carry=0; st.doDate=d; st.doTime=t||''; } });
+      const n=bulkSel.size; bulkSel=null; save(); render(); toast(a==='bulkclear'?`${n}件の日付を外しました`:`${n}件の工程に日付を入れました`); break; }
     case 'pickstep': pickSid=pickSid===b.dataset.s?null:b.dataset.s; renderDetail(); break;
-    case 'select': if(!draftLeave()) break; applyDateRow(); dateSid=null; pickSid=null; if(editing){cleanupEmpty();editing=false} selId=b.dataset.id; render(); window.innerWidth<=820&&window.scrollTo({top:0}); break;
-    case 'back': if(!draftLeave()) break; applyDateRow(); dateSid=null; if(editing){cleanupEmpty();editing=false} selId=null; toolPicked=false; pouchSel=null; render(); break;
+    case 'select': if(!draftLeave()) break; bulkSel=null; applyDateRow(); dateSid=null; pickSid=null; if(editing){cleanupEmpty();editing=false} selId=b.dataset.id; render(); window.innerWidth<=820&&window.scrollTo({top:0}); break;
+    case 'back': if(!draftLeave()) break; bulkSel=null; applyDateRow(); dateSid=null; if(editing){cleanupEmpty();editing=false} selId=null; toolPicked=false; pouchSel=null; render(); break;
     case 'pouch': pouchSel=b.dataset.v; render(); window.innerWidth<=820&&window.scrollTo({top:0}); break;
     case 'trday': selId=null; trSel=b.dataset.v; tab='list'; if(listCat!=='train'){ listCat='train'; } if(/^\d/.test(trSel)) trWeek=trWeekStart(trSel); render(); window.innerWidth<=820&&window.scrollTo({top:0}); break;
     case 'trweek': { const d=new Date((trWeek||trWeekStart(trDefaultDay()))+'T00:00:00'); d.setDate(d.getDate()+7*(+b.dataset.v)); const k=ymd(d); if(k<=TR_END&&ymd(new Date(d.getTime()+6*DAY))>=TR_START) trWeek=k; renderList(); break; }
