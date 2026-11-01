@@ -543,6 +543,18 @@ body{background:#050607}
 .shop-it .rp{width:8px;height:12px}.shop-add{display:flex;gap:6px;flex-wrap:wrap}.shop-add #shopName{flex:2;min-width:150px}.shop-add #shopCost{flex:1;min-width:80px}
 .btn[disabled]{opacity:.4;cursor:default}
 .kid.locked{opacity:.5}
+.chap-line{display:flex;flex-direction:column;align-items:center;gap:2px;width:100%;margin:-4px 0 10px;font-size:12px;letter-spacing:.12em;color:#d9d3be}.chap-line small{font-size:11px;letter-spacing:.04em;color:var(--muted)}.chap-line:hover span{color:var(--text)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.chip{font-size:12px;border:1px solid var(--line);border-radius:999px;padding:4px 10px;color:var(--muted)}.chip.on,.chip:hover{border-color:var(--orange);color:var(--orange)}
+.rev-btns{display:flex;flex-wrap:wrap;gap:8px}
+.rev-note{width:100%;min-height:90px;background:rgba(0,0,0,.35);border:1px solid var(--line);border-radius:3px;padding:10px 12px;color:var(--text);font:inherit;line-height:1.7;resize:vertical}
+.rev-go{margin-top:18px;text-align:center}
+.rev-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0 4px}.rev-stats div{text-align:center;border:1px solid var(--line);border-radius:3px;padding:8px 4px;background:rgba(0,0,0,.25)}.rev-stats b{display:block;font-size:22px;font-style:italic}.rev-stats span{font-size:11px;color:var(--muted)}
+.moon.rev{z-index:61;background:radial-gradient(1px 1px at 12% 18%,#fff8,transparent),radial-gradient(1px 1px at 74% 22%,#fff9,transparent),linear-gradient(#0d1626ee,#0a1018f2)}
+.moon.rev h2{text-shadow:0 0 18px rgba(95,212,239,.35)}.moon.rev .moon-k{color:#8fe8ff}.moon.rev-season .moon-k{color:var(--orange)}.moon.rev-season h2{text-shadow:0 0 18px rgba(240,166,64,.45)}
+.moon.rev .chap-form label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}.moon.rev .chap-form input{width:100%}
+.qk-m{font-style:normal;color:#b9e6a8;margin-right:5px;font-size:.9em}
+.shrine-row{display:flex;flex-wrap:wrap;gap:8px}.shrine-row .qk-b{color:var(--muted);border-color:var(--line);background:rgba(0,0,0,.25)}.shrine-row .qk-b.on{color:#b9e6a8;border-color:rgba(185,230,168,.5)}
+.qk-h{margin-top:14px}
 .p-desc:empty{display:none}.rec-lv .lv-title{display:inline!important}
 .proofs.one{display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;padding:7px 12px}.proofs.one .pf-h{margin:0}.proofs.one .pf{display:inline-flex;gap:7px;padding:0;font-size:12px}
 .rec-lv{display:flex;align-items:baseline;gap:10px;margin-top:6px}.rec-lv .lv-num{font-size:30px}.rec-lv .lv-title{font-size:13px;opacity:.9}.rec-xp{margin-top:8px}
@@ -587,6 +599,7 @@ body{background:#050607}
 <div class="toast" id="toast"></div>
 <div class="banner" id="banner"></div>
 <div class="moon" id="moon"></div>
+<div class="moon rev" id="rev"></div>
 <div class="shrine" id="shrine"></div>
 <div class="clear" id="clear"><div class="clear-in">
   <div class="clear-k">CHALLENGE</div>
@@ -656,6 +669,7 @@ function canLink(child,parent){
   return parent.type==='main'&&child.type==='challenge';
 }
 function migrate(){
+  initRev();
   const by=id=>state.quests.find(q=>q.id===id);
   state.quests.forEach(q=>{
     if(q.type==='sub'){
@@ -781,10 +795,10 @@ function gain(n){
 /* ---------- actions ---------- */
 function toggleStep(qid,sid){
   const q=findQ(qid), s=q&&q.steps.find(x=>x.id===sid); if(!s||s.qref) return;
-  s.done=!s.done; gain((s.done?1:-1)*10*(q.rank||1)); if(s.done) earnRupee(5);
+  s.done=!s.done; s.doneAt=s.done?Date.now():null; gain((s.done?1:-1)*10*(q.rank||1)); if(s.done) earnRupee(5);
   save(); render();
   if(s.done){
-    toast(`工程クリア  +${10*(q.rank||1)} XP ・ +5ルピー`); maybeSeed();
+    toast(`工程クリア  +${10*(q.rank||1)} XP ・ +5ルピー`); if(s.quick){ state.seeds=(state.seeds||0)+1; save(); setTimeout(()=>banner('seed','森の精の実を見つけた',`すぐ終わる工程をクリア・${state.seeds}個目`),350); } else maybeSeed();
     if(allStepsDone(q)) setTimeout(()=>toast('全工程クリア！ チャレンジ達成を報告しよう'),1400);
   }
 }
@@ -968,7 +982,7 @@ function stepRowToday(q,st){
 // 焚き火で休む：今日の分を明日に回す（持ち越し回数は増やさない）
 let pouchSel=null;
 function pouchList(){
-  const it=[['shop','ごほうびの店',`${rupeeSvg} ${rupeeBal()} ルピー`],['records','冒険の記録',(()=>{const L=lvInfo(state.xp); return `Lv.${L.lv} ${TITLES[Math.min(L.lv-1,TITLES.length-1)]}・✿ ${state.seeds||0}`;})()],['memory','思い出',`${state.quests.filter(q=>q.done&&q.type!=='mini').length}件の達成`],['equip','装備',equipNow().name]];
+  const it=[['shop','ごほうびの店',`${rupeeSvg} ${rupeeBal()} ルピー`],['records','冒険の記録',(()=>{const L=lvInfo(state.xp); return `Lv.${L.lv} ${TITLES[Math.min(L.lv-1,TITLES.length-1)]}・✿ ${state.seeds||0}`;})()],['chap','章と振り返り',(()=>{const {c,pro,left,until}=chapNow(); return pro?`序章・第${c.n}章まで あと${until}日`:`第${c.n}章${c.theme?'「'+c.theme+'」':''}・残り${left}日`;})()],['memory','思い出',`${state.quests.filter(q=>q.done&&q.type!=='mini').length}件の達成`],['equip','装備',equipNow().name]];
   return `<div class="cat-bar"><div class="cat-name">ポーチ</div><div class="cat-icons"><span class="cat on" style="cursor:default">${ICON.pouch}</span></div></div><div class="rows">`+
     it.map(([k,l,sub])=>`<button class="row ${pouchSel===k?'sel':''}" data-act="pouch" data-v="${k}"><span class="r-mark">✦</span><span class="r-main"><span class="r-title">${l}</span><span class="r-sub">${sub}</span></span><span class="r-notch"></span></button>`).join('')+'</div>';
 }
@@ -988,6 +1002,7 @@ function pouchPanel(){
   if(pouchSel==='records') return recordsPanel();
   if(pouchSel==='equip') return equipPanel();
   if(pouchSel==='memory') return memoryPanel();
+  if(pouchSel==='chap') return chapPanel();
   return '';
 }
 function restList(){
@@ -1011,12 +1026,15 @@ function restToday(){
 }
 function todayList(){
   const items=dayItems(dayView), d=new Date(dayView+'T00:00:00');
-  let h=catBar('today')+weekStrip();
+  let h=catBar('today')+chapLine()+weekStrip();
   h+=`<div class="day-h"><span>${dayView===ymd()?'今日':''}　${d.getMonth()+1}/${d.getDate()}（${'日月火水木金土'[d.getDay()]}）${holiday(dayView)?`<b class="hol">${holiday(dayView)}</b>`:''}</span><span>${items.filter(x=>x.s?x.s.done:x.q.done).length} / ${items.length}</span></div><div class="rows">`;
   if((state.rested||{})[dayView]) h+=`<div class="sec-empty">🔥 この日は焚き火で休みました</div>`;
   { const tt=trType(dayView); if(tt&&tt!=='R'){ const dn=trDone(dayView), tot=trChecks(dayView).length; h+=`<button class="row tr-today ${dn===tot?'done':''}" data-act="trday" data-v="${dayView}"><span class="r-mark">${ico('train')}</span><span class="r-main"><span class="r-title">鍛錬：${TR_NAME[tt]}</span><span class="r-sub">チェック ${dn}/${tot}</span></span><span class="r-side">${dn===tot?'<span class="r-clear">CLEAR</span>':''}</span><span class="r-notch"></span></button>`; } }
   h+=items.map(x=>x.s?stepRowToday(x.q,x.s):row(x.q)).join('');
   if(!items.length) h+=`<div class="sec-empty">この日の予定はまだありません。チャレンジや工程に「やる日」を入れると、ここに並びます</div>`;
+  if(dayView===ymd()){ const qk=[]; state.quests.forEach(q=>{ if(q.done) return; (q.steps||[]).forEach(st=>{ if(st.quick&&!st.qref&&!st.done&&st.doDate!==dayView) qk.push({q,st}); }); });
+    h+=`<div class="day-h qk-h"><span>✿ すぐ終わる工程</span><span>${qk.length?qk.length+'件':''}</span></div>`;
+    h+=qk.length?qk.slice(0,3).map(x=>stepRowToday(x.q,x.st)).join(''):`<div class="sec-empty">5〜15分で終わる工程をタップして「✿ すぐ終わる」にすると、ここにいつも3つまで並びます。クリアすると森の精の実がかならず見つかります</div>`; }
   h+=`<button class="row add-row" data-act="newcur"><span class="r-mark">＋</span><span class="r-main"><span class="r-title">この日にチャレンジを追加</span></span><span class="r-notch"></span></button></div>`;
   return h;
 }
@@ -1142,8 +1160,8 @@ function renderView(D,q){
         h+=`<li class="step qstep ${dn?'done':''} ${isNext?'next':''}" data-sid="${s.id}"><button class="qico" data-act="select" data-id="${r.id}" aria-label="チャレンジを開く">${ico(r.type,dn)}</button><span class="step-t"><button class="qlink" data-act="select" data-id="${r.id}">${esc(r.title||'(無題)')}</button><span class="qpct">${dn?'COMPLETE':Math.round(progress(r)*100)+'%'}</span>${na?`<span class="qnext">▸ ${esc(na)}</span>`:''}</span><span class="drag" data-drag title="ドラッグで並び替え">⋮⋮</span></li>`;
       }else{
         const chip=s.doDate?`<button class="sdate on" data-act="sdate" data-s="${s.id}">${doLabel(s,true).replace(' やる','')}${carryHtml(s)}</button>`:`<button class="sdate" data-act="sdate" data-s="${s.id}" title="日付を入れる">日付</button>`;
-        h+=`<li class="step ${dn?'done':''} ${isNext?'next':''} ${pickSid===s.id?'pick':''}" data-sid="${s.id}"><button class="chk" data-act="step" data-q="${q.id}" data-s="${s.id}" aria-label="完了切替"></button><span class="step-t" data-act="pickstep" data-s="${s.id}">${esc(s.text)}</span>${chip}<span class="drag" data-drag title="ドラッグで並び替え">⋮⋮</span></li>`;
-        if(pickSid===s.id&&!dn&&!q.done) h+=`<li class="shrine-row"><button data-act="shrine" data-q="${q.id}" data-s="${s.id}"><i class="sh-ico"></i>この工程で祠に挑む<small>25分だけ集中</small></button></li>`;
+        h+=`<li class="step ${dn?'done':''} ${isNext?'next':''} ${pickSid===s.id?'pick':''}" data-sid="${s.id}"><button class="chk" data-act="step" data-q="${q.id}" data-s="${s.id}" aria-label="完了切替"></button><span class="step-t" data-act="pickstep" data-s="${s.id}">${s.quick?'<i class="qk-m" title="すぐ終わる工程">✿</i>':''}${esc(s.text)}</span>${chip}<span class="drag" data-drag title="ドラッグで並び替え">⋮⋮</span></li>`;
+        if(pickSid===s.id&&!dn&&!q.done) h+=`<li class="shrine-row"><button class="qk-b ${s.quick?'on':''}" data-act="quick" data-s="${s.id}">✿ すぐ終わる<small>5〜15分</small></button><button data-act="shrine" data-q="${q.id}" data-s="${s.id}"><i class="sh-ico"></i>この工程で祠に挑む<small>25分だけ集中</small></button></li>`;
         if(dateSid===s.id) h+=`<li class="sdate-row"><input type="date" data-sdate="${s.id}" value="${esc(s.doDate||'')}"><input type="time" data-stime="${s.id}" value="${esc(s.doTime||'')}"><button class="btn small ghost" data-act="sdateclear" data-s="${s.id}">消す</button><button class="btn small" data-act="sdateclose">OK</button></li>`;
       }
     });
@@ -1250,6 +1268,7 @@ document.addEventListener('click',e=>{
   switch(a){
     case 'tab': if(!draftLeave()) break; if(editing){cleanupEmpty();editing=false} tab=b.dataset.v; if(window.innerWidth<=820) selId=null; render(); break;
     case 'openq': { const t=findQ(b.dataset.id); if(!t) break; tab='list'; listCat=t.type; selId=t.id; pouchSel=null; editing=false; render(); window.scrollTo({top:0}); break; }
+    case 'quick': { const st=q&&q.steps.find(x=>x.id===b.dataset.s); if(st){ st.quick=!st.quick; save(); renderDetail(); renderList(); toast(st.quick?'すぐ終わる工程にしました。今日の冒険にいつも並びます':'すぐ終わる工程から外しました'); } break; }
     case 'pickstep': pickSid=pickSid===b.dataset.s?null:b.dataset.s; renderDetail(); break;
     case 'select': if(!draftLeave()) break; applyDateRow(); dateSid=null; pickSid=null; if(editing){cleanupEmpty();editing=false} selId=b.dataset.id; render(); window.innerWidth<=820&&window.scrollTo({top:0}); break;
     case 'back': if(!draftLeave()) break; applyDateRow(); dateSid=null; if(editing){cleanupEmpty();editing=false} selId=null; toolPicked=false; pouchSel=null; render(); break;
@@ -1270,8 +1289,21 @@ document.addEventListener('click',e=>{
     case 'memedit': memEdit=q.id; renderDetail(); setTimeout(()=>{const t=$('memIn'); t&&t.focus();},30); break;
     case 'memsave': { const v=($('memIn')||{}).value||''; q.memory=v.trim(); memEdit=null; save(); render(); toast(q.memory?'思い出に残しました':'思い出を消しました'); break; }
     case 'rest': if(confirm('焚き火で休みますか？\n今日の分を明日に回します（持ち越しには数えません）')){ restToday(); render(); } break;
-    case 'moonclose': $('moon').classList.remove('show'); break;
-    case 'moonfinish': state.moonDone=moonKey()||ymd(); save(); $('moon').classList.remove('show'); toast('赤い月が沈んだ。新しい一週間の始まり'); break;
+    case 'moonclose': revSkip.moon=1; $('moon').classList.remove('show'); break;
+    case 'revclose': if(revCur) revSkip[revCur.kind]=1; $('rev').classList.remove('show'); break;
+    case 'revopen': { const now=new Date(); if(b.dataset.v==='day') revOpen('day',ymd()); else revOpen('month',ymOf(new Date(now.getFullYear(),now.getMonth()-1,1))); break; }
+    case 'openmoon': openMoon(); break;
+    case 'chiprule': { const el=$('chRule'); if(el) el.value=b.dataset.v; break; }
+    case 'chaprule': { const c=state.chap.cur; c.rule=c.rule===b.dataset.v?'':b.dataset.v; state.chap.u=Date.now(); save(); renderDetail(); renderList(); break; }
+    case 'chapopen': tab='pouch'; pouchSel='chap'; render(); window.innerWidth<=820&&window.scrollTo({top:0}); break;
+    case 'revdone': { const r=revCur; if(!r) break; const nt=($('revNote')||{}).value||'';
+      if(r.kind==='day'){ setNote('d:'+r.key,nt); state.rev.day=r.key; toast('おつかれさま。今日の冒険はここまで'); }
+      if(r.kind==='month'){ setNote('m:'+r.key,nt); state.rev.month=r.key; toast(`${+r.key.slice(5)}月の冒険を締めくくった`); }
+      if(r.kind==='season'){ const c=state.chap.cur; setNote('c:'+c.n,nt); state.chap.hist.push({n:c.n,theme:c.theme,rule:c.rule,start:c.start,end:c.end}); const ns=ymd(new Date(new Date(c.end+'T00:00:00').getTime()+DAY));
+        state.chap.cur={n:c.n+1,theme:(($('chTheme')||{}).value||'').trim(),rule:(($('chRule')||{}).value||'').trim(),start:ns,end:chEnd(ns)}; state.chap.u=Date.now();
+        setTimeout(()=>banner('accept',`第${c.n+1}章`,state.chap.cur.theme||'新しい章がはじまる'),300); }
+      state.rev.u=Date.now(); save(); $('rev').classList.remove('show'); render(); setTimeout(revCheck,3000); break; }
+    case 'moonfinish': state.moonDone=moonDueKey(); save(); $('moon').classList.remove('show'); toast('赤い月が沈んだ。新しい一週間の始まり'); setTimeout(revCheck,2500); break;
     case 'moonundate': { const mq=findQ(b.dataset.q); const o=b.dataset.s?mq&&mq.steps.find(x=>x.id===b.dataset.s):mq; if(o){ o.doDate=''; o.doTime=''; o.carry=0; save(); render(); renderMoon(); } break; }
     case 'moonopen': $('moon').classList.remove('show'); { const mq=findQ(b.dataset.q); if(mq){ tab='list'; listCat=mq.type; selId=mq.id; editing=false; render(); } } break;
     case 'bklist': toast('読み込み中…'); gas({action:'backups'}).then(j=>{bkList=j.list; renderDetail(); toast(`${j.list.length}件のバックアップ`);}).catch(err=>toast('読み込めませんでした：'+err.message)); break;
@@ -1377,6 +1409,7 @@ document.addEventListener('input',e=>{
 });
 document.addEventListener('change',e=>{
   if(trOnChange(e)) return;
+  if(e.target.dataset.chap){ state.chap.cur[e.target.dataset.chap]=e.target.value.trim(); state.chap.u=Date.now(); save(); renderList(); return; }
   if(e.target.dataset.sdate||e.target.dataset.stime){
     return; // スマホは日付欄を開いた瞬間に今日が入るので、OKを押すまで保存しない
   }
@@ -2044,7 +2077,108 @@ function renderMoon(){
     <div style="margin-top:18px;text-align:center"><button class="btn primary" data-act="moonfinish">見直しを終える</button></div></div>`;
 }
 function openMoon(){ renderMoon(); $('moon').classList.add('show'); }
-setTimeout(()=>{ const k=moonKey(); if(k&&state.moonDone!==k&&!state.pristine) openMoon(); },1800);
+setTimeout(revCheck,1800); document.addEventListener('visibilitychange',()=>{ if(!document.hidden) setTimeout(revCheck,800); }); setInterval(revCheck,5*60*1000);
+
+
+/* ---------- 章（シーズン）と振り返り ---------- */
+const RULE_PRESETS=['毎日ミニチャレンジを1つクリア','すぐ終わる工程（✿）を毎日1つ','週2回は祠に挑む','鍛錬を週3回','やる日を入れるのは前の晩','月に1回、新しい場所へ行く'];
+function chEnd(start){ const d=new Date(start+'T00:00:00'); return ymd(new Date(d.getFullYear(),d.getMonth()+3,0)); }
+function ymOf(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); }
+function initRev(){
+  if(!state.chap||!state.chap.cur||!state.chap.cur.start||!/^\d/.test(state.chap.cur.end||'')) state.chap={cur:{n:1,theme:'',rule:'',start:'2027-01-01',end:'2027-03-31'},hist:[],u:0};
+  if(!state.rev){ const now=new Date(); state.rev={day:ymd(new Date(now.getTime()-DAY)),month:ymOf(new Date(now.getFullYear(),now.getMonth()-1,1)),notes:{}}; }
+  state.rev.notes=state.rev.notes||{};
+}
+function chapNow(){ const c=state.chap.cur, t=ymd(); return {c,pro:t<c.start,left:Math.round((new Date(c.end+'T00:00:00')-new Date(t+'T00:00:00'))/DAY)+1,until:Math.round((new Date(c.start+'T00:00:00')-new Date(t+'T00:00:00'))/DAY)}; }
+function chapLine(){
+  const {c,pro,left,until}=chapNow(); const th=c.theme?`「${esc(c.theme)}」`:'';
+  const main=pro?(c.theme?`序章　第${c.n}章${th}まで あと${until}日`:`序章　第${c.n}章（${+c.start.slice(5,7)}/${+c.start.slice(8)}から）のテーマを決めよう`):`第${c.n}章${th}　残り${left}日`;
+  return `<button class="chap-line" data-act="chapopen"><span>${main}</span>${c.rule?`<small>ルール：${esc(c.rule)}</small>`:''}</button>`;
+}
+function note(k){ const n=state.rev.notes[k]; return n?n.t:''; }
+function setNote(k,t){ state.rev.notes[k]={t:(t||'').trim(),u:Date.now()}; }
+// 期間内の達成（チャレンジ・工程・鍛錬）
+function doneIn(a,b){ // a,b: ymd（両端を含む）
+  const t0=new Date(a+'T00:00:00').getTime(), t1=new Date(b+'T00:00:00').getTime()+DAY, inR=x=>x&&x>=t0&&x<t1;
+  const qs=state.quests.filter(q=>q.done&&inR(q.doneAt)).sort((x,y)=>x.doneAt-y.doneAt);
+  let steps=[]; state.quests.forEach(q=>(q.steps||[]).forEach(st=>{ if(!st.qref&&st.done&&inR(st.doneAt)) steps.push({q,st}); }));
+  let tr=0; const H=hm(); Object.keys(H.days||{}).forEach(k=>{ if(k>=a&&k<=b&&(H.days[k]||{}).train) tr++; });
+  return {qs,steps,tr};
+}
+const kidLine=(t,sub)=>`<div class="kid"><span>${t}${sub?`<br><small class="hint">${sub}</small>`:''}</span></div>`;
+function revOpen(kind,key){
+  const R=$('rev'); revCur={kind,key}; let h='';
+  if(kind==='day'){
+    const d=new Date(key+'T00:00:00'), nx=ymd(new Date(d.getTime()+DAY)), D=doneIn(key,key);
+    const left=dayItems(key).filter(x=>!(x.s?x.s.done:x.q.done)), tm=dayItems(nx).filter(x=>!(x.s?x.s.done:x.q.done));
+    h=`<div class="moon-k">DAY END</div><h2>${d.getMonth()+1}/${d.getDate()}（${'日月火水木金土'[d.getDay()]}）の冒険</h2><p class="moon-lead">今日の冒険をふり返って、明日にそなえよう</p>
+    <div class="sec-h"><span>クリアしたもの</span><span>${D.qs.length+D.steps.length+(D.tr?1:0)}件</span></div>
+    ${D.qs.length||D.steps.length||D.tr?`<div class="kids">${D.qs.map(q=>kidLine(ico(q.type,true)+' '+esc(q.title||'(無題)'))).join('')}${D.steps.map(x=>kidLine('◆ '+esc(x.st.text),esc(x.q.title||''))).join('')}${D.tr?kidLine(ico('train')+' 鍛錬'):''}</div>`:'<p class="hint">クリアはありませんでした。休むのも冒険のうち</p>'}
+    ${left.length?`<div class="sec-h"><span>残ったもの</span><span>${left.length}件</span></div><p class="hint">明日に持ち越されます</p><div class="kids">${left.map(x=>kidLine(esc(x.s?x.s.text:(x.q.title||'(無題)')),x.s?esc(x.q.title||''):'')).join('')}</div>`:''}
+    <div class="sec-h"><span>明日の予定</span><span>${tm.length}件</span></div>
+    ${tm.length?`<div class="kids">${tm.map(x=>kidLine(esc(x.s?x.s.text:(x.q.title||'(無題)')),x.s?esc(x.q.title||''):'')).join('')}</div>`:'<p class="hint">まだ予定はありません</p>'}
+    <div class="sec-h"><span>ひとこと日記</span></div><textarea id="revNote" class="rev-note" placeholder="よかったこと・気づいたこと・明日の自分へ">${esc(note('d:'+key))}</textarea>
+    <div class="rev-go"><button class="btn primary" data-act="revdone">今日の冒険を終える</button></div>`;
+  }
+  if(kind==='month'){
+    const [y,m]=key.split('-').map(Number), a=key+'-01', b=ymd(new Date(y,m,0)), D=doneIn(a,b);
+    const big=D.qs.filter(q=>q.type!=='mini'), mini=D.qs.length-big.length;
+    const dn=Object.keys(state.rev.notes).filter(k=>k.startsWith('d:'+key)&&state.rev.notes[k].t).sort();
+    h=`<div class="moon-k">MONTH END</div><h2>${m}月の冒険</h2><p class="moon-lead">ひと月をふり返って、来月の自分にひとこと</p>
+    <div class="rev-stats"><div><b>${big.length}</b><span>チャレンジ</span></div><div><b>${mini}</b><span>ミニ</span></div><div><b>${D.steps.length}</b><span>工程</span></div><div><b>${D.tr}</b><span>鍛錬した日</span></div></div>
+    ${big.length?`<div class="sec-h"><span>達成したチャレンジ</span></div><div class="kids">${big.map(q=>kidLine(ico(q.type,true)+' '+esc(q.title||'(無題)'),q.memory?esc(q.memory.split('\n')[0]):'')).join('')}</div>`:''}
+    ${dn.length?`<div class="sec-h"><span>日記から</span><span>${dn.length}日</span></div><div class="kids">${dn.slice(-6).map(k=>kidLine(esc(note(k).split('\n')[0]),k.slice(7).replace('-','/'))).join('')}</div>`:''}
+    <div class="sec-h"><span>この月をひとことで・来月やりたいこと</span></div><textarea id="revNote" class="rev-note" placeholder="例：引っ越しの段取りが進んだ。来月は鍛錬を続ける">${esc(note('m:'+key))}</textarea>
+    <div class="rev-go"><button class="btn primary" data-act="revdone">この月を締めくくる</button></div>`;
+  }
+  if(kind==='season'){
+    const c=state.chap.cur, D=doneIn(c.start,c.end), big=D.qs.filter(q=>q.type!=='mini');
+    const mn=Object.keys(state.rev.notes).filter(k=>k.startsWith('m:')&&k.slice(2)>=c.start.slice(0,7)&&k.slice(2)<=c.end.slice(0,7)&&state.rev.notes[k].t).sort();
+    const ns=ymd(new Date(new Date(c.end+'T00:00:00').getTime()+DAY));
+    h=`<div class="moon-k">CHAPTER CLEAR</div><h2>第${c.n}章${c.theme?`「${esc(c.theme)}」`:''} 完</h2><p class="moon-lead">${c.start.replace(/-/g,'/')} 〜 ${c.end.replace(/-/g,'/')}${c.rule?`　ルール：${esc(c.rule)}`:''}</p>
+    <div class="rev-stats"><div><b>${big.length}</b><span>チャレンジ</span></div><div><b>${D.qs.length-big.length}</b><span>ミニ</span></div><div><b>${D.steps.length}</b><span>工程</span></div><div><b>${D.tr}</b><span>鍛錬した日</span></div></div>
+    ${big.length?`<div class="sec-h"><span>この章の冒険</span></div><div class="kids">${big.map(q=>kidLine(ico(q.type,true)+' '+esc(q.title||'(無題)'),q.memory?esc(q.memory.split('\n')[0]):'')).join('')}</div>`:''}
+    ${mn.length?`<div class="sec-h"><span>月ごとのひとこと</span></div><div class="kids">${mn.map(k=>kidLine(esc(note(k).split('\n')[0]),+k.slice(7)+'月')).join('')}</div>`:''}
+    <div class="sec-h"><span>この章をふり返って</span></div><textarea id="revNote" class="rev-note" placeholder="この章で変わったこと・次の章で変えたいこと">${esc(note('c:'+c.n))}</textarea>
+    <div class="sec-h"><span>第${c.n+1}章（${ns.replace(/-/g,'/')} 〜 ${chEnd(ns).replace(/-/g,'/')}）</span></div>
+    ${chapForm('',c.rule)}
+    <div class="rev-go"><button class="btn primary" data-act="revdone">第${c.n+1}章をはじめる</button></div>`;
+  }
+  R.innerHTML=`<div class="moon-in"><button class="moon-x" data-act="revclose" aria-label="閉じる">✕</button>${h}</div>`;
+  R.className='moon rev rev-'+kind+' show'; R.scrollTop=0;
+}
+function chapForm(theme,rule){
+  return `<div class="form chap-form"><div class="f"><label>テーマ</label><input type="text" id="chTheme" value="${esc(theme||'')}" placeholder="例：身体をつくる章、家族と出かける章"></div>
+  <div class="f"><label>この章だけのルール</label><input type="text" id="chRule" value="${esc(rule||'')}" placeholder="下から選ぶか、自分で書く"><div class="chips">${RULE_PRESETS.map(r=>`<button class="chip" data-act="chiprule" data-v="${esc(r)}">${esc(r)}</button>`).join('')}</div></div></div>`;
+}
+let revCur=null; const revSkip={};
+function revDue(){
+  const t=ymd(), now=new Date(), out=[];
+  if(t>state.chap.cur.end) out.push(['season']);
+  const pm=ymOf(new Date(now.getFullYear(),now.getMonth()-1,1)); if((state.rev.month||'')<pm) out.push(['month',pm]);
+  const mk=moonDueKey(); if(state.moonDone!==mk&&(state.moonDone||'')<mk) out.push(['moon']);
+  const dk=now.getHours()>=20?t:ymd(new Date(now.getTime()-DAY)); if((state.rev.day||'')<dk) out.push(['day',dk]);
+  return out.filter(x=>!revSkip[x[0]]);
+}
+function revCheck(){
+  if(state.pristine||editing) return;
+  if($('rev').classList.contains('show')||$('moon').classList.contains('show')||$('shrine').classList.contains('show')) return;
+  const d=revDue()[0]; if(!d) return;
+  if(d[0]==='moon') openMoon(); else revOpen(d[0],d[1]);
+}
+function chapPanel(){
+  const {c,pro,left,until}=chapNow();
+  const recent=Object.keys(state.rev.notes).filter(k=>(k.startsWith('d:')||k.startsWith('m:'))&&state.rev.notes[k].t).sort().reverse().slice(0,12);
+  return `<h2 class="p-title">${pro?'序章':`第${c.n}章`}</h2><div class="p-desc"><p>${pro?`第${c.n}章は ${c.start.replace(/-/g,'/')} から。それまでにテーマとルールを決めておこう。`:`${c.start.replace(/-/g,'/')} 〜 ${c.end.replace(/-/g,'/')}　残り${left}日。章が終わると振り返りが出て、次の章のテーマとルールを決めます。`}</p></div>
+  <div class="sec-h"><span>第${c.n}章</span></div>
+  <div class="form chap-form"><div class="f"><label>テーマ</label><input type="text" data-chap="theme" value="${esc(c.theme)}" placeholder="例：身体をつくる章、家族と出かける章"></div>
+  <div class="f"><label>この章だけのルール</label><input type="text" data-chap="rule" value="${esc(c.rule)}" placeholder="下から選ぶか、自分で書く"><div class="chips">${RULE_PRESETS.map(r=>`<button class="chip ${c.rule===r?'on':''}" data-act="chaprule" data-v="${esc(r)}">${esc(r)}</button>`).join('')}</div></div></div>
+  <div class="sec-h"><span>振り返り</span></div>
+  <div class="rev-btns"><button class="btn small" data-act="revopen" data-v="day">今日の振り返り</button><button class="btn small" data-act="revopen" data-v="month">先月の振り返り</button><button class="btn small" data-act="openmoon">赤い月（週）</button></div>
+  ${state.chap.hist.length?`<div class="sec-h"><span>これまでの章</span></div><div class="kids">${state.chap.hist.slice().reverse().map(h=>kidLine(`第${h.n}章${h.theme?`「${esc(h.theme)}」`:''}`,`${h.start.replace(/-/g,'/')} 〜 ${h.end.replace(/-/g,'/')}${h.rule?'　'+esc(h.rule):''}`)).join('')}</div>`:''}
+  ${recent.length?`<div class="sec-h"><span>最近のひとこと</span></div><div class="kids">${recent.map(k=>kidLine(esc(note(k)).split('\n').join('<br>'),k[0]==='m'?`${+k.slice(7)}月の振り返り`:k.slice(7).replace('-','/'))).join('')}</div>`:''}`;
+}
+function moonDueKey(){ const d=new Date(), s=new Date(d); s.setHours(0,0,0,0); s.setDate(s.getDate()-s.getDay()); if(d.getDay()===0&&d.getHours()<18) s.setDate(s.getDate()-7); return ymd(s); }
 
 /* ---------- 指スワイプで隣の区分へ（左右） ---------- */
 function stepCat(dir){
@@ -2094,7 +2228,7 @@ function stamp(){
   state.quests.forEach(q=>{ const {u,...rest}=q; const sg=JSON.stringify(rest); cur[q.id]=sg;
     if(qSigs&&qSigs[q.id]!==sg){ q.u=now; state.pristine=false; } if(!q.u) q.u=q.created||now; });
   if(qSigs) Object.keys(qSigs).forEach(id=>{ if(!cur[id]){ state.deleted[id]=now; state.pristine=false; } });
-  const ex=[state.xp,state.seeds||0,state.moonDone||'',Object.keys(state.rested||{}).length,hmRev(),state.rupeeEarned||0,state.shrines||0,Object.keys(state.purchases||{}).length,JSON.stringify(state.shop||{})].join('|');
+  const ex=[state.xp,state.seeds||0,state.moonDone||'',Object.keys(state.rested||{}).length,hmRev(),state.rupeeEarned||0,state.shrines||0,Object.keys(state.purchases||{}).length,JSON.stringify(state.shop||{}),JSON.stringify(state.chap||{}),JSON.stringify(state.rev||{})].join('|');
   if(qSigs&&ex!==stamp.ex) state.pristine=false;
   stamp.ex=ex;
   Object.keys(state.deleted).forEach(id=>{ if(now-state.deleted[id]>90*DAY) delete state.deleted[id]; });
@@ -2106,9 +2240,9 @@ function mergeStates(a,b){
   const map={};
   [...(a.quests||[]),...(b.quests||[])].forEach(q=>{ const e=map[q.id]; if(!e||(q.u||0)>(e.u||0)) map[q.id]=q; });
   const quests=Object.values(map).filter(q=>!(del[q.id]&&del[q.id]>=(q.u||0)));
-  return {xp:Math.max(a.xp||0,b.xp||0),seeds:Math.max(a.seeds||0,b.seeds||0),rested:{...(a.rested||{}),...(b.rested||{})},hm:mergeHm(a.hm,b.hm),rupeeEarned:Math.max(a.rupeeEarned||0,b.rupeeEarned||0),shrines:Math.max(a.shrines||0,b.shrines||0),purchases:{...(a.purchases||{}),...(b.purchases||{})},shop:(()=>{const o={...(a.shop||{})}; Object.entries(b.shop||{}).forEach(([k,v])=>{ if(!o[k]||(v.u||0)>(o[k].u||0)) o[k]=v; }); return o;})(),moonDone:[a.moonDone||'',b.moonDone||''].sort().pop(),quests,deleted:del,pristine:false};
+  return {xp:Math.max(a.xp||0,b.xp||0),seeds:Math.max(a.seeds||0,b.seeds||0),rested:{...(a.rested||{}),...(b.rested||{})},hm:mergeHm(a.hm,b.hm),rupeeEarned:Math.max(a.rupeeEarned||0,b.rupeeEarned||0),shrines:Math.max(a.shrines||0,b.shrines||0),purchases:{...(a.purchases||{}),...(b.purchases||{})},shop:(()=>{const o={...(a.shop||{})}; Object.entries(b.shop||{}).forEach(([k,v])=>{ if(!o[k]||(v.u||0)>(o[k].u||0)) o[k]=v; }); return o;})(),moonDone:[a.moonDone||'',b.moonDone||''].sort().pop(),chap:((b.chap&&(b.chap.u||0)>((a.chap||{}).u||0))?b.chap:(a.chap||b.chap)),rev:(()=>{const A=a.rev||{},B=b.rev||{},n={...(A.notes||{})}; Object.entries(B.notes||{}).forEach(([k,v])=>{ if(!n[k]||(v.u||0)>(n[k].u||0)) n[k]=v; }); return {day:[A.day||'',B.day||''].sort().pop(),month:[A.month||'',B.month||''].sort().pop(),notes:n,u:Math.max(A.u||0,B.u||0)};})(),quests,deleted:del,pristine:false};
 }
-function fingerprint(st){ return JSON.stringify([(st.quests||[]).map(q=>q.id+':'+(q.u||0)).sort(),st.xp||0,st.seeds||0,Object.keys(st.rested||{}).length,st.moonDone||'',st.rupeeEarned||0,st.shrines||0,Object.keys(st.purchases||{}).length,JSON.stringify(st.shop||{}).length,(()=>{const u=(st.hm||{}).u||{};let m=0;for(const k in u)if(u[k]>m)m=u[k];return m})()]); }
+function fingerprint(st){ return JSON.stringify([(st.quests||[]).map(q=>q.id+':'+(q.u||0)).sort(),st.xp||0,st.seeds||0,Object.keys(st.rested||{}).length,st.moonDone||'',st.rupeeEarned||0,st.shrines||0,Object.keys(st.purchases||{}).length,JSON.stringify(st.shop||{}).length,((st.chap||{}).u||0),((st.rev||{}).u||0),(()=>{const u=(st.hm||{}).u||{};let m=0;for(const k in u)if(u[k]>m)m=u[k];return m})()]); }
 function applyState(ns){
   state=ns; if(!Array.isArray(state.quests)) state.quests=[];
   migrate(); qSigs=null; stamp();
