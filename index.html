@@ -2154,7 +2154,7 @@ function moonPhaseSvg(key){
   const lit=`M${cx} ${cy-r} A${r} ${r} 0 0 ${sw1} ${cx} ${cy+r} A${rx.toFixed(2)} ${r} 0 0 ${sw2} ${cx} ${cy-r}Z`;
   const id='mm'+key.replace(/-/g,'');
   return `<div class="rev-moon"><svg viewBox="0 0 100 100" aria-label="${moonPhaseName(a)}"><defs><mask id="${id}"><rect width="100" height="100" fill="#000"/><path d="${lit}" fill="#fff"/></mask><clipPath id="${id}c"><circle cx="50" cy="50" r="48.6"/></clipPath></defs>
-    <g clip-path="url(#${id}c)"><image href="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/FullMoon2010.jpg/500px-FullMoon2010.jpg" x="1" y="1" width="98" height="98" opacity=".07"/><image href="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/FullMoon2010.jpg/500px-FullMoon2010.jpg" x="1" y="1" width="98" height="98" mask="url(#${id})"/></g></svg>
+    <g clip-path="url(#${id}c)"><image href="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/FullMoon2010.jpg/500px-FullMoon2010.jpg" x="-4.4" y="-2.4" width="104.8" height="104.8" opacity=".07"/><image href="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/FullMoon2010.jpg/500px-FullMoon2010.jpg" x="-4.4" y="-2.4" width="104.8" height="104.8" mask="url(#${id})"/></g></svg>
     <div class="rev-moon-n">${moonPhaseName(a)}・月齢 ${a.toFixed(1)}</div></div>`;
 }
 function revOpen(kind,key){
