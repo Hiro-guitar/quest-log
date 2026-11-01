@@ -552,9 +552,7 @@ body{background:#050607}
 .moon.rev{z-index:61;background:radial-gradient(1px 1px at 12% 18%,#fff8,transparent),radial-gradient(1px 1px at 74% 22%,#fff9,transparent),linear-gradient(#0d1626ee,#0a1018f2)}
 .moon.rev h2{text-shadow:0 0 18px rgba(95,212,239,.35)}.moon.rev .moon-k{color:#8fe8ff}.moon.rev-season .moon-k{color:var(--orange)}.moon.rev-season h2{text-shadow:0 0 18px rgba(240,166,64,.45)}
 .moon.rev .chap-form label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}.moon.rev .chap-form input{width:100%}
-.qk-m{font-style:normal;color:#b9e6a8;margin-right:5px;font-size:.9em}
-.shrine-row{display:flex;flex-wrap:wrap;gap:8px}.shrine-row .qk-b{color:var(--muted);border-color:var(--line);background:rgba(0,0,0,.25)}.shrine-row .qk-b.on{color:#b9e6a8;border-color:rgba(185,230,168,.5)}
-.qk-h{margin-top:14px}
+.shrine-row{display:flex;flex-wrap:wrap;gap:8px}
 .p-desc:empty{display:none}.rec-lv .lv-title{display:inline!important}
 .proofs.one{display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;padding:7px 12px}.proofs.one .pf-h{margin:0}.proofs.one .pf{display:inline-flex;gap:7px;padding:0;font-size:12px}
 .rec-lv{display:flex;align-items:baseline;gap:10px;margin-top:6px}.rec-lv .lv-num{font-size:30px}.rec-lv .lv-title{font-size:13px;opacity:.9}.rec-xp{margin-top:8px}
@@ -798,7 +796,7 @@ function toggleStep(qid,sid){
   s.done=!s.done; s.doneAt=s.done?Date.now():null; gain((s.done?1:-1)*10*(q.rank||1)); if(s.done) earnRupee(5);
   save(); render();
   if(s.done){
-    toast(`工程クリア  +${10*(q.rank||1)} XP ・ +5ルピー`); if(s.quick){ state.seeds=(state.seeds||0)+1; save(); setTimeout(()=>banner('seed','森の精の実を見つけた',`すぐ終わる工程をクリア・${state.seeds}個目`),350); } else maybeSeed();
+    toast(`工程クリア  +${10*(q.rank||1)} XP ・ +5ルピー`); maybeSeed();
     if(allStepsDone(q)) setTimeout(()=>toast('全工程クリア！ チャレンジ達成を報告しよう'),1400);
   }
 }
@@ -1032,9 +1030,6 @@ function todayList(){
   { const tt=trType(dayView); if(tt&&tt!=='R'){ const dn=trDone(dayView), tot=trChecks(dayView).length; h+=`<button class="row tr-today ${dn===tot?'done':''}" data-act="trday" data-v="${dayView}"><span class="r-mark">${ico('train')}</span><span class="r-main"><span class="r-title">鍛錬：${TR_NAME[tt]}</span><span class="r-sub">チェック ${dn}/${tot}</span></span><span class="r-side">${dn===tot?'<span class="r-clear">CLEAR</span>':''}</span><span class="r-notch"></span></button>`; } }
   h+=items.map(x=>x.s?stepRowToday(x.q,x.s):row(x.q)).join('');
   if(!items.length) h+=`<div class="sec-empty">この日の予定はまだありません。チャレンジや工程に「やる日」を入れると、ここに並びます</div>`;
-  if(dayView===ymd()){ const qk=[]; state.quests.forEach(q=>{ if(q.done) return; (q.steps||[]).forEach(st=>{ if(st.quick&&!st.qref&&!st.done&&st.doDate!==dayView) qk.push({q,st}); }); });
-    h+=`<div class="day-h qk-h"><span>✿ すぐ終わる工程</span><span>${qk.length?qk.length+'件':''}</span></div>`;
-    h+=qk.length?qk.slice(0,3).map(x=>stepRowToday(x.q,x.st)).join(''):`<div class="sec-empty">5〜15分で終わる工程をタップして「✿ すぐ終わる」にすると、ここにいつも3つまで並びます。クリアすると森の精の実がかならず見つかります</div>`; }
   h+=`<button class="row add-row" data-act="newcur"><span class="r-mark">＋</span><span class="r-main"><span class="r-title">この日にチャレンジを追加</span></span><span class="r-notch"></span></button></div>`;
   return h;
 }
@@ -1160,8 +1155,8 @@ function renderView(D,q){
         h+=`<li class="step qstep ${dn?'done':''} ${isNext?'next':''}" data-sid="${s.id}"><button class="qico" data-act="select" data-id="${r.id}" aria-label="チャレンジを開く">${ico(r.type,dn)}</button><span class="step-t"><button class="qlink" data-act="select" data-id="${r.id}">${esc(r.title||'(無題)')}</button><span class="qpct">${dn?'COMPLETE':Math.round(progress(r)*100)+'%'}</span>${na?`<span class="qnext">▸ ${esc(na)}</span>`:''}</span><span class="drag" data-drag title="ドラッグで並び替え">⋮⋮</span></li>`;
       }else{
         const chip=s.doDate?`<button class="sdate on" data-act="sdate" data-s="${s.id}">${doLabel(s,true).replace(' やる','')}${carryHtml(s)}</button>`:`<button class="sdate" data-act="sdate" data-s="${s.id}" title="日付を入れる">日付</button>`;
-        h+=`<li class="step ${dn?'done':''} ${isNext?'next':''} ${pickSid===s.id?'pick':''}" data-sid="${s.id}"><button class="chk" data-act="step" data-q="${q.id}" data-s="${s.id}" aria-label="完了切替"></button><span class="step-t" data-act="pickstep" data-s="${s.id}">${s.quick?'<i class="qk-m" title="すぐ終わる工程">✿</i>':''}${esc(s.text)}</span>${chip}<span class="drag" data-drag title="ドラッグで並び替え">⋮⋮</span></li>`;
-        if(pickSid===s.id&&!dn&&!q.done) h+=`<li class="shrine-row"><button class="qk-b ${s.quick?'on':''}" data-act="quick" data-s="${s.id}">✿ すぐ終わる<small>5〜15分</small></button><button data-act="shrine" data-q="${q.id}" data-s="${s.id}"><i class="sh-ico"></i>この工程で祠に挑む<small>25分だけ集中</small></button></li>`;
+        h+=`<li class="step ${dn?'done':''} ${isNext?'next':''} ${pickSid===s.id?'pick':''}" data-sid="${s.id}"><button class="chk" data-act="step" data-q="${q.id}" data-s="${s.id}" aria-label="完了切替"></button><span class="step-t" data-act="pickstep" data-s="${s.id}">${esc(s.text)}</span>${chip}<span class="drag" data-drag title="ドラッグで並び替え">⋮⋮</span></li>`;
+        if(pickSid===s.id&&!dn&&!q.done) h+=`<li class="shrine-row"><button data-act="shrine" data-q="${q.id}" data-s="${s.id}"><i class="sh-ico"></i>この工程で祠に挑む<small>25分だけ集中</small></button></li>`;
         if(dateSid===s.id) h+=`<li class="sdate-row"><input type="date" data-sdate="${s.id}" value="${esc(s.doDate||'')}"><input type="time" data-stime="${s.id}" value="${esc(s.doTime||'')}"><button class="btn small ghost" data-act="sdateclear" data-s="${s.id}">消す</button><button class="btn small" data-act="sdateclose">OK</button></li>`;
       }
     });
@@ -1268,7 +1263,6 @@ document.addEventListener('click',e=>{
   switch(a){
     case 'tab': if(!draftLeave()) break; if(editing){cleanupEmpty();editing=false} tab=b.dataset.v; if(window.innerWidth<=820) selId=null; render(); break;
     case 'openq': { const t=findQ(b.dataset.id); if(!t) break; tab='list'; listCat=t.type; selId=t.id; pouchSel=null; editing=false; render(); window.scrollTo({top:0}); break; }
-    case 'quick': { const st=q&&q.steps.find(x=>x.id===b.dataset.s); if(st){ st.quick=!st.quick; save(); renderDetail(); renderList(); toast(st.quick?'すぐ終わる工程にしました。今日の冒険にいつも並びます':'すぐ終わる工程から外しました'); } break; }
     case 'pickstep': pickSid=pickSid===b.dataset.s?null:b.dataset.s; renderDetail(); break;
     case 'select': if(!draftLeave()) break; applyDateRow(); dateSid=null; pickSid=null; if(editing){cleanupEmpty();editing=false} selId=b.dataset.id; render(); window.innerWidth<=820&&window.scrollTo({top:0}); break;
     case 'back': if(!draftLeave()) break; applyDateRow(); dateSid=null; if(editing){cleanupEmpty();editing=false} selId=null; toolPicked=false; pouchSel=null; render(); break;
@@ -2081,7 +2075,7 @@ setTimeout(revCheck,1800); document.addEventListener('visibilitychange',()=>{ if
 
 
 /* ---------- 章（シーズン）と振り返り ---------- */
-const RULE_PRESETS=['毎日ミニチャレンジを1つクリア','すぐ終わる工程（✿）を毎日1つ','週2回は祠に挑む','鍛錬を週3回','やる日を入れるのは前の晩','月に1回、新しい場所へ行く'];
+const RULE_PRESETS=['毎日ミニチャレンジを1つクリア','週2回は祠に挑む','鍛錬を週3回','やる日を入れるのは前の晩','月に1回、新しい場所へ行く'];
 function chEnd(start){ const d=new Date(start+'T00:00:00'); return ymd(new Date(d.getFullYear(),d.getMonth()+3,0)); }
 function ymOf(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); }
 function initRev(){
