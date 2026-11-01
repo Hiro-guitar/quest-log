@@ -748,7 +748,7 @@ function doLabel(q,short){
   const d=new Date(q.doDate+'T00:00:00'), w='日月火水木金土'[d.getDay()];
   const n=daysLeft(q.doDate), rel=n===0?'今日':n===1?'明日':'';
   const t=`${d.getMonth()+1}/${d.getDate()}（${holiday(q.doDate)?'祝':w}）${q.doTime?' '+q.doTime:''}`;
-  return short ? (rel?rel+(q.doTime?' '+q.doTime:'')+' やる':t+' やる') : t+(rel?`　${rel}`:'');
+  return short ? (rel?rel+(q.doTime?' '+q.doTime:''):t) : t+(rel?`　${rel}`:'');
 }
 // やる日が入っているものを上に、日付・時刻の早い順に
 function doKey(o){return o&&o.doDate?o.doDate+' '+(o.doTime||'99:99'):null}
