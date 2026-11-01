@@ -1481,11 +1481,17 @@ document.addEventListener('pointermove',e=>{
 function endDrag(){
   if(!drag) return;
   const order=[...drag.list.querySelectorAll(':scope > [data-sid]')].map(x=>x.dataset.sid);
-  const q=drag.q; drag.item.classList.remove('dragging'); document.body.classList.remove('is-dragging'); drag=null;
+  const q=drag.q, mid=drag.item.dataset.sid; drag.item.classList.remove('dragging'); document.body.classList.remove('is-dragging'); drag=null;
   if(!q) return;
   const before=q.steps.map(x=>x.id).join();
   q.steps.sort((a,b)=>order.indexOf(a.id)-order.indexOf(b.id));
   if(q.steps.map(x=>x.id).join()===before) return;
+  // 日付のない工程を、日付のある工程より上へ動かしたら、その位置に合う日付を自動で入れる
+  { const i=q.steps.findIndex(x=>x.id===mid), m=q.steps[i], dd=x=>{ const r=x.qref?findQ(x.qref):null; return (r||x).doDate||''; };
+    if(m&&!m.qref&&!m.doDate&&!stepDone(m)){
+      const below=q.steps.slice(i+1).find(x=>!stepDone(x)&&dd(x));
+      if(below){ const above=q.steps.slice(0,i).reverse().find(x=>dd(x)); m.doDate=above?dd(above):dd(below); m.carry=0; toast(`「${m.text}」のやる日を ${m.doDate.slice(5).replace('-','/')} にしました`); }
+    } }
   save(); editing ? renderEdit($('detail'),q) : (renderDetail(), renderList(), renderHud());
 }
 document.addEventListener('pointerup',endDrag);
