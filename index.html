@@ -543,6 +543,7 @@ body{background:#050607}
 .shop-it .rp{width:8px;height:12px}.shop-add{display:flex;gap:6px;flex-wrap:wrap}.shop-add #shopName{flex:2;min-width:150px}.shop-add #shopCost{flex:1;min-width:80px}
 .btn[disabled]{opacity:.4;cursor:default}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+.rev-g{padding:6px 0 2px}.rev-gh{display:flex;align-items:center;gap:6px;font-size:12.5px;color:#d9d3be;font-weight:700;padding:2px 0}.rev-gh .ico{width:14px;height:14px}.rev-gh small{margin-left:auto;color:var(--muted);font-weight:400}.rev-gs{padding-left:16px}
 .mat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:10px;margin-top:6px}
 .mat{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center}
 .mat-b{position:relative;width:76px;height:76px;display:grid;place-items:center;border:1px solid rgba(242,236,214,.22);border-radius:6px;background:radial-gradient(circle at 50% 40%,rgba(255,255,255,.08),rgba(0,0,0,.35));box-shadow:inset 0 0 12px rgba(0,0,0,.45);transition:transform .15s,border-color .15s}
@@ -2280,6 +2281,12 @@ function doneIn(a,b){ // a,b: ymd（両端を含む）
   return {qs,steps,tr};
 }
 const kidLine=(t,sub)=>`<div class="kid"><span>${t}${sub?`<br><small class="hint">${sub}</small>`:''}</span></div>`;
+// 振り返り用：工程はチャレンジごとにまとめる（今日の冒険と同じ形）。items=[{q,s?}]、mark=工程の印
+function revGroup(items,mark){
+  const blocks=[], seen=new Map();
+  items.forEach(x=>{ if(!x.s){ blocks.push(x); return; } let g=seen.get(x.q.id); if(!g){ g={q:x.q,steps:[]}; seen.set(x.q.id,g); blocks.push(g); } g.steps.push(x.s); });
+  return blocks.map(b=>b.steps?`<div class="rev-g"><div class="rev-gh">${ico(b.q.type)} ${esc(b.q.title||'(無題)')}<small>${b.steps.length}</small></div>${b.steps.map(st=>`<div class="kid rev-gs"><span>${mark} ${esc(st.text)}</span></div>`).join('')}</div>`:kidLine(ico(b.q.type,!!b.q.done)+' '+esc(b.q.title||'(無題)'))).join('');
+}
 
 // その日の夜（20時）の月の満ち欠けを、本物の満月の写真に影を重ねて描く
 function moonAge(key){ const t=new Date(key+'T20:00:00').getTime(), P=29.530588853, ref=Date.UTC(2000,0,6,18,14); return (((t-ref)/864e5)%P+P)%P; }
@@ -2325,10 +2332,10 @@ function revOpen(kind,key){
     const left=dayItems(key).filter(x=>!(x.s?x.s.done:x.q.done)), tm=dayItems(nx).filter(x=>!(x.s?x.s.done:x.q.done));
     h=`${moonPhaseSvg(key)}<div class="moon-k">DAY END</div><h2>${d.getMonth()+1}/${d.getDate()}（${'日月火水木金土'[d.getDay()]}）の冒険</h2><p class="moon-lead">今日の冒険をふり返って、明日にそなえよう</p>
     <div class="sec-h"><span>クリアしたもの</span><span>${D.qs.length+D.steps.length+(D.tr?1:0)}件</span></div>
-    ${D.qs.length||D.steps.length||D.tr?`<div class="kids">${D.qs.map(q=>kidLine(ico(q.type,true)+' '+esc(q.title||'(無題)'))).join('')}${D.steps.map(x=>kidLine('◆ '+esc(x.st.text),esc(x.q.title||''))).join('')}${D.tr?kidLine(ico('train')+' 鍛錬'):''}</div>`:'<p class="hint">クリアはありませんでした。休むのも冒険のうち</p>'}
-    ${left.length?`<div class="sec-h"><span>残ったもの</span><span>${left.length}件</span></div><p class="hint">明日に持ち越されます</p><div class="kids">${left.map(x=>kidLine(esc(x.s?x.s.text:(x.q.title||'(無題)')),x.s?esc(x.q.title||''):'')).join('')}</div>`:''}
+    ${D.qs.length||D.steps.length||D.tr?`<div class="kids">${D.qs.map(q=>kidLine(ico(q.type,true)+' '+esc(q.title||'(無題)'))).join('')}${revGroup(D.steps.map(x=>({q:x.q,s:x.st})),'◆')}${D.tr?kidLine(ico('train')+' 鍛錬'):''}</div>`:'<p class="hint">クリアはありませんでした。休むのも冒険のうち</p>'}
+    ${left.length?`<div class="sec-h"><span>残ったもの</span><span>${left.length}件</span></div><p class="hint">明日に持ち越されます</p><div class="kids">${revGroup(left,'◇')}</div>`:''}
     <div class="sec-h"><span>明日の予定</span><span>${tm.length}件</span></div>
-    ${tm.length?`<div class="kids">${tm.map(x=>kidLine(esc(x.s?x.s.text:(x.q.title||'(無題)')),x.s?esc(x.q.title||''):'')).join('')}</div>`:'<p class="hint">まだ予定はありません</p>'}
+    ${tm.length?`<div class="kids">${revGroup(tm,'◇')}</div>`:'<p class="hint">まだ予定はありません</p>'}
     <div class="sec-h"><span>ひとこと日記</span></div><textarea id="revNote" class="rev-note" placeholder="よかったこと・気づいたこと・明日の自分へ">${esc(note('d:'+key))}</textarea>
     <div class="rev-go"><button class="btn primary" data-act="revdone">今日の冒険を終える</button></div>`;
   }
