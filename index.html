@@ -1162,7 +1162,7 @@ function renderView(D,q){
       }
     });
     h+=`</ul>`;
-    if(!q.done) h+=`<div class="add"><input type="text" id="quickAdd" placeholder="工程を追加（Enter／複数行を貼り付けで一括）"></div>`;
+    if(!q.done) h+=`<div class="add"><input type="text" id="quickAdd" placeholder="工程を追加（Enter／箇条書きを貼り付けで一括）"></div>`;
   }
   if(q.type==='main'){
     const kidRow=k=>`<button class="kid ${k.done?'done':''}" data-act="select" data-id="${k.id}"><span>${ico(k.type,k.done)} ${esc(k.title||'(無題)')}</span><span class="k-pct">${k.done?'COMPLETE':Math.round(progress(k)*100)+'%'}</span></button>`;
@@ -1248,7 +1248,7 @@ function renderEdit(D,q){
     h+=`<div class="estep" data-sid="${s.id}"><span class="drag" data-drag title="ドラッグで並び替え">⋮⋮</span>${mid}${up}${mv}<button class="ic" data-act="sdel" data-s="${s.id}" title="${r?'工程から外す（チャレンジ自体は残ります）':'削除'}">✕</button></div>`;
   });
   const insCands=state.quests.filter(o=>o.type==='challenge'&&o.id!==q.id&&!o.done&&!q.steps.some(s=>s.qref===o.id)&&!contains(o,q)).sort(byDue);
-  h+=`<input type="text" id="quickAdd" placeholder="工程を追加（Enter／複数行を貼り付けで一括）"></div>
+  h+=`<input type="text" id="quickAdd" placeholder="工程を追加（Enter／箇条書きを貼り付けで一括）"></div>
   <div class="hint" style="margin-top:6px">「格上げ」で工程をチャレンジに、「戻す」でチャレンジを工程に。「移す」で別のチャレンジへ</div>
   ${insCands.length?`<select id="insRef" style="margin-top:8px"><option value="">＋ 既存のチャレンジを工程に差し込む</option>${insCands.map(o=>`<option value="${o.id}">◇ ${esc(o.title||'(無題)')}</option>`).join('')}</select>`:''}
   </div>
@@ -1424,13 +1424,22 @@ document.addEventListener('keydown',e=>{
   addSteps(q,v);
   const n=$('quickAdd'); n&&n.focus();
 });
+// 複数行の貼り付け：行頭が「・」「-」「1.」などの箇条書きなら行ごとに分けて追加、ふつうの文章なら1行につなげて入力欄に入れる
+const LIST_RE=/^\s*([-*・●○◇◆□■]|\d+[.)．]|[①-⑳]|\[\s?\])\s*/;
+function joinLines(t){ const ls=t.split(/\r?\n/).map(x=>x.trim()).filter(Boolean); const cjk=/[\u3000-\u30ff\u3400-\u9fff\uff00-\uffef]/;
+  return ls.reduce((a,l)=>a?(cjk.test(a.slice(-1))&&cjk.test(l[0])?a+l:a+' '+l):l,''); }
 document.addEventListener('paste',e=>{
-  if(e.target.id==='miniAdd'){ const t=(e.clipboardData||window.clipboardData).getData('text'); if(/\n/.test(t)){ e.preventDefault(); addMinis(t); } return; }
-  if(e.target.id!=='quickAdd') return;
+  const id=e.target.id; if(id!=='miniAdd'&&id!=='quickAdd') return;
   const t=(e.clipboardData||window.clipboardData).getData('text');
-  if(!/\n/.test(t)) return;
-  e.preventDefault(); const q=findQ(selId); if(!q) return;
-  addSteps(q,t); const n=$('quickAdd'); n&&n.focus();
+  if(!/\n/.test(t.trim())) return;
+  e.preventDefault();
+  const ls=t.split(/\r?\n/).filter(x=>x.trim());
+  if(ls.length>1&&ls.every(l=>LIST_RE.test(l))){
+    if(id==='miniAdd'){ addMinis(t); return; }
+    const q=findQ(selId); if(!q) return; addSteps(q,t); const n=$('quickAdd'); n&&n.focus(); return;
+  }
+  const el=e.target, v=el.value, a=el.selectionStart??v.length, b=el.selectionEnd??v.length, j=joinLines(t);
+  el.value=v.slice(0,a)+j+v.slice(b); const c=a+j.length; try{ el.setSelectionRange(c,c); }catch(_){}
 });
 /* ---------- 工程のドラッグ並び替え ---------- */
 let drag=null;
