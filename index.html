@@ -543,6 +543,7 @@ body{background:#050607}
 .shop-it .rp{width:8px;height:12px}.shop-add{display:flex;gap:6px;flex-wrap:wrap}.shop-add #shopName{flex:2;min-width:150px}.shop-add #shopCost{flex:1;min-width:80px}
 .btn[disabled]{opacity:.4;cursor:default}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+.rev-moon{text-align:center;margin:0 auto 6px}.rev-moon svg{display:block;width:180px;height:180px;margin:0 auto;filter:drop-shadow(0 0 24px rgba(220,230,255,.3))}.rev-moon-n{font-size:11px;letter-spacing:.2em;color:var(--muted);margin-top:4px}
 .moon.rev .rev-orb{filter:drop-shadow(0 0 26px rgba(220,230,255,.35));animation:revorb 7s ease-in-out infinite}.moon.rev .rev-orb.flip{transform:scaleX(-1)}
 @keyframes revorb{50%{filter:drop-shadow(0 0 40px rgba(220,230,255,.55))}}
 .rev-wide{display:block;width:100%;max-width:520px;aspect-ratio:16/9;object-fit:cover;object-position:center 78%;margin:0 auto 8px;border-radius:4px;-webkit-mask-image:radial-gradient(ellipse at center,#000 45%,transparent 75%);mask-image:radial-gradient(ellipse at center,#000 45%,transparent 75%)}
@@ -1134,7 +1135,7 @@ function toolPanel(){
     const rows=[]; BG_PHOTOS.forEach(pl=>[['day','昼'],['morning','朝'],['evening','夕'],['night','夜']].forEach(([k,l])=>{ (pl.v&&pl.v[k]||[]).forEach(v=>rows.push(`<div class="kid"><span>${esc(v.name||pl.name)}（${l}・縦）<br><small class="hint">写真：${esc(v.by)} / ${esc(v.lic)}</small></span><a class="btn small ghost" href="${commonsPage(v.file)}" target="_blank" rel="noopener">元の写真</a></div>`)); const v=pl[k]; if(v) rows.push(`<div class="kid"><span>${esc(v.name||pl.name)}（${l}）<br><small class="hint">写真：${esc(v.by)} / ${esc(v.lic)}</small></span><a class="btn small ghost" href="${commonsPage(v.file)}" target="_blank" rel="noopener">元の写真</a></div>`); }));
     return `<h2 class="p-title">景色の写真について</h2>
     <div class="p-desc"><p>背景の景色は、Wikimedia Commons で公開されている写真を使わせてもらっています。1時間ごとに場所が変わり、朝・夕・夜はその時間の写真になります。</p>${bgNow?`<p>いまの景色：${esc(bgNow.name)}（写真：${esc(bgNow.by)} / ${esc(bgNow.lic)}）</p><p><a class="btn small" href="${bgNow.page}" target="_blank" rel="noopener">いまの景色の写真を見る</a></p>`:''}</div>
-    <div class="kids">${rows.join('')}<div class="kid"><span>赤い月（皆既月食）<br><small class="hint">写真：Robert Jay GaBany / CC BY-SA 3.0</small></span><a class="btn small ghost" href="https://commons.wikimedia.org/wiki/File:Lunar_eclipse_04-15-2014_by_R_Jay_GaBany.jpg" target="_blank" rel="noopener">元の写真</a></div><div class="kid"><span>1日の振り返り（三日月）<br><small class="hint">写真：ComputerHotline / CC BY 3.0（左右反転）</small></span><a class="btn small ghost" href="https://commons.wikimedia.org/wiki/File:2011-11-19-Waning_crescent_moon.jpg" target="_blank" rel="noopener">元の写真</a></div><div class="kid"><span>月の振り返り（満月）<br><small class="hint">写真：Gregory H. Revera / CC BY-SA 3.0</small></span><a class="btn small ghost" href="https://commons.wikimedia.org/wiki/File:FullMoon2010.jpg" target="_blank" rel="noopener">元の写真</a></div><div class="kid"><span>章の振り返り（地球の出）<br><small class="hint">写真：NASA / Apollo 8（パブリックドメイン）</small></span><a class="btn small ghost" href="https://commons.wikimedia.org/wiki/File:NASA-Apollo8-Dec24-Earthrise.jpg" target="_blank" rel="noopener">元の写真</a></div></div>`;
+    <div class="kids">${rows.join('')}<div class="kid"><span>赤い月（皆既月食）<br><small class="hint">写真：Robert Jay GaBany / CC BY-SA 3.0</small></span><a class="btn small ghost" href="https://commons.wikimedia.org/wiki/File:Lunar_eclipse_04-15-2014_by_R_Jay_GaBany.jpg" target="_blank" rel="noopener">元の写真</a></div><div class="kid"><span>月の振り返り（満月）・1日の振り返り（その日の月の満ち欠け）<br><small class="hint">写真：Gregory H. Revera / CC BY-SA 3.0（1日の振り返りでは、その日の月の形に影を重ねて表示）</small></span><a class="btn small ghost" href="https://commons.wikimedia.org/wiki/File:FullMoon2010.jpg" target="_blank" rel="noopener">元の写真</a></div><div class="kid"><span>章の振り返り（地球の出）<br><small class="hint">写真：NASA / Apollo 8（パブリックドメイン）</small></span><a class="btn small ghost" href="https://commons.wikimedia.org/wiki/File:NASA-Apollo8-Dec24-Earthrise.jpg" target="_blank" rel="noopener">元の写真</a></div></div>`;
   }
   if(toolSel==='backup') return `<h2 class="p-title">データの書き出し・読み込み</h2>
     <div class="p-desc"><p>念のためのバックアップや、別のブラウザに移すときに使います。</p></div>
@@ -1822,7 +1823,7 @@ paintBg(); setInterval(paintBg,60*1000); setInterval(()=>{ const t=$('sensor'); 
 // 景色の写真を端末に保存しておき、次からはすぐ表示する
 if('serviceWorker' in navigator && location.protocol==='https:'){
   navigator.serviceWorker.register('sw.js').then(()=>navigator.serviceWorker.ready).then(r=>{
-    setTimeout(()=>{ (r.active||navigator.serviceWorker.controller)?.postMessage({type:'precache',urls:bgUpcoming().concat(["https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/2011-11-19-Waning_crescent_moon.jpg/500px-2011-11-19-Waning_crescent_moon.jpg", "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/FullMoon2010.jpg/500px-FullMoon2010.jpg", "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a8/NASA-Apollo8-Dec24-Earthrise.jpg/1280px-NASA-Apollo8-Dec24-Earthrise.jpg", "https://upload.wikimedia.org/wikipedia/commons/thumb/4/46/Lunar_eclipse_04-15-2014_by_R_Jay_GaBany.jpg/500px-Lunar_eclipse_04-15-2014_by_R_Jay_GaBany.jpg"])}); },4000);
+    setTimeout(()=>{ (r.active||navigator.serviceWorker.controller)?.postMessage({type:'precache',urls:bgUpcoming().concat([ "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/FullMoon2010.jpg/500px-FullMoon2010.jpg", "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a8/NASA-Apollo8-Dec24-Earthrise.jpg/1280px-NASA-Apollo8-Dec24-Earthrise.jpg", "https://upload.wikimedia.org/wikipedia/commons/thumb/4/46/Lunar_eclipse_04-15-2014_by_R_Jay_GaBany.jpg/500px-Lunar_eclipse_04-15-2014_by_R_Jay_GaBany.jpg"])}); },4000);
   }).catch(()=>{});
 }
 
@@ -2143,12 +2144,25 @@ function doneIn(a,b){ // a,b: ymd（両端を含む）
   return {qs,steps,tr};
 }
 const kidLine=(t,sub)=>`<div class="kid"><span>${t}${sub?`<br><small class="hint">${sub}</small>`:''}</span></div>`;
+
+// その日の夜（20時）の月の満ち欠けを、本物の満月の写真に影を重ねて描く
+function moonAge(key){ const t=new Date(key+'T20:00:00').getTime(), P=29.530588853, ref=Date.UTC(2000,0,6,18,14); return (((t-ref)/864e5)%P+P)%P; }
+function moonPhaseName(a){ return a<1.5?'新月':a<5.5?'三日月':a<9?'上弦の月':a<13.8?'満ちていく月':a<16?'満月':a<21?'欠けていく月':a<24.5?'下弦の月':a<28?'有明の月':'新月'; }
+function moonPhaseSvg(key){
+  const a=moonAge(key), th=2*Math.PI*a/29.530588853, s=a<29.530588853/2?1:-1, c=Math.cos(th), r=48, cx=50, cy=50, rx=Math.abs(c)*r;
+  const sw2=(s*c>0)?0:1, sw1=s>0?1:0;
+  const lit=`M${cx} ${cy-r} A${r} ${r} 0 0 ${sw1} ${cx} ${cy+r} A${rx.toFixed(2)} ${r} 0 0 ${sw2} ${cx} ${cy-r}Z`;
+  const id='mm'+key.replace(/-/g,'');
+  return `<div class="rev-moon"><svg viewBox="0 0 100 100" aria-label="${moonPhaseName(a)}"><defs><mask id="${id}"><rect width="100" height="100" fill="#000"/><path d="${lit}" fill="#fff"/></mask><clipPath id="${id}c"><circle cx="50" cy="50" r="48.6"/></clipPath></defs>
+    <g clip-path="url(#${id}c)"><image href="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/FullMoon2010.jpg/500px-FullMoon2010.jpg" x="1" y="1" width="98" height="98" opacity=".07"/><image href="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/FullMoon2010.jpg/500px-FullMoon2010.jpg" x="1" y="1" width="98" height="98" mask="url(#${id})"/></g></svg>
+    <div class="rev-moon-n">${moonPhaseName(a)}・月齢 ${a.toFixed(1)}</div></div>`;
+}
 function revOpen(kind,key){
   const R=$('rev'); revCur={kind,key}; let h='';
   if(kind==='day'){
     const d=new Date(key+'T00:00:00'), nx=ymd(new Date(d.getTime()+DAY)), D=doneIn(key,key);
     const left=dayItems(key).filter(x=>!(x.s?x.s.done:x.q.done)), tm=dayItems(nx).filter(x=>!(x.s?x.s.done:x.q.done));
-    h=`<img class="moon-orb rev-orb flip" src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/2011-11-19-Waning_crescent_moon.jpg/500px-2011-11-19-Waning_crescent_moon.jpg" alt="三日月" onerror="this.style.display='none'"><div class="moon-k">DAY END</div><h2>${d.getMonth()+1}/${d.getDate()}（${'日月火水木金土'[d.getDay()]}）の冒険</h2><p class="moon-lead">今日の冒険をふり返って、明日にそなえよう</p>
+    h=`${moonPhaseSvg(key)}<div class="moon-k">DAY END</div><h2>${d.getMonth()+1}/${d.getDate()}（${'日月火水木金土'[d.getDay()]}）の冒険</h2><p class="moon-lead">今日の冒険をふり返って、明日にそなえよう</p>
     <div class="sec-h"><span>クリアしたもの</span><span>${D.qs.length+D.steps.length+(D.tr?1:0)}件</span></div>
     ${D.qs.length||D.steps.length||D.tr?`<div class="kids">${D.qs.map(q=>kidLine(ico(q.type,true)+' '+esc(q.title||'(無題)'))).join('')}${D.steps.map(x=>kidLine('◆ '+esc(x.st.text),esc(x.q.title||''))).join('')}${D.tr?kidLine(ico('train')+' 鍛錬'):''}</div>`:'<p class="hint">クリアはありませんでした。休むのも冒険のうち</p>'}
     ${left.length?`<div class="sec-h"><span>残ったもの</span><span>${left.length}件</span></div><p class="hint">明日に持ち越されます</p><div class="kids">${left.map(x=>kidLine(esc(x.s?x.s.text:(x.q.title||'(無題)')),x.s?esc(x.q.title||''):'')).join('')}</div>`:''}
