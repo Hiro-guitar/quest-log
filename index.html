@@ -677,7 +677,8 @@ function save(){ moveDoToSteps(); sortAllSteps(); if(window.__qlReady) stamp(); 
 let tab='list', selId=null, editing=false, showCleared=false, miniOpen=false, listCat='today', dayView=ymd(), pickSid=null;
 
 /* ---------- helpers ---------- */
-const findQ=id=>state.quests.find(q=>q.id===id);
+let draft=null; // 作成中（「完了」を押すまで登録しない）
+const findQ=id=>(draft&&draft.id===id)?draft:state.quests.find(q=>q.id===id);
 const kids=id=>state.quests.filter(q=>q.parentId===id);
 const refQ=s=>s&&s.qref?findQ(s.qref):null;
 function stepDone(s){const r=refQ(s); return r? !!r.done : !!s.done}
@@ -813,12 +814,18 @@ function addMinis(text){
 }
 function newQuest(type,parentId){
   const q={id:uid(),title:'',type,parentId:parentId||null,rank:0,deadline:'',reward:'',memo:'',steps:[],accepted:false,done:false,created:Date.now()};
-  state.quests.push(q); selId=q.id; editing=true; listCat=type;
+  draft=q; selId=q.id; editing=true; listCat=type;
   if(tab==='tools') tab='list';
   save(); render();
   setTimeout(()=>{const t=document.querySelector('[data-field=title]'); t&&t.focus()},30);
 }
+function draftLeave(){ // 書きかけを捨ててよいか
+  if(!(draft&&draft.id===selId&&editing)) return true;
+  const d=draft; if(!(d.title.trim()||d.memo.trim()||d.steps.length)) return true;
+  return confirm('まだ登録していません。書いた内容を捨てて閉じますか？\n（登録するときは「登録する」）');
+}
 function cleanupEmpty(){
+  if(draft&&draft.id===selId){ draft=null; selId=null; return; }
   const q=findQ(selId);
   if(q && !q.title.trim() && !q.steps.length && !kids(q.id).length){
     state.quests=state.quests.filter(x=>x!==q); selId=null; save();
@@ -1179,7 +1186,7 @@ function renderHints(){
   else if(!q&&listCat==='memory'){ h=''; }
   else if(!q&&listCat==='train'){ h=trSel?hint('trback','閉じる','B'):''; }
   else if(!q){ h=hint('newcur',listCat==='today'?'この日にチャレンジを追加':`新しい${CAT_NAMES[listCat]}`,'X'); }
-  else if(editing){ h=hint('delete','削除','','danger')+hint('doneedit','完了','A'); }
+  else if(editing){ h=(q===draft?hint('delete','やめる','B'):hint('delete','削除','','danger'))+hint('doneedit',q===draft?'登録する':'完了','A','gold'); }
   else if(q.done){ h=hint('back','閉じる','B')+hint('edit','編集','Y')+hint('reopen','未達成に戻す','','pc-only'); }
   else { h=hint('back','閉じる','B')+hint('edit','編集','Y')+hint('complete','達成を報告','X','gold pc-only')+hint('accept',q.accepted?'目的地を解除':'目的地を設定','A',(q.accepted?'on ':'')+'pc-only'); }
   $('hints').innerHTML=h;
@@ -1241,11 +1248,11 @@ document.addEventListener('click',e=>{
   const b=e.target.closest('[data-act]'); if(!b) return;
   const a=b.dataset.act, q=findQ(selId);
   switch(a){
-    case 'tab': if(editing){cleanupEmpty();editing=false} tab=b.dataset.v; if(window.innerWidth<=820) selId=null; render(); break;
+    case 'tab': if(!draftLeave()) break; if(editing){cleanupEmpty();editing=false} tab=b.dataset.v; if(window.innerWidth<=820) selId=null; render(); break;
     case 'openq': { const t=findQ(b.dataset.id); if(!t) break; tab='list'; listCat=t.type; selId=t.id; pouchSel=null; editing=false; render(); window.scrollTo({top:0}); break; }
     case 'pickstep': pickSid=pickSid===b.dataset.s?null:b.dataset.s; renderDetail(); break;
-    case 'select': applyDateRow(); dateSid=null; pickSid=null; if(editing){cleanupEmpty();editing=false} selId=b.dataset.id; render(); window.innerWidth<=820&&window.scrollTo({top:0}); break;
-    case 'back': applyDateRow(); dateSid=null; if(editing){cleanupEmpty();editing=false} selId=null; toolPicked=false; pouchSel=null; render(); break;
+    case 'select': if(!draftLeave()) break; applyDateRow(); dateSid=null; pickSid=null; if(editing){cleanupEmpty();editing=false} selId=b.dataset.id; render(); window.innerWidth<=820&&window.scrollTo({top:0}); break;
+    case 'back': if(!draftLeave()) break; applyDateRow(); dateSid=null; if(editing){cleanupEmpty();editing=false} selId=null; toolPicked=false; pouchSel=null; render(); break;
     case 'pouch': pouchSel=b.dataset.v; render(); window.innerWidth<=820&&window.scrollTo({top:0}); break;
     case 'trday': selId=null; trSel=b.dataset.v; tab='list'; if(listCat!=='train'){ listCat='train'; } if(/^\d/.test(trSel)) trWeek=trWeekStart(trSel); render(); window.innerWidth<=820&&window.scrollTo({top:0}); break;
     case 'trweek': { const d=new Date((trWeek||trWeekStart(trDefaultDay()))+'T00:00:00'); d.setDate(d.getDate()+7*(+b.dataset.v)); const k=ymd(d); if(k<=TR_END&&ymd(new Date(d.getTime()+6*DAY))>=TR_START) trWeek=k; renderList(); break; }
@@ -1290,8 +1297,9 @@ document.addEventListener('click',e=>{
       completeQuest(q); break;
     case 'reopen': reopen(q); break;
     case 'edit': editing=true; moveSid=null; render(); break;
-    case 'doneedit': if(!q.title.trim()){q.title='名もなきチャレンジ'} editing=false; save(); render(); break;
-    case 'delete': deleteQuest(q); break;
+    case 'doneedit': if(q===draft){ if(!q.title.trim()){ toast('名前を入れてください'); const t=document.querySelector('[data-field=title]'); t&&t.focus(); break; } q.created=Date.now(); state.quests.push(q); draft=null; editing=false; save(); render(); toast('登録しました'); break; }
+      if(!q.title.trim()){q.title='名もなきチャレンジ'} editing=false; save(); render(); break;
+    case 'delete': if(q===draft){ if(!draftLeave()) break; draft=null; selId=null; editing=false; render(); break; } deleteQuest(q); break;
     case 'addchild': newQuest(TYPES[q.type].child,q.id); break;
     case 'rank': q.rank=+b.dataset.v; save(); renderEdit($('detail'),q); renderList(); break;
     case 'up': case 'down': {
