@@ -2334,7 +2334,7 @@ async function pushData(){
   try{
     const j=await gas({action:'save',data:state,baseRev:sync.rev||0});
     if(j.conflict){ sync.rev=j.rev; saveSync(); applyState(mergeStates(state,j.data||{})); pushAgain=true; }
-    else { sync.rev=j.rev; sync.dataAt=Date.now(); saveSync(); refreshStatus(); }
+    else { sync.rev=j.rev; sync.dataAt=Date.now(); sync.err=''; saveSync(); refreshStatus(); }
   }catch(err){ sync.err=String(err.message||err); saveSync(); refreshStatus(); clearTimeout(pushT); pushT=setTimeout(pushData,30000); }
   finally{ pushing=false; if(pushAgain){ pushAgain=false; schedulePush(300); } }
 }
@@ -2342,6 +2342,7 @@ async function loadData(){
   if(!sync.url||pushing) return;
   try{
     const j=await gas({action:'load'});
+    if(sync.err){ sync.err=''; saveSync(); refreshStatus(); }
     if(!j.data){ schedulePush(100); return; }
     if(j.rev===sync.rev) return;
     const m=state.pristine ? {...j.data,pristine:false} : mergeStates(state,j.data);
