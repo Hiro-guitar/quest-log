@@ -253,6 +253,7 @@ select option{background:var(--panel-solid)}
 .f2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
 .rank-pick{display:flex;gap:2px}
 .rank-pick button{font-size:20px;color:var(--dim);padding:0 2px;line-height:1}
+.rank-pick .rank-clr{font-size:13px;margin-left:8px;color:var(--muted)}.rank-un{margin-left:8px;align-self:center}
 .rank-pick button.on{color:var(--orange);text-shadow:0 0 8px rgba(240,166,64,.6)}
 .estep{display:flex;gap:6px;align-items:center}
 .estep input,.estep select{flex:1;min-width:0}
@@ -779,10 +780,10 @@ function gain(n){
 /* ---------- actions ---------- */
 function toggleStep(qid,sid){
   const q=findQ(qid), s=q&&q.steps.find(x=>x.id===sid); if(!s||s.qref) return;
-  s.done=!s.done; gain((s.done?1:-1)*10*q.rank); if(s.done) earnRupee(5);
+  s.done=!s.done; gain((s.done?1:-1)*10*(q.rank||1)); if(s.done) earnRupee(5);
   save(); render();
   if(s.done){
-    toast(`工程クリア  +${10*q.rank} XP ・ +5ルピー`); maybeSeed();
+    toast(`工程クリア  +${10*(q.rank||1)} XP ・ +5ルピー`); maybeSeed();
     if(allStepsDone(q)) setTimeout(()=>toast('全工程クリア！ チャレンジ達成を報告しよう'),1400);
   }
 }
@@ -793,7 +794,7 @@ function maybeSeed(){
   setTimeout(()=>banner('seed','森の精の実を見つけた',`${state.seeds}個目`),350);
   return true;
 }
-function xpFor(q){return (q.type==='mini'?15:50)*q.rank}
+function xpFor(q){return (q.type==='mini'?15:50)*(q.rank||1)}
 function completeQuest(q){
   q.done=true; q.doneAt=Date.now(); q.accepted=false;
   const xp=xpFor(q), rp=q.type==='mini'?10:30*(q.rank||1); gain(xp); earnRupee(rp); save();
@@ -806,12 +807,12 @@ function completeQuest(q){
 function reopen(q){q.done=false;q.doneAt=null;gain(-xpFor(q));save();render()}
 function addMinis(text){
   const lines=text.split(/\r?\n/).map(x=>x.replace(/^\s*([-*・●○◇◆□■]|\d+[.)．]|\[\s?\])\s*/,'').trim()).filter(Boolean);
-  lines.forEach((t,i)=>state.quests.push({id:uid(),title:t,type:'mini',parentId:null,rank:1,deadline:'',reward:'',memo:'',steps:[],accepted:false,done:false,created:Date.now()+i}));
+  lines.forEach((t,i)=>state.quests.push({id:uid(),title:t,type:'mini',parentId:null,rank:0,deadline:'',reward:'',memo:'',steps:[],accepted:false,done:false,created:Date.now()+i}));
   if(lines.length){ save(); renderList(); renderTabs(); if(lines.length>1) toast(`${lines.length}個のミニチャレンジを追加`); }
   const el=$('miniAdd'); if(el){ el.value=''; el.focus(); }
 }
 function newQuest(type,parentId){
-  const q={id:uid(),title:'',type,parentId:parentId||null,rank:type==='mini'?1:2,deadline:'',reward:'',memo:'',steps:[],accepted:false,done:false,created:Date.now()};
+  const q={id:uid(),title:'',type,parentId:parentId||null,rank:0,deadline:'',reward:'',memo:'',steps:[],accepted:false,done:false,created:Date.now()};
   state.quests.push(q); selId=q.id; editing=true; listCat=type;
   if(tab==='tools') tab='list';
   save(); render();
@@ -829,7 +830,7 @@ function contains(x,target,g=0){
 }
 function promoteStep(q,sid){
   const s=q.steps.find(x=>x.id===sid); if(!s||s.qref) return;
-  const n={id:uid(),title:s.text,type:'challenge',parentId:null,rank:Math.max(1,q.rank-1),deadline:'',reward:'',memo:'',steps:[],accepted:false,done:!!s.done,doneAt:s.done?Date.now():null,created:Date.now()};
+  const n={id:uid(),title:s.text,type:'challenge',parentId:null,rank:0,deadline:'',reward:'',memo:'',steps:[],accepted:false,done:!!s.done,doneAt:s.done?Date.now():null,created:Date.now()};
   if(canLink(n,q)) n.parentId=q.id; else if(canLink(n,findQ(q.parentId))) n.parentId=q.parentId;
   state.quests.push(n); s.qref=n.id; save();
   renderEdit($('detail'),q); renderList(); renderTabs(); renderHud();
@@ -1203,7 +1204,7 @@ function renderEdit(D,q){
       : `<div class="f"><label>どのメインのため？（任意）</label>${linkSel}</div>`}
   </div>
   <div class="f2">
-    <div class="f"><label>難易度</label><div class="rank-pick">${[1,2,3,4,5].map(r=>`<button data-act="rank" data-v="${r}" class="${r<=q.rank?'on':''}">★</button>`).join('')}</div></div>
+    <div class="f"><label>難易度</label><div class="rank-pick">${[1,2,3,4,5].map(r=>`<button data-act="rank" data-v="${r}" class="${r<=(q.rank||0)?'on':''}">★</button>`).join('')}${q.rank?`<button class="rank-clr" data-act="rank" data-v="0" title="未設定に戻す">×</button>`:'<span class="hint rank-un">未設定</span>'}</div></div>
     <div class="f"><label>期限</label><input type="date" data-field="deadline" value="${esc(q.deadline)}"></div>
   </div>
   ${q.steps.length?`<div class="f"><label>やる日</label><p class="hint" style="margin:2px 0 0">工程があるチャレンジは、やる日を工程ごとに入れます（チャレンジのやる日は、いちばん近い工程の日付になります）</p></div>`:`<div class="f2">
