@@ -1160,6 +1160,15 @@ function renderView(D,q){
   h+=`</div>`;
   D.innerHTML=h;
 }
+// 日付の入力欄の値を工程に反映（OKを押したときだけ）
+function applyDateRow(){
+  if(!dateSid) return; const q=findQ(selId), st=q&&q.steps.find(x=>x.id===dateSid); if(!st) return;
+  const d=document.querySelector(`[data-sdate="${dateSid}"]`), t=document.querySelector(`[data-stime="${dateSid}"]`); if(!d) return;
+  const nd=d.value||'', nt=(t&&t.value)||'';
+  if(nd===(st.doDate||'')&&nt===(st.doTime||'')) return;
+  if(nd!==(st.doDate||'')) st.carry=0;
+  st.doDate=nd||(nt?ymd():''); st.doTime=nt; save(); renderList();
+}
 function hint(act,label,key,cls=''){return `<button class="hint-b ${cls}" data-act="${act}"><span>${label}</span>${key?`<i>${key}</i>`:''}</button>`}
 function renderHints(){
   const q=tab==='list'?findQ(selId):null; let h='';
@@ -1234,8 +1243,8 @@ document.addEventListener('click',e=>{
     case 'tab': if(editing){cleanupEmpty();editing=false} tab=b.dataset.v; if(window.innerWidth<=820) selId=null; render(); break;
     case 'openq': { const t=findQ(b.dataset.id); if(!t) break; tab='list'; listCat=t.type; selId=t.id; pouchSel=null; editing=false; render(); window.scrollTo({top:0}); break; }
     case 'pickstep': pickSid=pickSid===b.dataset.s?null:b.dataset.s; renderDetail(); break;
-    case 'select': dateSid=null; pickSid=null; if(editing){cleanupEmpty();editing=false} selId=b.dataset.id; render(); window.innerWidth<=820&&window.scrollTo({top:0}); break;
-    case 'back': if(editing){cleanupEmpty();editing=false} selId=null; toolPicked=false; pouchSel=null; render(); break;
+    case 'select': applyDateRow(); dateSid=null; pickSid=null; if(editing){cleanupEmpty();editing=false} selId=b.dataset.id; render(); window.innerWidth<=820&&window.scrollTo({top:0}); break;
+    case 'back': applyDateRow(); dateSid=null; if(editing){cleanupEmpty();editing=false} selId=null; toolPicked=false; pouchSel=null; render(); break;
     case 'pouch': pouchSel=b.dataset.v; render(); window.innerWidth<=820&&window.scrollTo({top:0}); break;
     case 'trday': selId=null; trSel=b.dataset.v; tab='list'; if(listCat!=='train'){ listCat='train'; } if(/^\d/.test(trSel)) trWeek=trWeekStart(trSel); render(); window.innerWidth<=820&&window.scrollTo({top:0}); break;
     case 'trweek': { const d=new Date((trWeek||trWeekStart(trDefaultDay()))+'T00:00:00'); d.setDate(d.getDate()+7*(+b.dataset.v)); const k=ymd(d); if(k<=TR_END&&ymd(new Date(d.getTime()+6*DAY))>=TR_START) trWeek=k; renderList(); break; }
@@ -1287,8 +1296,8 @@ document.addEventListener('click',e=>{
     case 'up': case 'down': {
       const i=q.steps.findIndex(s=>s.id===b.dataset.s), j=a==='up'?i-1:i+1;
       if(j<0||j>=q.steps.length) break; [q.steps[i],q.steps[j]]=[q.steps[j],q.steps[i]]; save(); renderEdit($('detail'),q); break;}
-    case 'sdate': dateSid=dateSid===b.dataset.s?null:b.dataset.s; renderDetail(); setTimeout(()=>{const el=document.querySelector(`[data-sdate="${dateSid}"]`); el&&!el.value&&el.showPicker&&(()=>{try{el.showPicker()}catch(e){}})()},30); break;
-    case 'sdateclose': dateSid=null; renderDetail(); break;
+    case 'sdate': applyDateRow(); dateSid=dateSid===b.dataset.s?null:b.dataset.s; renderDetail(); setTimeout(()=>{const el=document.querySelector(`[data-sdate="${dateSid}"]`); el&&!el.value&&el.showPicker&&(()=>{try{el.showPicker()}catch(e){}})()},30); break;
+    case 'sdateclose': applyDateRow(); dateSid=null; renderDetail(); renderList(); break;
     case 'sdateclear': {const st=q.steps.find(x=>x.id===b.dataset.s); if(st){st.doDate='';st.doTime='';st.carry=0;} dateSid=null; save(); renderDetail(); renderList(); break;}
     case 'promote': promoteStep(q,b.dataset.s); break;
     case 'demote': demoteStep(q,b.dataset.s); break;
@@ -1360,10 +1369,7 @@ document.addEventListener('input',e=>{
 document.addEventListener('change',e=>{
   if(trOnChange(e)) return;
   if(e.target.dataset.sdate||e.target.dataset.stime){
-    const q=findQ(selId), sid=e.target.dataset.sdate||e.target.dataset.stime, st=q&&q.steps.find(x=>x.id===sid); if(!st) return;
-    if(e.target.dataset.sdate) st.doDate=e.target.value; else { st.doTime=e.target.value; if(!st.doDate) st.doDate=ymd(); }
-    if(e.target.dataset.sdate) st.carry=0;
-    save(); renderDetail(); renderList(); return;
+    return; // スマホは日付欄を開いた瞬間に今日が入るので、OKを押すまで保存しない
   }
   if(e.target.id==='insRef'&&e.target.value){const q=findQ(selId); q&&insertRef(q,e.target.value); return;}
   if(e.target.dataset.moveto&&e.target.value){const q=findQ(selId); q&&moveStep(q,e.target.dataset.moveto,e.target.value); return;}
