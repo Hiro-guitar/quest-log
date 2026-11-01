@@ -543,6 +543,9 @@ body{background:#050607}
 .shop-it .rp{width:8px;height:12px}.shop-add{display:flex;gap:6px;flex-wrap:wrap}.shop-add #shopName{flex:2;min-width:150px}.shop-add #shopCost{flex:1;min-width:80px}
 .btn[disabled]{opacity:.4;cursor:default}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+.tgroup{margin:0 0 8px}.tg-h{display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:6px 6px 4px;font-size:12.5px;color:#d9d3be;letter-spacing:.04em}
+.tg-h .tg-i .ico{width:15px;height:15px}.tg-h .tg-t{flex:1;min-width:0;font-weight:700}.tg-h small{color:var(--muted);font-size:11px}.tg-h:hover .tg-t,.tg-h.sel .tg-t{color:var(--text)}
+.tgroup .srow{margin-left:16px;width:calc(100% - 16px)}.tgroup.done .tg-h{opacity:.6}
 .bulk-b{font-size:11px;color:var(--blue);border:1px solid rgba(95,212,239,.35);border-radius:10px;padding:1px 9px;margin-right:12px;letter-spacing:.04em}
 .bulk-bar{border:1px solid rgba(95,212,239,.35);background:rgba(10,40,60,.35);border-radius:3px;padding:10px 12px;margin:4px 0 8px}.bulk-bar p{margin:0 0 8px;font-size:12.5px;color:var(--muted)}
 .bulk-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.bulk-row input{flex:1;min-width:120px;background:rgba(0,0,0,.35);border:1px solid var(--line);border-radius:3px;padding:7px 10px}
@@ -979,10 +982,10 @@ function weekStrip(){
   }
   return h+'</div>';
 }
-function stepRowToday(q,st){
+function stepRowToday(q,st,inGroup){
   return `<button class="row srow ${st.done?'done':''} ${q.id===selId?'sel':''}" data-act="select" data-id="${q.id}">
     <span class="r-mark qcheck" data-act="step" data-q="${q.id}" data-s="${st.id}" title="工程をクリア"><i class="sq ${st.done?'on':''}"></i></span>
-    <span class="r-main"><span class="r-title">${esc(st.text)}</span><span class="r-sub">${TYPES[q.type].mark} ${esc(q.title||'(無題)')} の工程</span></span>
+    <span class="r-main"><span class="r-title">${esc(st.text)}</span>${inGroup?'':`<span class="r-sub">${TYPES[q.type].mark} ${esc(q.title||'(無題)')} の工程</span>`}</span>
     <span class="r-side">${st.done?'<span class="r-clear">CLEAR</span>':`${st.doTime?`<span class="do">${st.doTime}</span>`:''}${carryHtml(st)}`}</span><span class="r-notch"></span></button>`;
 }
 // 焚き火で休む：今日の分を明日に回す（持ち越し回数は増やさない）
@@ -1036,7 +1039,11 @@ function todayList(){
   h+=`<div class="day-h"><span>${dayView===ymd()?'今日':''}　${d.getMonth()+1}/${d.getDate()}（${'日月火水木金土'[d.getDay()]}）${holiday(dayView)?`<b class="hol">${holiday(dayView)}</b>`:''}</span><span>${items.filter(x=>x.s?x.s.done:x.q.done).length} / ${items.length}</span></div><div class="rows">`;
   if((state.rested||{})[dayView]) h+=`<div class="sec-empty">🔥 この日は焚き火で休みました</div>`;
   { const tt=trType(dayView); if(tt&&tt!=='R'){ const dn=trDone(dayView), tot=trChecks(dayView).length; h+=`<button class="row tr-today ${dn===tot?'done':''}" data-act="trday" data-v="${dayView}"><span class="r-mark">${ico('train')}</span><span class="r-main"><span class="r-title">鍛錬：${TR_NAME[tt]}</span><span class="r-sub">チェック ${dn}/${tot}</span></span><span class="r-side">${dn===tot?'<span class="r-clear">CLEAR</span>':''}</span><span class="r-notch"></span></button>`; } }
-  h+=items.map(x=>x.s?stepRowToday(x.q,x.s):row(x.q)).join('');
+  // 工程はチャレンジごとにまとめて、その下に並べる
+  { const seen=new Map(); const blocks=[];
+    items.forEach(x=>{ if(!x.s){ blocks.push(x); return; } let g=seen.get(x.q.id); if(!g){ g={q:x.q,steps:[]}; seen.set(x.q.id,g); blocks.push(g); } g.steps.push(x.s); });
+    h+=blocks.map(b=>{ if(!b.steps) return row(b.q); const q=b.q, dn=b.steps.filter(x=>x.done).length;
+      return `<div class="tgroup ${dn===b.steps.length?'done':''}"><button class="tg-h ${q.id===selId?'sel':''}" data-act="select" data-id="${q.id}"><span class="tg-i">${ico(q.type)}</span><span class="tg-t">${esc(q.title||'(無題)')}</span><small>${dn} / ${b.steps.length}</small></button>${b.steps.map(st=>stepRowToday(q,st,true)).join('')}</div>`; }).join(''); }
   if(!items.length) h+=`<div class="sec-empty">この日の予定はまだありません。チャレンジや工程に「やる日」を入れると、ここに並びます</div>`;
   h+=`<button class="row add-row" data-act="newcur"><span class="r-mark">＋</span><span class="r-main"><span class="r-title">この日にチャレンジを追加</span></span><span class="r-notch"></span></button></div>`;
   return h;
