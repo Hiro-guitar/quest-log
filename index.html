@@ -1180,7 +1180,7 @@ const MAT_PHOTOS={
  gift:['c/ce/Wrapped_gift.jpg',{er:2},'Loneshieling','CC BY-SA 4.0','プレゼント']
 };
 const MAT_ICON_ALT={eggplant:'veg',pepper:'veg',cucumber:'veg',coffee:'drink',tea:'drink',tape:'tool',apple:'fruit',onion:'fruit'};
-const MATPH_KEY='questlog-matph-v2:', matPhBusy={};
+const MATPH_KEY='questlog-matph-v3:', matPhBusy={};
 function matPhGet(k){ try{ return localStorage.getItem(MATPH_KEY+k); }catch(e){ return null; } }
 async function matPhMake(k){
   if(matPhBusy[k]) return; matPhBusy[k]=1;
@@ -1204,13 +1204,26 @@ async function matPhMake(k){
       if(px<x0)x0=px; if(px>x1)x1=px; if(py<y0)y0=py; if(py>y1)y1=py; }
     x.putImageData(im,0,0);
     const S=160, bw=x1-x0+1, bh=y1-y0+1, sc=Math.min(S*.86/bw,S*.86/bh), out=document.createElement('canvas'); out.width=S; out.height=S;
-    const ox=out.getContext('2d'); ox.filter='saturate(1.15) contrast(1.05)'; ox.drawImage(c,x0,y0,bw,bh,(S-bw*sc)/2,(S-bh*sc)/2,bw*sc,bh*sc);
+    const ox=out.getContext('2d',{willReadFrequently:true}); ox.filter='saturate(1.15) contrast(1.05)'; ox.drawImage(c,x0,y0,bw,bh,(S-bw*sc)/2,(S-bh*sc)/2,bw*sc,bh*sc); ox.filter='none';
+    matPaint(ox,S);
     let url=out.toDataURL('image/webp',.88); if(!url.startsWith('data:image/webp')) url=out.toDataURL('image/png');
     try{ localStorage.setItem(MATPH_KEY+k,url); }catch(e){ matPhMem[k]=url; }
     if(tab==='pouch'&&pouchSel==='mats') renderDetail();
   }catch(e){} finally{ matPhBusy[k]=0; }
 }
 const matPhMem={};
+// ゼルダ風の加工：Kuwahara（筆で面を塗ったような質感）＋色の段を少し減らす＋暖かい色味＋左上からの光のふち
+function matPaint(x,S,r=5,lv=6){
+  const d=x.getImageData(0,0,S,S).data, o=new Uint8ClampedArray(d), step=255/lv;
+  for(let y=0;y<S;y++) for(let X=0;X<S;X++){ const p=(y*S+X)*4; if(d[p+3]<10) continue; let best=1e9, res=[0,0,0];
+    for(const [dx,dy] of [[-r,-r],[0,-r],[-r,0],[0,0]]){ let a=0,g=0,b=0,s2=0,n=0;
+      for(let j=0;j<=r;j++) for(let i=0;i<=r;i++){ const xx=X+dx+i, yy=y+dy+j; if(xx<0||yy<0||xx>=S||yy>=S) continue; const q=(yy*S+xx)*4; if(d[q+3]<10) continue; const l=d[q]*.3+d[q+1]*.59+d[q+2]*.11; a+=d[q]; g+=d[q+1]; b+=d[q+2]; s2+=l*l; n++; }
+      if(!n) continue; const mean=(a*.3+g*.59+b*.11)/n, v=s2/n-mean*mean; if(v<best){ best=v; res=[a/n,g/n,b/n]; } }
+    for(let k=0;k<3;k++) o[p+k]=Math.round(res[k]/step)*step*.35+res[k]*.65;
+    o[p]=Math.min(255,o[p]*1.06+6); o[p+2]=o[p+2]*.94; }
+  for(let y=2;y<S;y++) for(let X=2;X<S;X++){ const p=(y*S+X)*4; if(o[p+3]<10) continue; const ul=((y-2)*S+(X-2))*4; if(o[ul+3]<10) for(let k=0;k<3;k++) o[p+k]=Math.min(255,o[p+k]*.6+102); }
+  x.putImageData(new ImageData(o,S,S),0,0);
+}
 function matSvg(n){ const kk=matKind(n);
   if(MAT_PHOTOS[kk]){ const u=matPhGet(kk)||matPhMem[kk]; if(u) return `<img class="mat-ico mat-ph" src="${u}" alt="">`; setTimeout(()=>matPhMake(kk),0); }
   const ar=MAT_ART[kk]||MAT_ART[MAT_ICON_ALT[kk]]; if(ar) return `<svg viewBox="0 0 64 64" class="mat-ico mat-art" aria-hidden="true">${ar}</svg>`;
