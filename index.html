@@ -2178,6 +2178,7 @@ const EX={
 const TR_MENU={P:['fp','sp','fr'],L1:['gs','rdl','ab'],L2:['bs','rdl','lr'],U:['row','cu','pu']};
 const TR_NAME={P:'押す（胸・肩・腕の裏）',L1:'脚・お腹',L2:'脚・お腹',U:'引く（背中・力こぶ）＋腕立て',R:'休み'};
 const TR_SHORT={P:'押す',L1:'脚',L2:'脚',U:'引く',R:'休み'};
+const TR_LAB={P:'押す鍛錬',L1:'脚の鍛錬',L2:'脚の鍛錬',U:'引く鍛錬'};
 const TR_WEEK=['P','L1','U','P','L2','U','R']; // 月〜日
 const trSets=k=>k<'2026-11-16'?2:3;
 let trSel=null, trWeek=null;
@@ -2259,12 +2260,12 @@ function trDayPanel(k){
   let note='', cv='';
   const em=x=>`<em>${x}</em>`, carry=(ic,txt)=>`<div class="tr-carry ${ic}"><i class="tc-ico" aria-hidden="true"></i><p>${txt}</p></div>`;
   if(t==='R'&&wd<6&&TR_WEEK[wd]!=='R'){ const sun=trAdd(k,6-wd), m=trMakeup(sun);
-    note=H.ovr[sun]?carry('stop',`この日の${em(TR_SHORT[TR_WEEK[wd]])}は休みにした。<br>今週の日曜 ${em(trMD(sun))} は予定を決めてあるので、そこには回らない。`)
-      :m&&m.k===k?carry('go',`この日の${em(TR_SHORT[m.t])}は、<br>今週の日曜 ${em(trMD(sun))} に回した。`)
-      :m?carry('stop',`この日の${em(TR_SHORT[TR_WEEK[wd]])}は休みにした。<br>日曜 ${em(trMD(sun))} には先に休んだ ${em(trMD(m.k)+'の'+TR_SHORT[m.t])} が入っているので、回らない。`):''; }
-  if(wd===6&&!H.ovr[k]){ const m=trMakeup(k); if(m) note=carry('come',`${em(trMD(m.k))} に休んだ${em(TR_SHORT[m.t])}を、<br>今日に回してある。`); }
+    note=H.ovr[sun]?carry('stop',`この日の${em(TR_LAB[TR_WEEK[wd]])}は休みにした。<br>今週の日曜${em(trMD(sun))}は予定を決めてあるので、そこには回らない。`)
+      :m&&m.k===k?carry('go',`この日の${em(TR_LAB[m.t])}は、<br>今週の日曜${em(trMD(sun))}に回した。`)
+      :m?carry('stop',`この日の${em(TR_LAB[TR_WEEK[wd]])}は休みにした。<br>日曜${em(trMD(sun))}には先に休んだ${em(trMD(m.k))+'の'+em(TR_LAB[m.t])}が入っているので、回らない。`):''; }
+  if(wd===6&&!H.ovr[k]){ const m=trMakeup(k); if(m) note=carry('come',`${em(trMD(m.k))}に休んだ${em(TR_LAB[m.t])}を、<br>今日に回してある。`); }
   const natural=wd===6?((trMakeup(k)||{}).t||'R'):TR_WEEK[wd];
-  if(H.ovr[k]==='R'&&natural!=='R') note+=`<button class="tr-undo" data-act="trsw" data-v="${natural}"><i aria-hidden="true">↺</i><span>休みを取り消す</span><small>予定どおり ${TR_SHORT[natural]} に戻す</small></button>`;
+  if(H.ovr[k]==='R'&&natural!=='R') note+=`<button class="tr-undo" data-act="trsw" data-v="${natural}"><i aria-hidden="true">↺</i><span>休みを取り消す</span><small>予定どおり${TR_LAB[natural]}に戻す</small></button>`;
   h+=note;
   if(t==='R'){
     h+=`<div class="sec-h"><span>休みの日</span></div><p class="hint">散歩や自転車はいつもどおり。${wd<6?'この日にやるなら':'できなかった鍛錬をここでやるなら'}：${['P','L1','U'].map(x=>`<button class="btn small ghost" data-act="trsw" data-v="${x}">${TR_SHORT[x]}</button>`).join(' ')}</p>`;
