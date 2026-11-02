@@ -1629,7 +1629,7 @@ document.addEventListener('click',e=>{
     case 'back': if(!draftLeave()) break; bulkSel=null; applyDateRow(); dateSid=null; if(editing){cleanupEmpty();editing=false} selId=null; toolPicked=false; pouchSel=null; render(); break;
     case 'pouch': pouchSel=b.dataset.v; render(); window.innerWidth<=820&&window.scrollTo({top:0}); break;
     case 'trday': selId=null; trSel=b.dataset.v; tab='list'; if(listCat!=='train'){ listCat='train'; } if(/^\d/.test(trSel)) trWeek=trWeekStart(trSel); render(); window.innerWidth<=820&&window.scrollTo({top:0}); break;
-    case 'trweek': { const d=new Date((trWeek||trWeekStart(trDefaultDay()))+'T00:00:00'); d.setDate(d.getDate()+7*(+b.dataset.v)); const k=ymd(d); if(k<=TR_END&&ymd(new Date(d.getTime()+6*DAY))>=TR_START) trWeek=k; renderList(); break; }
+    case 'trweek': { const d=new Date((trWeek||trWeekStart(trDefaultDay()))+'T00:00:00'); d.setDate(d.getDate()+7*(+b.dataset.v)); const k=ymd(d); if(k<=trLast()&&ymd(new Date(d.getTime()+6*DAY))>=TR_START) trWeek=k; renderList(); break; }
     case 'trback': trSel=null; render(); break;
     case 'trsw': { const H=hm(); H.ovr={...H.ovr,[trSel]:b.dataset.v}; hmTouch('ovr',trSel); save(); render(); break; }
     case 'trbody': { const d=$('trBd').value, kg=parseFloat($('trKg').value), cm=parseFloat($('trCm').value); if(!d||!(kg>40||cm>50)){ toast('体重かお腹まわりを入れてください'); break; } const H=hm(); H.body={...H.body,[d]:{...(H.body[d]||{}),...(kg>40&&kg<120?{kg:Math.round(kg*10)/10}:{}),...(cm>50&&cm<130?{cm:Math.round(cm*2)/2}:{})}}; hmTouch('body',d); save(); renderDetail(); toast('記録しました'); break; }
@@ -2161,7 +2161,7 @@ if('serviceWorker' in navigator && location.protocol==='https:'){
 }
 
 /* ---------- 鍛錬（細マッチョ計画）：日ごとの筋トレ・食事・チェック・記録 ---------- */
-const TR_START='2026-11-01', TR_END='2026-12-31';
+const TR_START='2026-11-01', TR_END='2026-12-31', TR_LATE='2027-01-31'; // 休んで後ろにずれた分は1月末までに回す
 const EX={
  gs:{n:'ゴブレットスクワット',r:'8〜12回',hi:12,kg:1,cue:'ダンベル1個を胸の前で縦に持つ。足は肩幅で、太ももが床と平行になるまでしゃがむ。かかとは浮かせない'},
  pu:{n:'腕立て伏せ',r:'限界の2回手前まで',hi:20,kg:0,cue:'頭からかかとまで一直線。胸が床に近づくまで下ろす。きつければ膝つきでOK。全セット20回を超えたら足を椅子に乗せる'},
@@ -2190,16 +2190,18 @@ const TR_ROT=['P','L1','U','P','L2','U'];
 let trSimKey='', trSim={};
 function trSched(){ const H=hm(), key=JSON.stringify(H.ovr); if(key===trSimKey) return trSim; trSimKey=key; trSim={};
   let idx=0, slots=0;
-  for(let k=TR_START;k<=TR_END;k=trAdd(k,1)){ const wd=(new Date(k+'T00:00:00').getDay()+6)%7, o=H.ovr[k]; if(wd<6) slots++;
+  for(let k=TR_START;k<=TR_LATE;k=trAdd(k,1)){ const wd=(new Date(k+'T00:00:00').getDay()+6)%7, o=H.ovr[k], late=k>TR_END; if(wd<6&&!late) slots++;
+    if(late&&idx>=slots&&o!=='R'&&!TR_MENU[o]){ trSim[k]={t:null,i:null,skip:null,catchup:false,behind:0,late}; continue; }
     let t='R', i=null, skip=null, catchup=false;
-    if(o==='R'){ if(wd<6||idx<slots) skip=idx; }
+    if(o==='R'){ if((wd<6&&!late)||idx<slots) skip=idx; }
     else if(TR_MENU[o]){ t=o; i=idx++; }
-    else if(wd<6){ i=idx++; t=TR_ROT[i%6]; }
+    else if(wd<6&&!late){ i=idx++; t=TR_ROT[i%6]; }
     else if(idx<slots){ i=idx++; t=TR_ROT[i%6]; catchup=true; }
-    trSim[k]={t,i,skip,catchup,behind:Math.max(0,slots-idx)}; }
+    trSim[k]={t,i,skip,catchup,behind:Math.max(0,slots-idx),late}; }
   return trSim; }
-function trType(k){ if(k<TR_START||k>TR_END) return null; return (trSched()[k]||{}).t||null; }
-function trWhere(k){ const S=trSched(), x=S[k]; if(!x||x.skip===null) return null; for(let d=trAdd(k,1);d<=TR_END;d=trAdd(d,1)) if(S[d]&&S[d].i===x.skip) return d; return ''; }
+function trType(k){ if(k<TR_START||k>TR_LATE) return null; return (trSched()[k]||{}).t||null; }
+function trLast(){ const S=trSched(); let l=TR_END; for(const k in S) if(S[k].t&&k>l) l=k; return l; }
+function trWhere(k){ const S=trSched(), x=S[k]; if(!x||x.skip===null) return null; for(let d=trAdd(k,1);d<=TR_LATE;d=trAdd(d,1)) if(S[d]&&S[d].i===x.skip) return d; return ''; }
 const trMD=k=>{ const d=new Date(k+'T00:00:00'); return (d.getMonth()+1)+'/'+d.getDate()+'（'+'日月火水木金土'[d.getDay()]+'）'; };
 const trChecks=k=>[...(trType(k)!=='R'?[['train','筋トレ']]:[]),['bfast','朝：卵・納豆'],['prot','プロテイン'],['rice','夜ごはん200g'],['walk','散歩・自転車'],['sleep','7時間寝た'],['grip','握力（ついでに）']];
 const trDone=k=>{ const d=hm().days[k]||{}; return trChecks(k).filter(([c])=>d[c]).length; };
@@ -2230,7 +2232,7 @@ const hmRev=()=>{ const u=(state.hm||{}).u||{}; let m=0; for(const k in u) if(u[
 function trPrev(id,k){ const L=hm().lift; const ds=Object.keys(L).filter(d=>d<k&&L[d][id]&&L[d][id].some(s=>s&&s[1])).sort(); return ds.length?{d:ds[ds.length-1],s:L[ds[ds.length-1]][id]}:null; }
 const trFmt=(e,s)=>s.filter(x=>x&&x[1]).map(x=>(e.kg?(x[0]||0)+'kg×':'')+x[1]).join('、');
 function trWeekStart(k){ const d=new Date(k+'T00:00:00'); d.setDate(d.getDate()-((d.getDay()+6)%7)); return ymd(d); }
-function trDefaultDay(){ const t=ymd(); return t<TR_START?TR_START:t>TR_END?TR_END:t; }
+function trDefaultDay(){ const t=ymd(), L=trLast(); return t<TR_START?TR_START:t>L?L:t; }
 function trList(){
   if(!trWeek) trWeek=trWeekStart(trDefaultDay());
   const ws=new Date(trWeek+'T00:00:00'), we=new Date(ws.getTime()+6*DAY);
@@ -2272,9 +2274,10 @@ function trDayPanel(k){
   let note='';
   const em=x=>`<em>${x}</em>`, carry=(ic,txt)=>`<div class="tr-carry ${ic}"><i class="tc-ico" aria-hidden="true"></i><p>${txt}</p></div>`, S=trSched(), x=S[k]||{};
   if(x.skip!==null&&x.skip!==undefined){ const to=trWhere(k), lab=TR_LAB[TR_ROT[x.skip%6]];
-    note=to===''?carry('stop',`この日の${em(lab)}は休みにした。<br>12月末までに入りきらないので、ここで終わり。`)
+    note=to===''?carry('stop',`この日の${em(lab)}は休みにした。<br>1月末までに入りきらないので、ここで終わり。`)
       :(new Date(to+'T00:00:00').getDay()===0&&trAdd(k,6-wd)===to)?carry('go',`この日の${em(lab)}は休みにした。<br>今週の日曜${em(trMD(to))}に回した。`)
       :carry('go',`この日の${em(lab)}は休みにした。<br>${em(trMD(to))}にずらして、そのあとの予定も後ろへ。`); }
+  else if(x.catchup&&x.late) note=carry('come',`12月に休んだぶんの続き。<br>今日は${em(TR_LAB[t])}。${x.behind?`<br>残りは${em(x.behind+'日ぶん')}。`:'<br>これで取り戻しきった。'}`);
   else if(x.catchup) note=carry('come',`休んだぶんを取り戻す日。<br>今日は${em(TR_LAB[t])}。${x.behind?`<br>残りの${em(x.behind+'日ぶん')}は来週へ。`:''}`);
   else if(t!=='R'&&x.behind) note=carry('come',`休んだぶん、予定が${em(x.behind+'日')}後ろにずれている。<br>次の日曜で取り戻す。`);
   if(H.ovr[k]==='R') note+=`<button class="tr-undo" data-act="trsw" data-v="A"><i aria-hidden="true">↺</i><span>休みを取り消す</span><small>もとの予定に戻す</small></button>`;
@@ -2323,7 +2326,7 @@ function trPlanPanel(){
   <div class="sec-h"><span>食事</span></div><p>1日約2,100〜2,200kcal、たんぱく質は約120g（体重1kgあたり1.8g）。おかずは奥さんと同じ1人前のまま、ごはんとたんぱく質を足す。</p>
   <div class="tr-food"><div><b>朝</b>プロテイン1杯＋ごはん150g＋納豆＋卵2個（約650kcal）</div><div><b>昼</b>好きなもの。たんぱく質20g以上（約600kcal）</div><div><b>夜</b>奥さんと同じおかず1人前＋ごはん200g（約700〜850kcal）</div><div><b>筋トレ後</b>プロテイン1杯（約120kcal）</div></div>
   <ul class="hint"><li>プロテインは一般的なホエイで1杯約110〜120kcal・たんぱく質20〜24g。VERIFYSTの袋の1食分の表示で確かめる</li><li>夜がパスタなどごはんのない日は、おかずと別にごはん100gか、卵・豆腐を足す</li><li>お酒や甘いものを食べた日は、昼か夜のごはんを少し減らす</li></ul>
-  <div class="sec-h"><span>筋トレのルール</span></div><p>1回20分・3種目だけ。月〜土に「押す→脚→引く」を2周して、日曜は休み。1回を短くして回数を増やすので、週の合計量は1回40分×週3回と同じくらい。「休みにする」を押しても、その日の鍛錬は消えずに次の日へずれ、予定全体が後ろへ。遅れは日曜で1日分ずつ取り戻す。</p>
+  <div class="sec-h"><span>筋トレのルール</span></div><p>1回20分・3種目だけ。月〜土に「押す→脚→引く」を2周して、日曜は休み。1回を短くして回数を増やすので、週の合計量は1回40分×週3回と同じくらい。「休みにする」を押しても、その日の鍛錬は消えずに次の日へずれ、予定全体が後ろへ。遅れは日曜で1日分ずつ取り戻し、12月末に残った分は1月に続けて回す。</p>
   <ul><li>最初の2週間（11/15まで）は各種目2セット。「あと3〜4回できる」重さでフォームを覚える</li><li>11/16からは3セット。毎セット「あと1〜2回できる」所まで追い込む</li><li><b>重さの上げ方</b>：全セットで回数の上限（12回や15回）に届いたら、次回は1〜2kg重くする。「重さを上げよう」と出る</li><li>同じ筋肉を続けて使わない順番にしてある。痛みが出たら、その種目は休む</li><li>握力の道具は、テレビや動画を見ながらのついででOK</li></ul>
   <div class="sec-h"><span>メニュー</span></div><h4>月・木：押す（胸・肩・腕の裏）</h4>${list('P')}<h4>火：脚・お腹</h4>${list('L1')}<h4>金：脚・お腹</h4>${list('L2')}<h4>水・土：引く（背中・力こぶ）＋腕立て</h4>${list('U')}<p class="hint">ダンベルは片手1個ずつで使う。バーベルの形には組み替えなくていい。</p>
   <div class="sec-h"><span>見直すタイミング</span></div><ul><li>体重が1週間で0.7kg以上落ちる：筋肉も落ちやすいので、ごはんを1日100g増やす</li><li>2週間たっても体重もお腹まわりも変わらない：昼を100〜200kcal減らす</li><li>同じ重さ・回数から3回続けて伸びない：その種目だけ1週間軽くしてから戻す</li><li>サッカーの日は筋トレを休みにしてOK。前日が脚の日なら軽めに</li></ul></div>`;
