@@ -606,8 +606,8 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 .sh-ring{width:220px;height:220px;filter:drop-shadow(0 0 14px rgba(111,224,255,.35))}
 .sh-msg{color:#cfe8f2;font-size:13px;margin:12px 0}.sh-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
 .wxfx{position:fixed;inset:0;z-index:1;width:100%;height:100%;pointer-events:none;display:none}.wxfx.on{display:block}
-.bg.rain .bg-photo{filter:blur(3.5px) saturate(.62) contrast(.88) brightness(.74)!important;transition:opacity .8s,filter 1.5s}
-.bg.rain::before{content:'';position:absolute;inset:0;z-index:2;pointer-events:none;background:linear-gradient(180deg,rgba(70,82,96,.38),rgba(40,48,58,.18) 45%,rgba(150,165,180,.22) 100%)}
+.bg.rain .bg-photo{filter:blur(4px) saturate(.42) contrast(.8) brightness(.8)!important;transition:opacity .8s,filter 1.5s}
+.bg.rain::before{content:'';position:absolute;inset:0;z-index:2;pointer-events:none;background:linear-gradient(180deg,rgba(96,106,118,.55),rgba(120,130,142,.34) 40%,rgba(150,160,170,.42) 100%)}
 .bg.snow .bg-photo{filter:blur(3.5px) saturate(.75) brightness(1.02) contrast(.85)!important}
 .bg.snow::before{content:'';position:absolute;inset:0;z-index:2;pointer-events:none;background:linear-gradient(180deg,rgba(210,220,232,.22),rgba(235,240,246,.12))}
 </style>
@@ -2354,31 +2354,35 @@ function wxFx(code){
 function fxSize(){ const cv=$('wxfx'); fx.dpr=Math.min(2,window.devicePixelRatio||1); fx.W=innerWidth; fx.H=innerHeight; cv.width=fx.W*fx.dpr; cv.height=fx.H*fx.dpr; }
 function fxCount(){ const area=fx.W*fx.H/(1280*800), base=fx.kind==='rain'?[0,220,450,750,1100][fx.lv]:[0,90,170,280][fx.lv]; const rm=matchMedia('(prefers-reduced-motion: reduce)').matches?.35:1; return Math.round(base*Math.max(.45,area)*rm); }
 function fxNew(any){ const z=Math.pow(Math.random(),1.6);
-  if(fx.kind==='rain') return {z,x:Math.random()*(fx.W+200)-100,y:any?Math.random()*fx.H:-Math.random()*200,len:14+60*z,v:700+1300*z,w:.5+1.3*z,a:.14+.5*z,gy:fx.H*(.62+.38*Math.random())};
+  if(fx.kind==='rain') return {z,x:Math.random()*(fx.W+200)-100,y:any?Math.random()*fx.H:-Math.random()*200,len:10+42*z,v:800+1300*z,w:.45+1.1*z,a:.12+.42*z,gy:fx.H*(.62+.38*Math.random())};
   return {z,x:Math.random()*fx.W,y:any?Math.random()*fx.H:-10,r:.8+3.6*z,v:22+70*z,ph:Math.random()*6.28,sw:8+26*z,a:.35+.55*z};
 }
+function fxBolt(){ const x0=fx.W*(.15+Math.random()*.7), yEnd=fx.H*(.55+Math.random()*.25), main=[[x0,0]]; let x=x0,y=0; while(y<yEnd){ y+=12+Math.random()*26; x+=(Math.random()-.5)*34; main.push([x,y]); }
+  const brs=[main]; for(let k=0;k<2;k++){ const s=main[2+Math.floor(Math.random()*(main.length-3))]; let bx=s[0],by=s[1]; const b=[[bx,by]]; const dir=Math.random()<.5?-1:1; for(let i=0;i<4+Math.random()*4;i++){ by+=10+Math.random()*20; bx+=dir*(6+Math.random()*16); b.push([bx,by]); } brs.push(b); } return brs; }
 function fxLoop(now){
   const cv=$('wxfx'), c=cv.getContext('2d'), dt=Math.min(.05,(now-fx.t)/1000); fx.t=now;
   if(document.hidden){ fx.raf=requestAnimationFrame(fxLoop); return; }
   c.setTransform(fx.dpr,0,0,fx.dpr,0,0); c.clearRect(0,0,fx.W,fx.H);
   if(fx.kind==='rain'){
-    const wind=-.16-.05*fx.lv; c.lineCap='round';
+    const wind=-.05-.025*fx.lv; c.lineCap='round';
     // 低いもや
     const g=c.createLinearGradient(0,fx.H*.55,0,fx.H); g.addColorStop(0,'rgba(190,205,220,0)'); g.addColorStop(1,`rgba(190,205,220,${.05+.035*fx.lv})`); c.fillStyle=g; c.fillRect(0,fx.H*.55,fx.W,fx.H*.45);
     for(const p of fx.ps){
       p.y+=p.v*dt; p.x+=p.v*wind*dt;
-      const tx=p.x-wind*p.len, ty=p.y-p.len, gr=c.createLinearGradient(tx,ty,p.x,p.y); gr.addColorStop(0,'rgba(210,222,238,0)'); gr.addColorStop(1,`rgba(220,232,246,${p.a})`);
+      const tx=p.x-wind*p.len, ty=p.y-p.len, gr=c.createLinearGradient(tx,ty,p.x,p.y); gr.addColorStop(0,'rgba(235,240,246,0)'); gr.addColorStop(1,`rgba(238,243,248,${p.a})`);
       c.strokeStyle=gr; c.lineWidth=p.w; c.beginPath(); c.moveTo(tx,ty); c.lineTo(p.x,p.y); c.stroke();
-      if(p.z>.55&&p.y>=p.gy){ if(fx.sp.length<160) fx.sp.push({x:p.x,y:p.gy,t:0,s:.6+p.z,d:[[-1,-1.6],[1.1,-1.3],[.2,-2]].map(([a,b])=>[a*(.5+Math.random()),b*(.6+Math.random()*.6)])}); Object.assign(p,fxNew(false)); }
+      if(p.z>.3&&p.y>=p.gy){ if(fx.sp.length<380) fx.sp.push({x:p.x,y:p.gy,t:0,s:.5+p.z}); Object.assign(p,fxNew(false)); }
       else if(p.y>fx.H+40||p.x<-120) Object.assign(p,fxNew(false));
     }
-    // しぶき
-    fx.sp=fx.sp.filter(s=>{ s.t+=dt; const k=s.t/.35; if(k>=1) return false;
-      c.strokeStyle=`rgba(225,236,248,${.35*(1-k)})`; c.lineWidth=.8; c.beginPath(); c.ellipse(s.x,s.y,2+9*k*s.s,(1+2.6*k)*s.s*.6,0,0,6.283); c.stroke();
-      c.fillStyle=`rgba(230,240,250,${.5*(1-k)})`; for(const [vx,vy] of s.d){ const tt=s.t*60; c.beginPath(); c.arc(s.x+vx*tt*s.s,s.y+vy*tt*s.s+.5*tt*tt*.05*s.s,.9*s.s,0,6.283); c.fill(); } return true; });
+    // 地面ではねる雨（ブレワイのように、小さな白い粒が一瞬はねる）
+    fx.sp=fx.sp.filter(sp=>{ sp.t+=dt; const k=sp.t/.2; if(k>=1) return false; const a=.7*(1-k), h=(3+5*sp.s)*(1-k*.6);
+      c.strokeStyle=`rgba(240,245,250,${a})`; c.lineWidth=.9*sp.s; c.beginPath(); c.moveTo(sp.x,sp.y); c.lineTo(sp.x,sp.y-h); c.stroke();
+      c.fillStyle=`rgba(240,245,250,${a*.8})`; c.beginPath(); c.arc(sp.x-2.5*sp.s*k*2,sp.y-h*.8,.8*sp.s,0,6.283); c.arc(sp.x+2.5*sp.s*k*2,sp.y-h*.7,.8*sp.s,0,6.283); c.fill(); return true; });
     // 雷
-    if(fx.thunder){ if(!fx.nextBolt) fx.nextBolt=now+6000+Math.random()*12000; if(now>fx.nextBolt){ fx.flash=1; fx.nextBolt=now+7000+Math.random()*15000; } }
-    if(fx.flash>0){ c.fillStyle=`rgba(235,240,255,${.55*fx.flash*(Math.random()>.3?1:.4)})`; c.fillRect(0,0,fx.W,fx.H); fx.flash-=dt*2.4; }
+    if(fx.thunder){ if(!fx.nextBolt) fx.nextBolt=now+6000+Math.random()*12000; if(now>fx.nextBolt){ fx.flash=1; fx.bolt=fxBolt(); fx.nextBolt=now+7000+Math.random()*15000; } }
+    if(fx.flash>0){ c.fillStyle=`rgba(235,240,255,${.5*fx.flash*(Math.random()>.3?1:.4)})`; c.fillRect(0,0,fx.W,fx.H);
+      if(fx.bolt&&fx.flash>.55){ c.save(); c.shadowColor='rgba(200,215,255,.9)'; c.shadowBlur=18; c.strokeStyle='rgba(250,252,255,.95)'; c.lineWidth=2.2; c.lineJoin='round'; for(const br of fx.bolt){ c.beginPath(); br.forEach(([x,y],i)=>i?c.lineTo(x,y):c.moveTo(x,y)); c.stroke(); c.lineWidth=1.2; } c.restore(); }
+      fx.flash-=dt*2.2; }
   } else {
     for(const p of fx.ps){
       p.y+=p.v*dt; p.ph+=dt*(.8+p.z); const x=p.x+Math.sin(p.ph)*p.sw;
