@@ -1415,7 +1415,7 @@ function renderView(D,q){
   if(anc.length) h+=`<div class="crumb link">${anc.map(a=>`${ico(a.type)} <button data-act="select" data-id="${a.id}">${esc(a.title||'(無題)')}</button>`).join('　›　')}　のためのチャレンジ</div>`;
   if(q.steps.length||!q.done){
     h+=`<div class="sec-h"><span>工程</span><span>${q.steps.filter(stepDone).length} / ${q.steps.length}${q.steps.length?`　・　${p}%`:''}</span></div>`;
-    if(bulkSel) h+=`<div class="bulk-bar"><p>日付を入れたい工程をタップして選んでください（${bulkSel.size}件選択中）</p><div class="bulk-row"><input type="date" id="bulkDate"><input type="time" id="bulkTime"><button class="btn small primary" data-act="bulkapply">選んだ工程に入れる</button><button class="btn small ghost" data-act="bulkclear">日付を外す</button><button class="btn small ghost" data-act="bulkoff">やめる</button></div></div>`;
+    if(bulkSel) h+=`<div class="bulk-bar"><p>日付を入れたい工程をタップして選んでください（${bulkSel.size}件選択中）</p><div class="bulk-row"><button class="btn small ghost" data-act="bulkall">${(()=>{ const all=q.steps.filter(x=>!x.qref&&!stepDone(x)); return all.length&&all.every(x=>bulkSel.has(x.id))?'選択をはずす':'すべて選ぶ'; })()}</button><input type="date" id="bulkDate"><input type="time" id="bulkTime"><button class="btn small primary" data-act="bulkapply">選んだ工程に入れる</button><button class="btn small ghost" data-act="bulkclear">日付を外す</button><button class="btn small ghost" data-act="bulkoff">やめる</button></div></div>`;
     h+=`<ul class="steps ${bulkSel?'bulk':''}" ${bulkSel?'':'data-sortable'}>`;
     q.steps.forEach(s=>{
       const r=refQ(s), dn=stepDone(s), isNext=!q.done&&ns&&s.id===ns.id;
@@ -1535,6 +1535,9 @@ document.addEventListener('click',e=>{
     case 'openq': { const t=findQ(b.dataset.id); if(!t) break; tab='list'; listCat=t.type; selId=t.id; pouchSel=null; editing=false; render(); window.scrollTo({top:0}); break; }
     case 'bulkon': if(editing){ editing=false; save(); } bulkSel=new Set(); dateSid=null; pickSid=null; render(); window.innerWidth<=820&&window.scrollTo({top:0}); break;
     case 'bulkoff': bulkSel=null; renderDetail(); break;
+    case 'bulkall': { if(!bulkSel||!q) break; const all=q.steps.filter(x=>!x.qref&&!stepDone(x)); const d=($('bulkDate')||{}).value, t=($('bulkTime')||{}).value;
+      if(all.every(x=>bulkSel.has(x.id))) bulkSel.clear(); else all.forEach(x=>bulkSel.add(x.id));
+      renderDetail(); if($('bulkDate')){ $('bulkDate').value=d||''; $('bulkTime').value=t||''; } break; }
     case 'bulkpick': bulkSel&&(bulkSel.has(b.dataset.s)?bulkSel.delete(b.dataset.s):bulkSel.add(b.dataset.s)); { const d=($('bulkDate')||{}).value, t=($('bulkTime')||{}).value; renderDetail(); if($('bulkDate')){ $('bulkDate').value=d||''; $('bulkTime').value=t||''; } } break;
     case 'bulkapply': case 'bulkclear': { if(!bulkSel||!bulkSel.size){ toast('工程を選んでください'); break; } const d=a==='bulkclear'?'':($('bulkDate')||{}).value, t=a==='bulkclear'?'':($('bulkTime')||{}).value;
       if(a==='bulkapply'&&!d){ toast('日付を選んでください'); break; }
