@@ -261,6 +261,22 @@ select{max-width:100%;text-overflow:ellipsis}
 .estep .ic{color:var(--dim);width:26px;height:30px;font-size:13px;border-radius:3px}
 .estep .ic:hover{color:var(--text);background:rgba(255,255,255,.06)}
 .hint{font-size:12px;color:var(--dim)}
+.tr-carry{position:relative;display:flex;gap:12px;align-items:center;margin:16px -6px 6px;padding:12px 14px;background:linear-gradient(90deg,rgba(0,0,0,0),rgba(0,0,0,.32) 12%,rgba(0,0,0,.32) 88%,rgba(0,0,0,0))}
+.tr-carry::before,.tr-carry::after{content:"";position:absolute;left:4%;right:4%;height:1px;background:linear-gradient(90deg,transparent,rgba(242,194,48,.55),transparent)}
+.tr-carry::before{top:0}.tr-carry::after{bottom:0}
+.tr-carry p{margin:0;font-size:13px;line-height:1.7;color:var(--text);letter-spacing:.03em}
+.tr-carry em{font-style:normal;font-weight:700;color:var(--orange)}
+.tc-ico{flex:none;width:30px;height:30px;position:relative;display:grid;place-items:center}
+.tc-ico::before{content:"";width:16px;height:16px;transform:rotate(45deg);border:1.5px solid var(--blue);box-shadow:0 0 10px rgba(95,212,239,.55),inset 0 0 6px rgba(95,212,239,.35)}
+.tc-ico::after{content:"";position:absolute;width:6px;height:6px;transform:rotate(45deg);background:var(--blue);box-shadow:0 0 8px var(--blue)}
+.tr-carry.go .tc-ico::after{animation:tcGo 2.4s ease-in-out infinite}
+.tr-carry.come .tc-ico::after{animation:tcGo 2.4s ease-in-out infinite reverse}
+@keyframes tcGo{0%,100%{transform:translateX(-3px) rotate(45deg);opacity:.5}50%{transform:translateX(3px) rotate(45deg);opacity:1}}
+.tr-carry.stop .tc-ico::before{border-color:var(--dim);box-shadow:none}.tr-carry.stop .tc-ico::after{background:var(--dim);box-shadow:none}
+.tr-undo{display:flex;align-items:center;gap:10px;margin:2px 0 4px auto;padding:6px 4px;color:var(--text);font-size:13px;font-weight:700;letter-spacing:.06em;background:none;border:0}
+.tr-undo i{font-style:normal;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:14px;color:#11171b;background:var(--text);box-shadow:0 0 0 2px rgba(0,0,0,.4)}
+.tr-undo small{font-size:11px;font-weight:400;color:var(--muted);letter-spacing:.02em}
+.tr-undo:hover span,.tr-undo:focus-visible span{color:var(--blue);text-shadow:0 0 8px rgba(95,212,239,.6)}
 .qico{flex:none;width:18px;height:22px;color:var(--blue);font-size:15px;line-height:1;margin-top:1px}
 .qstep.done .qico{color:var(--dim)}
 .qstep .step-t{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px}
@@ -2240,14 +2256,15 @@ function trDayPanel(k){
   <div class="p-giver"><span>${t==='R'?'':`<i class="giver-mark">!</i>${TR_NAME[t]}（約${trSets(k)===2?15:20}分）`}</span><span class="p-place">家</span></div>
   <div class="p-desc"><p>${trPhase(k)}</p></div>`;
   const wd=(d.getDay()+6)%7, H=hm();
-  let note='';
+  let note='', cv='';
+  const em=x=>`<em>${x}</em>`, carry=(ic,txt)=>`<div class="tr-carry ${ic}"><i class="tc-ico" aria-hidden="true"></i><p>${txt}</p></div>`;
   if(t==='R'&&wd<6&&TR_WEEK[wd]!=='R'){ const sun=trAdd(k,6-wd), m=trMakeup(sun);
-    note=H.ovr[sun]?`<p class="hint">この日の「${TR_SHORT[TR_WEEK[wd]]}」は休みにしました。今週の日曜（${trMD(sun)}）は手で決めた予定になっているので、そこには入りません。</p>`
-      :m&&m.k===k?`<p class="hint">🔁 この日の「${TR_SHORT[m.t]}」は、今週の日曜（${trMD(sun)}）に自動で回しました。</p>`
-      :m?`<p class="hint">この日の「${TR_SHORT[TR_WEEK[wd]]}」は休みにしました。今週の日曜（${trMD(sun)}）には先に休んだ${trMD(m.k)}の「${TR_SHORT[m.t]}」が入っているので、この分は回せません。</p>`:''; }
-  if(wd===6&&!H.ovr[k]){ const m=trMakeup(k); if(m) note=`<p class="hint">🔁 ${trMD(m.k)}に休んだ「${TR_SHORT[m.t]}」を、今日に回しています。</p>`; }
+    note=H.ovr[sun]?carry('stop',`この日の${em(TR_SHORT[TR_WEEK[wd]])}は休みにした。<br>今週の日曜 ${em(trMD(sun))} は予定を決めてあるので、そこには回らない。`)
+      :m&&m.k===k?carry('go',`この日の${em(TR_SHORT[m.t])}は、<br>今週の日曜 ${em(trMD(sun))} に回した。`)
+      :m?carry('stop',`この日の${em(TR_SHORT[TR_WEEK[wd]])}は休みにした。<br>日曜 ${em(trMD(sun))} には先に休んだ ${em(trMD(m.k)+'の'+TR_SHORT[m.t])} が入っているので、回らない。`):''; }
+  if(wd===6&&!H.ovr[k]){ const m=trMakeup(k); if(m) note=carry('come',`${em(trMD(m.k))} に休んだ${em(TR_SHORT[m.t])}を、<br>今日に回してある。`); }
   const natural=wd===6?((trMakeup(k)||{}).t||'R'):TR_WEEK[wd];
-  if(H.ovr[k]==='R'&&natural!=='R') note+=`<p class="hint"><button class="btn small" data-act="trsw" data-v="${natural}">休みを取り消す</button>　予定どおり「${TR_SHORT[natural]}」に戻します</p>`;
+  if(H.ovr[k]==='R'&&natural!=='R') note+=`<button class="tr-undo" data-act="trsw" data-v="${natural}"><i aria-hidden="true">↺</i><span>休みを取り消す</span><small>予定どおり ${TR_SHORT[natural]} に戻す</small></button>`;
   h+=note;
   if(t==='R'){
     h+=`<div class="sec-h"><span>休みの日</span></div><p class="hint">散歩や自転車はいつもどおり。${wd<6?'この日にやるなら':'できなかった鍛錬をここでやるなら'}：${['P','L1','U'].map(x=>`<button class="btn small ghost" data-act="trsw" data-v="${x}">${TR_SHORT[x]}</button>`).join(' ')}</p>`;
