@@ -278,7 +278,8 @@ select{max-width:100%;text-overflow:ellipsis}
   body.pfull .sl-p{font-size:12px}
   .sl-list.on{color:#fff;text-shadow:0 0 6px rgba(95,212,239,.8)}
   body.pfull{background:#08141b}
-  body.pfull .slate{display:flex;flex-direction:column;top:0;bottom:auto;height:var(--vh,100lvh)}
+  body.pfull .app,body.pfull .bg-name,body.pfull .fab{display:none!important}
+  body.pfull .slate{display:flex;flex-direction:column;top:0;bottom:0;height:auto}
   body.pfull .sl-top{position:relative;z-index:6;flex:none;height:auto;padding:calc(env(safe-area-inset-top) + 4px) 14px 8px;background:#08141b;border-bottom:1px solid rgba(95,212,239,.4);box-shadow:none}
   body.pfull .sl-body{position:relative;z-index:0;isolation:isolate;flex:1;height:auto;min-height:0}
   body.pfull .sl-bot{position:relative;z-index:6;flex:none;height:auto;padding:8px 14px max(8px,env(safe-area-inset-bottom));background:#08141b;border-top:1px solid rgba(95,212,239,.4);box-shadow:none}
@@ -371,6 +372,7 @@ select{max-width:100%;text-overflow:ellipsis}
 .rd-stamp.done{opacity:.55}
 .rd-reg{color:rgba(232,210,140,.75)!important;letter-spacing:.32em!important;font-size:14px!important}
 .rd-reg::before{display:none!important}
+.rd-reg.lft{right:auto!important;left:10px!important;text-align:left}.rd-reg.lft i{margin-left:0!important}
 .rd-reg i{display:block;height:5px;margin:3px 0 0 auto;width:70%;background:repeating-linear-gradient(90deg,rgba(232,210,140,.55) 0 3px,transparent 3px 5px,rgba(232,210,140,.55) 5px 6px,transparent 6px 9px)}
 .tr-fin{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:18px 0 4px;padding-top:12px;border-top:1px solid var(--line)}
 .tr-fin.done .r-clear{font-size:15px}
@@ -3074,7 +3076,7 @@ function pathList(){
   const foot=isT&&now>PATH_H0?`<path class="rd-hero" d="${seg(PATH_H0,Math.min(now,PATH_H1))}"/>`:'';
   let hrs=''; for(let m=PATH_H0+60;m<PATH_H1;m+=60){ const y=pm2y(m), x=pRX(y); svg+=`<circle class="rd-stone" cx="${x.toFixed(1)}" cy="${y}" r="2"/>`; hrs+=`<span class="rd-hr ${m%180===0?'big':''}" style="top:${y}px;left:${(x<52?x+8:x-46).toFixed(1)}px;${x<52?'text-align:left':''}">${m/60}:00</span>`; }
   // 地方の名前（地図の地名のように）
-  const regs=pRegions(k).map(([m,n])=>`<div class="rd-reg" style="top:${pm2y(m)+14}px">${n}<i></i></div>`).join('');
+  const regs=pRegions(k).map(([m,n])=>{ const y=pm2y(m)+24, lft=Math.max(pRX(y-10),pRX(y+10))>pW*.5; return `<div class="rd-reg ${lft?'lft':''}" style="top:${pm2y(m)+14}px">${n}<i></i></div>`; }).join('');
   const lateId=isT?(bls.find(b=>!pDone(b)&&!b.fix&&!b.wake&&b.s<now-4&&b.e>now-120)||{}).id:null;
   // 札の名前は省略せず折り返す：幅から行数を見積もって、下の札と重ならないようにする
   const cW=(($('slView')||{}).clientWidth||Math.min(window.innerWidth-40,520))-pCardX-26, cLines=t=>Math.min(4,Math.max(1,Math.ceil(t.length*13.6/Math.max(80,cW))));
@@ -3149,7 +3151,7 @@ function pNamer(k){ const r=pRng(k,991), used=new Set(); return t=>{ let n; for(
 function pRegions(k){ const name=pNamer(k), r=pRng(k,77), out=[]; let m=PATH_H0+20/PX; while(m<PATH_H1){ out.push([m,name(r()<.6?'region':['plain','hill','high','vale','marsh'][Math.floor(r()*5)])]); m+=150+r()*150; } return out; }
 // 地形：山（雪の頂）、湖、川と橋、森、村、馬宿、塔、遺跡を日ごとに散らす
 function pMapArt(k,H){
-  const rnd=pRng(k,5), name=pNamer(k+'#'), W=Math.max(320,(($('slView')||{}).clientWidth||380)), Y0=-900, Y1=H+900;
+  const rnd=pRng(k,5), name=pNamer(k+'#'), W=pW, Y0=-900, Y1=H+900;
   const band=[[0,'#6a5d36'],[pm2y(6*60),'#7a6b3e'],[pm2y(11*60),'#857543'],[pm2y(15*60),'#7b6a3c'],[pm2y(18*60),'#6a5b34'],[pm2y(21*60),'#56492b'],[H,'#4c4026']];
   let o=`<defs><linearGradient id="mpBand" x1="0" y1="0" x2="0" y2="${H}" gradientUnits="userSpaceOnUse">${band.map(([y,c])=>`<stop offset="${(y/H).toFixed(3)}" stop-color="${c}"/>`).join('')}</linearGradient></defs><rect x="0" y="${Y0}" width="100%" height="${Y1-Y0}" fill="url(#mpBand)"/>`;
   const labs=[], far=(x,y,d)=>Math.abs(x-pRX(Math.max(0,Math.min(H,y))))>d||y<0||y>H;
@@ -3182,11 +3184,16 @@ function pMapArt(k,H){
     tower:'<g class="mp-ic twr"><path d="M-4 9 -2.5-12h5L4 9Z"/><circle cy="-14" r="3.2" class="gl"/></g>',
     ruin:'<g class="mp-ic run"><path d="M-9 8V-3h3V8M-2 8V-7h3V8M5 8V1h3v7"/><path d="M-11 9h22" class="dk"/></g>'};
   let pois=''; for(let y=40+rnd()*120;y<H-30;y+=150+rnd()*170){ const t=['village','village','stable','stable','tower','ruin'][Math.floor(rnd()*6)], side=rnd()<.5?-1:1;
-    let x=pRX(y)+side*(26+rnd()*20); if(x<14||x>W-90) x=pRX(y)-side*(30+rnd()*14); pois+=`<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)})">${ic[t]}</g>`; labs.push([x+14,y+4,name(t),'poi']); }
+    let x=pRX(y)+side*(26+rnd()*20); if(x<14||x>W-90) x=pRX(y)-side*(30+rnd()*14); pois+=`<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)})">${ic[t]}</g>`; labs.push([x+14,y+4,name(t),'poi',x]); }
   o+=pois;
   // 地名どうしが重ならないものだけ出す（村・馬宿などを優先）
+  // 地名どうし・道・地方名と重ならないように置く（だめなら道の反対側へ、それでもだめなら出さない）
   const placed=[]; labs.sort((a,b)=>(b[3]==='poi')-(a[3]==='poi'));
-  o+=labs.filter(([x,y,t])=>{ const w=t.length*10.5+6, bx=[x-3,y-11,x+w,y+3]; if(placed.some(q=>bx[0]<q[2]&&bx[2]>q[0]&&bx[1]<q[3]&&bx[3]>q[1])) return false; placed.push(bx); return true; }).map(([x,y,t,c])=>`<text class="mp-lab ${c}" x="${x.toFixed(1)}" y="${y.toFixed(1)}">${t}</text>`).join('');
+  pRegions(k).forEach(([m,n])=>{ const y=pm2y(m)+14, w=n.length*24, lft=Math.max(pRX(y),pRX(y+20))>pW*.5; placed.push(lft?[0,y-2,w+20,y+34]:[W-w-20,y-2,W,y+34]); });
+  const hitRoad=b=>{ for(let yy=b[1]-4;yy<=b[3]+4;yy+=4){ if(yy<0||yy>H) continue; const rx=pRX(yy); if(rx>b[0]-8&&rx<b[2]+8) return true; } return false; };
+  const hit=b=>hitRoad(b)||b[0]<2||b[2]>W-2||placed.some(q=>b[0]<q[2]&&b[2]>q[0]&&b[1]<q[3]&&b[3]>q[1]);
+  o+=labs.filter(L=>{ const [x,y,t]=L, w=t.length*10.5+6; const cands=L[4]!=null?[x,L[4]-w-12]:[x, pRX(y-4)+18, pRX(y-4)-w-18, x-w*.6];
+    for(const cx of cands){ const bx=[cx-3,y-11,cx+w,y+3]; if(!hit(bx)){ L[0]=cx; placed.push(bx); return true; } } return false; }).map(([x,y,t,c])=>`<text class="mp-lab ${c}" x="${x.toFixed(1)}" y="${y.toFixed(1)}">${t}</text>`).join('');
   return o;
 }
 const pRetY=sv=>Math.round(sv.clientHeight*.42);
