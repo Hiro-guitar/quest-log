@@ -304,6 +304,7 @@ select{max-width:100%;text-overflow:ellipsis}
 .sl-band.t{border-radius:6px 6px 0 0}
 .sl-cn.c1{left:-8px;top:-8px}.sl-cn.c2{right:-8px;top:-8px}.sl-cn.c3{left:-8px;bottom:-8px}.sl-cn.c4{right:-8px;bottom:-8px}
 .sl-body{position:relative;height:min(68vh,640px);overflow:hidden}
+@media (min-width:821px){.sl-body{height:min(74vh,820px)}}
 .sl-view{position:absolute;inset:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .sl-view::-webkit-scrollbar{display:none}
 .sl-view .tl{margin:0}
@@ -368,8 +369,13 @@ select{max-width:100%;text-overflow:ellipsis}
 .rd-reg::before{content:"";display:inline-block;width:18px;height:1px;background:rgba(242,236,214,.18);vertical-align:middle;margin-right:10px}
 .rd-line{fill:none;stroke:rgba(10,13,15,.55);stroke-width:5;stroke-linecap:round}
 
-.rd-pre{fill:none;stroke:#fffbe8;stroke-width:3.4;stroke-dasharray:.1 5.5;stroke-linecap:round;filter:drop-shadow(0 0 2px rgba(0,0,0,.8))}
-.rd-post{fill:none;stroke:rgba(255,251,232,.55);stroke-width:7;stroke-linecap:butt;stroke-dasharray:6 3}
+.rd-pre{fill:none;stroke:#7fe0f7;stroke-width:4.5;stroke-dasharray:.1 6.5;stroke-linecap:round;filter:drop-shadow(0 0 3px rgba(95,212,239,.9))}
+.rd-pre-dot{fill:#06202b;stroke:#7fe0f7;stroke-width:1.6}
+.rd-tag{position:absolute;transform:translateY(-50%);z-index:2;font-size:9.5px;font-weight:700;letter-spacing:.08em;padding:1px 5px;border-radius:8px;pointer-events:none;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.5)}
+.rd-tag.pre{color:#06202b;background:#7fe0f7}
+.rd-tag.post{color:#2a1a08;background:#e8c46a}
+.slate.z0 .rd-tag{display:none}
+.rd-post{fill:none;stroke:rgba(232,196,106,.6);stroke-width:9;stroke-linecap:butt;stroke-dasharray:3 3}
 .rc-m{flex:none;font-style:normal;font-size:9.5px;letter-spacing:.04em;color:#e8d28c;border:1px solid rgba(232,210,140,.45);border-radius:2px;padding:0 4px;line-height:15px}
 .pb-mg{display:flex;flex-wrap:wrap;gap:6px}
 .pb-mg button{font-size:12px;padding:4px 10px;border:1px solid var(--line);border-radius:3px;color:var(--muted)}
@@ -2965,9 +2971,9 @@ function pathList(){
   const REG=[[PATH_H0,'暁の丘'],[6*60,'朝の平原'],[11*60,'真昼の街道'],[15*60,'夕暮れの坂'],[18*60,'灯りの宿場'],[21*60,'夜の森']];
   const regs=REG.map(([m,n])=>`<div class="rd-reg" style="top:${pm2y(m)+14}px">${n}<i></i></div>`).join('');
   const lateId=isT?(bls.find(b=>!pDone(b)&&!b.fix&&!b.wake&&b.s<now-4&&b.e>now-120)||{}).id:null;
-  let lastB=-1e9; const cards=bls.map(b=>{ const kd=pKind(b), dn=pDone(b), past=isT&&b.e<=now, cur=isT&&b.s<=now&&now<b.e, r=pRef(b), ttl=pTitle(b), y=pm2y(b.s), y2=pm2y(b.e), x=pRX(y);
-    if(b.pre) svg+=`<path class="rd-pre" d="${seg(Math.max(PATH_H0,b.s-b.pre),b.s)}"/>`;
-    if(b.post) svg+=`<path class="rd-post" d="${seg(b.e,Math.min(PATH_H1,b.e+b.post))}"/>`;
+  let lastB=-1e9, mtags=''; const cards=bls.map(b=>{ const kd=pKind(b), dn=pDone(b), past=isT&&b.e<=now, cur=isT&&b.s<=now&&now<b.e, r=pRef(b), ttl=pTitle(b), y=pm2y(b.s), y2=pm2y(b.e), x=pRX(y);
+    if(b.pre){ const a0=Math.max(PATH_H0,b.s-b.pre), my=pm2y((a0+b.s)/2); svg+=`<path class="rd-pre" d="${seg(a0,b.s)}"/><circle class="rd-pre-dot" cx="${pRX(pm2y(a0)).toFixed(1)}" cy="${pm2y(a0)}" r="3.2"/>`; mtags+=`<span class="rd-tag pre" style="top:${my}px;left:${(pRX(my)+9).toFixed(1)}px">支度</span>`; }
+    if(b.post){ const a1=Math.min(PATH_H1,b.e+b.post), my=pm2y((b.e+a1)/2); svg+=`<path class="rd-post" d="${seg(b.e,a1)}"/>`; mtags+=`<span class="rd-tag post" style="top:${my}px;left:${(pRX(my)+9).toFixed(1)}px">ゆとり</span>`; }
     svg+=`<path class="rd-seg k-${kd} ${dn?'done':''} ${b.wake&&!b.woke?'wake':''}" d="${seg(b.s,b.e)}"/>`;
     const late=b.id===lateId, wake=isT&&b.wake&&!b.woke&&!dn&&b.s<=now, extra=late||wake;
     const cy=Math.max(y-15,lastB+4); lastB=cy+30+(extra?30:0);
@@ -2986,7 +2992,7 @@ function pathList(){
   const hud=`<div class="sl-hud">${nb.length?`<b>${nd}/${nb.length}</b><i></i>`:''}${isT?`<b>${now>=6*60&&now<18*60?'<i class="ck-sun"></i>':'<i class="ck-moon"></i>'}${now<12*60?'AM':'PM'} ${String(Math.floor(now/60)%12||12).padStart(2,'0')}:${String(now%60).padStart(2,'0')}</b><i></i>`:''}${isT&&wx&&wx.temp!=null?`<b>${wx.temp>0?'+':''}${Math.round(wx.temp)}℃</b><i></i>`:''}</div>`;
   h+=`<div class="slate z${pZoom} ${pathBoot?'boot':''}">${SL_DEFS}<i class="sl-cn c1">${slCorner(0,0)}</i><i class="sl-cn c2">${slCorner(1,0)}</i><i class="sl-cn c3">${slCorner(0,1)}</i><i class="sl-cn c4">${slCorner(1,1)}</i>
     ${slBand('t')}<div class="sl-top"><button class="sl-tab" data-act="pathday" data-v="-1">${md(-1)} <i>L</i></button><div class="sl-title"><b>${isT?'今日の旅程':'旅程'}</b><small>${d.getMonth()+1}/${d.getDate()}（${'日月火水木金土'[d.getDay()]}）${holiday(k)?' '+holiday(k):''}</small></div><button class="sl-tab" data-act="pathday" data-v="1"><i>R</i> ${md(1)}</button></div>
-    <div class="sl-body"><div class="sl-view" id="slView"><div class="tl road" id="tl" style="height:${H}px"><svg class="rd-svg" width="100%" height="${H}" aria-hidden="true">${svg}</svg>${regs}${hrs}${cards}${nowM}</div></div><div class="sl-fx" aria-hidden="true"></div>${hud}<div class="sl-ret" id="slRet" aria-hidden="true"><i class="rt-c"></i><span class="rt-l" id="slRetL"></span></div></div>
+    <div class="sl-body"><div class="sl-view" id="slView"><div class="tl road" id="tl" style="height:${H}px"><svg class="rd-svg" width="100%" height="${H}" aria-hidden="true">${svg}</svg>${regs}${hrs}${mtags}${cards}${nowM}</div></div><div class="sl-fx" aria-hidden="true"></div>${hud}<div class="sl-ret" id="slRet" aria-hidden="true"><i class="rt-c"></i><span class="rt-l" id="slRetL"></span></div></div>
     <div class="sl-bot"><span class="sl-zoom"><button data-act="pathzoom" data-v="-1" aria-label="ひろく見る" ${pZoom===0?'disabled':''}>−</button>ズーム<button data-act="pathzoom" data-v="1" aria-label="くわしく見る" ${pZoom===2?'disabled':''}>＋</button></span>${isT?'<button class="sl-p" data-act="pathhere">現在地<i>Y</i></button>':''}<button class="sl-p sl-a" data-act="pathA" id="slA"><span id="slAt">置く</span><i>A</i></button></div>${slBand('b')}</div>`;
   pathBoot=false;
   return h;
