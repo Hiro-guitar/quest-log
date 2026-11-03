@@ -1590,6 +1590,8 @@ function fitTitles(){
     else { el.style.fontSize=(base*0.86).toFixed(1)+'px'; el.style.whiteSpace=''; el.classList.add('two'); }
   });
 }
+window.addEventListener('resize',()=>{ clearTimeout(pLayout._t); pLayout._t=setTimeout(pLayout,120); });
+try{ document.fonts&&document.fonts.ready.then(()=>pLayout()); }catch(e){}
 window.addEventListener('resize',()=>{ clearTimeout(fitTitles._t); fitTitles._t=setTimeout(fitTitles,150); });
 try{ document.fonts&&document.fonts.ready.then(()=>fitTitles()); }catch(e){}
 window.addEventListener('load',()=>setTimeout(fitTitles,50));
@@ -3103,12 +3105,13 @@ function pRetUpdate(){
   ret.dataset.m=hit?'':sm; ret.dataset.id=hit?hit.id:'';
 }
 // 札を実際の高さで並べ直す（同じ時刻の予定や長い名前でも重ならない）。道しるべからの線もつなぎ直す
-function pLayout(){ const tl=$('tl'); if(!tl) return; let last=-1e9;
+function pLayout(){ const tl=$('tl'); if(!tl||!tl.offsetParent) return; let last=-1e9;
   [...tl.querySelectorAll('.rd-card')].sort((a,b)=>(+a.dataset.y)-(+b.dataset.y)||(a.offsetTop-b.offsetTop)).forEach(el=>{ const x=+el.dataset.x, y=+el.dataset.y, top=Math.max(y-15,last+5);
     el.style.top=top+'px'; last=top+el.offsetHeight; const ld=tl.querySelector(`[data-ld="${el.dataset.pb}"]`); if(ld) ld.setAttribute('d',`M${x+8} ${y-12}C${x+34} ${y-12} ${pCardX-26} ${top+15} ${pCardX} ${top+15}`); }); }
 function pathAfter(){
   if(listCat!=='path'||tab!=='list') return;
   const sv=$('slView'); if(!sv) return;
+  pLayout();
   if(!sv.__ret){ sv.__ret=1; sv.addEventListener('scroll',()=>requestAnimationFrame(pRetUpdate),{passive:true});
     sv.addEventListener('wheel',e=>{ if(!e.ctrlKey) return; e.preventDefault(); pZoomBy(e.deltaY<0?1:-1); },{passive:false}); }
   const key=dayView;
