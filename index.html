@@ -263,6 +263,59 @@ select{max-width:100%;text-overflow:ellipsis}
 .hint{font-size:12px;color:var(--dim)}
 .tr-fin{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:18px 0 4px;padding-top:12px;border-top:1px solid var(--line)}
 .tr-fin.done .r-clear{font-size:15px}
+/* 旅程 */
+.path-h{align-items:center}
+.ph-nav{width:30px;height:26px;color:var(--muted);font-size:18px;line-height:1}
+.ph-nav:hover{color:var(--text)}
+.path-un{margin:4px 0 12px;padding:10px 12px;background:linear-gradient(90deg,rgba(0,0,0,0),rgba(0,0,0,.28) 10%,rgba(0,0,0,.28) 90%,rgba(0,0,0,0));position:relative}
+.path-un::before,.path-un::after{content:"";position:absolute;left:4%;right:4%;height:1px;background:linear-gradient(90deg,transparent,rgba(242,194,48,.45),transparent)}
+.path-un::before{top:0}.path-un::after{bottom:0}
+.pu-h{font-size:11px;letter-spacing:.18em;color:rgba(242,236,214,.6);margin-bottom:6px;display:flex;justify-content:space-between;gap:8px}
+.pu-h small{letter-spacing:.04em;color:var(--dim)}
+.pu-i{display:flex;align-items:baseline;gap:8px;width:100%;text-align:left;padding:6px 4px;font-size:13px;color:var(--text);border-radius:3px}
+.pu-i:hover{background:var(--blue-soft)}
+.pu-i small{color:var(--muted);font-size:11px;margin-left:auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:40%}
+.pu-pin{flex:none;width:8px;height:8px;transform:rotate(45deg) translateY(-1px);border:1.5px solid var(--blue);box-shadow:0 0 6px rgba(95,212,239,.5)}
+.pu-i.tr .pu-pin{border-color:var(--orange);box-shadow:0 0 6px rgba(240,166,64,.5)}
+.path-empty{text-align:center;padding:4px 0 10px;display:grid;gap:6px;justify-items:center}
+.tl{position:relative;margin:6px 0 30px;user-select:none;-webkit-user-select:none;touch-action:pan-y;cursor:crosshair}
+.tl-hr{position:absolute;left:0;right:0;border-top:1px solid rgba(242,236,214,.10)}
+.tl-hr span{position:absolute;left:0;top:-8px;font-size:10.5px;letter-spacing:.06em;color:var(--dim);font-variant-numeric:tabular-nums;background:transparent;width:40px;text-align:right}
+.tl-half{position:absolute;left:48px;right:0;border-top:1px dashed rgba(242,236,214,.05)}
+.tl-road{position:absolute;left:47px;top:0;bottom:0;width:2px;background:linear-gradient(rgba(216,208,180,0),rgba(216,208,180,.22) 4%,rgba(216,208,180,.22) 96%,rgba(216,208,180,0))}
+.tl-b{position:absolute;left:56px;right:4px;padding:5px 10px 5px 12px;border-radius:3px;background:rgba(14,19,22,.82);border:1px solid rgba(242,236,214,.16);overflow:hidden;cursor:grab;display:flex;flex-direction:column;gap:1px;transition:box-shadow .15s,border-color .15s}
+.tl-b::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:rgba(216,208,180,.45)}
+.tl-b::after{content:"";position:absolute;left:-13px;top:7px;width:8px;height:8px;transform:rotate(45deg);background:#0b0f12;border:1.5px solid rgba(216,208,180,.6)}
+.tl-b.thin{flex-direction:row;align-items:center;gap:10px;padding-top:0;padding-bottom:0}
+.tl-b.thin::after{top:calc(50% - 5px)}
+.tb-t{display:flex;align-items:center;gap:6px;min-width:0;font-size:13px;color:var(--text)}
+.tb-t b{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tb-t .ico{flex:none;width:14px;height:14px;color:var(--muted)}
+.tb-time{font-size:10.5px;color:var(--muted);letter-spacing:.04em;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tb-dot{flex:none;width:5px;height:5px;border-radius:50%;background:var(--dim)}
+.tb-grip{position:absolute;left:30%;right:30%;bottom:0;height:9px;cursor:ns-resize}
+.tb-grip::after{content:"";position:absolute;left:50%;bottom:3px;width:22px;margin-left:-11px;height:2px;border-radius:2px;background:rgba(242,236,214,.18)}
+.tl-b.k-q{border-color:rgba(95,212,239,.35)}
+.tl-b.k-q::before{background:var(--blue);box-shadow:0 0 8px rgba(95,212,239,.6)}
+.tl-b.k-q::after{border-color:var(--blue);box-shadow:0 0 6px rgba(95,212,239,.6)}
+.tl-b.k-tr{border-color:rgba(240,166,64,.35)}
+.tl-b.k-tr::before{background:var(--orange);box-shadow:0 0 8px rgba(240,166,64,.5)}
+.tl-b.k-tr::after{border-color:var(--orange)}
+.tl-b.k-fix{background:rgba(14,19,22,.55);border-style:dashed;border-color:rgba(242,236,214,.12)}
+.tl-b.k-fix .tb-t{color:#cfc8b0}
+.tl-b.done{opacity:.55}
+.tl-b.done::after{background:var(--dim)}
+.tb-clear{margin-left:auto;font-size:10px;font-style:italic;font-weight:900;letter-spacing:.05em;color:var(--orange);flex:none}
+.tl-b.past{opacity:.72}
+.tl-b.cur{box-shadow:0 0 0 1px rgba(95,212,239,.5),0 0 18px rgba(95,212,239,.18)}
+.tl-b.sel{border-color:var(--text);box-shadow:0 0 0 1px var(--text)}
+.tl-b.drag{z-index:5;cursor:grabbing;box-shadow:0 8px 22px rgba(0,0,0,.55),0 0 0 1px var(--blue);opacity:.95}
+body.pdrag{cursor:grabbing}
+.tl-now{position:absolute;left:40px;right:0;height:0;border-top:1.5px solid var(--blue);box-shadow:0 0 8px var(--blue);z-index:4;pointer-events:none}
+.tl-now span{position:absolute;right:2px;top:-17px;font-size:10px;color:var(--blue);letter-spacing:.06em;text-shadow:0 0 6px rgba(95,212,239,.6)}
+.tn-arrow{position:absolute;left:1px;top:-6px;width:0;height:0;border-top:5.5px solid transparent;border-bottom:5.5px solid transparent;border-left:9px solid var(--blue);filter:drop-shadow(0 0 4px var(--blue))}
+.pb-chk{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin-top:4px}
+.btn.danger{color:var(--red)}
 .tr-carry{position:relative;display:flex;gap:12px;align-items:center;margin:16px -6px 6px;padding:12px 14px;background:linear-gradient(90deg,rgba(0,0,0,0),rgba(0,0,0,.32) 12%,rgba(0,0,0,.32) 88%,rgba(0,0,0,0))}
 .tr-carry::before,.tr-carry::after{content:"";position:absolute;left:4%;right:4%;height:1px;background:linear-gradient(90deg,transparent,rgba(242,194,48,.55),transparent)}
 .tr-carry::before{top:0}.tr-carry::after{bottom:0}
@@ -670,6 +723,7 @@ const TYPES={
   mini:{label:'ミニチャレンジ',hint:'ちょっとした用事・雑用。左の○で即クリア',mark:'○',child:'mini'}
 };
 const ICON={
+  path:'<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 15c0-3 6-3.5 6-7S7 4.5 7 1" fill="none" stroke="currentColor" stroke-width="1.4" stroke-dasharray="2 1.6"/><path d="M11.5 1.2a2.3 2.3 0 0 1 2.3 2.3c0 1.7-2.3 4-2.3 4S9.2 5.2 9.2 3.5a2.3 2.3 0 0 1 2.3-2.3Z" fill="currentColor"/></svg>',
   today:'<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="3" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 .8v2.4M8 12.8v2.4M.8 8h2.4M12.8 8h2.4M2.9 2.9l1.7 1.7M11.4 11.4l1.7 1.7M2.9 13.1l1.7-1.7M11.4 4.6l1.7-1.7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>',
   main:'<svg viewBox="0 0 24 16" aria-hidden="true"><path d="M12 14C9.5 10 5.5 8.6 1 9.4 4 7.2 7.4 6.6 10.2 7.5 7.6 5.6 4.8 3.4 3 1c3.8 1.1 7 3.3 9 7 2-3.7 5.2-5.9 9-7-1.8 2.4-4.6 4.6-7.2 6.5 2.8-.9 6.2-.3 9.2 1.9-4.5-.8-8.5.6-11 4.6Z" fill="currentColor"/></svg>',
   challenge:'<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.2 14.8 8 8 14.8 1.2 8Z" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 10.6V8.4C6.2 7 7 6.2 8 6.2S9.8 7 9.8 8.4v2.2" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>',
@@ -948,11 +1002,11 @@ function addSteps(q,text){
 }
 
 /* ---------- render ---------- */
-const CAT_NAMES={today:'今日の冒険',main:'メインチャレンジ',challenge:'チャレンジ',mini:'ミニチャレンジ',train:'鍛錬',memory:'思い出'};
-const CATS=['today','main','challenge','mini','train'];
+const CAT_NAMES={today:'今日の冒険',path:'旅程',main:'メインチャレンジ',challenge:'チャレンジ',mini:'ミニチャレンジ',train:'鍛錬',memory:'思い出'};
+const CATS=['today','path','main','challenge','mini','train'];
 let toolSel='sync', bkList=null, memEdit=null;
 function render(){sortAllSteps();renderLv();renderHud();renderTabs();renderList();renderDetail();renderHints();
-  $('split').classList.toggle('has-sel',!!selId||(tab==='tools'&&toolPicked)||(tab==='pouch'&&!!pouchSel)||(tab==='list'&&listCat==='train'&&!!trSel));
+  $('split').classList.toggle('has-sel',!!selId||(tab==='tools'&&toolPicked)||(tab==='pouch'&&!!pouchSel)||(tab==='list'&&listCat==='train'&&!!trSel)||(tab==='list'&&listCat==='path'&&!!pathSel));
 }
 let toolPicked=false;
 function renderLv(){ setTimeout(syncBadge,0); setTimeout(wxRender,0);
@@ -1398,6 +1452,7 @@ function renderList(){
   if(tab==='pouch'){ L.innerHTML=pouchList(); fitTitles(); return; }
   if(tab!=='tools'&&listCat==='today'){ L.innerHTML=connectBanner()+todayList(); fitTitles(); return; }
   if(tab!=='tools'&&listCat==='train'){ L.innerHTML=connectBanner()+trList(); fitTitles(); return; }
+  if(tab!=='tools'&&listCat==='path'){ L.innerHTML=connectBanner()+pathList(); setTimeout(pathAfter,0); return; }
   if(tab!=='tools'&&listCat==='memory'){
     const ms=state.quests.filter(q=>q.done&&q.type!=='mini').sort((a,b)=>(b.doneAt||0)-(a.doneAt||0));
     let m=catBar('memory')+'<div class="rows">';
@@ -1474,6 +1529,7 @@ function renderDetail(){
   if(tab==='rest'){ D.innerHTML=`<div class="panel p-empty fire-panel"><div class="fire">🔥</div><p>疲れた日や体調が悪い日は、焚き火で休もう。<br>休んだ日の分は明日に回して、持ち越しには数えません。</p></div>`; return; }
   if(tab==='tools'){ D.innerHTML=`<div class="panel"><button class="back" data-act="back">‹ 一覧へ</button>${toolPanel()}</div>`; return; }
   if(tab==='list'&&listCat==='train'){ D.innerHTML=trPanel(); return; }
+  if(tab==='list'&&listCat==='path'){ D.innerHTML=pathPanel(); return; }
   const q=findQ(selId);
   if(!q){ D.innerHTML=`<div class="panel p-empty"><div class="p-wm">${SECBG[listCat]}</div><p>左のリストから選ぶと、ここに説明が表示されます</p></div>`; return; }
   editing ? renderEdit(D,q) : renderView(D,q);
@@ -1544,6 +1600,7 @@ function renderHints(){
   else if(tab==='tools'){ h=toolPicked?hint('back','閉じる','B'):''; }
   else if(!q&&listCat==='memory'){ h=''; }
   else if(!q&&listCat==='train'){ h=trSel?hint('trback','閉じる','B'):''; }
+  else if(!q&&listCat==='path'){ h=pathSel?hint('pathback','道へもどる','B'):''; }
   else if(!q){ h=hint('newcur',listCat==='today'?'この日にチャレンジを追加':`新しい${CAT_NAMES[listCat]}`,'X'); }
   else if(editing){ h=(q===draft?hint('delete','やめる','B'):hint('delete','削除','','danger'))+hint('doneedit',q===draft?'登録する':'完了','A','gold'); }
   else if(q.done){ h=hint('back','閉じる','B')+hint('edit','編集','Y')+hint('reopen','未達成に戻す','','pc-only'); }
@@ -1606,6 +1663,7 @@ function renderEdit(D,q){
 document.addEventListener('click',e=>{
   const b=e.target.closest('[data-act]'); if(!b) return;
   const a=b.dataset.act, q=findQ(selId);
+  if(a.startsWith('path')&&pathAct(a,b)) return;
   switch(a){
     case 'tab': if(!draftLeave()) break; if(editing){cleanupEmpty();editing=false} tab=b.dataset.v; if(window.innerWidth<=820) selId=null; render(); break;
     case 'openq': { const t=findQ(b.dataset.id); if(!t) break; tab='list'; listCat=t.type; selId=t.id; pouchSel=null; editing=false; render(); window.scrollTo({top:0}); break; }
@@ -1754,6 +1812,7 @@ document.addEventListener('click',e=>{
 });
 
 document.addEventListener('input',e=>{
+  if(pathInput(e)) return;
   const q=findQ(selId); if(!q) return;
   const f=e.target.dataset.field, sid=e.target.dataset.steptext;
   if(f){
@@ -1768,6 +1827,7 @@ document.addEventListener('input',e=>{
   }
 });
 document.addEventListener('change',e=>{
+  if(e.target.type==='checkbox'&&pathInput(e)) return;
   if(trOnChange(e)) return;
   if(e.target.dataset.chap){ state.chap.cur[e.target.dataset.chap]=e.target.value.trim(); state.chap.u=Date.now(); save(); renderList(); return; }
   if(e.target.dataset.sdate||e.target.dataset.stime){
@@ -2733,6 +2793,159 @@ document.addEventListener('keydown',e=>{
   else if(e.key==='Escape'&&selId){ selId=null; render(); }
 });
 
+/* ---------- 旅程（その日の予定を時間の道に置く） ---------- */
+const PATH_H0=4*60, PATH_H1=24*60, PX=1.15, SNAP=15;
+let pathSel=null, pathScrolled=null, pathDrag=null;
+const pm2y=m=>(m-PATH_H0)*PX;
+const pfmt=m=>Math.floor(m/60)+':'+String(m%60).padStart(2,'0');
+const pnow=()=>{ const d=new Date(); return d.getHours()*60+d.getMinutes(); };
+function plan(){ state.plan=state.plan||{}; if(!state.plan.d||typeof state.plan.d!=='object') state.plan.d={}; if(!state.plan.tpl||typeof state.plan.tpl!=='object') state.plan.tpl={}; return state.plan; }
+function pDay(k){ const P=plan(); return P.d[k]||{}; }
+function pBlocks(k){ return Object.entries(pDay(k)).filter(([id,b])=>b&&!b.del).map(([id,b])=>({id,...b})).sort((a,b)=>a.s-b.s||a.e-b.e); }
+function pSet(k,id,patch){ const P=plan(); const day={...(P.d[k]||{})}; day[id]={...(day[id]||{}),...patch,u:Date.now()}; P.d={...P.d,[k]:day}; save(); }
+function pDel(k,id){ pSet(k,id,{del:1}); }
+// 何に結びついた区間か
+function pRef(b){ if(b.q){ const q=findQ(b.q); if(!q) return null; const s=b.sid?(q.steps||[]).find(x=>x.id===b.sid):null; return {q,s,done:s?!!s.done:!!q.done,title:s?s.text:q.title,sub:s?q.title:''}; } return null; }
+function pTitle(b){ if(b.tr) return '鍛錬：'+(TR_LAB[trType(b.tr)]||'鍛錬'); const r=pRef(b); return r?r.title:(b.t||''); }
+function pKind(b){ return b.tr?'tr':b.q?'q':b.fix?'fix':'free'; }
+function pDone(b){ if(b.tr) return !!(hm().days[b.tr]||{}).train; const r=pRef(b); return r?r.done:!!b.done; }
+// まだ道に置いていない、その日の冒険
+function pUnplaced(k){
+  const bl=pBlocks(k), has=(q,s)=>bl.some(b=>b.q===q&&(b.sid||'')===(s||''));
+  const out=dayItems(k).filter(x=>!(x.s?x.s.done:x.q.done)&&!has(x.q.id,x.s?x.s.id:'')).map(x=>({q:x.q.id,sid:x.s?x.s.id:'',t:x.s?x.s.text:x.q.title,sub:x.s?x.q.title:''}));
+  const tt=trType(k); if(tt&&tt!=='R'&&!bl.some(b=>b.tr===k)&&!(hm().days[k]||{}).train) out.unshift({tr:k,t:'鍛錬：'+TR_LAB[tt]});
+  return out;
+}
+// 空いている時間を探す（今より後、なければ朝から）
+function pFree(k,len){ const bl=pBlocks(k), start=k===ymd()?Math.ceil(Math.max(pnow(),6*60)/SNAP)*SNAP:9*60;
+  for(let s=start;s+len<=PATH_H1;s+=SNAP){ if(!bl.some(b=>b.s<s+len&&b.e>s)) return s; }
+  for(let s=6*60;s+len<=PATH_H1;s+=SNAP){ if(!bl.some(b=>b.s<s+len&&b.e>s)) return s; }
+  return start; }
+function pTpl(k){ const wd=new Date(k+'T00:00:00').getDay(); return (wd===0||wd===6||holiday(k))?'we':'wk'; }
+
+function pathList(){
+  const k=dayView, d=new Date(k+'T00:00:00'), isT=k===ymd(), bl=pBlocks(k), P=plan(), tk=pTpl(k), tpl=(P.tpl[tk]||{}).b||[];
+  let h=catBar('path');
+  h+=`<div class="day-h path-h"><button class="ph-nav" data-act="pathday" data-v="-1" aria-label="前の日">‹</button><span>${isT?'今日　':''}${d.getMonth()+1}/${d.getDate()}（${'日月火水木金土'[d.getDay()]}）${holiday(k)?`<b class="hol">${holiday(k)}</b>`:''}</span><button class="ph-nav" data-act="pathday" data-v="1" aria-label="次の日">›</button></div>`;
+  const un=pUnplaced(k);
+  if(un.length) h+=`<div class="path-un"><div class="pu-h">まだ道に置いていない冒険<small>押すと空いている時間に置く</small></div>${un.map((x,i)=>`<button class="pu-i ${x.tr?'tr':''}" data-act="pathput" data-i="${i}"><i class="pu-pin" aria-hidden="true"></i><span>${esc(x.t||'(無題)')}</span>${x.sub?`<small>${esc(x.sub)}</small>`:''}</button>`).join('')}</div>`;
+  if(!bl.length) h+=`<div class="path-empty">${tpl.length?`<button class="btn" data-act="pathtpl">いつもの旅程（${tk==='we'?'休日':'平日'}）を敷く</button>`:''}<p class="hint">道をタップすると、その時刻に予定を置けます</p></div>`;
+  // 時間の道
+  let g=''; for(let m=PATH_H0;m<=PATH_H1;m+=60) g+=`<div class="tl-hr" style="top:${pm2y(m)}px"><span>${m/60}:00</span></div>`;
+  for(let m=PATH_H0+30;m<PATH_H1;m+=60) g+=`<div class="tl-half" style="top:${pm2y(m)}px"></div>`;
+  const now=pnow();
+  const blocks=bl.map(b=>{ const kd=pKind(b), dn=pDone(b), past=isT&&b.e<=now, cur=isT&&b.s<=now&&now<b.e, r=pRef(b), ttl=pTitle(b), hgt=Math.max(16,(b.e-b.s)*PX-3);
+    return `<div class="tl-b k-${kd} ${dn?'done':''} ${past&&!dn?'past':''} ${cur?'cur':''} ${pathSel===b.id?'sel':''} ${hgt<34?'thin':''}" data-pb="${b.id}" style="top:${pm2y(b.s)+1}px;height:${hgt}px">
+      <span class="tb-t">${b.tr?ico('train'):r?ico(r.q.type):b.fix?'<i class="tb-dot"></i>':''}<b>${esc(ttl||'（名前なし）')}</b>${dn?'<em class="tb-clear">CLEAR</em>':''}</span>
+      <span class="tb-time">${pfmt(b.s)}–${pfmt(b.e)}${r&&r.sub?`　${esc(r.sub)}`:''}</span><i class="tb-grip" data-pgrip="${b.id}" aria-hidden="true"></i></div>`; }).join('');
+  const nowM=isT&&now>=PATH_H0&&now<PATH_H1?`<div class="tl-now" style="top:${pm2y(now)}px"><i class="tn-arrow" aria-hidden="true"></i><span>${pfmt(now)}</span></div>`:'';
+  h+=`<div class="tl" id="tl" style="height:${pm2y(PATH_H1)+8}px">${g}<div class="tl-road" aria-hidden="true"></div>${blocks}${nowM}</div>`;
+  return h;
+}
+function pathAfter(){
+  if(listCat!=='path'||tab!=='list') return;
+  const key=dayView; if(pathScrolled===key) return; pathScrolled=key;
+  const tl=$('tl'); if(!tl) return;
+  const bl=pBlocks(key), m=key===ymd()?pnow()-60:(bl[0]?bl[0].s-30:7*60);
+  const y=tl.getBoundingClientRect().top+window.scrollY+pm2y(Math.max(PATH_H0,m))-120;
+  window.scrollTo({top:Math.max(0,y)});
+}
+function pathPanel(){
+  const k=dayView, b=pathSel&&pBlocks(k).find(x=>x.id===pathSel);
+  if(!b){ const P=plan(), tk=pTpl(k), n=pBlocks(k).filter(x=>!x.q&&!x.tr).length;
+    return `<div class="panel path-panel"><div class="p-wm">${SECBG.today}</div><h2 class="p-title">旅程</h2>
+    <div class="p-desc"><p>その日の予定を、時間の道に置いていこう。道の空いている所をタップすると予定を置ける。置いた予定は、押したまま動かすと時間をずらせる（下の端を動かすと長さが変わる）。</p></div>
+    <div class="sec-h"><span>いつもの旅程</span></div>
+    <p class="hint">起床・散歩・夕食のように毎日ほぼ同じ予定は「いつもの旅程」にしておくと、何も置いていない日にまとめて敷ける。</p>
+    <div class="p-acts"><button class="btn small" data-act="pathsave" data-v="wk" ${n?'':'disabled'}>この日の予定を平日の型にする</button><button class="btn small" data-act="pathsave" data-v="we" ${n?'':'disabled'}>休日の型にする</button></div>
+    <p class="hint">平日の型：${((P.tpl.wk||{}).b||[]).length}件　休日の型：${((P.tpl.we||{}).b||[]).length}件（冒険や鍛錬に結びついた予定は型に入れない）</p></div>`; }
+  const r=pRef(b), kd=pKind(b), dn=pDone(b), opts=(sel,min,max)=>{ let o=''; for(let m=min;m<=max;m+=SNAP) o+=`<option value="${m}" ${m===sel?'selected':''}>${pfmt(m)}</option>`; return o; };
+  let h=`<div class="panel path-panel"><button class="back" data-act="pathback">‹ 道へもどる</button>
+  <h2 class="p-title">${esc(pTitle(b)||'（名前なし）')}</h2>`;
+  if(r) h+=`<div class="p-giver"><span>${ico(r.q.type)} ${esc(r.sub||TYPES[r.q.type].label)}</span><button class="btn small ghost" data-act="openq" data-id="${r.q.id}">冒険を開く</button></div>`;
+  if(b.tr) h+=`<div class="p-giver"><span>${ico('train')} 鍛錬</span><button class="btn small ghost" data-act="trday" data-v="${b.tr}">鍛錬を開く</button></div>`;
+  h+=`<div class="form" style="margin-top:12px">`;
+  if(kd==='free'||kd==='fix') h+=`<div class="f"><label>予定</label><input type="text" id="pbTitle" value="${esc(b.t||'')}" placeholder="例：図書館で仕事、子どもと散歩"></div>`;
+  h+=`<div class="f2"><div class="f"><label>はじまり</label><select id="pbS">${opts(b.s,PATH_H0,PATH_H1-SNAP)}</select></div><div class="f"><label>おわり</label><select id="pbE">${opts(b.e,PATH_H0+SNAP,PATH_H1)}</select></div></div>`;
+  if(kd==='free'||kd==='fix') h+=`<label class="pb-chk"><input type="checkbox" id="pbFix" ${b.fix?'checked':''}><i></i>毎日のこと（いつもの旅程に入れる）</label>`;
+  h+=`</div>`;
+  if(!r&&!b.tr) h+=`<div class="p-acts"><button class="btn ${dn?'':'primary'}" data-act="pathdone">${dn?'終えた印を外す':'この予定を終えた'}</button></div>`;
+  else if(r&&!r.s) h+=`<p class="hint">終えたら、冒険の画面で達成を報告しよう。</p>`;
+  else if(r&&r.s) h+=`<div class="p-acts"><button class="btn ${dn?'':'primary'}" data-act="pathstep">${dn?'工程の印を外す':'この工程を終えた'}</button></div>`;
+  h+=`<div class="sec-h"><span>遅れたとき</span></div><p class="hint">この予定から後ろを、まとめてずらす</p>
+  <div class="p-acts">${[15,30,60].map(n=>`<button class="btn small" data-act="pathshift" data-v="${n}">＋${n<60?n+'分':'1時間'}</button>`).join('')}${[-15].map(n=>`<button class="btn small ghost" data-act="pathshift" data-v="${n}">−15分</button>`).join('')}</div>
+  <div class="p-acts" style="margin-top:22px"><button class="btn small ghost danger" data-act="pathdel">この予定を道から外す</button></div></div>`;
+  return h;
+}
+function pathShift(k,from,n){ const P=plan(), day={...(P.d[k]||{})}, now=Date.now();
+  Object.entries(day).forEach(([id,b])=>{ if(!b||b.del||b.s<from) return; const len=b.e-b.s; let s=Math.min(PATH_H1-len,Math.max(PATH_H0,b.s+n)); day[id]={...b,s,e:s+len,u:now}; });
+  P.d={...P.d,[k]:day}; save(); }
+function pathAct(a,b){
+  const k=dayView;
+  switch(a){
+    case 'pathday': dayView=ymd(new Date(new Date(dayView+'T00:00:00').getTime()+(+b.dataset.v)*DAY+DAY/2)); pathSel=null; pathScrolled=null; render(); return true;
+    case 'pathback': pathSel=null; render(); return true;
+    case 'pathput': { const x=pUnplaced(k)[+b.dataset.i]; if(!x) return true; const len=x.tr?30:60, s=pFree(k,len), id=uid();
+      pSet(k,id,{s,e:Math.min(PATH_H1,s+len),...(x.tr?{tr:x.tr}:{q:x.q,sid:x.sid})}); pathSel=id; pathScrolled=null; render(); return true; }
+    case 'pathtpl': { const tpl=(plan().tpl[pTpl(k)]||{}).b||[]; const P=plan(), day={...(P.d[k]||{})}, now=Date.now(); tpl.forEach(t=>{ day[uid()]={s:t.s,e:t.e,t:t.t,fix:1,u:now}; }); P.d={...P.d,[k]:day}; save(); pathScrolled=null; render(); toast('いつもの旅程を敷いた'); return true; }
+    case 'pathsave': { const bl=pBlocks(k).filter(x=>!x.q&&!x.tr&&(x.fix||true)).map(x=>({s:x.s,e:x.e,t:x.t||''})); plan().tpl={...plan().tpl,[b.dataset.v]:{b:bl,u:Date.now()}}; save(); renderDetail(); toast(`${b.dataset.v==='we'?'休日':'平日'}の型にした（${bl.length}件）`); return true; }
+    case 'pathdone': { const x=pBlocks(k).find(y=>y.id===pathSel); if(x){ pSet(k,x.id,{done:!x.done}); if(!x.done) gain(5); render(); } return true; }
+    case 'pathstep': { const x=pBlocks(k).find(y=>y.id===pathSel), r=x&&pRef(x); if(r&&r.s) toggleStep(r.q.id,r.s.id); render(); return true; }
+    case 'pathshift': { const x=pBlocks(k).find(y=>y.id===pathSel); if(x){ pathShift(k,x.s,+b.dataset.v); render(); } return true; }
+    case 'pathdel': { if(pathSel){ pDel(k,pathSel); pathSel=null; render(); } return true; }
+  }
+  return false;
+}
+function pathInput(e){
+  if(listCat!=='path'||!pathSel) return false; const k=dayView, id=pathSel, t=e.target;
+  if(t.id==='pbTitle'){ pSet(k,id,{t:t.value.slice(0,80)}); renderList(); return true; }
+  if(t.id==='pbS'||t.id==='pbE'){ const b=pBlocks(k).find(x=>x.id===id); if(!b) return true; let s=+$('pbS').value, en=+$('pbE').value;
+    if(t.id==='pbS'){ const len=b.e-b.s; en=Math.min(PATH_H1,s+len); } if(en<=s) en=Math.min(PATH_H1,s+SNAP);
+    pSet(k,id,{s,e:en}); render(); return true; }
+  if(t.id==='pbFix'){ pSet(k,id,{fix:t.checked?1:0}); renderList(); return true; }
+  return false;
+}
+// 道の上の操作：空いている所をタップ→予定を置く／予定を押したまま動かす→時間をずらす／下の端→長さを変える
+(function(){
+  const snap=m=>Math.round(m/SNAP)*SNAP;
+  const yOf=(e,tl)=>e.clientY-tl.getBoundingClientRect().top;
+  let pend=null, timer=null;
+  function start(e){
+    const tl=e.target.closest('#tl'); if(!tl||listCat!=='path') return;
+    const bEl=e.target.closest('[data-pb]'), grip=e.target.closest('[data-pgrip]');
+    pend={x:e.clientX,y:e.clientY,tl,id:bEl&&bEl.dataset.pb,grip:!!grip,el:bEl,touch:e.pointerType!=='mouse',started:false,pid:e.pointerId};
+    if(pend.id&&pend.touch){ timer=setTimeout(()=>{ if(pend&&!pend.moved){ begin(); navigator.vibrate&&navigator.vibrate(12); } },320); }
+  }
+  function begin(){ const b=pBlocks(dayView).find(x=>x.id===pend.id); if(!b) return; pend.started=true; pend.b=b; pend.el.classList.add('drag'); document.body.classList.add('pdrag'); }
+  function move(e){
+    if(!pend) return; const dx=e.clientX-pend.x, dy=e.clientY-pend.y;
+    if(!pend.started){ if(Math.hypot(dx,dy)<=7) return; pend.moved=true; if(pend.id&&!pend.touch) begin(); else { clearTimeout(timer); pend=null; return; } }
+    if(!pend||!pend.started) return; e.preventDefault();
+    const b=pend.b, dm=snap(dy/PX);
+    if(pend.grip){ const en=Math.max(b.s+SNAP,Math.min(PATH_H1,b.e+dm)); pend.ns=b.s; pend.ne=en; }
+    else { const len=b.e-b.s, s=Math.max(PATH_H0,Math.min(PATH_H1-len,b.s+dm)); pend.ns=s; pend.ne=s+len; }
+    pend.el.style.top=(pm2y(pend.ns)+1)+'px'; pend.el.style.height=Math.max(16,(pend.ne-pend.ns)*PX-3)+'px';
+    const tm=pend.el.querySelector('.tb-time'); if(tm) tm.textContent=pfmt(pend.ns)+'–'+pfmt(pend.ne);
+  }
+  function end(e){
+    clearTimeout(timer); if(!pend) return; const p=pend; pend=null; document.body.classList.remove('pdrag');
+    if(p.started){ if(p.ns!=null) pSet(dayView,p.id,{s:p.ns,e:p.ne}); render(); return; }
+    if(p.moved) return;
+    if(p.id){ pathSel=p.id; render(); if(window.innerWidth<=820) window.scrollTo({top:0}); return; }
+    // 空いている所：その時刻に1時間の予定を置く
+    const m=snap(PATH_H0+yOf(e,p.tl)/PX-SNAP/2), bl=pBlocks(dayView), s=Math.max(PATH_H0,Math.min(PATH_H1-SNAP,m));
+    const nx=bl.filter(x=>x.s>=s+SNAP).map(x=>x.s)[0]||PATH_H1, en=Math.min(s+60,nx,PATH_H1), id=uid();
+    pSet(dayView,id,{s,e:Math.max(en,s+SNAP),t:''}); pathSel=id; render(); if(window.innerWidth<=820) window.scrollTo({top:0});
+    setTimeout(()=>{ const i=$('pbTitle'); i&&i.focus(); },60);
+  }
+  document.addEventListener('pointerdown',start);
+  document.addEventListener('pointermove',move,{passive:false});
+  document.addEventListener('pointerup',end);
+  document.addEventListener('pointercancel',()=>{ clearTimeout(timer); if(pend&&pend.started){ pend=null; document.body.classList.remove('pdrag'); render(); } else pend=null; });
+  document.addEventListener('touchmove',e=>{ if(pend&&pend.started) e.preventDefault(); },{passive:false});
+  setInterval(()=>{ if(listCat==='path'&&tab==='list'&&!pend&&dayView===ymd()&&!document.hidden){ const n=document.querySelector('.tl-now'); const m=pnow(); if(n){ n.style.top=pm2y(m)+'px'; n.querySelector('span').textContent=pfmt(m); } } },30000);
+})();
+
 /* ---------- PCとスマホのデータ同期 ---------- */
 let qSigs=null;
 function stamp(){
@@ -2740,7 +2953,7 @@ function stamp(){
   state.quests.forEach(q=>{ const {u,...rest}=q; const sg=JSON.stringify(rest); cur[q.id]=sg;
     if(qSigs&&qSigs[q.id]!==sg){ q.u=now; state.pristine=false; } if(!q.u) q.u=q.created||now; });
   if(qSigs) Object.keys(qSigs).forEach(id=>{ if(!cur[id]){ state.deleted[id]=now; state.pristine=false; } });
-  const ex=[state.xp,state.seeds||0,state.moonDone||'',Object.keys(state.rested||{}).length,hmRev(),state.rupeeEarned||0,state.shrines||0,Object.keys(state.purchases||{}).length,JSON.stringify(state.shop||{}),JSON.stringify(state.chap||{}),JSON.stringify(state.rev||{}),JSON.stringify(state.mats||{}),JSON.stringify(state.matHist||{})].join('|');
+  const ex=[state.xp,state.seeds||0,state.moonDone||'',Object.keys(state.rested||{}).length,hmRev(),state.rupeeEarned||0,state.shrines||0,Object.keys(state.purchases||{}).length,JSON.stringify(state.shop||{}),JSON.stringify(state.chap||{}),JSON.stringify(state.rev||{}),JSON.stringify(state.mats||{}),JSON.stringify(state.matHist||{}),JSON.stringify(state.plan||{})].join('|');
   if(qSigs&&ex!==stamp.ex) state.pristine=false;
   stamp.ex=ex;
   Object.keys(state.deleted).forEach(id=>{ if(now-state.deleted[id]>90*DAY) delete state.deleted[id]; });
@@ -2752,9 +2965,11 @@ function mergeStates(a,b){
   const map={};
   [...(a.quests||[]),...(b.quests||[])].forEach(q=>{ const e=map[q.id]; if(!e||(q.u||0)>(e.u||0)) map[q.id]=q; });
   const quests=Object.values(map).filter(q=>!(del[q.id]&&del[q.id]>=(q.u||0)));
-  return {xp:Math.max(a.xp||0,b.xp||0),seeds:Math.max(a.seeds||0,b.seeds||0),rested:{...(a.rested||{}),...(b.rested||{})},hm:mergeHm(a.hm,b.hm),rupeeEarned:Math.max(a.rupeeEarned||0,b.rupeeEarned||0),shrines:Math.max(a.shrines||0,b.shrines||0),purchases:{...(a.purchases||{}),...(b.purchases||{})},shop:(()=>{const o={...(a.shop||{})}; Object.entries(b.shop||{}).forEach(([k,v])=>{ if(!o[k]||(v.u||0)>(o[k].u||0)) o[k]=v; }); return o;})(),moonDone:[a.moonDone||'',b.moonDone||''].sort().pop(),mats:(()=>{const o={...(a.mats||{})}; Object.entries(b.mats||{}).forEach(([k,v])=>{ if(!o[k]||(v.u||0)>(o[k].u||0)) o[k]=v; }); return o;})(),matHist:(()=>{const o={...(a.matHist||{})}; Object.entries(b.matHist||{}).forEach(([k,v])=>{ o[k]=Math.max(o[k]||0,v); }); return o;})(),chap:((b.chap&&(b.chap.u||0)>((a.chap||{}).u||0))?b.chap:(a.chap||b.chap)),rev:(()=>{const A=a.rev||{},B=b.rev||{},n={...(A.notes||{})}; Object.entries(B.notes||{}).forEach(([k,v])=>{ if(!n[k]||(v.u||0)>(n[k].u||0)) n[k]=v; }); return {day:[A.day||'',B.day||''].sort().pop(),month:[A.month||'',B.month||''].sort().pop(),notes:n,u:Math.max(A.u||0,B.u||0)};})(),quests,deleted:del,pristine:false};
+  return {xp:Math.max(a.xp||0,b.xp||0),seeds:Math.max(a.seeds||0,b.seeds||0),rested:{...(a.rested||{}),...(b.rested||{})},hm:mergeHm(a.hm,b.hm),rupeeEarned:Math.max(a.rupeeEarned||0,b.rupeeEarned||0),shrines:Math.max(a.shrines||0,b.shrines||0),purchases:{...(a.purchases||{}),...(b.purchases||{})},shop:(()=>{const o={...(a.shop||{})}; Object.entries(b.shop||{}).forEach(([k,v])=>{ if(!o[k]||(v.u||0)>(o[k].u||0)) o[k]=v; }); return o;})(),moonDone:[a.moonDone||'',b.moonDone||''].sort().pop(),mats:(()=>{const o={...(a.mats||{})}; Object.entries(b.mats||{}).forEach(([k,v])=>{ if(!o[k]||(v.u||0)>(o[k].u||0)) o[k]=v; }); return o;})(),matHist:(()=>{const o={...(a.matHist||{})}; Object.entries(b.matHist||{}).forEach(([k,v])=>{ o[k]=Math.max(o[k]||0,v); }); return o;})(),chap:((b.chap&&(b.chap.u||0)>((a.chap||{}).u||0))?b.chap:(a.chap||b.chap)),plan:mergePlan(a.plan,b.plan),rev:(()=>{const A=a.rev||{},B=b.rev||{},n={...(A.notes||{})}; Object.entries(B.notes||{}).forEach(([k,v])=>{ if(!n[k]||(v.u||0)>(n[k].u||0)) n[k]=v; }); return {day:[A.day||'',B.day||''].sort().pop(),month:[A.month||'',B.month||''].sort().pop(),notes:n,u:Math.max(A.u||0,B.u||0)};})(),quests,deleted:del,pristine:false};
 }
-function fingerprint(st){ return JSON.stringify([(st.quests||[]).map(q=>q.id+':'+(q.u||0)).sort(),st.xp||0,st.seeds||0,Object.keys(st.rested||{}).length,st.moonDone||'',st.rupeeEarned||0,st.shrines||0,Object.keys(st.purchases||{}).length,JSON.stringify(st.shop||{}).length,((st.chap||{}).u||0),((st.rev||{}).u||0),Object.values(st.mats||{}).reduce((m,v)=>Math.max(m,v.u||0),0),(()=>{const u=(st.hm||{}).u||{};let m=0;for(const k in u)if(u[k]>m)m=u[k];return m})()]); }
+function mergePlan(A,B){ A=A||{}; B=B||{}; const d={...(A.d||{})}; Object.entries(B.d||{}).forEach(([k,day])=>{ const o={...(d[k]||{})}; Object.entries(day||{}).forEach(([id,b])=>{ if(!o[id]||(b.u||0)>(o[id].u||0)) o[id]=b; }); d[k]=o; }); const tpl={...(A.tpl||{})}; Object.entries(B.tpl||{}).forEach(([k,v])=>{ if(!tpl[k]||(v.u||0)>(tpl[k].u||0)) tpl[k]=v; }); return {d,tpl}; }
+const planU=st=>{ let m=0; const P=st.plan||{}; Object.values(P.d||{}).forEach(day=>Object.values(day||{}).forEach(b=>{ if((b.u||0)>m) m=b.u; })); Object.values(P.tpl||{}).forEach(v=>{ if((v.u||0)>m) m=v.u; }); return m; };
+function fingerprint(st){ return JSON.stringify([(st.quests||[]).map(q=>q.id+':'+(q.u||0)).sort(),st.xp||0,st.seeds||0,Object.keys(st.rested||{}).length,st.moonDone||'',st.rupeeEarned||0,st.shrines||0,Object.keys(st.purchases||{}).length,JSON.stringify(st.shop||{}).length,((st.chap||{}).u||0),((st.rev||{}).u||0),Object.values(st.mats||{}).reduce((m,v)=>Math.max(m,v.u||0),0),planU(st),(()=>{const u=(st.hm||{}).u||{};let m=0;for(const k in u)if(u[k]>m)m=u[k];return m})()]); }
 function applyState(ns){
   state=ns; if(!Array.isArray(state.quests)) state.quests=[];
   migrate(); qSigs=null; stamp();
