@@ -368,6 +368,12 @@ select{max-width:100%;text-overflow:ellipsis}
 .rd-reg::before{content:"";display:inline-block;width:18px;height:1px;background:rgba(242,236,214,.18);vertical-align:middle;margin-right:10px}
 .rd-line{fill:none;stroke:rgba(10,13,15,.55);stroke-width:5;stroke-linecap:round}
 
+.rd-pre{fill:none;stroke:#fffbe8;stroke-width:3.4;stroke-dasharray:.1 5.5;stroke-linecap:round;filter:drop-shadow(0 0 2px rgba(0,0,0,.8))}
+.rd-post{fill:none;stroke:rgba(255,251,232,.55);stroke-width:7;stroke-linecap:butt;stroke-dasharray:6 3}
+.rc-m{flex:none;font-style:normal;font-size:9.5px;letter-spacing:.04em;color:#e8d28c;border:1px solid rgba(232,210,140,.45);border-radius:2px;padding:0 4px;line-height:15px}
+.pb-mg{display:flex;flex-wrap:wrap;gap:6px}
+.pb-mg button{font-size:12px;padding:4px 10px;border:1px solid var(--line);border-radius:3px;color:var(--muted)}
+.pb-mg button.on{color:#06121a;background:#bfeefa;border-color:#bfeefa;font-weight:700}
 .rd-seg.wake{stroke-dasharray:4 4;opacity:.7}
 .rd-stone{fill:#6b5f45;stroke:#2a251c;stroke-width:.8}
 .rd-seg{fill:none;stroke:#e9dfbf;stroke-width:4.5;stroke-linecap:round}
@@ -2932,7 +2938,7 @@ function pUnplaced(k){
   return out;
 }
 // 空いている時間を探す（今より後、なければ朝から）
-function pFree(k,len){ const bl=pBlocks(k), start=k===ymd()?Math.ceil(Math.max(pnow(),6*60)/SNAP)*SNAP:9*60;
+function pFree(k,len){ const bl=pBlocks(k).map(b=>({...b,s:b.s-(b.pre||0),e:b.e+(b.post||0)})), start=k===ymd()?Math.ceil(Math.max(pnow(),6*60)/SNAP)*SNAP:9*60;
   for(let s=start;s+len<=PATH_H1;s+=SNAP){ if(!bl.some(b=>b.s<s+len&&b.e>s)) return s; }
   for(let s=6*60;s+len<=PATH_H1;s+=SNAP){ if(!bl.some(b=>b.s<s+len&&b.e>s)) return s; }
   return start; }
@@ -2960,6 +2966,8 @@ function pathList(){
   const regs=REG.map(([m,n])=>`<div class="rd-reg" style="top:${pm2y(m)+14}px">${n}<i></i></div>`).join('');
   const lateId=isT?(bls.find(b=>!pDone(b)&&!b.fix&&!b.wake&&b.s<now-4&&b.e>now-120)||{}).id:null;
   let lastB=-1e9; const cards=bls.map(b=>{ const kd=pKind(b), dn=pDone(b), past=isT&&b.e<=now, cur=isT&&b.s<=now&&now<b.e, r=pRef(b), ttl=pTitle(b), y=pm2y(b.s), y2=pm2y(b.e), x=pRX(y);
+    if(b.pre) svg+=`<path class="rd-pre" d="${seg(Math.max(PATH_H0,b.s-b.pre),b.s)}"/>`;
+    if(b.post) svg+=`<path class="rd-post" d="${seg(b.e,Math.min(PATH_H1,b.e+b.post))}"/>`;
     svg+=`<path class="rd-seg k-${kd} ${dn?'done':''} ${b.wake&&!b.woke?'wake':''}" d="${seg(b.s,b.e)}"/>`;
     const late=b.id===lateId, wake=isT&&b.wake&&!b.woke&&!dn&&b.s<=now, extra=late||wake;
     const cy=Math.max(y-15,lastB+4); lastB=cy+30+(extra?30:0);
@@ -3038,7 +3046,7 @@ function pRetUpdate(){
   let hit=null, bd=1e9; bl.forEach(b=>{ const d=Math.abs(pm2y(b.s)-y); if(d<Math.max(14,SNAP*PX*.9)&&d<bd){ bd=d; hit=b; } });
   const yy=hit?pm2y(hit.s):y, x=pRX(yy), off=tl.getBoundingClientRect().left-sv.parentNode.getBoundingClientRect().left;
   ret.style.top=(yy-sv.scrollTop)+'px'; ret.style.left=(off+x)+'px'; ret.classList.toggle('hit',!!hit); ret.classList.toggle('nolab',!!hit&&pZoom>0);
-  const sm=Math.round(m/SNAP)*SNAP; $('slRetL').textContent=hit?(pTitle(hit)||'（名前なし）'):pfmt(sm);
+  const sm=Math.round(m/SNAP)*SNAP; $('slRetL').textContent=hit?(pTitle(hit)||'（名前なし）')+(hit.pre?`　支度 ${pfmt(hit.s-hit.pre)}〜`:'')+(hit.post?`　ゆとり〜${pfmt(hit.e+hit.post)}`:''):pfmt(sm);
   const at=$('slAt'); if(at) at.textContent=hit?'開く':'置く';
   if((hit&&hit.id)!==pHover){ document.querySelectorAll('.rd-card.hover').forEach(e=>e.classList.remove('hover')); pHover=hit&&hit.id; if(pHover){ const c=document.querySelector(`.rd-card[data-pb="${pHover}"]`); c&&c.classList.add('hover'); } }
   ret.dataset.m=hit?'':sm; ret.dataset.id=hit?hit.id:'';
@@ -3077,6 +3085,9 @@ function pathPanel(){
   if(kd==='free'||kd==='fix') h+=`<div class="f"><label>予定</label><input type="text" id="pbTitle" value="${esc(b.t||'')}" placeholder="例：図書館で仕事、子どもと散歩"></div>`;
   h+=`<div class="f2"><div class="f"><label>はじまり</label><select id="pbS">${opts(b.s,PATH_H0,PATH_H1-SNAP)}</select></div><div class="f"><label>おわり</label><select id="pbE">${opts(b.e,PATH_H0+SNAP,PATH_H1)}</select></div></div>`;
   if(kd==='free'||kd==='fix') h+=`<label class="pb-chk"><input type="checkbox" id="pbFix" ${b.fix?'checked':''}><i></i>毎日のこと（いつもの旅程に入れる）</label><label class="pb-chk"><input type="checkbox" id="pbWake" ${b.wake?'checked':''}><i></i>子どもが起きるまで（終わりの時刻は「起きた」を押した時）</label>`;
+  const mg=(id,cur,vals)=>`<div class="pb-mg">${vals.map(v=>`<button class="${(cur||0)===v?'on':''}" data-act="pathmg" data-f="${id}" data-v="${v}">${v?v+'分':'なし'}</button>`).join('')}</div>`;
+  h+=`<div class="f"><label>支度（前に取っておく時間）</label>${mg('pre',b.pre,[0,10,15,30,60])}</div><div class="f"><label>ゆとり（のびそうな時のために後ろを空けておく）</label>${mg('post',b.post,[0,15,30,60])}</div>`;
+  if(b.pre||b.post) h+=`<p class="hint">${b.pre?`支度は ${pfmt(b.s-b.pre)} から。`:''}${b.post?`ゆとりを入れて ${pfmt(b.e+b.post)} まで空けておく。`:''}</p>`;
   h+=`</div>`;
   if(!r&&!b.tr) h+=`<div class="p-acts"><button class="btn ${dn?'':'primary'}" data-act="pathdone">${dn?'終えた印を外す':'この予定を終えた'}</button></div>`;
   else if(r&&!r.s) h+=`<p class="hint">終えたら、冒険の画面で達成を報告しよう。</p>`;
@@ -3104,6 +3115,7 @@ function pathAct(a,b){
     case 'pathlate': { const x=pBlocks(k).find(y=>y.id===b.dataset.v); if(x){ const d=Math.ceil((pnow()-x.s)/SNAP)*SNAP; if(d>0){ pathShift(k,x.s,d); toast(`${pfmt(x.s+d)}から始める。後ろの予定も${d}分ずらした`); } render(); } return true; }
     case 'pathwake': { const x=pBlocks(k).find(y=>y.id===b.dataset.v); if(x){ const e=Math.max(x.s+SNAP,Math.round(pnow()/SNAP)*SNAP); pSet(k,x.id,{e,done:1,woke:1}); toast('おはよう。ここから今日の冒険'); render(); } return true; }
     case 'pathmorning': { tab='list'; listCat='path'; dayView=ymd(); pathSel=null; pathScrolled=null; const tpl=(plan().tpl[pTpl(dayView)]||{}).b||[]; if(!pBlocks(dayView).length&&tpl.length){ const P=plan(), day={...(P.d[dayView]||{})}, now=Date.now(); tpl.forEach(t=>{ day[uid()]={s:t.s,e:t.e,t:t.t,fix:1,...(t.wake?{wake:1}:{}),u:now}; }); P.d={...P.d,[dayView]:day}; save(); } render(); return true; }
+    case 'pathmg': { const x=pBlocks(k).find(y=>y.id===pathSel); if(x){ pSet(k,x.id,{[b.dataset.f]:+b.dataset.v}); render(); } return true; }
     case 'pathzoom': pZoomBy(+b.dataset.v); return true;
     case 'pathhere': { const sv=$('slView'); if(sv) sv.scrollTo({top:Math.max(0,pm2y(pnow())-pRetY(sv)),behavior:'smooth'}); return true; }
     case 'pathA': { const r=$('slRet'); if(!r) return true; if(r.dataset.id){ pathSel=r.dataset.id; render(); if(window.innerWidth<=820) pScroll(0); return true; }
