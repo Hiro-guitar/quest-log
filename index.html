@@ -284,10 +284,8 @@ select{max-width:100%;text-overflow:ellipsis}
 .slate.boot .sl-fx::after{content:"";position:absolute;left:0;right:0;height:40%;background:linear-gradient(rgba(95,212,239,0),rgba(95,212,239,.22),rgba(95,212,239,0));animation:slScan .55s ease-out forwards}
 @keyframes slBoot{0%{opacity:0;transform:scale(1.06);filter:blur(4px) saturate(.4)}100%{opacity:1;transform:none;filter:none}}
 @keyframes slScan{0%{top:-40%}100%{top:100%}}
-.slate{position:relative;margin:8px -4px 26px;padding:0 6px;background:#0a1116;border:1px solid rgba(95,212,239,.35);border-radius:6px;box-shadow:0 0 0 1px #000,0 0 18px rgba(95,212,239,.18),0 10px 30px rgba(0,0,0,.55)}
+.slate{position:relative;margin:12px 0 30px;padding:0 6px;background:#070b0e;border:1px solid rgba(95,212,239,.35);border-radius:6px;box-shadow:0 0 0 1px #000,0 0 18px rgba(95,212,239,.18),0 10px 30px rgba(0,0,0,.55)}
 .sl-top,.sl-bot{position:relative;display:flex;align-items:center;justify-content:space-between;gap:6px;height:44px;padding:0 30px;z-index:3}
-.sl-top::before,.sl-bot::after{content:"";position:absolute;left:34px;right:34px;height:12px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='12'%3E%3Cpath d='M1 10h6a4 4 0 0 0 0-8 2.4 2.4 0 0 0 0 4.8M39 2h-6a4 4 0 0 0 0 8 2.4 2.4 0 0 0 0-4.8M14 6h12' fill='none' stroke='%23000' stroke-width='3.6' stroke-linecap='round'/%3E%3Cpath d='M1 10h6a4 4 0 0 0 0-8 2.4 2.4 0 0 0 0 4.8M39 2h-6a4 4 0 0 0 0 8 2.4 2.4 0 0 0 0-4.8M14 6h12' fill='none' stroke='%23c49a5c' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") repeat-x center/40px 12px;opacity:.9}
-.sl-top::before{top:-6px}.sl-bot::after{bottom:-6px}
 .sl-top{border-bottom:1px solid rgba(95,212,239,.45);box-shadow:0 1px 8px rgba(95,212,239,.25)}
 .sl-bot{border-top:1px solid rgba(95,212,239,.45);box-shadow:0 -1px 8px rgba(95,212,239,.25);justify-content:flex-end;gap:16px;padding:0 16px;font-size:11px;color:#bfeefa;letter-spacing:.06em}
 .sl-bot span{display:flex;align-items:center;gap:5px}
@@ -298,8 +296,13 @@ select{max-width:100%;text-overflow:ellipsis}
 .sl-tab{display:flex;align-items:center;gap:6px;font-size:11.5px;color:#bfeefa;letter-spacing:.06em;opacity:.85}
 .sl-tab i{font-style:normal;font-size:10px;font-weight:800;width:20px;height:16px;border-radius:4px;display:grid;place-items:center;background:rgba(95,212,239,.85);color:#06121a}
 .sl-tab:hover{opacity:1;text-shadow:0 0 6px rgba(95,212,239,.8)}
-.sl-cn{position:absolute;width:38px;height:38px;z-index:4;pointer-events:none;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cpath d='M4 36V14A10 10 0 0 1 14 4h22' fill='none' stroke='%23000' stroke-width='6'/%3E%3Cpath d='M4 36V14A10 10 0 0 1 14 4h22' fill='none' stroke='%23c49a5c' stroke-width='3.2'/%3E%3Cpath d='M12 30v-9a7 7 0 0 1 7-7h11M20 22a3 3 0 1 1 3 3' fill='none' stroke='%23c49a5c' stroke-width='2.4' stroke-linecap='round'/%3E%3Ccircle cx='23' cy='22' r='9' fill='%235fd4ef' opacity='.25'/%3E%3C/svg%3E") no-repeat center/contain;filter:drop-shadow(0 0 4px rgba(95,212,239,.6))}
-.sl-cn.tl{left:-6px;top:-6px}.sl-cn.tr{right:-6px;top:-6px;transform:scaleX(-1)}.sl-cn.bl{left:-6px;bottom:-6px;transform:scaleY(-1)}.sl-cn.br{right:-6px;bottom:-6px;transform:scale(-1,-1)}
+.sl-cn{position:absolute;width:64px;height:64px;z-index:5;pointer-events:none}
+.sl-cn svg{width:100%;height:100%;overflow:visible;display:block}
+.sl-band{display:block;margin:0 -6px;height:22px;position:relative;z-index:4}
+.sl-band svg{position:absolute;display:block;overflow:visible}
+.sb-bg{inset:0}.sb-ch{left:44px;right:44px;width:calc(100% - 88px);top:1px}
+.sl-band.t{border-radius:6px 6px 0 0}
+.sl-cn.c1{left:-8px;top:-8px}.sl-cn.c2{right:-8px;top:-8px}.sl-cn.c3{left:-8px;bottom:-8px}.sl-cn.c4{right:-8px;bottom:-8px}
 .sl-body{position:relative;height:min(68vh,640px);overflow:hidden}
 .sl-view{position:absolute;inset:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .sl-view::-webkit-scrollbar{display:none}
@@ -340,6 +343,12 @@ select{max-width:100%;text-overflow:ellipsis}
 .pu-h small{letter-spacing:.04em;color:var(--dim)}
 .pu-i{display:flex;align-items:baseline;gap:8px;width:100%;text-align:left;padding:6px 4px;font-size:13px;color:var(--text);border-radius:3px}
 .pu-i:hover{background:var(--blue-soft)}
+.pu-g{margin:4px 0 2px}
+.pu-gh{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:var(--text);padding:4px 4px 2px}
+.pu-gh .ico{width:14px;height:14px;color:var(--muted)}
+.pu-gh small{margin-left:auto;font-weight:400;font-size:10.5px;color:var(--muted)}
+.pu-i.st{padding-left:24px;font-size:12.5px}
+.pu-i.st .pu-pin{width:6px;height:6px}
 .pu-i small{color:var(--muted);font-size:11px;margin-left:auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:40%}
 .pu-pin{flex:none;width:8px;height:8px;transform:rotate(45deg) translateY(-1px);border:1.5px solid var(--blue);box-shadow:0 0 6px rgba(95,212,239,.5)}
 .pu-i.tr .pu-pin{border-color:var(--orange);box-shadow:0 0 6px rgba(240,166,64,.5)}
@@ -2933,7 +2942,10 @@ function pathList(){
   const k=dayView, d=new Date(k+'T00:00:00'), isT=k===ymd(), bl=pBlocks(k), P=plan(), tk=pTpl(k), tpl=(P.tpl[tk]||{}).b||[];
   let h=catBar('path');
   const un=pUnplaced(k);
-  if(un.length) h+=`<div class="path-un"><div class="pu-h">まだ道に置いていない冒険<small>押すと空いている時間に置く</small></div>${un.map((x,i)=>`<button class="pu-i ${x.tr?'tr':''}" data-act="pathput" data-i="${i}"><i class="pu-pin" aria-hidden="true"></i><span>${esc(x.t||'(無題)')}</span>${x.sub?`<small>${esc(x.sub)}</small>`:''}</button>`).join('')}</div>`;
+  if(un.length){ const grp=[]; un.forEach((x,i)=>{ const key=x.sid?x.q:'_'+i; let g=grp.find(z=>z.key===key); if(!g){ g={key,x,items:[]}; grp.push(g); } g.items.push([x,i]); });
+    h+=`<div class="path-un"><div class="pu-h">まだ道に置いていない冒険<small>押すと空いている時間に置く</small></div>${grp.map(g=>{ const q=g.x.q&&findQ(g.x.q);
+      if(!g.x.sid) return `<button class="pu-i ${g.x.tr?'tr':''}" data-act="pathput" data-i="${g.items[0][1]}"><i class="pu-pin" aria-hidden="true"></i><span>${esc(g.x.t||'(無題)')}</span></button>`;
+      return `<div class="pu-g"><div class="pu-gh">${q?ico(q.type):''}<span>${esc(g.x.sub||'')}</span><small>工程 ${g.items.length}</small></div>${g.items.map(([x,i])=>`<button class="pu-i st" data-act="pathput" data-i="${i}"><i class="pu-pin" aria-hidden="true"></i><span>${esc(x.t||'(無題)')}</span></button>`).join('')}</div>`; }).join('')}</div>`; }
   if(!bl.length) h+=`<div class="path-empty">${tpl.length?`<button class="btn" data-act="pathtpl">いつもの旅程（${tk==='we'?'休日':'平日'}）を敷く</button>`:''}<p class="hint">道をタップすると、その時刻に予定を置けます</p></div>`;
   // 時間の道：1日を地図の上の一本の道にして、予定は道しるべ（ピン）として立てる
   const now=pnow(), H=pm2y(PATH_H1)+10, L=b=>pathDrag&&pathDrag.id===b.id?{...b,s:pathDrag.s,e:pathDrag.e}:b;
@@ -2964,13 +2976,44 @@ function pathList(){
   const md=x=>{ const t=new Date(k+'T00:00:00'); t.setDate(t.getDate()+x); return (t.getMonth()+1)+'/'+t.getDate(); };
   const nb=bls.filter(b=>!b.fix), nd=nb.filter(pDone).length; let wx=null; try{ wx=JSON.parse(localStorage.getItem(WX_KEY)||'null'); }catch(e){}
   const hud=`<div class="sl-hud">${nb.length?`<b>${nd}/${nb.length}</b><i></i>`:''}${isT?`<b>${now>=6*60&&now<18*60?'<i class="ck-sun"></i>':'<i class="ck-moon"></i>'}${now<12*60?'AM':'PM'} ${String(Math.floor(now/60)%12||12).padStart(2,'0')}:${String(now%60).padStart(2,'0')}</b><i></i>`:''}${isT&&wx&&wx.temp!=null?`<b>${wx.temp>0?'+':''}${Math.round(wx.temp)}℃</b><i></i>`:''}</div>`;
-  h+=`<div class="slate z${pZoom} ${pathBoot?'boot':''}"><i class="sl-cn tl" aria-hidden="true"></i><i class="sl-cn tr" aria-hidden="true"></i><i class="sl-cn bl" aria-hidden="true"></i><i class="sl-cn br" aria-hidden="true"></i>
-    <div class="sl-top"><button class="sl-tab" data-act="pathday" data-v="-1">${md(-1)} <i>L</i></button><div class="sl-title"><b>${isT?'今日の旅程':'旅程'}</b><small>${d.getMonth()+1}/${d.getDate()}（${'日月火水木金土'[d.getDay()]}）${holiday(k)?' '+holiday(k):''}</small></div><button class="sl-tab" data-act="pathday" data-v="1"><i>R</i> ${md(1)}</button></div>
+  h+=`<div class="slate z${pZoom} ${pathBoot?'boot':''}">${SL_DEFS}<i class="sl-cn c1">${slCorner(0,0)}</i><i class="sl-cn c2">${slCorner(1,0)}</i><i class="sl-cn c3">${slCorner(0,1)}</i><i class="sl-cn c4">${slCorner(1,1)}</i>
+    ${slBand('t')}<div class="sl-top"><button class="sl-tab" data-act="pathday" data-v="-1">${md(-1)} <i>L</i></button><div class="sl-title"><b>${isT?'今日の旅程':'旅程'}</b><small>${d.getMonth()+1}/${d.getDate()}（${'日月火水木金土'[d.getDay()]}）${holiday(k)?' '+holiday(k):''}</small></div><button class="sl-tab" data-act="pathday" data-v="1"><i>R</i> ${md(1)}</button></div>
     <div class="sl-body"><div class="sl-view" id="slView"><div class="tl road" id="tl" style="height:${H}px"><svg class="rd-svg" width="100%" height="${H}" aria-hidden="true">${svg}</svg>${regs}${hrs}${cards}${nowM}</div></div><div class="sl-fx" aria-hidden="true"></div>${hud}<div class="sl-ret" id="slRet" aria-hidden="true"><i class="rt-c"></i><span class="rt-l" id="slRetL"></span></div></div>
-    <div class="sl-bot"><span class="sl-zoom"><button data-act="pathzoom" data-v="-1" aria-label="ひろく見る" ${pZoom===0?'disabled':''}>−</button>ズーム<button data-act="pathzoom" data-v="1" aria-label="くわしく見る" ${pZoom===2?'disabled':''}>＋</button></span>${isT?'<button class="sl-p" data-act="pathhere">現在地<i>Y</i></button>':''}<button class="sl-p sl-a" data-act="pathA" id="slA"><span id="slAt">置く</span><i>A</i></button></div></div>`;
+    <div class="sl-bot"><span class="sl-zoom"><button data-act="pathzoom" data-v="-1" aria-label="ひろく見る" ${pZoom===0?'disabled':''}>−</button>ズーム<button data-act="pathzoom" data-v="1" aria-label="くわしく見る" ${pZoom===2?'disabled':''}>＋</button></span>${isT?'<button class="sl-p" data-act="pathhere">現在地<i>Y</i></button>':''}<button class="sl-p sl-a" data-act="pathA" id="slA"><span id="slAt">置く</span><i>A</i></button></div>${slBand('b')}</div>`;
   pathBoot=false;
   return h;
 }
+// シーカーストーンの枠：彫った砂岩の渦（立体・ざらつき）＋すき間から漏れる青い光、帯は黒い御影石
+const SL_DEFS=`<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<filter id="slStone" x="-30%" y="-30%" width="160%" height="160%" color-interpolation-filters="sRGB">
+ <feMorphology in="SourceAlpha" operator="dilate" radius="2.2" result="d"/><feGaussianBlur in="d" stdDeviation="2.6" result="gb"/><feFlood flood-color="#36c4f2"/><feComposite in2="gb" operator="in" result="glow"/>
+ <feOffset in="SourceAlpha" dy="1.6" result="o"/><feGaussianBlur in="o" stdDeviation="1" result="ob"/><feFlood flood-color="#120c05" flood-opacity=".95"/><feComposite in2="ob" operator="in" result="shadow"/>
+ <feGaussianBlur in="SourceAlpha" stdDeviation="1.5" result="b"/>
+ <feDiffuseLighting in="b" surfaceScale="4" diffuseConstant="1.05" lighting-color="#d7b98a" result="dif"><feDistantLight azimuth="240" elevation="38"/></feDiffuseLighting>
+ <feSpecularLighting in="b" surfaceScale="4" specularConstant=".55" specularExponent="18" lighting-color="#fff2d0" result="spec"><feDistantLight azimuth="240" elevation="42"/></feSpecularLighting>
+ <feTurbulence type="fractalNoise" baseFrequency="1.1" numOctaves="2" seed="7" result="n"/><feColorMatrix in="n" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 -1.3 1.2" result="grain"/>
+ <feComposite in="dif" in2="grain" operator="arithmetic" k1="1" k2="0" k3="0" k4="0" result="dg"/>
+ <feComposite in="dg" in2="spec" operator="arithmetic" k2="1" k3=".8" result="lit"/><feComposite in="lit" in2="SourceAlpha" operator="in" result="stone"/>
+ <feMerge><feMergeNode in="glow"/><feMergeNode in="shadow"/><feMergeNode in="stone"/></feMerge>
+</filter>
+<filter id="slStone2" x="-30%" y="-30%" width="160%" height="160%" color-interpolation-filters="sRGB">
+ <feMorphology in="SourceAlpha" operator="dilate" radius="1" result="d"/><feGaussianBlur in="d" stdDeviation="1.6" result="gb"/><feFlood flood-color="#36c4f2" flood-opacity=".55"/><feComposite in2="gb" operator="in" result="glow"/>
+ <feOffset in="SourceAlpha" dy="1.6" result="o"/><feGaussianBlur in="o" stdDeviation="1" result="ob"/><feFlood flood-color="#120c05" flood-opacity=".95"/><feComposite in2="ob" operator="in" result="shadow"/>
+ <feGaussianBlur in="SourceAlpha" stdDeviation="1.5" result="b"/>
+ <feDiffuseLighting in="b" surfaceScale="4" diffuseConstant="1.05" lighting-color="#d7b98a" result="dif"><feDistantLight azimuth="240" elevation="38"/></feDiffuseLighting>
+ <feSpecularLighting in="b" surfaceScale="4" specularConstant=".55" specularExponent="18" lighting-color="#fff2d0" result="spec"><feDistantLight azimuth="240" elevation="42"/></feSpecularLighting>
+ <feTurbulence type="fractalNoise" baseFrequency="1.1" numOctaves="2" seed="7" result="n"/><feColorMatrix in="n" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 -1.3 1.2" result="grain"/>
+ <feComposite in="dif" in2="grain" operator="arithmetic" k1="1" k2="0" k3="0" k4="0" result="dg"/>
+ <feComposite in="dg" in2="spec" operator="arithmetic" k2="1" k3=".8" result="lit"/><feComposite in="lit" in2="SourceAlpha" operator="in" result="stone"/>
+ <feMerge><feMergeNode in="glow"/><feMergeNode in="shadow"/><feMergeNode in="stone"/></feMerge>
+</filter>
+<filter id="slGranite" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="1.6" numOctaves="1" seed="2" result="n"/><feColorMatrix in="n" type="matrix" values="0 0 0 0 .24  0 0 0 0 .26  0 0 0 0 .28  0 0 0 -16 8.9" result="sp"/><feFlood flood-color="#15191b" result="bg"/><feMerge><feMergeNode in="bg"/><feMergeNode in="sp"/></feMerge></filter>
+<pattern id="slChain" width="36" height="18" patternUnits="userSpaceOnUse"><path d="M-2 9h6c3 0 5-2 5-4.5S7 1 5 3M38 9h-6c-3 0-5 2-5 4.5S29 17 31 15M11 9h14" fill="none" stroke="#000" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round"/></pattern>
+</defs></svg>`;
+const slBand=pos=>`<div class="sl-band ${pos}" aria-hidden="true"><svg class="sb-bg" width="100%" height="100%"><rect width="100%" height="100%" filter="url(#slGranite)"/></svg><svg class="sb-ch" width="100%" height="20"><rect width="100%" height="18" y="1" fill="url(#slChain)" filter="url(#slStone2)"/></svg></div>`;
+const SL_CP='M9 82L9 38C9 20 21 9 38 9L82 9M21 70L21 40C21 29 29 21 40 21L51 21C59 21 64 27 64 34C64 41 59 46 52 46L45 46C41 46 39 43 39 40C39 37 41 35 44 35';
+// 四隅は向きをそろえるため、座標そのものを反転させた形を描く（CSSで反転すると光の当たり方が崩れる）
+const slCorner=(fx,fy)=>`<svg viewBox="0 0 84 84" aria-hidden="true"><path d="${SL_CP.replace(/(-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?)/g,(m,x,y)=>`${fx?84-x:x} ${fy?84-y:y}`)}" fill="none" stroke="#000" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round" filter="url(#slStone)"/></svg>`;
 // 地図の地形（日ごとに少し違う等高線・森・岩）
 function pMapArt(k,H){
   let sd=0; for(const c of k) sd=(sd*31+c.charCodeAt(0))>>>0; const rnd=()=>{ sd=(sd*1664525+1013904223)>>>0; return sd/4294967296; };
