@@ -309,8 +309,18 @@ select{max-width:100%;text-overflow:ellipsis}
 .sl-view{position:absolute;inset:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .sl-view::-webkit-scrollbar{display:none}
 .sl-view .tl{margin:0}
-.sl-view{background:linear-gradient(#6a5d36 50%,#4c4026 50%)}
-@media (max-width:820px){.sl-body{height:calc(100svh - 300px);min-height:360px}.slate{margin-bottom:96px}}
+.sl-view{background:#08141b linear-gradient(rgba(95,212,239,.07) 1px,transparent 1px) 0 0/100% 40px,#08141b}
+.sl-view::before{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(90deg,rgba(95,212,239,.05) 0 1px,transparent 1px 40px)}
+/* 地図の端（4時より前・24時より後）はブレワイの未踏の地のように暗い格子に溶かす */
+.sl-view .tl.road{-webkit-mask-image:linear-gradient(transparent,#000 46px,#000 calc(100% - 46px),transparent);mask-image:linear-gradient(transparent,#000 46px,#000 calc(100% - 46px),transparent)}
+.sl-fx{box-shadow:inset 0 0 0 1px rgba(0,0,0,.7),inset 0 0 38px 10px rgba(5,22,36,.95),inset 0 30px 26px -12px rgba(5,22,36,.9),inset 0 -30px 26px -12px rgba(5,22,36,.9)!important}
+/* スマホでは画面そのものがシーカーストーン：飾りの枠をなくし、地図を画面いっぱいに */
+@media (max-width:820px){
+  .slate{margin:6px calc(50% - 50vw) 92px;width:100vw;border-radius:0;border-left:0;border-right:0;padding:0;box-shadow:0 0 0 1px #000,0 0 14px rgba(95,212,239,.25)}
+  .slate .sl-cn,.slate .sl-band{display:none}
+  .sl-top,.sl-bot{padding:0 14px}
+  .sl-body{height:calc(100svh - 236px);min-height:380px}
+}
 .sl-fx{position:absolute;inset:0;pointer-events:none;z-index:2;box-shadow:inset 0 0 0 1px rgba(0,0,0,.7),inset 0 0 38px 10px rgba(5,22,36,.95);
   background:repeating-linear-gradient(90deg,rgba(95,212,239,.13) 0 1px,transparent 1px 4px);-webkit-mask-image:linear-gradient(90deg,#000 0,transparent 26px,transparent calc(100% - 26px),#000 100%);mask-image:linear-gradient(90deg,#000 0,transparent 26px,transparent calc(100% - 26px),#000 100%)}
 .sl-hud{position:absolute;left:0;bottom:0;z-index:3;display:grid;gap:3px;pointer-events:none;padding:10px 26px 12px 12px;background:radial-gradient(ellipse at 0 100%,rgba(5,18,26,.85),rgba(5,18,26,0) 72%)}
