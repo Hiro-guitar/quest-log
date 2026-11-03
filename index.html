@@ -1205,7 +1205,7 @@ function addSteps(q,text){
 const CAT_NAMES={today:'今日の冒険',path:'旅程',main:'メインチャレンジ',challenge:'チャレンジ',mini:'ミニチャレンジ',train:'鍛錬',memory:'思い出'};
 const CATS=['today','path','main','challenge','mini','train'];
 let toolSel='sync', bkList=null, memEdit=null;
-function render(){ try{ document.documentElement.style.setProperty('--vh',Math.max(window.innerHeight,document.documentElement.clientHeight,navigator.standalone?screen.height:0)+'px'); }catch(e){} document.body.classList.toggle('pfull',window.innerWidth<=820&&tab==='list'&&listCat==='path'&&!pathSel&&!selId); sortAllSteps();renderLv();renderHud();renderTabs();renderList();renderDetail();renderHints();
+function render(){ try{ document.documentElement.style.setProperty('--vh',Math.max(window.innerHeight,document.documentElement.clientHeight,navigator.standalone?screen.height:0)+'px'); }catch(e){} { const pf=window.innerWidth<=820&&tab==='list'&&listCat==='path'&&!pathSel&&!selId; if(pf){ try{ window.scrollTo(0,0); document.body.scrollTop=0; document.documentElement.scrollTop=0; }catch(e){} } document.body.classList.toggle('pfull',pf); } sortAllSteps();renderLv();renderHud();renderTabs();renderList();renderDetail();renderHints();
   $('split').classList.toggle('has-sel',!!selId||(tab==='tools'&&toolPicked)||(tab==='pouch'&&!!pouchSel)||(tab==='list'&&listCat==='train'&&!!trSel)||(tab==='list'&&listCat==='path'&&!!pathSel));
 }
 let toolPicked=false;
