@@ -1243,7 +1243,7 @@ function renderTabs(){
 }
 function row(q){
   const isPlace=!!(q.place&&!q.done);
-  const sub=isPlace ? q.place : (q.done ? (q.doneAt?new Date(q.doneAt).toLocaleDateString('ja-JP')+' 達成':'') : (nextAction(q)||(findQ(q.parentId)?.title||'')));
+  const sub=isPlace ? q.place : (q.done ? (q.doneAt?new Date(q.doneAt).toLocaleDateString('ja-JP')+' 達成':'') : (findQ(q.parentId)?.title||''));
   const mark=q.type==='mini'&&!q.done?`<span class="r-mark qcheck" data-act="quickdone" data-id="${q.id}" title="クリア">${ico('mini')}</span>`:`<span class="r-mark">${ico(q.type,q.done)}</span>`;
   return `<button class="row ${q.id===selId?'sel':''} ${q.done?'done':''}" data-act="select" data-id="${q.id}">
     ${mark}<span class="r-main"><span class="r-title">${esc(q.title||'(無題)')}</span>${sub?`<span class="r-sub ${isPlace?'place':''}">${esc(sub)}</span>`:''}</span>
