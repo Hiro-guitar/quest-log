@@ -2929,8 +2929,19 @@ const pnow=()=>{ const d=new Date(); return d.getHours()*60+d.getMinutes(); };
 function plan(){ state.plan=state.plan||{}; if(!state.plan.d||typeof state.plan.d!=='object') state.plan.d={}; if(!state.plan.tpl||typeof state.plan.tpl!=='object') state.plan.tpl={}; return state.plan; }
 function pDay(k){ const P=plan(); return P.d[k]||{}; }
 function pBlocks(k){ return Object.entries(pDay(k)).filter(([id,b])=>b&&!b.del).map(([id,b])=>({id,...b})).sort((a,b)=>a.s-b.s||a.e-b.e); }
-function pSet(k,id,patch){ const P=plan(); const day={...(P.d[k]||{})}; day[id]={...(day[id]||{}),...patch,u:Date.now()}; P.d={...P.d,[k]:day}; save(); }
+function pSet(k,id,patch){ const P=plan(); const day={...(P.d[k]||{})}; day[id]={...(day[id]||{}),...patch,u:Date.now()}; P.d={...P.d,[k]:day}; save(); if('s' in patch) pSyncTime(k,id); }
 function pDel(k,id){ pSet(k,id,{del:1}); }
+const pTm=t=>{ const m=/^(\d{1,2}):(\d{2})/.exec(t||''); return m?+m[1]*60+ +m[2]:null; }, pHM=m=>String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
+// 「やる日」に時刻まで入っている冒険は、はじめから旅程に置いておく（外した物は置き直さない／やる時刻を変えたら道しるべも動く）
+function pAutoPlace(k){
+  const P=plan(), day={...(P.d[k]||{})}, now=Date.now(); let ch=false;
+  dayItems(k).forEach(x=>{ const m=pTm(x.time); if(m==null||m<PATH_H0||m>=PATH_H1) return; const sid=x.s?x.s.id:'';
+    const ex=Object.entries(day).find(([id,b])=>b&&b.q===x.q.id&&(b.sid||'')===sid);
+    if(!ex){ if(x.s?x.s.done:x.q.done) return; day[uid()]={s:m,e:Math.min(PATH_H1,m+60),q:x.q.id,sid,at:x.time,u:now}; ch=true; return; }
+    const [id,b]=ex; if(!b.del&&b.at!==x.time&&(!b.at||b.s===pTm(b.at))){ const len=b.e-b.s; day[id]={...b,s:m,e:Math.min(PATH_H1,m+len),at:x.time,u:now}; ch=true; } });
+  if(ch){ P.d={...P.d,[k]:day}; save(); } }
+// 道しるべを動かしたら、冒険の「やる時刻」もそろえる（時刻が入っていた物だけ）
+function pSyncTime(k,id){ const b=(plan().d[k]||{})[id]; if(!b||b.del||!b.q) return; const r=pRef(b); if(!r) return; const o=r.s||r.q; if(!o.doTime) return; const t=pHM(b.s); if(o.doTime===t) return; o.doTime=t; b.at=t; save(); }
 // 何に結びついた区間か
 function pRef(b){ if(b.q){ const q=findQ(b.q); if(!q) return null; const s=b.sid?(q.steps||[]).find(x=>x.id===b.sid):null; return {q,s,done:s?!!s.done:!!q.done,title:s?s.text:q.title,sub:s?q.title:''}; } return null; }
 function pTitle(b){ if(b.tr) return '鍛錬：'+(TR_LAB[trType(b.tr)]||'鍛錬'); const r=pRef(b); return r?r.title:(b.t||''); }
@@ -2951,6 +2962,7 @@ function pFree(k,len){ const bl=pBlocks(k).map(b=>({...b,s:b.s-(b.pre||0),e:b.e+
 function pTpl(k){ const wd=new Date(k+'T00:00:00').getDay(); return (wd===0||wd===6||holiday(k))?'we':'wk'; }
 
 function pathList(){
+  pAutoPlace(dayView);
   const k=dayView, d=new Date(k+'T00:00:00'), isT=k===ymd(), bl=pBlocks(k), P=plan(), tk=pTpl(k), tpl=(P.tpl[tk]||{}).b||[];
   let h=catBar('path');
   const un=pUnplaced(k);
@@ -3107,7 +3119,7 @@ function pathPanel(){
 }
 function pathShift(k,from,n){ const P=plan(), day={...(P.d[k]||{})}, now=Date.now();
   Object.entries(day).forEach(([id,b])=>{ if(!b||b.del||b.s<from||(b.fix&&b.s>from)) return; const len=b.e-b.s; let s=Math.min(PATH_H1-len,Math.max(PATH_H0,b.s+n)); day[id]={...b,s,e:s+len,u:now}; });
-  P.d={...P.d,[k]:day}; save(); }
+  P.d={...P.d,[k]:day}; save(); Object.keys(day).forEach(id=>pSyncTime(k,id)); }
 function pathAct(a,b){
   const k=dayView;
   switch(a){
