@@ -2189,17 +2189,23 @@ const trAdd=(k,n)=>{ const d=new Date(k+'T00:00:00'); d.setDate(d.getDate()+n); 
 const TR_ROT=['P','L1','U','P','L2','U'];
 let trSimKey='', trSim={};
 function trSched(){ const H=hm(), key=JSON.stringify(H.ovr); if(key===trSimKey) return trSim; trSimKey=key; trSim={};
-  let idx=0, slots=0;
-  for(let k=TR_START;k<=TR_LATE;k=trAdd(k,1)){ const wd=(new Date(k+'T00:00:00').getDay()+6)%7, o=H.ovr[k], late=k>TR_END; if(wd<6&&!late) slots++;
-    if(late&&idx>=slots&&o!=='R'&&!TR_MENU[o]){ trSim[k]={t:null,i:null,skip:null,catchup:false,behind:0,late}; continue; }
+  const q=[]; let nx=0, done=0, slots=0; const fill=()=>{ while(q.length<8) q.push(nx++); };
+  const leg=x=>x==='L1'||x==='L2'?'L':x;
+  for(let k=TR_START;k<=TR_LATE;k=trAdd(k,1)){ const wd=(new Date(k+'T00:00:00').getDay()+6)%7, o=H.ovr[k], late=k>TR_END; if(wd<6&&!late) slots++; fill();
+    if(late&&done>=slots&&o!=='R'&&!TR_MENU[o]){ trSim[k]={t:null,i:null,skip:null,catchup:false,behind:0,late}; continue; }
     let t='R', i=null, skip=null, catchup=false;
-    if(o==='R'){ if((wd<6&&!late)||idx<slots) skip=idx; }
-    else if(TR_MENU[o]){ t=o; i=idx++; }
-    else if(wd<6&&!late){ i=idx++; t=TR_ROT[i%6]; }
-    else if(idx<slots){ i=idx++; t=TR_ROT[i%6]; catchup=true; }
-    trSim[k]={t,i,skip,catchup,behind:Math.max(0,slots-idx),late}; }
+    if(o==='R'){ if((wd<6&&!late)||done<slots) skip=q[0]; }
+    else if(TR_MENU[o]){ // 種目を選んだ日：順番待ちの中から同じ種目を先に片づける（なければ先頭を使う）
+      let j=q.slice(0,6).findIndex(x=>TR_ROT[x%6]===o); if(j<0) j=q.slice(0,6).findIndex(x=>leg(TR_ROT[x%6])===leg(o)); if(j<0) j=0;
+      i=q.splice(j,1)[0]; t=o; done++; }
+    else if(wd<6&&!late){ i=q.shift(); t=TR_ROT[i%6]; done++; }
+    else if(done<slots){ i=q.shift(); t=TR_ROT[i%6]; done++; catchup=true; }
+    trSim[k]={t,i,skip,catchup,behind:Math.max(0,slots-done),late}; }
   return trSim; }
 function trType(k){ if(k<TR_START||k>TR_LATE) return null; return (trSched()[k]||{}).t||null; }
+// 鍛錬した日は、その日の種目を固定する（あとで前の日を休みにしても、やった記録の種目が入れ替わらないように）
+function trPin(k){ const H=hm(); if(TR_MENU[H.ovr[k]]) return false; const t=trType(k); if(!TR_MENU[t]) return false; H.ovr={...H.ovr,[k]:t}; hmTouch('ovr',k); return true; }
+function trPinDone(){ const H=hm(), t=ymd(); let ch=false; Object.keys({...H.days,...H.lift}).sort().forEach(k=>{ if(k>t||k<TR_START) return; const l=H.lift[k]||{}, did=(H.days[k]||{}).train||Object.values(l).some(a=>(a||[]).some(x=>x&&x[1])); if(did&&trPin(k)) ch=true; }); if(ch) save(); }
 function trLast(){ const S=trSched(); let l=TR_END; for(const k in S) if(S[k].t&&k>l) l=k; return l; }
 function trWhere(k){ const S=trSched(), x=S[k]; if(!x||x.skip===null) return null; for(let d=trAdd(k,1);d<=TR_LATE;d=trAdd(d,1)) if(S[d]&&S[d].i===x.skip) return d; return ''; }
 const trMD=k=>{ const d=new Date(k+'T00:00:00'); return (d.getMonth()+1)+'/'+d.getDate()+'（'+'日月火水木金土'[d.getDay()]+'）'; };
@@ -2234,6 +2240,7 @@ const trFmt=(e,s)=>s.filter(x=>x&&x[1]).map(x=>(e.kg?(x[0]||0)+'kg×':'')+x[1]).
 function trWeekStart(k){ const d=new Date(k+'T00:00:00'); d.setDate(d.getDate()-((d.getDay()+6)%7)); return ymd(d); }
 function trDefaultDay(){ const t=ymd(), L=trLast(); return t<TR_START?TR_START:t>L?L:t; }
 function trList(){
+  trPinDone();
   if(!trWeek) trWeek=trWeekStart(trDefaultDay());
   const ws=new Date(trWeek+'T00:00:00'), we=new Date(ws.getTime()+6*DAY);
   let h=catBar('train');
@@ -2285,7 +2292,7 @@ function trDayPanel(k){
   if(t==='R'){
     h+=`<div class="sec-h"><span>休みの日</span></div><p class="hint">散歩や自転車はいつもどおり。${wd<6?'この日にやるなら':'できなかった鍛錬をここでやるなら'}：${['P','L1','U'].map(x=>`<button class="btn small ghost" data-act="trsw" data-v="${x}">${TR_SHORT[x]}</button>`).join(' ')}</p>`;
   } else {
-    h+=`<div class="sec-h"><span>筋トレ</span><button class="btn small ghost" data-act="trsw" data-v="R">休みにする</button></div><p class="hint" style="margin:0 0 6px">ダンベルの重さは片手1個あたり。セットの間は1〜2分休む。</p>${TR_MENU[t].map(id=>trExHtml(id,k)).join('')}`;
+    h+=`<div class="sec-h"><span>筋トレ</span>${dd.train?'':'<button class="btn small ghost" data-act="trsw" data-v="R">休みにする</button>'}</div><p class="hint" style="margin:0 0 6px">ダンベルの重さは片手1個あたり。セットの間は1〜2分休む。</p>${TR_MENU[t].map(id=>trExHtml(id,k)).join('')}`;
   }
   h+=`<div class="sec-h"><span>食事</span><span>約2,100〜2,200 kcal・たんぱく質約120g</span></div><div class="tr-food">
     <div><b>朝</b>プロテイン1杯＋ごはん150g＋納豆＋卵2個</div><div><b>昼</b>約600kcalまで。たんぱく質20g以上（サラダチキン、鮭おにぎり＋ゆで卵など）</div><div><b>夜</b>奥さんと同じおかず1人前＋ごはん200g</div>${t!=='R'?'<div><b>筋トレ後</b>プロテイン1杯</div>':''}</div>`;
@@ -2362,12 +2369,12 @@ function trOnChange(e){
   const el=e.target, k=trSel; if(!k||!trType(k)) return false;
   const H=hm();
   const vb=trVessels();
-  if(el.dataset.trc){ const c=el.dataset.trc, was=!!(H.days[k]||{})[c]; H.days[k]={...(H.days[k]||{}),[c]:el.checked}; hmTouch('days',k);
+  if(el.dataset.trc){ const c=el.dataset.trc, was=!!(H.days[k]||{})[c]; if(c==='train'&&el.checked) trPin(k); H.days[k]={...(H.days[k]||{}),[c]:el.checked}; hmTouch('days',k);
     if(el.checked&&!was){ gain(c==='train'?30:5); if(c==='train'){ earnRupee(20); toast('鍛錬クリア  +30 XP ・ +20ルピー'); maybeSeed(); } if(trDone(k)===trChecks(k).length) setTimeout(()=>banner('train','今日のチェック制覇',`${k.slice(5).replace('-','/')}　全${trChecks(k).length}項目`),400); }
     else if(!el.checked&&was) gain(c==='train'?-30:-5);
     if(c==='train'&&el.checked&&!was){ const p=TR_PART[trType(k)]; if(p) setTimeout(()=>toast(`克服の証（${PART_NAME[p]}）を手に入れた`),1300); trVesselBanner(vb); }
     save(); renderLv(); renderList(); renderDetail(); return true; }
-  if(el.dataset.trex){ const id=el.dataset.trex, ix=+el.dataset.i, f=+el.dataset.f, v=el.value===''?null:Math.max(0,parseFloat(el.value));
+  if(el.dataset.trex){ const id=el.dataset.trex, ix=+el.dataset.i, f=+el.dataset.f, v=el.value===''?null:Math.max(0,parseFloat(el.value)); if(v) trPin(k);
     const day={...(H.lift[k]||{})}, arr=(day[id]||[]).slice(), s=(arr[ix]||[null,null]).slice(); s[f]=v; arr[ix]=s; day[id]=arr; H.lift[k]=day; hmTouch('lift',k);
     if(f===1&&v&&!(H.days[k]||{}).train){ H.days[k]={...(H.days[k]||{}),train:true}; hmTouch('days',k); gain(30); earnRupee(20); toast('鍛錬クリア  +30 XP ・ +20ルピー'); maybeSeed();
       const cb=document.querySelector('input[data-trc=train]'); if(cb){ cb.checked=true; cb.closest('label').classList.add('on'); }
