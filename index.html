@@ -261,6 +261,72 @@ select{max-width:100%;text-overflow:ellipsis}
 .estep .ic{color:var(--dim);width:26px;height:30px;font-size:13px;border-radius:3px}
 .estep .ic:hover{color:var(--text);background:rgba(255,255,255,.06)}
 .hint{font-size:12px;color:var(--dim)}
+
+/* シーカーストーンの地図画面 */
+.sl-ret{position:absolute;z-index:3;pointer-events:none;transition:top .12s ease-out,left .12s ease-out}
+.rt-c{position:absolute;left:-15px;top:-15px;width:30px;height:30px;
+  background:linear-gradient(#5fd4ef,#5fd4ef) 0 0/8px 2px,linear-gradient(#5fd4ef,#5fd4ef) 0 0/2px 8px,linear-gradient(#5fd4ef,#5fd4ef) 100% 0/8px 2px,linear-gradient(#5fd4ef,#5fd4ef) 100% 0/2px 8px,
+  linear-gradient(#5fd4ef,#5fd4ef) 0 100%/8px 2px,linear-gradient(#5fd4ef,#5fd4ef) 0 100%/2px 8px,linear-gradient(#5fd4ef,#5fd4ef) 100% 100%/8px 2px,linear-gradient(#5fd4ef,#5fd4ef) 100% 100%/2px 8px;background-repeat:no-repeat;filter:drop-shadow(0 0 3px rgba(95,212,239,.9));transition:all .15s}
+.sl-ret.hit .rt-c{left:-12px;top:-12px;width:24px;height:24px;filter:drop-shadow(0 0 5px #fff) drop-shadow(0 0 3px rgba(95,212,239,1))}
+.rt-l{position:absolute;left:18px;top:-11px;white-space:nowrap;font-size:11px;font-weight:700;letter-spacing:.06em;color:#e9fbff;padding:2px 8px;background:rgba(5,18,26,.85);border:1px solid rgba(95,212,239,.55);border-radius:2px;box-shadow:0 0 8px rgba(95,212,239,.35);max-width:52vw;overflow:hidden;text-overflow:ellipsis}
+.sl-ret.nolab .rt-l{display:none}
+.rd-card.hover{border-color:rgba(255,255,255,.75);box-shadow:0 0 0 1px rgba(95,212,239,.7),0 0 14px rgba(95,212,239,.35)}
+.sl-zoom{display:flex;align-items:center;gap:6px}
+.sl-zoom button{width:22px;height:20px;border-radius:4px;background:rgba(95,212,239,.85);color:#06121a;font-weight:800;line-height:1}
+.sl-zoom button:disabled{opacity:.3}
+.sl-p{display:flex;align-items:center;gap:6px;font-size:11.5px;color:#bfeefa;letter-spacing:.06em}
+.sl-p i{font-style:normal;font-size:10px;font-weight:800;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;background:rgba(95,212,239,.9);color:#06121a}
+.sl-a{font-size:13px;font-weight:700;color:#fff;text-shadow:0 0 6px rgba(95,212,239,.8)}
+.sl-a i{width:24px;height:24px;font-size:11px;background:#e9fbff;box-shadow:0 0 8px rgba(95,212,239,.9)}
+.slate.z0 .rd-card,.slate.z0 .rd-lead,.slate.z0 .rd-knob{display:none}
+.slate.z0 .rd-hr:not(.big){display:none}
+.slate.boot .sl-view{animation:slBoot .5s ease-out}
+.slate.boot .sl-fx::after{content:"";position:absolute;left:0;right:0;height:40%;background:linear-gradient(rgba(95,212,239,0),rgba(95,212,239,.22),rgba(95,212,239,0));animation:slScan .55s ease-out forwards}
+@keyframes slBoot{0%{opacity:0;transform:scale(1.06);filter:blur(4px) saturate(.4)}100%{opacity:1;transform:none;filter:none}}
+@keyframes slScan{0%{top:-40%}100%{top:100%}}
+.slate{position:relative;margin:8px -4px 26px;padding:0 6px;background:#0a1116;border:1px solid rgba(95,212,239,.35);border-radius:6px;box-shadow:0 0 0 1px #000,0 0 18px rgba(95,212,239,.18),0 10px 30px rgba(0,0,0,.55)}
+.sl-top,.sl-bot{position:relative;display:flex;align-items:center;justify-content:space-between;gap:6px;height:44px;padding:0 30px;z-index:3}
+.sl-top::before,.sl-bot::after{content:"";position:absolute;left:34px;right:34px;height:12px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='12'%3E%3Cpath d='M1 10h6a4 4 0 0 0 0-8 2.4 2.4 0 0 0 0 4.8M39 2h-6a4 4 0 0 0 0 8 2.4 2.4 0 0 0 0-4.8M14 6h12' fill='none' stroke='%23000' stroke-width='3.6' stroke-linecap='round'/%3E%3Cpath d='M1 10h6a4 4 0 0 0 0-8 2.4 2.4 0 0 0 0 4.8M39 2h-6a4 4 0 0 0 0 8 2.4 2.4 0 0 0 0-4.8M14 6h12' fill='none' stroke='%23c49a5c' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") repeat-x center/40px 12px;opacity:.9}
+.sl-top::before{top:-6px}.sl-bot::after{bottom:-6px}
+.sl-top{border-bottom:1px solid rgba(95,212,239,.45);box-shadow:0 1px 8px rgba(95,212,239,.25)}
+.sl-bot{border-top:1px solid rgba(95,212,239,.45);box-shadow:0 -1px 8px rgba(95,212,239,.25);justify-content:flex-end;gap:16px;padding:0 16px;font-size:11px;color:#bfeefa;letter-spacing:.06em}
+.sl-bot span{display:flex;align-items:center;gap:5px}
+.sl-bot i{font-style:normal;font-size:9.5px;padding:1px 6px;border-radius:9px;background:rgba(95,212,239,.85);color:#06121a;font-weight:700}
+.sl-title{display:grid;justify-items:center;line-height:1.15}
+.sl-title b{font-size:15px;letter-spacing:.3em;color:#bfeefa;text-shadow:0 0 8px rgba(95,212,239,.7);font-weight:700}
+.sl-title small{font-size:10.5px;color:rgba(191,238,250,.65);letter-spacing:.1em}
+.sl-tab{display:flex;align-items:center;gap:6px;font-size:11.5px;color:#bfeefa;letter-spacing:.06em;opacity:.85}
+.sl-tab i{font-style:normal;font-size:10px;font-weight:800;width:20px;height:16px;border-radius:4px;display:grid;place-items:center;background:rgba(95,212,239,.85);color:#06121a}
+.sl-tab:hover{opacity:1;text-shadow:0 0 6px rgba(95,212,239,.8)}
+.sl-cn{position:absolute;width:38px;height:38px;z-index:4;pointer-events:none;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cpath d='M4 36V14A10 10 0 0 1 14 4h22' fill='none' stroke='%23000' stroke-width='6'/%3E%3Cpath d='M4 36V14A10 10 0 0 1 14 4h22' fill='none' stroke='%23c49a5c' stroke-width='3.2'/%3E%3Cpath d='M12 30v-9a7 7 0 0 1 7-7h11M20 22a3 3 0 1 1 3 3' fill='none' stroke='%23c49a5c' stroke-width='2.4' stroke-linecap='round'/%3E%3Ccircle cx='23' cy='22' r='9' fill='%235fd4ef' opacity='.25'/%3E%3C/svg%3E") no-repeat center/contain;filter:drop-shadow(0 0 4px rgba(95,212,239,.6))}
+.sl-cn.tl{left:-6px;top:-6px}.sl-cn.tr{right:-6px;top:-6px;transform:scaleX(-1)}.sl-cn.bl{left:-6px;bottom:-6px;transform:scaleY(-1)}.sl-cn.br{right:-6px;bottom:-6px;transform:scale(-1,-1)}
+.sl-body{position:relative;height:min(68vh,640px);overflow:hidden}
+.sl-view{position:absolute;inset:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.sl-view::-webkit-scrollbar{display:none}
+.sl-view .tl{margin:0}
+.sl-fx{position:absolute;inset:0;pointer-events:none;z-index:2;box-shadow:inset 0 0 0 1px rgba(0,0,0,.7),inset 0 0 38px 10px rgba(5,22,36,.95);
+  background:repeating-linear-gradient(90deg,rgba(95,212,239,.13) 0 1px,transparent 1px 4px);-webkit-mask-image:linear-gradient(90deg,#000 0,transparent 26px,transparent calc(100% - 26px),#000 100%);mask-image:linear-gradient(90deg,#000 0,transparent 26px,transparent calc(100% - 26px),#000 100%)}
+.sl-hud{position:absolute;left:0;bottom:0;z-index:3;display:grid;gap:3px;pointer-events:none;padding:10px 26px 12px 12px;background:radial-gradient(ellipse at 0 100%,rgba(5,18,26,.85),rgba(5,18,26,0) 72%)}
+.sl-hud b{display:flex;align-items:center;gap:5px}
+.sl-hud b i{display:inline-block!important;width:9px!important;height:9px!important;margin:0!important}
+.sl-hud b i.ck-sun{background:#f7d36b}.sl-hud b i.ck-moon{background:none}
+.sl-hud b{font-size:11.5px;font-weight:600;letter-spacing:.06em;color:#bfeefa;text-shadow:0 0 6px rgba(95,212,239,.8),0 1px 2px #000;font-variant-numeric:tabular-nums}
+.sl-hud i{display:block;width:54px;height:2px;margin-top:-1px;background:linear-gradient(90deg,rgba(95,212,239,.8),rgba(95,212,239,0))}
+.tl.road{border:0;border-radius:0;box-shadow:none}
+.rd-pin .pn-g{fill:none;stroke:rgba(240,166,64,.35);stroke-width:3}
+.rd-pin .pn-b{fill:#e8952f;stroke:#2a1a08;stroke-width:1.2;filter:drop-shadow(0 0 5px rgba(240,166,64,.9))}
+.rd-pin .pn-c{fill:#2a1a08;stroke:#2a1a08;stroke-width:1.4;stroke-linecap:round}
+.rd-pin.done .pn-b{fill:#4fc6ea;stroke:#06202b;filter:drop-shadow(0 0 5px rgba(95,212,239,.95))}
+.rd-pin.done .pn-g{stroke:rgba(95,212,239,.4)}
+.rd-pin.done .pn-c{fill:#06202b;stroke:#06202b}
+.rd-pin.sel .pn-g{stroke:#fff}
+.rd-pin.cur .pn-g{animation:pinPulse 1.4s ease-in-out infinite}
+.rd-stamp rect{fill:#c9a46a;stroke:#3a2a12;stroke-width:1.2}
+.rd-stamp circle{fill:#3a2a12}
+.rd-stamp.done{opacity:.55}
+.rd-reg{color:rgba(232,210,140,.75)!important;letter-spacing:.32em!important;font-size:14px!important}
+.rd-reg::before{display:none!important}
+.rd-reg i{display:block;height:5px;margin:3px 0 0 auto;width:70%;background:repeating-linear-gradient(90deg,rgba(232,210,140,.55) 0 3px,transparent 3px 5px,rgba(232,210,140,.55) 5px 6px,transparent 6px 9px)}
 .tr-fin{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:18px 0 4px;padding-top:12px;border-top:1px solid var(--line)}
 .tr-fin.done .r-clear{font-size:15px}
 /* 旅程 */
@@ -279,16 +345,16 @@ select{max-width:100%;text-overflow:ellipsis}
 .pu-i.tr .pu-pin{border-color:var(--orange);box-shadow:0 0 6px rgba(240,166,64,.5)}
 .path-empty{text-align:center;padding:4px 0 10px;display:grid;gap:6px;justify-items:center}
 .tl{position:relative;margin:6px 0 30px;user-select:none;-webkit-user-select:none;touch-action:pan-y;cursor:crosshair}
-.tl.road{background:#5f503a;border:1px solid rgba(216,208,180,.28);border-radius:3px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(0,0,0,.6),inset 0 0 50px rgba(0,0,0,.45),0 6px 18px rgba(0,0,0,.4)}
+.tl.road{background:#7a6b3e;border:1px solid rgba(216,208,180,.28);border-radius:3px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(0,0,0,.6),inset 0 0 50px rgba(0,0,0,.45),0 6px 18px rgba(0,0,0,.4)}
 .rd-svg{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
-.rd-bed{fill:none;stroke:rgba(30,26,20,.8);stroke-width:7.5;stroke-linecap:round}
-.rd-edge{fill:none;stroke:#d9caa0;stroke-width:4.5;stroke-linecap:round}
+.rd-bed{fill:none;stroke:rgba(60,50,25,.55);stroke-width:5;stroke-linecap:round}
+.rd-edge{fill:none;stroke:#e6d9a8;stroke-width:2.6;stroke-linecap:round}
 .rd-hero{fill:none;stroke:#8be04e;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 2px rgba(139,224,78,.7))}
-.mp-river{fill:none;stroke:#3f6378;stroke-width:11;stroke-linecap:round}
-.mp-river2{fill:none;stroke:#5f8aa0;stroke-width:4;stroke-linecap:round}
+.mp-river{fill:none;stroke:#3b4b55;stroke-width:12;stroke-linecap:round}
+.mp-river2{fill:none;stroke:#465a66;stroke-width:6;stroke-linecap:round}
 .mp-grid line{stroke:rgba(0,0,0,.14);stroke-width:1}
-.mp-topo path{stroke:rgba(60,45,28,.45);stroke-width:.9}
-.mp-tree circle{fill:#4f4a2c;stroke:rgba(40,34,20,.7);stroke-width:.7}
+.mp-topo path{stroke:rgba(225,212,165,.35);stroke-width:.8}
+.mp-tree circle{fill:#5d5530;stroke:rgba(40,34,18,.55);stroke-width:.7}
 .rd-reg{position:absolute;right:8px;font-family:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;font-size:15px;letter-spacing:.5em;color:rgba(242,236,214,.42);pointer-events:none;z-index:1;text-shadow:0 1px 3px rgba(0,0,0,.6)}
 .rd-reg::before{content:"";display:inline-block;width:18px;height:1px;background:rgba(242,236,214,.18);vertical-align:middle;margin-right:10px}
 .rd-line{fill:none;stroke:rgba(10,13,15,.55);stroke-width:5;stroke-linecap:round}
@@ -296,12 +362,12 @@ select{max-width:100%;text-overflow:ellipsis}
 .rd-seg.wake{stroke-dasharray:4 4;opacity:.7}
 .rd-stone{fill:#6b5f45;stroke:#2a251c;stroke-width:.8}
 .rd-seg{fill:none;stroke:#e9dfbf;stroke-width:4.5;stroke-linecap:round}
-.rd-seg.k-q{stroke:var(--blue);filter:drop-shadow(0 0 4px rgba(95,212,239,.8))}
+.rd-seg.k-q{stroke:#f0a640;filter:drop-shadow(0 0 4px rgba(240,166,64,.8))}
 .rd-seg.k-tr{stroke:var(--orange);filter:drop-shadow(0 0 4px rgba(240,166,64,.7))}
 .rd-seg.k-fix{stroke:#d8cba3}
-.rd-seg.done{opacity:.4;filter:none}
+.rd-seg.done{stroke:#5fd4ef!important;filter:drop-shadow(0 0 4px rgba(95,212,239,.8))!important;opacity:.9}
 .rd-lead{fill:none;stroke:rgba(235,226,196,.45);stroke-width:1}
-.rd-lead.k-q{stroke:rgba(95,212,239,.4)}.rd-lead.k-tr{stroke:rgba(240,166,64,.4)}
+.rd-lead.k-q,.rd-lead.k-tr{stroke:rgba(240,166,64,.55)}
 .rd-hr{position:absolute;width:38px;text-align:right;transform:translateY(-50%);font-size:10px;letter-spacing:.06em;color:rgba(235,226,196,.55);text-shadow:0 1px 2px rgba(0,0,0,.7);font-variant-numeric:tabular-nums;pointer-events:none}
 .rd-hr.big{color:rgba(245,238,214,.85)}
 .rd-pin .pn-sh{fill:rgba(0,0,0,.45)}
@@ -318,14 +384,15 @@ select{max-width:100%;text-overflow:ellipsis}
 .rd-knob{position:absolute;width:26px;height:22px;margin:-11px 0 0 -13px;cursor:ns-resize;z-index:3;display:grid;place-items:center;touch-action:none}
 .rd-knob::after{content:"";width:7px;height:7px;border-radius:50%;background:#0b0f12;border:1.5px solid rgba(216,208,180,.7)}
 .rd-knob.k-q::after{border-color:var(--blue)}.rd-knob.k-tr::after{border-color:var(--orange)}
-.rd-card{position:absolute;left:118px;right:2px;min-height:34px;padding:5px 12px 6px;cursor:grab;z-index:2;
-  background:rgba(16,19,17,.9);border:1px solid rgba(216,208,180,.18);border-left:2px solid rgba(216,208,180,.5);border-radius:2px;box-shadow:0 2px 8px rgba(0,0,0,.45);display:grid;gap:1px;transition:background .15s}
-.rd-card.k-q{border-left-color:var(--blue)}.rd-card.k-tr{border-left-color:var(--orange)}
-.rd-card.k-fix{background:rgba(16,19,17,.72)}
+.rd-card{position:absolute;left:118px;right:auto;max-width:calc(100% - 128px);min-height:28px;padding:4px 10px 4px 9px;cursor:grab;z-index:2;
+  background:rgba(7,16,22,.74);border:1px solid rgba(95,212,239,.28);border-left:2px solid rgba(201,164,106,.8);border-radius:2px;box-shadow:0 2px 8px rgba(0,0,0,.5);display:grid;gap:1px;transition:background .15s}
+.rd-card.k-q,.rd-card.k-tr{border-left-color:#f0a640}.rd-card.done{border-left-color:#5fd4ef}
+.rd-card.k-fix{background:rgba(7,16,22,.7);border-color:rgba(201,164,106,.25)}
 .rc-time{font-size:10.5px;letter-spacing:.08em;color:#e8c46a;font-variant-numeric:tabular-nums}
 .rc-time small{font-size:10px;color:rgba(216,208,180,.55);margin-left:2px}
-.rd-card.k-q .rc-time{color:var(--blue)}.rd-card.k-tr .rc-time{color:var(--orange)}.rd-card.k-fix .rc-time{color:rgba(216,208,180,.6)}
-.rc-t{display:flex;align-items:center;gap:6px;min-width:0;font-size:13.5px;color:var(--text)}
+.rd-card .rc-time{color:#8fe3f7}.rd-card.k-fix .rc-time{color:#d9bf86}.rd-card.k-fix .rc-time{color:rgba(216,208,180,.6)}
+.rc-t{display:flex;align-items:baseline;gap:8px;min-width:0;font-size:13px;color:var(--text)}
+.rc-t .rc-time{flex:none;font-size:11px}
 .rc-t b{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rc-t .ico{flex:none;width:14px;height:14px;color:var(--muted)}
 .rd-card.k-fix .rc-t{color:#cfc8b0;font-size:13px}.rd-card.k-fix .rc-t b{font-weight:500}
@@ -1487,7 +1554,7 @@ function renderList(){
   if(tab==='pouch'){ L.innerHTML=pouchList(); fitTitles(); return; }
   if(tab!=='tools'&&listCat==='today'){ L.innerHTML=connectBanner()+todayList(); fitTitles(); return; }
   if(tab!=='tools'&&listCat==='train'){ L.innerHTML=connectBanner()+trList(); fitTitles(); return; }
-  if(tab!=='tools'&&listCat==='path'){ L.innerHTML=connectBanner()+pathList(); setTimeout(pathAfter,0); return; }
+  if(tab!=='tools'&&listCat==='path'){ const sv=$('slView'), st=sv?sv.scrollTop:null; L.innerHTML=connectBanner()+pathList(); if(st!=null&&$('slView')) $('slView').scrollTop=st; setTimeout(pathAfter,0); return; }
   if(tab!=='tools'&&listCat==='memory'){
     const ms=state.quests.filter(q=>q.done&&q.type!=='mini').sort((a,b)=>(b.doneAt||0)-(a.doneAt||0));
     let m=catBar('memory')+'<div class="rows">';
@@ -1735,7 +1802,7 @@ document.addEventListener('click',e=>{
     case 'step': toggleStep(b.dataset.q,b.dataset.s); break;
     case 'new': newQuest(b.dataset.type,null); break;
     case 'day': dayView=b.dataset.v; if(!editing) selId=null; render(); break;
-    case 'cat': listCat=b.dataset.v; if(listCat==='today') dayView=ymd(); showCleared=false; miniOpen=false; if(!editing){selId=null;} render(); break;
+    case 'cat': if(b.dataset.v==='path'&&listCat!=='path') pathBoot=true; listCat=b.dataset.v; if(listCat==='today') dayView=ymd(); showCleared=false; miniOpen=false; if(!editing){selId=null;} render(); break;
     case 'catprev': case 'catnext': { const i=CATS.indexOf(listCat); listCat=CATS[(i+(a==='catnext'?1:CATS.length-1))%CATS.length]; showCleared=false; miniOpen=false; if(!editing) selId=null; render(); break; }
     case 'newcur': if(listCat==='today'){ newQuest('challenge',null); const nq=findQ(selId); if(nq){ nq.doDate=dayView; listCat='today'; save(); render(); } break; } if(listCat==='mini'){ miniOpen=true; renderList(); setTimeout(()=>{const el=$('miniAdd'); el&&el.focus()},20);} else newQuest(listCat,null); break;
     case 'tool': if(b.dataset.v==='moon'){ openMoon(); break; } toolSel=b.dataset.v; toolPicked=true; render(); break;
@@ -2830,8 +2897,9 @@ document.addEventListener('keydown',e=>{
 });
 
 /* ---------- 旅程（その日の予定を時間の道に置く） ---------- */
-const PATH_H0=4*60, PATH_H1=24*60, PX=1.0, SNAP=15, pCardX=118;
-const pRX=y=>62+20*Math.sin(y/88)+8*Math.sin(y/37+1.3); // 道の曲がり具合
+const PATH_H0=4*60, PATH_H1=24*60, SNAP=15, pCardX=118, PZOOM=[.55,1,1.7];
+let pZoom=1, PX=PZOOM[1], pathBoot=false;
+const pRX=y=>{ const q=y/PX; return 62+20*Math.sin(q/88)+8*Math.sin(q/37+1.3); }; // 道の曲がり具合（ズームしても形は同じ）
 let pathSel=null, pathScrolled=null, pathDrag=null, pathFocus=null;
 const pm2y=m=>(m-PATH_H0)*PX;
 const pfmt=m=>Math.floor(m/60)+':'+String(m%60).padStart(2,'0');
@@ -2864,7 +2932,6 @@ function pTpl(k){ const wd=new Date(k+'T00:00:00').getDay(); return (wd===0||wd=
 function pathList(){
   const k=dayView, d=new Date(k+'T00:00:00'), isT=k===ymd(), bl=pBlocks(k), P=plan(), tk=pTpl(k), tpl=(P.tpl[tk]||{}).b||[];
   let h=catBar('path');
-  h+=`<div class="day-h path-h"><button class="ph-nav" data-act="pathday" data-v="-1" aria-label="前の日">‹</button><span>${isT?'今日　':''}${d.getMonth()+1}/${d.getDate()}（${'日月火水木金土'[d.getDay()]}）${holiday(k)?`<b class="hol">${holiday(k)}</b>`:''}</span><button class="ph-nav" data-act="pathday" data-v="1" aria-label="次の日">›</button></div>`;
   const un=pUnplaced(k);
   if(un.length) h+=`<div class="path-un"><div class="pu-h">まだ道に置いていない冒険<small>押すと空いている時間に置く</small></div>${un.map((x,i)=>`<button class="pu-i ${x.tr?'tr':''}" data-act="pathput" data-i="${i}"><i class="pu-pin" aria-hidden="true"></i><span>${esc(x.t||'(無題)')}</span>${x.sub?`<small>${esc(x.sub)}</small>`:''}</button>`).join('')}</div>`;
   if(!bl.length) h+=`<div class="path-empty">${tpl.length?`<button class="btn" data-act="pathtpl">いつもの旅程（${tk==='we'?'休日':'平日'}）を敷く</button>`:''}<p class="hint">道をタップすると、その時刻に予定を置けます</p></div>`;
@@ -2878,48 +2945,77 @@ function pathList(){
   let hrs=''; for(let m=PATH_H0+60;m<PATH_H1;m+=60){ const y=pm2y(m), x=pRX(y); svg+=`<circle class="rd-stone" cx="${x.toFixed(1)}" cy="${y}" r="2"/>`; hrs+=`<span class="rd-hr ${m%180===0?'big':''}" style="top:${y}px;left:${(x-46).toFixed(1)}px">${m/60}:00</span>`; }
   // 地方の名前（地図の地名のように）
   const REG=[[PATH_H0,'暁の丘'],[6*60,'朝の平原'],[11*60,'真昼の街道'],[15*60,'夕暮れの坂'],[18*60,'灯りの宿場'],[21*60,'夜の森']];
-  const regs=REG.map(([m,n])=>`<div class="rd-reg" style="top:${pm2y(m)+14}px">${n}</div>`).join('');
+  const regs=REG.map(([m,n])=>`<div class="rd-reg" style="top:${pm2y(m)+14}px">${n}<i></i></div>`).join('');
   const lateId=isT?(bls.find(b=>!pDone(b)&&!b.fix&&!b.wake&&b.s<now-4&&b.e>now-120)||{}).id:null;
   let lastB=-1e9; const cards=bls.map(b=>{ const kd=pKind(b), dn=pDone(b), past=isT&&b.e<=now, cur=isT&&b.s<=now&&now<b.e, r=pRef(b), ttl=pTitle(b), y=pm2y(b.s), y2=pm2y(b.e), x=pRX(y);
     svg+=`<path class="rd-seg k-${kd} ${dn?'done':''} ${b.wake&&!b.woke?'wake':''}" d="${seg(b.s,b.e)}"/>`;
     const late=b.id===lateId, wake=isT&&b.wake&&!b.woke&&!dn&&b.s<=now, extra=late||wake;
-    const cy=Math.max(y-16,lastB+6); lastB=cy+(r&&r.sub?62:46)+(extra?30:0);
-    svg+=`<path class="rd-lead k-${kd}" d="M${(x+8).toFixed(1)} ${y-12}C${(x+34).toFixed(1)} ${y-12} ${(pCardX-26)} ${cy+16} ${pCardX} ${cy+16}"/>`;
-    svg+=`<g class="rd-pin k-${kd} ${dn?'done':''} ${cur?'cur':''} ${pathSel===b.id?'sel':''}" transform="translate(${x.toFixed(1)} ${y})"><ellipse class="pn-sh" cx="0" cy="0" rx="5" ry="2"/><path class="pn-b" d="M0 0C-5-6-7.5-9.5-7.5-13a7.5 7.5 0 1 1 15 0c0 3.5-2.5 7-7.5 13Z"/><circle class="pn-c" cy="-13" r="2.8"/></g>`;
+    const cy=Math.max(y-15,lastB+4); lastB=cy+30+(extra?30:0);
+    svg+=`<path class="rd-lead k-${kd}" d="M${(x+8).toFixed(1)} ${y-12}C${(x+34).toFixed(1)} ${y-12} ${(pCardX-26)} ${cy+15} ${pCardX} ${cy+15}"/>`;
+    svg+=b.fix?`<g class="rd-stamp ${dn?'done':''}" transform="translate(${x.toFixed(1)} ${y})"><rect x="-6" y="-6" width="12" height="12" rx="2.5"/><circle r="2.2"/></g>`
+      :`<g class="rd-pin k-${kd} ${dn?'done':''} ${cur?'cur':''} ${pathSel===b.id?'sel':''}" transform="translate(${x.toFixed(1)} ${y})"><rect class="pn-g" x="-9" y="-9" width="18" height="18" rx="3" transform="rotate(45)"/><rect class="pn-b" x="-6.5" y="-6.5" width="13" height="13" rx="2" transform="rotate(45)"/>${b.tr?'<path class="pn-c" d="M-3.5 0h7M-3.5-2v4M3.5-2v4"/>':'<path class="pn-c" d="M0-3.2 3.2 0 0 3.2-3.2 0Z"/>'}</g>`;
     return `<i class="rd-knob k-${kd}" data-pgrip="${b.id}" style="top:${y2}px;left:${pRX(y2).toFixed(1)}px" aria-hidden="true"></i>
       <div class="rd-card k-${kd} ${dn?'done':''} ${past&&!dn?'past':''} ${cur?'cur':''} ${pathSel===b.id?'sel':''} ${pathDrag&&pathDrag.id===b.id?'drag':''}" data-pb="${b.id}" style="top:${cy}px">
-        <span class="rc-time">${pfmt(b.s)}<small>〜${b.wake&&!b.woke?'起きるまで':pfmt(b.e)}</small></span>
-        <span class="rc-t">${b.tr?ico('train'):r?ico(r.q.type):''}<b>${esc(ttl||'（名前なし）')}</b>${dn?'<em class="tb-clear">CLEAR</em>':''}</span>${r&&r.sub?`<span class="rc-sub">${esc(r.sub)}</span>`:''}
+        <span class="rc-t"><span class="rc-time">${pfmt(b.s)}${b.wake&&!b.woke?'<small>〜起きるまで</small>':''}</span><b>${esc(ttl||'（名前なし）')}</b>${dn?'<em class="tb-clear">CLEAR</em>':''}</span>
         ${late?`<button class="rc-act" data-act="pathlate" data-v="${b.id}"><i>⟳</i>遅れた　今から始める</button>`:''}${wake?`<button class="rc-act" data-act="pathwake" data-v="${b.id}"><i>☀</i>起きた</button>`:''}</div>`; }).join('');
   svg+=foot;
   let nowM=''; if(isT&&now>=PATH_H0&&now<PATH_H1){ const y=pm2y(now), x=pRX(y), day=now>=6*60&&now<18*60, ang=Math.atan2(6,pRX(y+3)-pRX(y-3))*180/Math.PI-90;
-    nowM=`<div class="rd-link" style="top:${y}px;left:${x.toFixed(1)}px;transform:rotate(${ang.toFixed(0)}deg)" aria-hidden="true"></div><div class="rd-clock" style="top:${y}px;left:${(x+14).toFixed(1)}px">${day?'<i class="ck-sun"></i>':'<i class="ck-moon"></i>'}<span>${pfmt(now)}</span></div>`; }
-  h+=`<div class="tl road" id="tl" style="height:${H}px"><svg class="rd-svg" width="100%" height="${H}" aria-hidden="true">${svg}</svg>${regs}${hrs}${cards}${nowM}</div>`;
+    nowM=`<div class="rd-link" style="top:${y}px;left:${x.toFixed(1)}px;transform:rotate(${ang.toFixed(0)}deg)" aria-hidden="true"></div>`; }
+  const md=x=>{ const t=new Date(k+'T00:00:00'); t.setDate(t.getDate()+x); return (t.getMonth()+1)+'/'+t.getDate(); };
+  const nb=bls.filter(b=>!b.fix), nd=nb.filter(pDone).length; let wx=null; try{ wx=JSON.parse(localStorage.getItem(WX_KEY)||'null'); }catch(e){}
+  const hud=`<div class="sl-hud">${nb.length?`<b>${nd}/${nb.length}</b><i></i>`:''}${isT?`<b>${now>=6*60&&now<18*60?'<i class="ck-sun"></i>':'<i class="ck-moon"></i>'}${now<12*60?'AM':'PM'} ${String(Math.floor(now/60)%12||12).padStart(2,'0')}:${String(now%60).padStart(2,'0')}</b><i></i>`:''}${isT&&wx&&wx.temp!=null?`<b>${wx.temp>0?'+':''}${Math.round(wx.temp)}℃</b><i></i>`:''}</div>`;
+  h+=`<div class="slate z${pZoom} ${pathBoot?'boot':''}"><i class="sl-cn tl" aria-hidden="true"></i><i class="sl-cn tr" aria-hidden="true"></i><i class="sl-cn bl" aria-hidden="true"></i><i class="sl-cn br" aria-hidden="true"></i>
+    <div class="sl-top"><button class="sl-tab" data-act="pathday" data-v="-1">${md(-1)} <i>L</i></button><div class="sl-title"><b>${isT?'今日の旅程':'旅程'}</b><small>${d.getMonth()+1}/${d.getDate()}（${'日月火水木金土'[d.getDay()]}）${holiday(k)?' '+holiday(k):''}</small></div><button class="sl-tab" data-act="pathday" data-v="1"><i>R</i> ${md(1)}</button></div>
+    <div class="sl-body"><div class="sl-view" id="slView"><div class="tl road" id="tl" style="height:${H}px"><svg class="rd-svg" width="100%" height="${H}" aria-hidden="true">${svg}</svg>${regs}${hrs}${cards}${nowM}</div></div><div class="sl-fx" aria-hidden="true"></div>${hud}<div class="sl-ret" id="slRet" aria-hidden="true"><i class="rt-c"></i><span class="rt-l" id="slRetL"></span></div></div>
+    <div class="sl-bot"><span class="sl-zoom"><button data-act="pathzoom" data-v="-1" aria-label="ひろく見る" ${pZoom===0?'disabled':''}>−</button>ズーム<button data-act="pathzoom" data-v="1" aria-label="くわしく見る" ${pZoom===2?'disabled':''}>＋</button></span>${isT?'<button class="sl-p" data-act="pathhere">現在地<i>Y</i></button>':''}<button class="sl-p sl-a" data-act="pathA" id="slA"><span id="slAt">置く</span><i>A</i></button></div></div>`;
+  pathBoot=false;
   return h;
 }
 // 地図の地形（日ごとに少し違う等高線・森・岩）
 function pMapArt(k,H){
   let sd=0; for(const c of k) sd=(sd*31+c.charCodeAt(0))>>>0; const rnd=()=>{ sd=(sd*1664525+1013904223)>>>0; return sd/4294967296; };
-  const band=[[0,'#5b4c37'],[pm2y(6*60),'#64553d'],[pm2y(11*60),'#6b5b41'],[pm2y(15*60),'#62523b'],[pm2y(18*60),'#564734'],[pm2y(21*60),'#4a3d2c'],[H,'#43372a']];
+  const band=[[0,'#6a5d36'],[pm2y(6*60),'#7a6b3e'],[pm2y(11*60),'#857543'],[pm2y(15*60),'#7b6a3c'],[pm2y(18*60),'#6a5b34'],[pm2y(21*60),'#56492b'],[H,'#4c4026']];
   let o=`<defs><linearGradient id="mpBand" x1="0" y1="0" x2="0" y2="${H}" gradientUnits="userSpaceOnUse">${band.map(([y,c])=>`<stop offset="${(y/H).toFixed(3)}" stop-color="${c}"/>`).join('')}</linearGradient></defs><rect x="0" y="0" width="100%" height="${H}" fill="url(#mpBand)"/>`;
   // 川（道と交わる所は橋になる）
   { const ry=pm2y(8*60)+rnd()*pm2y(10*60); let d=''; for(let x=-10;x<=520;x+=10){ const y=ry+18*Math.sin(x/70+rnd()*.2)+10*Math.sin(x/23); d+=(d?'L':'M')+x+' '+y.toFixed(1); } o+=`<path class="mp-river" d="${d}"/><path class="mp-river2" d="${d}"/>`; }
   o+='<g class="mp-grid">'; for(let y=0;y<H;y+=120) o+=`<line x1="0" x2="100%" y1="${y}" y2="${y}"/>`; for(let x=0;x<900;x+=120) o+=`<line y1="0" y2="${H}" x1="${x}" x2="${x}"/>`; o+='</g><g class="mp-topo">';
   for(let i=0;i<Math.ceil(H/170);i++){ const cx=130+rnd()*320, cy=40+i*170+rnd()*90, R=40+rnd()*50, f1=rnd()*6, f2=rnd()*6, n=3+Math.floor(rnd()*3);
-    for(let j=n;j>=1;j--){ const r=R*j/n, lv=(n-j)/(n-1||1); let d=''; for(let t=0;t<=40;t++){ const a=t/40*Math.PI*2, rr=r*(1+.18*Math.sin(3*a+f1)+.09*Math.sin(5*a+f2)); d+=(t?'L':'M')+(cx+rr*Math.cos(a)*1.4).toFixed(1)+' '+(cy+rr*Math.sin(a)).toFixed(1); } o+=`<path d="${d}Z" style="fill:rgba(${190+lv*30|0},${170+lv*30|0},${125+lv*30|0},${(.08+lv*.12).toFixed(2)})"/>`; } }
+    for(let j=n;j>=1;j--){ const r=R*j/n, lv=(n-j)/(n-1||1); let d=''; for(let t=0;t<=40;t++){ const a=t/40*Math.PI*2, rr=r*(1+.18*Math.sin(3*a+f1)+.09*Math.sin(5*a+f2)); d+=(t?'L':'M')+(cx+rr*Math.cos(a)*1.4).toFixed(1)+' '+(cy+rr*Math.sin(a)).toFixed(1); } o+=`<path d="${d}Z" style="fill:rgba(${205+lv*30|0},${195+lv*30|0},${160+lv*30|0},${(.1+lv*.2).toFixed(2)})"/>`; } }
   o+='</g><g class="mp-tree">';
   for(let i=0;i<Math.ceil(H/70);i++){ const y=20+i*70+rnd()*40, x=rnd()<.45?6+rnd()*30:pRX(y)+22+rnd()*60; if(Math.abs(x-pRX(y))<16) continue; const n=4+Math.floor(rnd()*7);
     for(let j=0;j<n;j++){ const tx=x+(rnd()-.5)*26, ty=y+(rnd()-.5)*18, r=2.2+rnd()*1.6; if(Math.abs(tx-pRX(ty))<10) continue; o+=`<circle cx="${tx.toFixed(1)}" cy="${ty.toFixed(1)}" r="${r.toFixed(1)}"/>`; } }
   return o+'</g>';
 }
+const pRetY=sv=>Math.round(sv.clientHeight*.42);
+// 地図の真ん中の照準：その時刻を読み取り、近くの道しるべに吸い付く
+let pHover=null;
+function pRetUpdate(){
+  const sv=$('slView'), ret=$('slRet'), tl=$('tl'); if(!sv||!ret||!tl) return;
+  const ry=pRetY(sv), y=sv.scrollTop+ry, m=Math.max(PATH_H0,Math.min(PATH_H1,PATH_H0+y/PX)), bl=pBlocks(dayView);
+  let hit=null, bd=1e9; bl.forEach(b=>{ const d=Math.abs(pm2y(b.s)-y); if(d<Math.max(14,SNAP*PX*.9)&&d<bd){ bd=d; hit=b; } });
+  const yy=hit?pm2y(hit.s):y, x=pRX(yy), off=tl.getBoundingClientRect().left-sv.parentNode.getBoundingClientRect().left;
+  ret.style.top=(yy-sv.scrollTop)+'px'; ret.style.left=(off+x)+'px'; ret.classList.toggle('hit',!!hit); ret.classList.toggle('nolab',!!hit&&pZoom>0);
+  const sm=Math.round(m/SNAP)*SNAP; $('slRetL').textContent=hit?(pTitle(hit)||'（名前なし）'):pfmt(sm);
+  const at=$('slAt'); if(at) at.textContent=hit?'開く':'置く';
+  if((hit&&hit.id)!==pHover){ document.querySelectorAll('.rd-card.hover').forEach(e=>e.classList.remove('hover')); pHover=hit&&hit.id; if(pHover){ const c=document.querySelector(`.rd-card[data-pb="${pHover}"]`); c&&c.classList.add('hover'); } }
+  ret.dataset.m=hit?'':sm; ret.dataset.id=hit?hit.id:'';
+}
 function pathAfter(){
   if(listCat!=='path'||tab!=='list') return;
-  const key=dayView; if(pathScrolled===key) return; pathScrolled=key;
-  const tl=$('tl'); if(!tl) return;
-  const bl=pBlocks(key), m=pathFocus!=null?pathFocus-90:key===ymd()?pnow()-60:(bl[0]?bl[0].s-30:7*60); pathFocus=null;
-  const y=tl.getBoundingClientRect().top+pScrollY()+pm2y(Math.max(PATH_H0,m))-120;
-  pScroll(Math.max(0,y));
+  const sv=$('slView'); if(!sv) return;
+  if(!sv.__ret){ sv.__ret=1; sv.addEventListener('scroll',()=>requestAnimationFrame(pRetUpdate),{passive:true});
+    sv.addEventListener('wheel',e=>{ if(!e.ctrlKey) return; e.preventDefault(); pZoomBy(e.deltaY<0?1:-1); },{passive:false}); }
+  const key=dayView;
+  if(pathScrolled!==key){ pathScrolled=key; const bl=pBlocks(key), m=pathFocus!=null?pathFocus:key===ymd()?pnow():(bl[0]?bl[0].s:8*60); pathFocus=null; sv.scrollTop=Math.max(0,pm2y(Math.max(PATH_H0,m))-pRetY(sv)); }
+  pRetUpdate();
 }
+// ズーム：照準の時刻を保ったまま、地図をひろく／くわしく
+function pZoomBy(d){ const nz=Math.max(0,Math.min(2,pZoom+d)); if(nz===pZoom) return; const sv=$('slView'); const m=sv?PATH_H0+(sv.scrollTop+pRetY(sv))/PX:null;
+  pZoom=nz; PX=PZOOM[nz]; renderList(); const s2=$('slView'); if(s2&&m!=null) s2.scrollTop=Math.max(0,pm2y(m)-pRetY(s2)); pRetUpdate(); }
+// 2本指でつまんでズーム
+(function(){ let d0=null; document.addEventListener('touchstart',e=>{ if(e.touches.length===2&&e.target.closest('#slView')){ d0=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY); } },{passive:true});
+  document.addEventListener('touchmove',e=>{ if(d0&&e.touches.length===2){ e.preventDefault(); const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY); if(d/d0>1.35){ pZoomBy(1); d0=d; } else if(d/d0<.74){ pZoomBy(-1); d0=d; } } },{passive:false});
+  document.addEventListener('touchend',e=>{ if(e.touches.length<2) d0=null; }); })();
 function pathPanel(){
   const k=dayView, b=pathSel&&pBlocks(k).find(x=>x.id===pathSel);
   if(!b){ const P=plan(), tk=pTpl(k), n=pBlocks(k).filter(x=>!x.q&&!x.tr&&x.fix).length;
@@ -2965,6 +3061,11 @@ function pathAct(a,b){
     case 'pathlate': { const x=pBlocks(k).find(y=>y.id===b.dataset.v); if(x){ const d=Math.ceil((pnow()-x.s)/SNAP)*SNAP; if(d>0){ pathShift(k,x.s,d); toast(`${pfmt(x.s+d)}から始める。後ろの予定も${d}分ずらした`); } render(); } return true; }
     case 'pathwake': { const x=pBlocks(k).find(y=>y.id===b.dataset.v); if(x){ const e=Math.max(x.s+SNAP,Math.round(pnow()/SNAP)*SNAP); pSet(k,x.id,{e,done:1,woke:1}); toast('おはよう。ここから今日の冒険'); render(); } return true; }
     case 'pathmorning': { tab='list'; listCat='path'; dayView=ymd(); pathSel=null; pathScrolled=null; const tpl=(plan().tpl[pTpl(dayView)]||{}).b||[]; if(!pBlocks(dayView).length&&tpl.length){ const P=plan(), day={...(P.d[dayView]||{})}, now=Date.now(); tpl.forEach(t=>{ day[uid()]={s:t.s,e:t.e,t:t.t,fix:1,...(t.wake?{wake:1}:{}),u:now}; }); P.d={...P.d,[dayView]:day}; save(); } render(); return true; }
+    case 'pathzoom': pZoomBy(+b.dataset.v); return true;
+    case 'pathhere': { const sv=$('slView'); if(sv) sv.scrollTo({top:Math.max(0,pm2y(pnow())-pRetY(sv)),behavior:'smooth'}); return true; }
+    case 'pathA': { const r=$('slRet'); if(!r) return true; if(r.dataset.id){ pathSel=r.dataset.id; render(); if(window.innerWidth<=820) pScroll(0); return true; }
+      const s0=Math.max(PATH_H0,Math.min(PATH_H1-SNAP,+r.dataset.m)), bl=pBlocks(k), nx=bl.filter(x=>x.s>=s0+SNAP).map(x=>x.s)[0]||PATH_H1, id=uid();
+      pSet(k,id,{s:s0,e:Math.max(s0+SNAP,Math.min(s0+60,nx,PATH_H1)),t:''}); pathSel=id; render(); if(window.innerWidth<=820) pScroll(0); setTimeout(()=>{ const i=$('pbTitle'); i&&i.focus(); },60); return true; }
     case 'pathdel': { if(pathSel){ pDel(k,pathSel); pathSel=null; render(); } return true; }
   }
   return false;
