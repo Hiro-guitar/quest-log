@@ -268,7 +268,7 @@ select{max-width:100%;text-overflow:ellipsis}
   background:linear-gradient(#5fd4ef,#5fd4ef) 0 0/8px 2px,linear-gradient(#5fd4ef,#5fd4ef) 0 0/2px 8px,linear-gradient(#5fd4ef,#5fd4ef) 100% 0/8px 2px,linear-gradient(#5fd4ef,#5fd4ef) 100% 0/2px 8px,
   linear-gradient(#5fd4ef,#5fd4ef) 0 100%/8px 2px,linear-gradient(#5fd4ef,#5fd4ef) 0 100%/2px 8px,linear-gradient(#5fd4ef,#5fd4ef) 100% 100%/8px 2px,linear-gradient(#5fd4ef,#5fd4ef) 100% 100%/2px 8px;background-repeat:no-repeat;filter:drop-shadow(0 0 3px rgba(95,212,239,.9));transition:all .15s}
 .sl-ret.hit .rt-c{left:-12px;top:-12px;width:24px;height:24px;filter:drop-shadow(0 0 5px #fff) drop-shadow(0 0 3px rgba(95,212,239,1))}
-.rt-l{position:absolute;left:18px;top:-11px;white-space:nowrap;font-size:11px;font-weight:700;letter-spacing:.06em;color:#e9fbff;padding:2px 8px;background:rgba(5,18,26,.85);border:1px solid rgba(95,212,239,.55);border-radius:2px;box-shadow:0 0 8px rgba(95,212,239,.35);max-width:min(60vw,320px);white-space:normal;line-height:1.35}
+.rt-l{position:absolute;left:12px;top:-40px;white-space:nowrap;font-size:11px;font-weight:700;letter-spacing:.06em;color:#e9fbff;padding:2px 8px;background:rgba(5,18,26,.85);border:1px solid rgba(95,212,239,.55);border-radius:2px;box-shadow:0 0 8px rgba(95,212,239,.35);max-width:min(60vw,320px);white-space:normal;line-height:1.35}
 .sl-ret.nolab .rt-l{display:none}
 .rd-card.hover{border-color:rgba(255,255,255,.75);box-shadow:0 0 0 1px rgba(95,212,239,.7),0 0 14px rgba(95,212,239,.35)}
 .sl-zoom{display:flex;align-items:center;gap:6px}
@@ -423,13 +423,18 @@ select{max-width:100%;text-overflow:ellipsis}
 .rd-knob{position:absolute;width:26px;height:22px;margin:-11px 0 0 -13px;cursor:ns-resize;z-index:3;display:grid;place-items:center;touch-action:none}
 .rd-knob::after{content:"";width:7px;height:7px;border-radius:50%;background:#0b0f12;border:1.5px solid rgba(216,208,180,.7)}
 .rd-knob.k-q::after{border-color:var(--blue)}.rd-knob.k-tr::after{border-color:var(--orange)}
-.rd-card{position:absolute;left:118px;right:auto;max-width:calc(100% - 128px);min-height:28px;padding:4px 10px 4px 9px;cursor:grab;z-index:2;
+.rd-card{position:absolute;left:118px;right:auto;max-width:calc(100% - 128px);min-width:120px;min-height:28px;padding:4px 10px 5px 9px;cursor:grab;z-index:2;
   background:rgba(7,16,22,.74);border:1px solid rgba(95,212,239,.28);border-left:2px solid rgba(201,164,106,.8);border-radius:2px;box-shadow:0 2px 8px rgba(0,0,0,.5);display:grid;gap:1px;transition:background .15s}
 .rd-card.k-q,.rd-card.k-tr{border-left-color:#f0a640}.rd-card.done{border-left-color:#5fd4ef}
 .rd-card.k-fix{background:rgba(7,16,22,.7);border-color:rgba(201,164,106,.25)}
 .rc-time{font-size:10.5px;letter-spacing:.08em;color:#e8c46a;font-variant-numeric:tabular-nums}
 .rc-time small{font-size:10px;color:rgba(216,208,180,.55);margin-left:2px}
 .rd-card .rc-time{color:#8fe3f7}.rd-card.k-fix .rc-time{color:#d9bf86}.rd-card.k-fix .rc-time{color:rgba(216,208,180,.6)}
+.rc-head{display:flex;align-items:center;gap:8px;min-height:15px}
+.rc-head .rc-time{font-size:10.5px;line-height:1}
+.rc-name{display:block;font-size:13px;font-weight:700;color:var(--text);line-height:1.38;overflow-wrap:anywhere}
+.rd-card.k-fix .rc-name{font-weight:500;color:#cfc8b0}
+.rc-dots{margin-left:auto}
 .rc-t{display:flex;align-items:baseline;gap:8px;min-width:0;font-size:13px;color:var(--text);flex-wrap:nowrap}
 .rc-t .rc-time{flex:none;font-size:11px}
 .rc-t b{font-weight:700;white-space:normal;overflow-wrap:anywhere;line-height:1.3}
@@ -3009,19 +3014,19 @@ function pathList(){
   const regs=REG.map(([m,n])=>`<div class="rd-reg" style="top:${pm2y(m)+14}px">${n}<i></i></div>`).join('');
   const lateId=isT?(bls.find(b=>!pDone(b)&&!b.fix&&!b.wake&&b.s<now-4&&b.e>now-120)||{}).id:null;
   // 札の名前は省略せず折り返す：幅から行数を見積もって、下の札と重ならないようにする
-  const cW=(($('slView')||{}).clientWidth||Math.min(window.innerWidth-40,520))-pCardX-24, cLines=(t,tw)=>Math.min(4,Math.max(1,Math.ceil((t.length*13.2+tw)/Math.max(80,cW))));
+  const cW=(($('slView')||{}).clientWidth||Math.min(window.innerWidth-40,520))-pCardX-26, cLines=t=>Math.min(4,Math.max(1,Math.ceil(t.length*13.6/Math.max(80,cW))));
   let lastB=-1e9, mtags=''; const cards=bls.map(b=>{ const kd=pKind(b), dn=pDone(b), past=isT&&b.e<=now, cur=isT&&b.s<=now&&now<b.e, r=pRef(b), ttl=pTitle(b), y=pm2y(b.s), y2=pm2y(b.e), x=pRX(y);
     if(b.pre){ const a0=Math.max(PATH_H0,b.s-b.pre), my=pm2y((a0+b.s)/2); svg+=`<path class="rd-pre" d="${seg(a0,b.s)}"/><circle class="rd-pre-dot" cx="${pRX(pm2y(a0)).toFixed(1)}" cy="${pm2y(a0)}" r="3.2"/>`; mtags+=`<span class="rd-tag pre" style="top:${my}px;left:${(pRX(my)+9).toFixed(1)}px">支度</span>`; }
     if(b.post){ const a1=Math.min(PATH_H1,b.e+b.post), my=pm2y((b.e+a1)/2); svg+=`<path class="rd-post" d="${seg(b.e,a1)}"/>`; mtags+=`<span class="rd-tag post" style="top:${my}px;left:${(pRX(my)+9).toFixed(1)}px">ゆとり</span>`; }
     svg+=`<path class="rd-seg k-${kd} ${dn?'done':''} ${b.wake&&!b.woke?'wake':''}" d="${seg(b.s,b.e)}"/>`;
     const late=b.id===lateId, wake=isT&&b.wake&&!b.woke&&!dn&&b.s<=now, extra=late||wake;
-    const nl=cLines(pTitle(b)||'（名前なし）',dn?95:44); const cy=Math.max(y-15,lastB+4); lastB=cy+30+(nl-1)*17+(extra?30:0);
+    const nl=cLines(pTitle(b)||'（名前なし）'); const cy=Math.max(y-15,lastB+5); lastB=cy+20+nl*18+(extra?30:0);
     svg+=`<path class="rd-lead k-${kd}" d="M${(x+8).toFixed(1)} ${y-12}C${(x+34).toFixed(1)} ${y-12} ${(pCardX-26)} ${cy+15} ${pCardX} ${cy+15}"/>`;
     svg+=b.fix?`<g class="rd-stamp ${dn?'done':''}" transform="translate(${x.toFixed(1)} ${y})"><rect x="-6" y="-6" width="12" height="12" rx="2.5"/><circle r="2.2"/></g>`
       :`<g class="rd-pin k-${kd} ${dn?'done':''} ${cur?'cur':''} ${pathSel===b.id?'sel':''}" transform="translate(${x.toFixed(1)} ${y})"><rect class="pn-g" x="-9" y="-9" width="18" height="18" rx="3" transform="rotate(45)"/><rect class="pn-b" x="-6.5" y="-6.5" width="13" height="13" rx="2" transform="rotate(45)"/>${b.tr?'<path class="pn-c" d="M-3.5 0h7M-3.5-2v4M3.5-2v4"/>':'<path class="pn-c" d="M0-3.2 3.2 0 0 3.2-3.2 0Z"/>'}</g>`;
     return `<i class="rd-knob k-${kd}" data-pgrip="${b.id}" style="top:${y2}px;left:${pRX(y2).toFixed(1)}px" aria-hidden="true"></i>
       <div class="rd-card k-${kd} ${dn?'done':''} ${past&&!dn?'past':''} ${cur?'cur':''} ${pathSel===b.id?'sel':''} ${pathDrag&&pathDrag.id===b.id?'drag':''}" data-pb="${b.id}" style="top:${cy}px">
-        <span class="rc-t"><span class="rc-time">${pfmt(b.s)}${b.wake&&!b.woke?'<small>〜起きるまで</small>':''}</span><b>${esc(ttl||'（名前なし）')}</b>${r&&r.ss?`<span class="rc-dots">${r.ss.map(z=>`<i class="${z.done?'on':''}"></i>`).join('')}</span>`:''}${dn?'<em class="tb-clear">CLEAR</em>':''}</span>
+        <span class="rc-head"><span class="rc-time">${pfmt(b.s)}${b.wake&&!b.woke?'<small>〜起きるまで</small>':''}</span>${r&&r.ss?`<span class="rc-dots">${r.ss.map(z=>`<i class="${z.done?'on':''}"></i>`).join('')}</span>`:''}${dn?'<em class="tb-clear">CLEAR</em>':''}</span><b class="rc-name">${esc(ttl||'（名前なし）')}</b>
         ${late?`<button class="rc-act" data-act="pathlate" data-v="${b.id}"><i>⟳</i>遅れた　今から始める</button>`:''}${wake?`<button class="rc-act" data-act="pathwake" data-v="${b.id}"><i>☀</i>起きた</button>`:''}</div>`; }).join('');
   svg+=foot;
   let nowM=''; if(isT&&now>=PATH_H0&&now<PATH_H1){ const y=pm2y(now), x=pRX(y), day=now>=6*60&&now<18*60, ang=Math.atan2(6,pRX(y+3)-pRX(y-3))*180/Math.PI-90;
