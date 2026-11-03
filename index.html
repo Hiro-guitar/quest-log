@@ -262,6 +262,25 @@ select{max-width:100%;text-overflow:ellipsis}
 .estep .ic:hover{color:var(--text);background:rgba(255,255,255,.06)}
 .hint{font-size:12px;color:var(--dim)}
 
+/* スマホ：旅程は画面いっぱいの地図（ブレワイでマップを開いた時のように） */
+.sl-close,.sl-list{display:none}
+@media (max-width:820px){
+  body.pfull{overflow:hidden}
+  body.pfull .hints{display:none}
+  body.pfull .slate{position:fixed;inset:0;margin:0;width:auto;z-index:60;display:flex;flex-direction:column;border:0;box-shadow:none}
+  body.pfull .sl-top{padding-top:env(safe-area-inset-top);height:calc(48px + env(safe-area-inset-top))}
+  body.pfull .sl-body{flex:1;height:auto;min-height:0}
+  body.pfull .sl-bot{padding-bottom:env(safe-area-inset-bottom);height:calc(50px + env(safe-area-inset-bottom));justify-content:space-between;gap:10px}
+  body.pfull .sl-close,body.pfull .sl-list{display:flex}
+  body.pfull .sl-zoom{margin-left:auto}
+  body.pfull .sl-zoom{font-size:0;gap:4px}body.pfull .sl-zoom button{font-size:14px}
+  body.pfull [data-act=pathhere]{font-size:0;gap:0}body.pfull [data-act=pathhere] i{font-size:10px}
+  body.pfull .sl-p{font-size:12px}
+  .sl-list.on{color:#fff;text-shadow:0 0 6px rgba(95,212,239,.8)}
+  .sl-sheet{position:absolute;left:0;right:0;bottom:0;max-height:62%;overflow:auto;z-index:4;background:rgba(6,14,19,.96);border-top:1px solid rgba(95,212,239,.45);box-shadow:0 -6px 20px rgba(0,0,0,.6);padding:4px 10px 10px}
+  .sl-sheet .path-un{margin:0;background:none}.sl-sheet .path-un::before,.sl-sheet .path-un::after{display:none}
+}
+
 /* シーカーストーンの地図画面 */
 .sl-ret{position:absolute;z-index:3;pointer-events:none;transition:top .12s ease-out,left .12s ease-out}
 .rt-c{position:absolute;left:-15px;top:-15px;width:30px;height:30px;
@@ -309,10 +328,13 @@ select{max-width:100%;text-overflow:ellipsis}
 .sl-view{position:absolute;inset:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .sl-view::-webkit-scrollbar{display:none}
 .sl-view .tl{margin:0}
-.sl-view{background:#08141b linear-gradient(rgba(95,212,239,.07) 1px,transparent 1px) 0 0/100% 40px,#08141b}
+.sl-view{background:#08141b}
 .sl-view::before{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(90deg,rgba(95,212,239,.05) 0 1px,transparent 1px 40px)}
 /* 地図の端（4時より前・24時より後）はブレワイの未踏の地のように暗い格子に溶かす */
-.sl-view .tl.road{-webkit-mask-image:linear-gradient(transparent,#000 46px,#000 calc(100% - 46px),transparent);mask-image:linear-gradient(transparent,#000 46px,#000 calc(100% - 46px),transparent)}
+.cf-void{fill:#08141b}
+.cf-rim{fill:none;stroke:#efe2b4;stroke-width:2.2;stroke-linejoin:round;filter:drop-shadow(0 0 3px rgba(95,212,239,.35))}
+.cf-shade{fill:none;stroke:rgba(48,36,16,.45);stroke-width:10;stroke-linejoin:round}
+.cf-hatch{fill:none;stroke:rgba(52,38,18,.55);stroke-width:1.1;stroke-linecap:round}
 .sl-fx{box-shadow:inset 0 0 0 1px rgba(0,0,0,.7),inset 0 0 38px 10px rgba(5,22,36,.95),inset 0 30px 26px -12px rgba(5,22,36,.9),inset 0 -30px 26px -12px rgba(5,22,36,.9)!important}
 /* スマホでは画面そのものがシーカーストーン：飾りの枠をなくし、地図を画面いっぱいに */
 @media (max-width:820px){
@@ -386,7 +408,7 @@ select{max-width:100%;text-overflow:ellipsis}
 .pu-i.tr .pu-pin{border-color:var(--orange);box-shadow:0 0 6px rgba(240,166,64,.5)}
 .path-empty{text-align:center;padding:4px 0 10px;display:grid;gap:6px;justify-items:center}
 .tl{position:relative;margin:6px 0 30px;user-select:none;-webkit-user-select:none;touch-action:pan-y;cursor:crosshair}
-.tl.road{background:#7a6b3e;border:1px solid rgba(216,208,180,.28);border-radius:3px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(0,0,0,.6),inset 0 0 50px rgba(0,0,0,.45),0 6px 18px rgba(0,0,0,.4)}
+.tl.road{background:#08141b;overflow:hidden}
 .rd-svg{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
 .rd-bed{fill:none;stroke:rgba(60,50,25,.55);stroke-width:5;stroke-linecap:round}
 .rd-edge{fill:none;stroke:#e6d9a8;stroke-width:2.6;stroke-linecap:round}
@@ -1163,7 +1185,7 @@ function addSteps(q,text){
 const CAT_NAMES={today:'今日の冒険',path:'旅程',main:'メインチャレンジ',challenge:'チャレンジ',mini:'ミニチャレンジ',train:'鍛錬',memory:'思い出'};
 const CATS=['today','path','main','challenge','mini','train'];
 let toolSel='sync', bkList=null, memEdit=null;
-function render(){sortAllSteps();renderLv();renderHud();renderTabs();renderList();renderDetail();renderHints();
+function render(){ document.body.classList.toggle('pfull',window.innerWidth<=820&&tab==='list'&&listCat==='path'&&!pathSel&&!selId); sortAllSteps();renderLv();renderHud();renderTabs();renderList();renderDetail();renderHints();
   $('split').classList.toggle('has-sel',!!selId||(tab==='tools'&&toolPicked)||(tab==='pouch'&&!!pouchSel)||(tab==='list'&&listCat==='train'&&!!trSel)||(tab==='list'&&listCat==='path'&&!!pathSel));
 }
 let toolPicked=false;
@@ -1609,12 +1631,12 @@ window.addEventListener('resize',()=>{ clearTimeout(fitTitles._t); fitTitles._t=
 try{ document.fonts&&document.fonts.ready.then(()=>fitTitles()); }catch(e){}
 window.addEventListener('load',()=>setTimeout(fitTitles,50));
 function renderList(){
-  const L=$('list'); let h='';
+  const L=$('list'); let h=''; const oldFull=$('slFull'), oldSt=oldFull&&$('slView')?$('slView').scrollTop:null; if(oldFull) oldFull.remove();
   if(tab==='rest'){ L.innerHTML=restList(); fitTitles(); return; }
   if(tab==='pouch'){ L.innerHTML=pouchList(); fitTitles(); return; }
   if(tab!=='tools'&&listCat==='today'){ L.innerHTML=connectBanner()+todayList(); fitTitles(); return; }
   if(tab!=='tools'&&listCat==='train'){ L.innerHTML=connectBanner()+trList(); fitTitles(); return; }
-  if(tab!=='tools'&&listCat==='path'){ const sv=$('slView'), st=sv?sv.scrollTop:null; L.innerHTML=connectBanner()+pathList(); pLayout(); pPad(); if(st!=null&&$('slView')) $('slView').scrollTop=st; setTimeout(pathAfter,0); return; }
+  if(tab!=='tools'&&listCat==='path'){ const sv=$('slView'), st=oldSt!=null?oldSt:(sv?sv.scrollTop:null); L.innerHTML=connectBanner()+pathList(); if(document.body.classList.contains('pfull')){ const sl=L.querySelector('.slate'); if(sl){ sl.id='slFull'; document.body.appendChild(sl); } } pLayout(); pPad(); if(st!=null&&$('slView')) $('slView').scrollTop=st; setTimeout(pathAfter,0); return; }
   if(tab!=='tools'&&listCat==='memory'){
     const ms=state.quests.filter(q=>q.done&&q.type!=='mini').sort((a,b)=>(b.doneAt||0)-(a.doneAt||0));
     let m=catBar('memory')+'<div class="rows">';
@@ -2960,6 +2982,7 @@ document.addEventListener('keydown',e=>{
 const PATH_H0=4*60, PATH_H1=24*60, SNAP=15, pCardX=118, PZOOM=[.55,1,1.7];
 let pZoom=1, PX=PZOOM[1], pathBoot=false;
 const pRX=y=>{ const q=y/PX; return 62+20*Math.sin(q/88)+8*Math.sin(q/37+1.3); }; // 道の曲がり具合（ズームしても形は同じ）
+let pathSheet=false;
 let puSel=null; // まとめて置く工程を選んでいる途中 {q, ids:Set}
 let pathSel=null, pathScrolled=null, pathDrag=null, pathFocus=null;
 const pm2y=m=>(m-PATH_H0)*PX;
@@ -3011,7 +3034,7 @@ function pathList(){
   pAutoPlace(dayView);
   const k=dayView, d=new Date(k+'T00:00:00'), isT=k===ymd(), bl=pBlocks(k), P=plan(), tk=pTpl(k), tpl=(P.tpl[tk]||{}).b||[];
   let h=catBar('path');
-  const un=pUnplaced(k);
+  const un=pUnplaced(k), unAt=h.length;
   if(un.length){ const grp=[]; un.forEach((x,i)=>{ const key=x.sid?x.q:'_'+i; let g=grp.find(z=>z.key===key); if(!g){ g={key,x,items:[]}; grp.push(g); } g.items.push([x,i]); });
     h+=`<div class="path-un"><div class="pu-h">まだ道に置いていない冒険<small>押すと空いている時間に置く</small></div>${grp.map(g=>{ const q=g.x.q&&findQ(g.x.q);
       if(!g.x.sid) return `<button class="pu-i ${g.x.tr?'tr':''}" data-act="pathput" data-i="${g.items[0][1]}"><i class="pu-pin" aria-hidden="true"></i><span>${esc(g.x.t||'(無題)')}</span></button>`;
@@ -3019,6 +3042,7 @@ function pathList(){
         ?g.items.map(([x,i])=>`<button class="pu-i st pick ${puSel.ids.has(x.sid)?'on':''}" data-act="pathpupick" data-v="${x.sid}"><i class="pu-ck" aria-hidden="true">${puSel.ids.has(x.sid)?'✓':''}</i><span>${esc(x.t||'(無題)')}</span></button>`).join('')+`<div class="pu-selbar"><span class="hint">一緒にやるものを選んで</span><button class="btn small" data-act="pathpusel" data-q="">やめる</button><button class="btn small primary" data-act="pathputg" data-q="${g.x.q}" ${puSel.ids.size?'':'disabled'}>選んだ${puSel.ids.size}つをまとめて置く</button></div>`
         :g.items.map(([x,i])=>`<button class="pu-i st" data-act="pathput" data-i="${i}"><i class="pu-pin" aria-hidden="true"></i><span>${esc(x.t||'(無題)')}</span></button>`).join('')}</div>`; }).join('')}</div>`; }
   if(!bl.length) h+=`<div class="path-empty">${tpl.length?`<button class="btn" data-act="pathtpl">いつもの旅程（${tk==='we'?'休日':'平日'}）を敷く</button>`:''}<p class="hint">地図を動かして照準を合わせ、A で予定を置けます</p></div>`;
+  const unH=h.slice(unAt);
   // 時間の道：1日を地図の上の一本の道にして、予定は道しるべ（ピン）として立てる
   const now=pnow(), H=pm2y(PATH_H1)+10, L=b=>pathDrag&&pathDrag.id===b.id?{...b,s:pathDrag.s,e:pathDrag.e}:b;
   const bls=bl.map(L).sort((a,b)=>a.s-b.s);
@@ -3028,7 +3052,7 @@ function pathList(){
   const foot=isT&&now>PATH_H0?`<path class="rd-hero" d="${seg(PATH_H0,Math.min(now,PATH_H1))}"/>`:'';
   let hrs=''; for(let m=PATH_H0+60;m<PATH_H1;m+=60){ const y=pm2y(m), x=pRX(y); svg+=`<circle class="rd-stone" cx="${x.toFixed(1)}" cy="${y}" r="2"/>`; hrs+=`<span class="rd-hr ${m%180===0?'big':''}" style="top:${y}px;left:${(x-46).toFixed(1)}px">${m/60}:00</span>`; }
   // 地方の名前（地図の地名のように）
-  const REG=[[PATH_H0,'暁の丘'],[6*60,'朝の平原'],[11*60,'真昼の街道'],[15*60,'夕暮れの坂'],[18*60,'灯りの宿場'],[21*60,'夜の森']];
+  const REG=[[PATH_H0+40/PX,'暁の丘'],[6*60,'朝の平原'],[11*60,'真昼の街道'],[15*60,'夕暮れの坂'],[18*60,'灯りの宿場'],[21*60,'夜の森']];
   const regs=REG.map(([m,n])=>`<div class="rd-reg" style="top:${pm2y(m)+14}px">${n}<i></i></div>`).join('');
   const lateId=isT?(bls.find(b=>!pDone(b)&&!b.fix&&!b.wake&&b.s<now-4&&b.e>now-120)||{}).id:null;
   // 札の名前は省略せず折り返す：幅から行数を見積もって、下の札と重ならないようにする
@@ -3046,7 +3070,7 @@ function pathList(){
       <div class="rd-card k-${kd} ${dn?'done':''} ${past&&!dn?'past':''} ${cur?'cur':''} ${pathSel===b.id?'sel':''} ${pathDrag&&pathDrag.id===b.id?'drag':''}" data-pb="${b.id}" data-x="${x.toFixed(1)}" data-y="${y}" style="top:${cy}px">
         <span class="rc-head"><span class="rc-time">${pfmt(b.s)}${b.wake&&!b.woke?'<small>〜起きるまで</small>':''}</span>${r&&r.ss?`<span class="rc-dots">${r.ss.map(z=>`<i class="${z.done?'on':''}"></i>`).join('')}</span>`:''}${dn?'<em class="tb-clear">CLEAR</em>':''}</span><b class="rc-name">${esc(ttl||'（名前なし）')}</b>
         ${late?`<button class="rc-act" data-act="pathlate" data-v="${b.id}"><i>⟳</i>遅れた　今から始める</button>`:''}${wake?`<button class="rc-act" data-act="pathwake" data-v="${b.id}"><i>☀</i>起きた</button>`:''}</div>`; }).join('');
-  svg+=foot;
+  svg+=foot+pCliff(k,H);
   let nowM=''; if(isT&&now>=PATH_H0&&now<PATH_H1){ const y=pm2y(now), x=pRX(y), day=now>=6*60&&now<18*60, ang=Math.atan2(6,pRX(y+3)-pRX(y-3))*180/Math.PI-90;
     nowM=`<div class="rd-link" style="top:${y}px;left:${x.toFixed(1)}px;transform:rotate(${ang.toFixed(0)}deg)" aria-hidden="true"></div>`; }
   const md=x=>{ const t=new Date(k+'T00:00:00'); t.setDate(t.getDate()+x); return (t.getMonth()+1)+'/'+t.getDate(); };
@@ -3054,8 +3078,8 @@ function pathList(){
   const hud=`<div class="sl-hud">${nb.length?`<b>${nd}/${nb.length}</b><i></i>`:''}${isT?`<b>${now>=6*60&&now<18*60?'<i class="ck-sun"></i>':'<i class="ck-moon"></i>'}${now<12*60?'AM':'PM'} ${String(Math.floor(now/60)%12||12).padStart(2,'0')}:${String(now%60).padStart(2,'0')}</b><i></i>`:''}${isT&&wx&&wx.temp!=null?`<b>${wx.temp>0?'+':''}${Math.round(wx.temp)}℃</b><i></i>`:''}</div>`;
   h+=`<div class="slate z${pZoom} ${pathBoot?'boot':''}">${SL_DEFS}<i class="sl-cn c1">${slCorner(0,0)}</i><i class="sl-cn c2">${slCorner(1,0)}</i><i class="sl-cn c3">${slCorner(0,1)}</i><i class="sl-cn c4">${slCorner(1,1)}</i>
     ${slBand('t')}<div class="sl-top"><button class="sl-tab" data-act="pathday" data-v="-1">${md(-1)} <i>L</i></button><div class="sl-title"><b>${isT?'今日の旅程':'旅程'}</b><small>${d.getMonth()+1}/${d.getDate()}（${'日月火水木金土'[d.getDay()]}）${holiday(k)?' '+holiday(k):''}</small></div><button class="sl-tab" data-act="pathday" data-v="1"><i>R</i> ${md(1)}</button></div>
-    <div class="sl-body"><div class="sl-view" id="slView"><div class="tl road" id="tl" style="height:${H}px"><svg class="rd-svg" width="100%" height="${H}" aria-hidden="true">${svg}</svg>${regs}${hrs}${mtags}${cards}${nowM}</div></div><div class="sl-fx" aria-hidden="true"></div>${hud}<div class="sl-ret" id="slRet" aria-hidden="true"><i class="rt-c"></i><span class="rt-l" id="slRetL"></span></div></div>
-    <div class="sl-bot"><span class="sl-zoom"><button data-act="pathzoom" data-v="-1" aria-label="ひろく見る" ${pZoom===0?'disabled':''}>−</button>ズーム<button data-act="pathzoom" data-v="1" aria-label="くわしく見る" ${pZoom===2?'disabled':''}>＋</button></span>${isT?'<button class="sl-p" data-act="pathhere">現在地<i>Y</i></button>':''}<button class="sl-p sl-a" data-act="pathA" id="slA"><span id="slAt">置く</span><i>A</i></button></div>${slBand('b')}</div>`;
+    <div class="sl-body"><div class="sl-view" id="slView"><div class="tl road" id="tl" style="height:${H}px"><svg class="rd-svg" width="100%" height="${H}" aria-hidden="true">${svg}</svg>${regs}${hrs}${mtags}${cards}${nowM}</div></div><div class="sl-fx" aria-hidden="true"></div>${hud}${pathSheet&&unH?`<div class="sl-sheet">${unH}</div>`:''}<div class="sl-ret" id="slRet" aria-hidden="true"><i class="rt-c"></i><span class="rt-l" id="slRetL"></span></div></div>
+    <div class="sl-bot"><button class="sl-p sl-close" data-act="pathclose"><i>B</i>とじる</button>${un.length?`<button class="sl-p sl-list ${pathSheet?'on':''}" data-act="pathsheet"><i>X</i>冒険${un.length}</button>`:''}<span class="sl-zoom"><button data-act="pathzoom" data-v="-1" aria-label="ひろく見る" ${pZoom===0?'disabled':''}>−</button>ズーム<button data-act="pathzoom" data-v="1" aria-label="くわしく見る" ${pZoom===2?'disabled':''}>＋</button></span>${isT?'<button class="sl-p" data-act="pathhere">現在地<i>Y</i></button>':''}<button class="sl-p sl-a" data-act="pathA" id="slA"><span id="slAt">置く</span><i>A</i></button></div>${slBand('b')}</div>`;
   pathBoot=false;
   return h;
 }
@@ -3090,6 +3114,15 @@ const slBand=pos=>`<div class="sl-band ${pos}" aria-hidden="true"><svg class="sb
 const SL_CP='M9 82L9 38C9 20 21 9 38 9L82 9M21 70L21 40C21 29 29 21 40 21L51 21C59 21 64 27 64 34C64 41 59 46 52 46L45 46C41 46 39 43 39 40C39 37 41 35 44 35';
 // 四隅は向きをそろえるため、座標そのものを反転させた形を描く（CSSで反転すると光の当たり方が崩れる）
 const slCorner=(fx,fy)=>`<svg viewBox="0 0 84 84" aria-hidden="true"><path d="${SL_CP.replace(/(-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?)/g,(m,x,y)=>`${fx?84-x:x} ${fy?84-y:y}`)}" fill="none" stroke="#000" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round" filter="url(#slStone)"/></svg>`;
+// 地図の上下の端：ブレワイの地図の外周のように、ギザギザの崖で大地が切れて、その先は暗い空間
+function pCliff(k,H){
+  let sd=7; for(const c of k) sd=(sd*37+c.charCodeAt(0))>>>0; const rnd=()=>{ sd=(sd*1664525+1013904223)>>>0; return sd/4294967296; };
+  const W=1400, edge=(base,dir)=>{ const pts=[]; let y=0; for(let x=-20;x<=W;x+=5){ y=y*.93+(rnd()-.5)*1.1; pts.push([x,base+dir*(9*Math.sin(x/83+sd%7)+4*Math.sin(x/31+1)+y)]); } return pts; };
+  const out=(pts,dir)=>{ const P=pts.map(([x,y])=>x+' '+y.toFixed(1)).join('L'), far=dir<0?-60:H+60;
+    let hatch=''; pts.forEach(([x,y],i)=>{ if(i%1) return; if(rnd()<.35) return; const l=3+rnd()*4; hatch+=`M${(x+rnd()*4).toFixed(1)} ${(y-dir*1.5).toFixed(1)}l${((rnd()-.5)*3).toFixed(1)} ${(-dir*l).toFixed(1)}`; });
+    return `<path class="cf-shade" d="M${P}" transform="translate(0 ${-dir*5})"/><path class="cf-hatch" d="${hatch}"/><path class="cf-void" d="M-20 ${far}L${P}L${W} ${far}Z"/><path class="cf-rim" d="M${P}"/>`; };
+  return out(edge(30,-1),-1)+out(edge(H-24,1),1);
+}
 // 地図の地形（日ごとに少し違う等高線・森・岩）
 function pMapArt(k,H){
   let sd=0; for(const c of k) sd=(sd*31+c.charCodeAt(0))>>>0; const rnd=()=>{ sd=(sd*1664525+1013904223)>>>0; return sd/4294967296; };
@@ -3097,7 +3130,7 @@ function pMapArt(k,H){
   let o=`<defs><linearGradient id="mpBand" x1="0" y1="0" x2="0" y2="${H}" gradientUnits="userSpaceOnUse">${band.map(([y,c])=>`<stop offset="${(y/H).toFixed(3)}" stop-color="${c}"/>`).join('')}</linearGradient></defs><rect x="0" y="0" width="100%" height="${H}" fill="url(#mpBand)"/>`;
   // 川（道と交わる所は橋になる）
   { const ry=pm2y(8*60)+rnd()*pm2y(10*60); let d=''; for(let x=-10;x<=520;x+=10){ const y=ry+18*Math.sin(x/70+rnd()*.2)+10*Math.sin(x/23); d+=(d?'L':'M')+x+' '+y.toFixed(1); } o+=`<path class="mp-river" d="${d}"/><path class="mp-river2" d="${d}"/>`; }
-  o+='<g class="mp-grid">'; for(let y=0;y<H;y+=120) o+=`<line x1="0" x2="100%" y1="${y}" y2="${y}"/>`; for(let x=0;x<900;x+=120) o+=`<line y1="0" y2="${H}" x1="${x}" x2="${x}"/>`; o+='</g><g class="mp-topo">';
+  o+='<g class="mp-grid">'; for(let y=120;y<H;y+=120) o+=`<line x1="0" x2="100%" y1="${y}" y2="${y}"/>`; for(let x=0;x<900;x+=120) o+=`<line y1="0" y2="${H}" x1="${x}" x2="${x}"/>`; o+='</g><g class="mp-topo">';
   for(let i=0;i<Math.ceil(H/170);i++){ const cx=130+rnd()*320, cy=40+i*170+rnd()*90, R=40+rnd()*50, f1=rnd()*6, f2=rnd()*6, n=3+Math.floor(rnd()*3);
     for(let j=n;j>=1;j--){ const r=R*j/n, lv=(n-j)/(n-1||1); let d=''; for(let t=0;t<=40;t++){ const a=t/40*Math.PI*2, rr=r*(1+.18*Math.sin(3*a+f1)+.09*Math.sin(5*a+f2)); d+=(t?'L':'M')+(cx+rr*Math.cos(a)*1.4).toFixed(1)+' '+(cy+rr*Math.sin(a)).toFixed(1); } o+=`<path d="${d}Z" style="fill:rgba(${205+lv*30|0},${195+lv*30|0},${160+lv*30|0},${(.1+lv*.2).toFixed(2)})"/>`; } }
   o+='</g><g class="mp-tree">';
@@ -3184,13 +3217,13 @@ function pathAct(a,b){
     case 'pathback': { const x=pBlocks(k).find(y=>y.id===pathSel); pDropEmpty(); pathSel=null; if(x&&window.innerWidth<=820){ pathFocus=x.s; pathScrolled=null; } render(); return true; }
     case 'pathpusel': puSel=b.dataset.q?{q:b.dataset.q,ids:new Set()}:null; renderList(); return true;
     case 'pathpupick': if(puSel){ const v=b.dataset.v; puSel.ids.has(v)?puSel.ids.delete(v):puSel.ids.add(v); renderList(); } return true;
-    case 'pathputg': { const xs=pUnplaced(k).filter(x=>x.q===b.dataset.q&&x.sid&&(!puSel||puSel.q!==b.dataset.q||puSel.ids.has(x.sid))); puSel=null; if(!xs.length) return true; const s=pFree(k,60), id=uid();
+    case 'pathputg': { pathSheet=false; const xs=pUnplaced(k).filter(x=>x.q===b.dataset.q&&x.sid&&(!puSel||puSel.q!==b.dataset.q||puSel.ids.has(x.sid))); puSel=null; if(!xs.length) return true; const s=pFree(k,60), id=uid();
       pSet(k,id,{s,e:Math.min(PATH_H1,s+60),q:b.dataset.q,sids:xs.map(x=>x.sid)}); pathSel=id; pathScrolled=null; pathFocus=s; render(); toast('1つの道しるべにまとめた'); return true; }
     case 'pathsstep': { const x=pBlocks(k).find(y=>y.id===pathSel); if(x) toggleStep(x.q,b.dataset.v); render(); return true; }
     case 'pathsall': { const x=pBlocks(k).find(y=>y.id===pathSel), r=x&&pRef(x); if(r&&r.ss){ const all=r.ss.every(z=>z.done); r.ss.filter(z=>all||!z.done).forEach(z=>toggleStep(r.q.id,z.id)); } render(); return true; }
     case 'pathsout': { const x=pBlocks(k).find(y=>y.id===pathSel); if(x&&x.sids){ const n=x.sids.filter(v=>v!==b.dataset.v); pSet(k,x.id,n.length===1?{sids:null,sid:n[0]}:{sids:n}); } render(); return true; }
     case 'pathsadd': { const x=pBlocks(k).find(y=>y.id===pathSel); if(x){ const cur=x.sids||(x.sid?[x.sid]:[]); pSet(k,x.id,{sids:[...cur,b.dataset.v],sid:''}); } render(); return true; }
-    case 'pathput': { const x=pUnplaced(k)[+b.dataset.i]; if(!x) return true; const len=x.tr?30:60, s=pFree(k,len), id=uid();
+    case 'pathput': { pathSheet=false; const x=pUnplaced(k)[+b.dataset.i]; if(!x) return true; const len=x.tr?30:60, s=pFree(k,len), id=uid();
       pSet(k,id,{s,e:Math.min(PATH_H1,s+len),...(x.tr?{tr:x.tr}:{q:x.q,sid:x.sid})}); pathSel=id; pathScrolled=null; render(); return true; }
     case 'pathtpl': { const tpl=(plan().tpl[pTpl(k)]||{}).b||[]; const P=plan(), day={...(P.d[k]||{})}, now=Date.now(); tpl.forEach(t=>{ day[uid()]={s:t.s,e:t.e,t:t.t,fix:1,...(t.wake?{wake:1}:{}),u:now}; }); P.d={...P.d,[k]:day}; save(); pathScrolled=null; render(); toast('いつもの旅程を敷いた'); return true; }
     case 'pathsave': { const bl=pBlocks(k).filter(x=>!x.q&&!x.tr&&x.fix).map(x=>({s:x.s,e:x.e,t:x.t||'',...(x.wake?{wake:1}:{})})); plan().tpl={...plan().tpl,[b.dataset.v]:{b:bl,u:Date.now()}}; save(); renderDetail(); toast(`${b.dataset.v==='we'?'休日':'平日'}の型にした（${bl.length}件）`); return true; }
@@ -3201,6 +3234,8 @@ function pathAct(a,b){
     case 'pathwake': { const x=pBlocks(k).find(y=>y.id===b.dataset.v); if(x){ const e=Math.max(x.s+SNAP,Math.round(pnow()/SNAP)*SNAP); pSet(k,x.id,{e,done:1,woke:1}); toast('おはよう。ここから今日の冒険'); render(); } return true; }
     case 'pathmorning': { tab='list'; listCat='path'; dayView=ymd(); pathSel=null; pathScrolled=null; const tpl=(plan().tpl[pTpl(dayView)]||{}).b||[]; if(!pBlocks(dayView).length&&tpl.length){ const P=plan(), day={...(P.d[dayView]||{})}, now=Date.now(); tpl.forEach(t=>{ day[uid()]={s:t.s,e:t.e,t:t.t,fix:1,...(t.wake?{wake:1}:{}),u:now}; }); P.d={...P.d,[dayView]:day}; save(); } render(); return true; }
     case 'pathmg': { const x=pBlocks(k).find(y=>y.id===pathSel); if(x){ pSet(k,x.id,{[b.dataset.f]:+b.dataset.v}); render(); } return true; }
+    case 'pathsheet': pathSheet=!pathSheet; renderList(); return true;
+    case 'pathclose': pDropEmpty(); pathSel=null; pathSheet=false; listCat='today'; dayView=ymd(); render(); return true;
     case 'pathzoom': pZoomBy(+b.dataset.v); return true;
     case 'pathhere': { const sv=$('slView'); if(sv) sv.scrollTo({top:pm2y(pnow()),behavior:'smooth'}); return true; }
     case 'pathA': { const r=$('slRet'); if(!r) return true; pDropEmpty(); if(r.dataset.id){ pathSel=r.dataset.id; render(); if(window.innerWidth<=820) pScroll(0); return true; }
