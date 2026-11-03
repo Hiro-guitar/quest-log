@@ -279,27 +279,32 @@ select{max-width:100%;text-overflow:ellipsis}
 .pu-i.tr .pu-pin{border-color:var(--orange);box-shadow:0 0 6px rgba(240,166,64,.5)}
 .path-empty{text-align:center;padding:4px 0 10px;display:grid;gap:6px;justify-items:center}
 .tl{position:relative;margin:6px 0 30px;user-select:none;-webkit-user-select:none;touch-action:pan-y;cursor:crosshair}
+.tl.road{background:#3d453a;border:1px solid rgba(216,208,180,.28);border-radius:3px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(0,0,0,.6),inset 0 0 50px rgba(0,0,0,.45),0 6px 18px rgba(0,0,0,.4)}
 .rd-svg{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
-.rd-bed{fill:none;stroke:rgba(10,13,15,.45);stroke-width:14;stroke-linecap:round}
-.rd-edge{fill:none;stroke:rgba(216,208,180,.22);stroke-width:9;stroke-linecap:round}
-.mp-grid line{stroke:rgba(216,208,180,.05);stroke-width:1}
-.mp-topo path{fill:none;stroke:rgba(216,208,180,.075);stroke-width:1}
-.mp-tree path{fill:rgba(140,170,120,.14);stroke:rgba(170,190,150,.18);stroke-width:.6}
-.rd-reg{position:absolute;right:8px;font-family:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;font-size:15px;letter-spacing:.5em;color:rgba(242,236,214,.2);pointer-events:none;z-index:1;text-shadow:0 1px 3px rgba(0,0,0,.4)}
+.rd-bed{fill:none;stroke:rgba(30,26,20,.8);stroke-width:7.5;stroke-linecap:round}
+.rd-edge{fill:none;stroke:#bfb08a;stroke-width:4.5;stroke-linecap:round}
+.rd-foot ellipse{fill:rgba(70,52,30,.85)}
+.mp-wood path{fill:rgba(28,40,26,.55);stroke:rgba(20,28,18,.6);stroke-width:1}
+.mp-river{fill:none;stroke:#3d5560;stroke-width:9;stroke-linecap:round}
+.mp-river2{fill:none;stroke:rgba(150,190,200,.25);stroke-width:2;stroke-linecap:round}
+.mp-grid line{stroke:rgba(0,0,0,.14);stroke-width:1}
+.mp-topo path{fill:none;stroke:rgba(225,215,180,.13);stroke-width:1}
+.mp-tree path{fill:#2b3a27;stroke:rgba(150,170,130,.35);stroke-width:.6}
+.rd-reg{position:absolute;right:8px;font-family:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;font-size:15px;letter-spacing:.5em;color:rgba(242,236,214,.42);pointer-events:none;z-index:1;text-shadow:0 1px 3px rgba(0,0,0,.6)}
 .rd-reg::before{content:"";display:inline-block;width:18px;height:1px;background:rgba(242,236,214,.18);vertical-align:middle;margin-right:10px}
 .rd-line{fill:none;stroke:rgba(10,13,15,.55);stroke-width:5;stroke-linecap:round}
-.rd-walked{fill:none;stroke:rgba(232,196,106,.28);stroke-width:2;stroke-dasharray:1 5;stroke-linecap:round}
+
 .rd-seg.wake{stroke-dasharray:4 4;opacity:.7}
-.rd-stone{fill:rgba(216,208,180,.55)}
-.rd-seg{fill:none;stroke:rgba(216,208,180,.75);stroke-width:4;stroke-linecap:round}
+.rd-stone{fill:#6b5f45;stroke:#2a251c;stroke-width:.8}
+.rd-seg{fill:none;stroke:#e9dfbf;stroke-width:4.5;stroke-linecap:round}
 .rd-seg.k-q{stroke:var(--blue);filter:drop-shadow(0 0 4px rgba(95,212,239,.8))}
 .rd-seg.k-tr{stroke:var(--orange);filter:drop-shadow(0 0 4px rgba(240,166,64,.7))}
-.rd-seg.k-fix{stroke:rgba(216,208,180,.5);stroke-dasharray:2 3}
-.rd-seg.done{opacity:.35}
-.rd-lead{fill:none;stroke:rgba(216,208,180,.28);stroke-width:1}
+.rd-seg.k-fix{stroke:#d8cba3}
+.rd-seg.done{opacity:.4;filter:none}
+.rd-lead{fill:none;stroke:rgba(235,226,196,.45);stroke-width:1}
 .rd-lead.k-q{stroke:rgba(95,212,239,.4)}.rd-lead.k-tr{stroke:rgba(240,166,64,.4)}
-.rd-hr{position:absolute;width:38px;text-align:right;transform:translateY(-50%);font-size:10px;letter-spacing:.06em;color:rgba(216,208,180,.38);font-variant-numeric:tabular-nums;pointer-events:none}
-.rd-hr.big{color:rgba(216,208,180,.6)}
+.rd-hr{position:absolute;width:38px;text-align:right;transform:translateY(-50%);font-size:10px;letter-spacing:.06em;color:rgba(235,226,196,.55);text-shadow:0 1px 2px rgba(0,0,0,.7);font-variant-numeric:tabular-nums;pointer-events:none}
+.rd-hr.big{color:rgba(245,238,214,.85)}
 .rd-pin .pn-sh{fill:rgba(0,0,0,.45)}
 .rd-pin .pn-b{fill:#d8d0b4;stroke:#0b0f12;stroke-width:1.2}
 .rd-pin .pn-c{fill:#0b0f12}
@@ -315,9 +320,9 @@ select{max-width:100%;text-overflow:ellipsis}
 .rd-knob::after{content:"";width:7px;height:7px;border-radius:50%;background:#0b0f12;border:1.5px solid rgba(216,208,180,.7)}
 .rd-knob.k-q::after{border-color:var(--blue)}.rd-knob.k-tr::after{border-color:var(--orange)}
 .rd-card{position:absolute;left:118px;right:2px;min-height:34px;padding:5px 12px 6px;cursor:grab;z-index:2;
-  background:linear-gradient(90deg,rgba(8,11,13,.78),rgba(8,11,13,.5) 70%,rgba(8,11,13,0));border-left:1px solid rgba(216,208,180,.35);display:grid;gap:1px;transition:background .15s}
-.rd-card.k-q{border-left-color:rgba(95,212,239,.6)}.rd-card.k-tr{border-left-color:rgba(240,166,64,.6)}
-.rd-card.k-fix{background:linear-gradient(90deg,rgba(8,11,13,.42),rgba(8,11,13,0) 80%)}
+  background:rgba(16,19,17,.9);border:1px solid rgba(216,208,180,.18);border-left:2px solid rgba(216,208,180,.5);border-radius:2px;box-shadow:0 2px 8px rgba(0,0,0,.45);display:grid;gap:1px;transition:background .15s}
+.rd-card.k-q{border-left-color:var(--blue)}.rd-card.k-tr{border-left-color:var(--orange)}
+.rd-card.k-fix{background:rgba(16,19,17,.72)}
 .rc-time{font-size:10.5px;letter-spacing:.08em;color:#e8c46a;font-variant-numeric:tabular-nums}
 .rc-time small{font-size:10px;color:rgba(216,208,180,.55);margin-left:2px}
 .rd-card.k-q .rc-time{color:var(--blue)}.rd-card.k-tr .rc-time{color:var(--orange)}.rd-card.k-fix .rc-time{color:rgba(216,208,180,.6)}
@@ -333,10 +338,10 @@ select{max-width:100%;text-overflow:ellipsis}
 .rv-pt{display:inline-block;width:1.2em;color:var(--dim)}.rv-pt.on{color:var(--orange)}
 .rv-tm{color:var(--muted);font-variant-numeric:tabular-nums;margin-right:4px}
 .tb-clear{margin-left:auto;font-size:10px;font-style:italic;font-weight:900;letter-spacing:.05em;color:var(--orange);flex:none}
-.rd-card.done{opacity:.5}.rd-card.past{opacity:.75}
-.rd-card.cur{background:linear-gradient(90deg,rgba(95,212,239,.16),rgba(8,11,13,.5) 70%,rgba(8,11,13,0))}
-.rd-card.sel{border-left:2px solid var(--text);background:linear-gradient(90deg,rgba(242,236,214,.12),rgba(8,11,13,.5) 70%,rgba(8,11,13,0))}
-.rd-card.drag{cursor:grabbing;background:linear-gradient(90deg,rgba(95,212,239,.22),rgba(8,11,13,.6) 70%,rgba(8,11,13,0))}
+.rd-card.done{opacity:.62}.rd-card.past{opacity:.85}
+.rd-card.cur{background:linear-gradient(90deg,rgba(28,52,58,.95),rgba(16,19,17,.92))}
+.rd-card.sel{border-color:var(--text);box-shadow:0 0 0 1px var(--text),0 2px 8px rgba(0,0,0,.45)}
+.rd-card.drag{cursor:grabbing;border-color:var(--blue);box-shadow:0 8px 20px rgba(0,0,0,.6)}
 body.pdrag{cursor:grabbing}
 .rd-link{position:absolute;width:16px;height:18px;margin:-9px 0 0 -8px;z-index:4;pointer-events:none;transform-origin:50% 50%;
   background:#f7d36b;clip-path:polygon(50% 100%,0 0,50% 22%,100% 0);filter:drop-shadow(0 0 4px rgba(247,211,107,.9))}
@@ -2868,8 +2873,11 @@ function pathList(){
   const now=pnow(), H=pm2y(PATH_H1)+10, L=b=>pathDrag&&pathDrag.id===b.id?{...b,s:pathDrag.s,e:pathDrag.e}:b;
   const bls=bl.map(L).sort((a,b)=>a.s-b.s);
   const seg=(m0,m1)=>{ let d=''; for(let y=pm2y(m0);;y+=6){ const yy=Math.min(y,pm2y(m1)); d+=(d?'L':'M')+pRX(yy).toFixed(1)+' '+yy.toFixed(1); if(yy>=pm2y(m1)) break; } return d; };
-  let svg=pMapArt(k,H)+`<path class="rd-bed" d="${seg(PATH_H0,PATH_H1)}"/><path class="rd-edge" d="${seg(PATH_H0,PATH_H1)}"/><path class="rd-line" d="${seg(PATH_H0,PATH_H1)}"/>`;
-  if(isT&&now>PATH_H0) svg+=`<path class="rd-walked" d="${seg(PATH_H0,Math.min(now,PATH_H1))}"/>`;
+  let svg=pMapArt(k,H)+`<path class="rd-bed" d="${seg(PATH_H0,PATH_H1)}"/><path class="rd-edge" d="${seg(PATH_H0,PATH_H1)}"/>`;
+  // 今日通ってきた道には足あと
+  let foot='';
+  if(isT&&now>PATH_H0){ let f='', side=1; for(let y=pm2y(PATH_H0)+8;y<pm2y(Math.min(now,PATH_H1))-12;y+=11){ const dx=pRX(y+2)-pRX(y-2), ang=Math.atan2(4,dx)*180/Math.PI-90, L=Math.hypot(dx,4), nx=-4/L*side*1.9, ny=dx/L*side*1.9, cx=(pRX(y)+nx).toFixed(1), cy=(y+ny).toFixed(1);
+    f+=`<g transform="translate(${cx} ${cy}) rotate(${ang.toFixed(0)})"><ellipse cx="0" cy="-.6" rx="1.05" ry="1.5"/><ellipse cx="0" cy="1.6" rx=".85" ry=".8"/></g>`; side=-side; } foot=`<g class="rd-foot">${f}</g>`; }
   let hrs=''; for(let m=PATH_H0+60;m<PATH_H1;m+=60){ const y=pm2y(m), x=pRX(y); svg+=`<circle class="rd-stone" cx="${x.toFixed(1)}" cy="${y}" r="2"/>`; hrs+=`<span class="rd-hr ${m%180===0?'big':''}" style="top:${y}px;left:${(x-46).toFixed(1)}px">${m/60}:00</span>`; }
   // 地方の名前（地図の地名のように）
   const REG=[[PATH_H0,'暁の丘'],[6*60,'朝の平原'],[11*60,'真昼の街道'],[15*60,'夕暮れの坂'],[18*60,'灯りの宿場'],[21*60,'夜の森']];
@@ -2886,15 +2894,22 @@ function pathList(){
         <span class="rc-time">${pfmt(b.s)}<small>〜${b.wake&&!b.woke?'起きるまで':pfmt(b.e)}</small></span>
         <span class="rc-t">${b.tr?ico('train'):r?ico(r.q.type):''}<b>${esc(ttl||'（名前なし）')}</b>${dn?'<em class="tb-clear">CLEAR</em>':''}</span>${r&&r.sub?`<span class="rc-sub">${esc(r.sub)}</span>`:''}
         ${late?`<button class="rc-act" data-act="pathlate" data-v="${b.id}"><i>⟳</i>遅れた　今から始める</button>`:''}${wake?`<button class="rc-act" data-act="pathwake" data-v="${b.id}"><i>☀</i>起きた</button>`:''}</div>`; }).join('');
+  svg+=foot;
   let nowM=''; if(isT&&now>=PATH_H0&&now<PATH_H1){ const y=pm2y(now), x=pRX(y), day=now>=6*60&&now<18*60, ang=Math.atan2(6,pRX(y+3)-pRX(y-3))*180/Math.PI-90;
-    nowM=`<div class="rd-link" style="top:${y}px;left:${x.toFixed(1)}px;transform:rotate(${ang.toFixed(0)}deg)" aria-hidden="true"></div><div class="rd-clock" style="top:${y}px;left:${(x-62).toFixed(1)}px">${day?'<i class="ck-sun"></i>':'<i class="ck-moon"></i>'}<span>${pfmt(now)}</span></div>`; }
+    nowM=`<div class="rd-link" style="top:${y}px;left:${x.toFixed(1)}px;transform:rotate(${ang.toFixed(0)}deg)" aria-hidden="true"></div><div class="rd-clock" style="top:${y}px;left:${(x+14).toFixed(1)}px">${day?'<i class="ck-sun"></i>':'<i class="ck-moon"></i>'}<span>${pfmt(now)}</span></div>`; }
   h+=`<div class="tl road" id="tl" style="height:${H}px"><svg class="rd-svg" width="100%" height="${H}" aria-hidden="true">${svg}</svg>${regs}${hrs}${cards}${nowM}</div>`;
   return h;
 }
 // 地図の地形（日ごとに少し違う等高線・森・岩）
 function pMapArt(k,H){
   let sd=0; for(const c of k) sd=(sd*31+c.charCodeAt(0))>>>0; const rnd=()=>{ sd=(sd*1664525+1013904223)>>>0; return sd/4294967296; };
-  let o='<g class="mp-grid">'; for(let y=0;y<H;y+=120) o+=`<line x1="0" x2="100%" y1="${y}" y2="${y}"/>`; for(let x=0;x<900;x+=120) o+=`<line y1="0" y2="${H}" x1="${x}" x2="${x}"/>`; o+='</g><g class="mp-topo">';
+  const band=[[0,'#4b4a41'],[pm2y(6*60),'#47503f'],[pm2y(11*60),'#4f5643'],[pm2y(15*60),'#57503f'],[pm2y(18*60),'#4a4539'],[pm2y(21*60),'#2f3a2d'],[H,'#26301f']];
+  let o=`<defs><linearGradient id="mpBand" x1="0" y1="0" x2="0" y2="${H}" gradientUnits="userSpaceOnUse">${band.map(([y,c])=>`<stop offset="${(y/H).toFixed(3)}" stop-color="${c}"/>`).join('')}</linearGradient></defs><rect x="0" y="0" width="100%" height="${H}" fill="url(#mpBand)"/>`;
+  // 森のかたまり
+  o+='<g class="mp-wood">'; for(let i=0;i<Math.ceil(H/260);i++){ const cx=rnd()*420, cy=60+i*260+rnd()*140, R=34+rnd()*40; let d=''; for(let t=0;t<=24;t++){ const a=t/24*Math.PI*2, rr=R*(1+.22*Math.sin(4*a+i)+.12*Math.sin(7*a+rnd())); d+=(t?'L':'M')+(cx+rr*Math.cos(a)*1.5).toFixed(1)+' '+(cy+rr*Math.sin(a)).toFixed(1); } o+=`<path d="${d}Z"/>`; } o+='</g>';
+  // 川（道と交わる所は橋になる）
+  { const ry=pm2y(8*60)+rnd()*pm2y(10*60); let d=''; for(let x=-10;x<=520;x+=10){ const y=ry+18*Math.sin(x/70+rnd()*.2)+10*Math.sin(x/23); d+=(d?'L':'M')+x+' '+y.toFixed(1); } o+=`<path class="mp-river" d="${d}"/><path class="mp-river2" d="${d}"/>`; }
+  o+='<g class="mp-grid">'; for(let y=0;y<H;y+=120) o+=`<line x1="0" x2="100%" y1="${y}" y2="${y}"/>`; for(let x=0;x<900;x+=120) o+=`<line y1="0" y2="${H}" x1="${x}" x2="${x}"/>`; o+='</g><g class="mp-topo">';
   for(let i=0;i<Math.ceil(H/170);i++){ const cx=130+rnd()*320, cy=40+i*170+rnd()*90, R=40+rnd()*50, f1=rnd()*6, f2=rnd()*6, n=3+Math.floor(rnd()*3);
     for(let j=1;j<=n;j++){ const r=R*j/n; let d=''; for(let t=0;t<=40;t++){ const a=t/40*Math.PI*2, rr=r*(1+.18*Math.sin(3*a+f1)+.09*Math.sin(5*a+f2)); d+=(t?'L':'M')+(cx+rr*Math.cos(a)*1.4).toFixed(1)+' '+(cy+rr*Math.sin(a)).toFixed(1); } o+=`<path d="${d}Z"/>`; } }
   o+='</g><g class="mp-tree">';
