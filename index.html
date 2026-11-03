@@ -309,6 +309,8 @@ select{max-width:100%;text-overflow:ellipsis}
 .sl-view{position:absolute;inset:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .sl-view::-webkit-scrollbar{display:none}
 .sl-view .tl{margin:0}
+.sl-view{background:linear-gradient(#6a5d36 50%,#4c4026 50%)}
+@media (max-width:820px){.sl-body{height:calc(100svh - 300px);min-height:360px}.slate{margin-bottom:96px}}
 .sl-fx{position:absolute;inset:0;pointer-events:none;z-index:2;box-shadow:inset 0 0 0 1px rgba(0,0,0,.7),inset 0 0 38px 10px rgba(5,22,36,.95);
   background:repeating-linear-gradient(90deg,rgba(95,212,239,.13) 0 1px,transparent 1px 4px);-webkit-mask-image:linear-gradient(90deg,#000 0,transparent 26px,transparent calc(100% - 26px),#000 100%);mask-image:linear-gradient(90deg,#000 0,transparent 26px,transparent calc(100% - 26px),#000 100%)}
 .sl-hud{position:absolute;left:0;bottom:0;z-index:3;display:grid;gap:3px;pointer-events:none;padding:10px 26px 12px 12px;background:radial-gradient(ellipse at 0 100%,rgba(5,18,26,.85),rgba(5,18,26,0) 72%)}
@@ -1602,7 +1604,7 @@ function renderList(){
   if(tab==='pouch'){ L.innerHTML=pouchList(); fitTitles(); return; }
   if(tab!=='tools'&&listCat==='today'){ L.innerHTML=connectBanner()+todayList(); fitTitles(); return; }
   if(tab!=='tools'&&listCat==='train'){ L.innerHTML=connectBanner()+trList(); fitTitles(); return; }
-  if(tab!=='tools'&&listCat==='path'){ const sv=$('slView'), st=sv?sv.scrollTop:null; L.innerHTML=connectBanner()+pathList(); pLayout(); if(st!=null&&$('slView')) $('slView').scrollTop=st; setTimeout(pathAfter,0); return; }
+  if(tab!=='tools'&&listCat==='path'){ const sv=$('slView'), st=sv?sv.scrollTop:null; L.innerHTML=connectBanner()+pathList(); pLayout(); pPad(); if(st!=null&&$('slView')) $('slView').scrollTop=st; setTimeout(pathAfter,0); return; }
   if(tab!=='tools'&&listCat==='memory'){
     const ms=state.quests.filter(q=>q.done&&q.type!=='mini').sort((a,b)=>(b.doneAt||0)-(a.doneAt||0));
     let m=catBar('memory')+'<div class="rows">';
@@ -3094,14 +3096,16 @@ function pMapArt(k,H){
   return o+'</g>';
 }
 const pRetY=sv=>Math.round(sv.clientHeight*.42);
+// 地図の上下に余白をつけて、朝早くや夜遅くの時刻にも照準が届くようにする（地図の座標＝スクロール量）
+function pPad(){ const sv=$('slView'), tl=$('tl'); if(!sv||!tl) return; const ry=pRetY(sv); tl.style.marginTop=ry+'px'; tl.style.marginBottom=(sv.clientHeight-ry)+'px'; }
 // 地図の真ん中の照準：その時刻を読み取り、近くの道しるべに吸い付く
 let pHover=null;
 function pRetUpdate(){
   const sv=$('slView'), ret=$('slRet'), tl=$('tl'); if(!sv||!ret||!tl) return;
-  const ry=pRetY(sv), y=sv.scrollTop+ry, m=Math.max(PATH_H0,Math.min(PATH_H1,PATH_H0+y/PX)), bl=pBlocks(dayView);
+  const ry=pRetY(sv), y=sv.scrollTop, m=Math.max(PATH_H0,Math.min(PATH_H1,PATH_H0+y/PX)), bl=pBlocks(dayView);
   let hit=null, bd=1e9; bl.forEach(b=>{ const d=Math.abs(pm2y(b.s)-y); if(d<Math.max(14,SNAP*PX*.9)&&d<bd){ bd=d; hit=b; } });
   const yy=hit?pm2y(hit.s):y, x=pRX(yy), off=tl.getBoundingClientRect().left-sv.parentNode.getBoundingClientRect().left;
-  ret.style.top=(yy-sv.scrollTop)+'px'; ret.style.left=(off+x)+'px'; ret.classList.toggle('hit',!!hit); ret.classList.toggle('nolab',!!hit&&pZoom>0);
+  ret.style.top=(yy+ry-sv.scrollTop)+'px'; ret.style.left=(off+x)+'px'; ret.classList.toggle('hit',!!hit); ret.classList.toggle('nolab',!!hit&&pZoom>0);
   const sm=Math.round(m/SNAP)*SNAP; $('slRetL').innerHTML=hit?esc(pTitle(hit)||'（名前なし）')+(hit.pre||hit.post?`<small>${hit.pre?`支度 ${pfmt(hit.s-hit.pre)}〜`:''}${hit.pre&&hit.post?'　':''}${hit.post?`ゆとり 〜${pfmt(hit.e+hit.post)}`:''}</small>`:''):pfmt(sm);
   const at=$('slAt'); if(at) at.textContent=hit?'開く':'置く';
   if((hit&&hit.id)!==pHover){ document.querySelectorAll('.rd-card.hover').forEach(e=>e.classList.remove('hover')); pHover=hit&&hit.id; if(pHover){ const c=document.querySelector(`.rd-card[data-pb="${pHover}"]`); c&&c.classList.add('hover'); } }
@@ -3114,16 +3118,16 @@ function pLayout(){ const tl=$('tl'); if(!tl||!tl.offsetParent) return; let last
 function pathAfter(){
   if(listCat!=='path'||tab!=='list') return;
   const sv=$('slView'); if(!sv) return;
-  pLayout();
+  pLayout(); pPad();
   if(!sv.__ret){ sv.__ret=1; sv.addEventListener('scroll',()=>requestAnimationFrame(pRetUpdate),{passive:true});
     sv.addEventListener('wheel',e=>{ if(!e.ctrlKey) return; e.preventDefault(); pZoomBy(e.deltaY<0?1:-1); },{passive:false}); }
   const key=dayView;
-  if(pathScrolled!==key){ pathScrolled=key; const bl=pBlocks(key), m=pathFocus!=null?pathFocus:key===ymd()?pnow():(bl[0]?bl[0].s:8*60); pathFocus=null; sv.scrollTop=Math.max(0,pm2y(Math.max(PATH_H0,m))-pRetY(sv)); }
+  if(pathScrolled!==key){ pathScrolled=key; const bl=pBlocks(key), m=pathFocus!=null?pathFocus:key===ymd()?pnow():(bl[0]?bl[0].s:8*60); pathFocus=null; sv.scrollTop=pm2y(Math.max(PATH_H0,m)); }
   pRetUpdate();
 }
 // ズーム：照準の時刻を保ったまま、地図をひろく／くわしく
-function pZoomBy(d){ const nz=Math.max(0,Math.min(2,pZoom+d)); if(nz===pZoom) return; const sv=$('slView'); const m=sv?PATH_H0+(sv.scrollTop+pRetY(sv))/PX:null;
-  pZoom=nz; PX=PZOOM[nz]; renderList(); const s2=$('slView'); if(s2&&m!=null) s2.scrollTop=Math.max(0,pm2y(m)-pRetY(s2)); pRetUpdate(); }
+function pZoomBy(d){ const nz=Math.max(0,Math.min(2,pZoom+d)); if(nz===pZoom) return; const sv=$('slView'); const m=sv?PATH_H0+sv.scrollTop/PX:null;
+  pZoom=nz; PX=PZOOM[nz]; renderList(); const s2=$('slView'); if(s2&&m!=null){ pPad(); s2.scrollTop=pm2y(m); } pRetUpdate(); }
 // 2本指でつまんでズーム
 (function(){ let d0=null; document.addEventListener('touchstart',e=>{ if(e.touches.length===2&&e.target.closest('#slView')){ d0=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY); } },{passive:true});
   document.addEventListener('touchmove',e=>{ if(d0&&e.touches.length===2){ e.preventDefault(); const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY); if(d/d0>1.35){ pZoomBy(1); d0=d; } else if(d/d0<.74){ pZoomBy(-1); d0=d; } } },{passive:false});
@@ -3188,7 +3192,7 @@ function pathAct(a,b){
     case 'pathmorning': { tab='list'; listCat='path'; dayView=ymd(); pathSel=null; pathScrolled=null; const tpl=(plan().tpl[pTpl(dayView)]||{}).b||[]; if(!pBlocks(dayView).length&&tpl.length){ const P=plan(), day={...(P.d[dayView]||{})}, now=Date.now(); tpl.forEach(t=>{ day[uid()]={s:t.s,e:t.e,t:t.t,fix:1,...(t.wake?{wake:1}:{}),u:now}; }); P.d={...P.d,[dayView]:day}; save(); } render(); return true; }
     case 'pathmg': { const x=pBlocks(k).find(y=>y.id===pathSel); if(x){ pSet(k,x.id,{[b.dataset.f]:+b.dataset.v}); render(); } return true; }
     case 'pathzoom': pZoomBy(+b.dataset.v); return true;
-    case 'pathhere': { const sv=$('slView'); if(sv) sv.scrollTo({top:Math.max(0,pm2y(pnow())-pRetY(sv)),behavior:'smooth'}); return true; }
+    case 'pathhere': { const sv=$('slView'); if(sv) sv.scrollTo({top:pm2y(pnow()),behavior:'smooth'}); return true; }
     case 'pathA': { const r=$('slRet'); if(!r) return true; pDropEmpty(); if(r.dataset.id){ pathSel=r.dataset.id; render(); if(window.innerWidth<=820) pScroll(0); return true; }
       const s0=Math.max(PATH_H0,Math.min(PATH_H1-SNAP,+r.dataset.m)), bl=pBlocks(k), nx=bl.filter(x=>x.s>=s0+SNAP).map(x=>x.s)[0]||PATH_H1, id=uid();
       pSet(k,id,{s:s0,e:Math.max(s0+SNAP,Math.min(s0+60,nx,PATH_H1)),t:''}); pathSel=id; render(); if(window.innerWidth<=820) pScroll(0); setTimeout(()=>{ const i=$('pbTitle'); i&&i.focus(); },60); return true; }
@@ -3235,7 +3239,9 @@ function pathInput(e){
     if(p.moved) return;
     if(p.id){ if(p.id!==pathSel) pDropEmpty(); pathSel=p.id; render(); if(window.innerWidth<=820) pScroll(0); return; }
     // 空いている所：その場所へ照準を動かすだけ（置くのは A を押した時）
-    const sv=$('slView'); if(sv) sv.scrollTo({top:Math.max(0,yOf(e,p.tl)-pRetY(sv)),behavior:'smooth'});
+    const ty=yOf(e,p.tl), tx=e.clientX-p.tl.getBoundingClientRect().left, near=pBlocks(dayView).find(b=>Math.abs(pm2y(b.s)-ty)<18&&Math.abs(pRX(pm2y(b.s))-tx)<26);
+    if(near){ pDropEmpty(); pathSel=near.id; render(); if(window.innerWidth<=820) pScroll(0); return; }
+    const sv=$('slView'); if(sv) sv.scrollTo({top:Math.max(0,ty),behavior:'smooth'});
   }
   document.addEventListener('pointerdown',start);
   document.addEventListener('pointermove',move,{passive:false});
