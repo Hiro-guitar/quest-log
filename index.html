@@ -1233,7 +1233,7 @@ function renderHud(){
 // 旅程は上の帯（冒険手帳・ポーチと同じ並び）から開く。中身は冒険手帳の画面を借りて出している
 const curTab=()=>tab==='list'&&listCat==='path'?'path':tab;
 function goTab(v){
-  if(v==='path'){ if(listCat!=='path'){ pathBoot=true; listCat='path'; } tab='list'; }
+  if(v==='path'){ if(listCat!=='path'){ pathBoot=true; pathScrolled=null; listCat='path'; } tab='list'; }
   else { if(listCat==='path'){ pDropEmpty(); pathSel=null; pathSheet=false; listCat='today'; dayView=ymd(); } tab=v; }
   if(window.innerWidth<=820) selId=null; render();
 }
@@ -1921,7 +1921,7 @@ document.addEventListener('click',e=>{
     case 'step': toggleStep(b.dataset.q,b.dataset.s); break;
     case 'new': newQuest(b.dataset.type,null); break;
     case 'day': dayView=b.dataset.v; if(!editing) selId=null; render(); break;
-    case 'cat': if(listCat==='path'&&b.dataset.v!=='path'){ pDropEmpty(); pathSel=null; } if(b.dataset.v==='path'&&listCat!=='path') pathBoot=true; listCat=b.dataset.v; if(listCat==='today') dayView=ymd(); showCleared=false; miniOpen=false; if(!editing){selId=null;} render(); break;
+    case 'cat': if(listCat==='path'&&b.dataset.v!=='path'){ pDropEmpty(); pathSel=null; } if(b.dataset.v==='path'&&listCat!=='path'){ pathBoot=true; pathScrolled=null; } listCat=b.dataset.v; if(listCat==='today') dayView=ymd(); showCleared=false; miniOpen=false; if(!editing){selId=null;} render(); break;
     case 'catprev': case 'catnext': { if(listCat==='path') break; const i=CATS.indexOf(listCat); listCat=CATS[(i+(a==='catnext'?1:CATS.length-1))%CATS.length]; showCleared=false; miniOpen=false; if(!editing) selId=null; render(); break; }
     case 'newcur': if(listCat==='today'){ newQuest('challenge',null); const nq=findQ(selId); if(nq){ nq.doDate=dayView; listCat='today'; save(); render(); } break; } if(listCat==='mini'){ miniOpen=true; renderList(); setTimeout(()=>{const el=$('miniAdd'); el&&el.focus()},20);} else newQuest(listCat,null); break;
     case 'tool': if(b.dataset.v==='moon'){ openMoon(); break; } toolSel=b.dataset.v; toolPicked=true; render(); break;
