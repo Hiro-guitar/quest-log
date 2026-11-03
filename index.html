@@ -335,11 +335,11 @@ select{max-width:100%;text-overflow:ellipsis}
 .sl-view{position:absolute;inset:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .sl-view::-webkit-scrollbar{display:none}
 .sl-view .tl{margin:0}
-.sl-view{background:#26323a}
+.sl-view{background:#4f4429}
 /* 地図の端（4時より前・24時より後）はブレワイの未踏の地のように暗い格子に溶かす */
-.cf-void{fill:#26323a}
-.cf-coast{fill:none;stroke:rgba(20,24,20,.55);stroke-width:1.2}
-.cf-low{fill:none;stroke:rgba(52,42,18,.55);stroke-width:26;filter:blur(6px)}
+.pe-bg{fill:rgba(20,16,10,.75);stroke:#e8c46a;stroke-width:1.4}
+.pe-fire{fill:#f0a640;filter:drop-shadow(0 0 4px rgba(240,166,64,.9))}
+.pe-lab{font-size:11px;font-weight:700;letter-spacing:.12em;fill:#f2e6c2;paint-order:stroke;stroke:rgba(20,16,10,.85);stroke-width:3px}
 .sl-fx{box-shadow:inset 0 0 0 1px rgba(0,0,0,.7),inset 0 0 38px 10px rgba(5,22,36,.95),inset 0 30px 26px -12px rgba(5,22,36,.9),inset 0 -30px 26px -12px rgba(5,22,36,.9)!important}
 /* スマホでは画面そのものがシーカーストーン：飾りの枠をなくし、地図を画面いっぱいに */
 @media (max-width:820px){
@@ -413,7 +413,7 @@ select{max-width:100%;text-overflow:ellipsis}
 .pu-i.tr .pu-pin{border-color:var(--orange);box-shadow:0 0 6px rgba(240,166,64,.5)}
 .path-empty{text-align:center;padding:4px 0 10px;display:grid;gap:6px;justify-items:center}
 .tl{position:relative;margin:6px 0 30px;user-select:none;-webkit-user-select:none;touch-action:pan-y;cursor:crosshair}
-.tl.road{background:#26323a;overflow:hidden}
+.tl.road{background:transparent;overflow:visible}
 .rd-svg{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
 .rd-bed{fill:none;stroke:rgba(60,50,25,.55);stroke-width:5;stroke-linecap:round}
 .rd-edge{fill:none;stroke:#e6d9a8;stroke-width:2.6;stroke-linecap:round}
@@ -3057,7 +3057,7 @@ function pathList(){
   const foot=isT&&now>PATH_H0?`<path class="rd-hero" d="${seg(PATH_H0,Math.min(now,PATH_H1))}"/>`:'';
   let hrs=''; for(let m=PATH_H0+60;m<PATH_H1;m+=60){ const y=pm2y(m), x=pRX(y); svg+=`<circle class="rd-stone" cx="${x.toFixed(1)}" cy="${y}" r="2"/>`; hrs+=`<span class="rd-hr ${m%180===0?'big':''}" style="top:${y}px;left:${(x-46).toFixed(1)}px">${m/60}:00</span>`; }
   // 地方の名前（地図の地名のように）
-  const REG=[[PATH_H0+40/PX,'暁の丘'],[6*60,'朝の平原'],[11*60,'真昼の街道'],[15*60,'夕暮れの坂'],[18*60,'灯りの宿場'],[21*60,'夜の森']];
+  const REG=[[PATH_H0+20/PX,'暁の丘'],[6*60,'朝の平原'],[11*60,'真昼の街道'],[15*60,'夕暮れの坂'],[18*60,'灯りの宿場'],[21*60,'夜の森']];
   const regs=REG.map(([m,n])=>`<div class="rd-reg" style="top:${pm2y(m)+14}px">${n}<i></i></div>`).join('');
   const lateId=isT?(bls.find(b=>!pDone(b)&&!b.fix&&!b.wake&&b.s<now-4&&b.e>now-120)||{}).id:null;
   // 札の名前は省略せず折り返す：幅から行数を見積もって、下の札と重ならないようにする
@@ -3119,26 +3119,25 @@ const slBand=pos=>`<div class="sl-band ${pos}" aria-hidden="true"><svg class="sb
 const SL_CP='M9 82L9 38C9 20 21 9 38 9L82 9M21 70L21 40C21 29 29 21 40 21L51 21C59 21 64 27 64 34C64 41 59 46 52 46L45 46C41 46 39 43 39 40C39 37 41 35 44 35';
 // 四隅は向きをそろえるため、座標そのものを反転させた形を描く（CSSで反転すると光の当たり方が崩れる）
 const slCorner=(fx,fy)=>`<svg viewBox="0 0 84 84" aria-hidden="true"><path d="${SL_CP.replace(/(-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?)/g,(m,x,y)=>`${fx?84-x:x} ${fy?84-y:y}`)}" fill="none" stroke="#000" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round" filter="url(#slStone)"/></svg>`;
-// 地図の上下の端：ブレワイの地図の外周のように、なめらかに入り組んだ海岸線で大地が終わり、その先は暗い海
+// 1日の道のはじまりと終わり：道は寝床から出て、夜の焚き火で終わる。その先の大地は、まだ足を踏み入れていない場所として少し暗く
 function pCliff(k,H){
-  let sd=7; for(const c of k) sd=(sd*37+c.charCodeAt(0))>>>0; const rnd=()=>{ sd=(sd*1664525+1013904223)>>>0; return sd/4294967296; };
-  const W=1400, edge=(base,dir)=>{ const f=[rnd()*6,rnd()*6,rnd()*6], a=[14+rnd()*8,8+rnd()*6,4]; let d=''; for(let x=-20;x<=W;x+=6){ const y=base+dir*(a[0]*Math.sin(x/170+f[0])+a[1]*Math.sin(x/67+f[1])+a[2]*Math.sin(x/29+f[2])); d+=(d?'L':'M')+x+' '+y.toFixed(1); } return d; };
-  const out=(d,dir)=>{ const far=dir<0?-80:H+80; return `<path class="cf-low" d="${d}"/><path class="cf-void" d="${d}L${W} ${far}L-20 ${far}Z"/><path class="cf-coast" d="${d}"/>`; };
-  return out(edge(44,-1),-1)+out(edge(H-40,1),1);
+  const fire=(y,lab,up)=>{ const x=pRX(Math.max(0,Math.min(H,y))); return `<g class="pe-mark" transform="translate(${x.toFixed(1)} ${y})"><circle r="11" class="pe-bg"/><path class="pe-fire" d="M0 6c-4.5 0-6.5-3-6-6.5.5-3 3-4.5 3.5-8 2 1.5 2.5 3.5 2 5.5 1.5-.8 2.2-2.4 2.2-3.8 2.8 2.4 4.3 5.3 4.3 7.8 0 3-2.5 5-6 5Z"/><text class="pe-lab" x="16" y="${up?-2:4}">${lab}</text></g>`; };
+  return `<defs><linearGradient id="peTop" x1="0" y1="-900" x2="0" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#0b0f0c" stop-opacity=".62"/><stop offset=".86" stop-color="#0b0f0c" stop-opacity=".45"/><stop offset="1" stop-color="#0b0f0c" stop-opacity="0"/></linearGradient><linearGradient id="peBot" x1="0" y1="${H}" x2="0" y2="${H+900}" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#0b0f0c" stop-opacity="0"/><stop offset=".14" stop-color="#0b0f0c" stop-opacity=".45"/><stop offset="1" stop-color="#0b0f0c" stop-opacity=".62"/></linearGradient></defs>
+    <rect x="0" y="-900" width="100%" height="900" fill="url(#peTop)"/><rect x="0" y="${H}" width="100%" height="900" fill="url(#peBot)"/>${fire(0,'目覚め',1)}${fire(pm2y(PATH_H1),'焚き火で休む',0)}`;
 }
 // 地図の地形（日ごとに少し違う等高線・森・岩）
 function pMapArt(k,H){
   let sd=0; for(const c of k) sd=(sd*31+c.charCodeAt(0))>>>0; const rnd=()=>{ sd=(sd*1664525+1013904223)>>>0; return sd/4294967296; };
   const band=[[0,'#6a5d36'],[pm2y(6*60),'#7a6b3e'],[pm2y(11*60),'#857543'],[pm2y(15*60),'#7b6a3c'],[pm2y(18*60),'#6a5b34'],[pm2y(21*60),'#56492b'],[H,'#4c4026']];
-  let o=`<defs><linearGradient id="mpBand" x1="0" y1="0" x2="0" y2="${H}" gradientUnits="userSpaceOnUse">${band.map(([y,c])=>`<stop offset="${(y/H).toFixed(3)}" stop-color="${c}"/>`).join('')}</linearGradient></defs><rect x="0" y="0" width="100%" height="${H}" fill="url(#mpBand)"/>`;
+  let o=`<defs><linearGradient id="mpBand" x1="0" y1="0" x2="0" y2="${H}" gradientUnits="userSpaceOnUse">${band.map(([y,c])=>`<stop offset="${(y/H).toFixed(3)}" stop-color="${c}"/>`).join('')}</linearGradient></defs><rect x="0" y="-900" width="100%" height="${H+1800}" fill="url(#mpBand)"/>`;
   // 川（道と交わる所は橋になる）
   { const ry=pm2y(8*60)+rnd()*pm2y(10*60); let d=''; for(let x=-10;x<=520;x+=10){ const y=ry+18*Math.sin(x/70+rnd()*.2)+10*Math.sin(x/23); d+=(d?'L':'M')+x+' '+y.toFixed(1); } o+=`<path class="mp-river" d="${d}"/><path class="mp-river2" d="${d}"/>`; }
-  o+='<g class="mp-grid">'; for(let y=120;y<H;y+=120) o+=`<line x1="0" x2="100%" y1="${y}" y2="${y}"/>`; for(let x=0;x<900;x+=120) o+=`<line y1="0" y2="${H}" x1="${x}" x2="${x}"/>`; o+='</g><g class="mp-topo">';
-  for(let i=0;i<Math.ceil(H/170);i++){ const cx=130+rnd()*320, cy=40+i*170+rnd()*90, R=40+rnd()*50, f1=rnd()*6, f2=rnd()*6, n=3+Math.floor(rnd()*3);
+  o+='<g class="mp-grid">'; for(let y=-840;y<H+900;y+=120) o+=`<line x1="0" x2="100%" y1="${y}" y2="${y}"/>`; for(let x=0;x<900;x+=120) o+=`<line y1="-900" y2="${H+900}" x1="${x}" x2="${x}"/>`; o+='</g><g class="mp-topo">';
+  for(let i=-5;i<Math.ceil(H/170)+5;i++){ const cx=130+rnd()*320, cy=40+i*170+rnd()*90, R=40+rnd()*50, f1=rnd()*6, f2=rnd()*6, n=3+Math.floor(rnd()*3);
     for(let j=n;j>=1;j--){ const r=R*j/n, lv=(n-j)/(n-1||1); let d=''; for(let t=0;t<=40;t++){ const a=t/40*Math.PI*2, rr=r*(1+.18*Math.sin(3*a+f1)+.09*Math.sin(5*a+f2)); d+=(t?'L':'M')+(cx+rr*Math.cos(a)*1.4).toFixed(1)+' '+(cy+rr*Math.sin(a)).toFixed(1); } o+=`<path d="${d}Z" style="fill:rgba(${205+lv*30|0},${195+lv*30|0},${160+lv*30|0},${(.1+lv*.2).toFixed(2)})"/>`; } }
   o+='</g><g class="mp-tree">';
-  for(let i=0;i<Math.ceil(H/70);i++){ const y=20+i*70+rnd()*40, x=rnd()<.45?6+rnd()*30:pRX(y)+22+rnd()*60; if(Math.abs(x-pRX(y))<16) continue; const n=4+Math.floor(rnd()*7);
-    for(let j=0;j<n;j++){ const tx=x+(rnd()-.5)*26, ty=y+(rnd()-.5)*18, r=2.2+rnd()*1.6; if(Math.abs(tx-pRX(ty))<10) continue; o+=`<circle cx="${tx.toFixed(1)}" cy="${ty.toFixed(1)}" r="${r.toFixed(1)}"/>`; } }
+  for(let i=-12;i<Math.ceil(H/70)+12;i++){ const y=20+i*70+rnd()*40, out=y<0||y>H, x=out?rnd()*420:(rnd()<.45?6+rnd()*30:pRX(y)+22+rnd()*60); if(!out&&Math.abs(x-pRX(y))<16) continue; const n=4+Math.floor(rnd()*7);
+    for(let j=0;j<n;j++){ const tx=x+(rnd()-.5)*26, ty=y+(rnd()-.5)*18, r=2.2+rnd()*1.6; if(ty>=0&&ty<=H&&Math.abs(tx-pRX(ty))<10) continue; o+=`<circle cx="${tx.toFixed(1)}" cy="${ty.toFixed(1)}" r="${r.toFixed(1)}"/>`; } }
   return o+'</g>';
 }
 const pRetY=sv=>Math.round(sv.clientHeight*.42);
