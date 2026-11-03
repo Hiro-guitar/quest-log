@@ -3167,22 +3167,23 @@ const P_SEA=.27;
 function pHgt(x,y){ const v=y/PX, u=x*1.05; let f=0,amp=.5,fr=1/170; for(let o=0;o<5;o++){ f+=amp*pNoise(u*fr+o*17,v*fr+o*31); amp*=.5; fr*=2.03; }
   const r=1-Math.abs(2*pNoise(u/240+9,v/240+3)-1); let h=.62*f+.5*r*r*r-.08;
   // 道のまわりは陸地にする（道が水に沈まないように）
-  const dd=Math.abs(x-pRX(Math.max(-900,Math.min(pm2y(PATH_H1)+900,y)))); if(dd<40&&h<P_SEA+.03){ const t=1-dd/40; h=Math.max(h,P_SEA+.03*t*t*(3-2*t)+.0001); }
+  const dd=Math.abs(x-pRX(Math.max(-900,Math.min(pm2y(PATH_H1)+900,y)))); if(dd<80){ const t=1-dd/80, m=P_SEA+.07*t*t*(3-2*t); if(h<m) h=m+(h-m)*.15*(1-t); }
   return Math.max(0,Math.min(1,h)); }
 const P_RAMP=[[0,[64,52,27]],[.12,[82,68,36]],[.24,[103,86,46]],[.36,[124,106,58]],[.48,[146,128,76]],[.6,[170,154,104]],[.72,[195,184,140]],[.84,[219,211,180]],[.93,[236,232,214]],[1,[246,244,236]]];
 const pRamp=t=>{ for(let i=1;i<P_RAMP.length;i++){ if(t<=P_RAMP[i][0]){ const [t0,c0]=P_RAMP[i-1], [t1,c1]=P_RAMP[i], k=(t-t0)/(t1-t0); return [c0[0]+(c1[0]-c0[0])*k,c0[1]+(c1[1]-c0[1])*k,c0[2]+(c1[2]-c0[2])*k]; } } return P_RAMP[P_RAMP.length-1][1]; };
 const pTerCache={};
 function pTerrain(k,H){
   const key=k+'|'+PX+'|'+pW; if(pTerCache[key]) return pTerCache[key];
-  const S=1.5, Y0=-900, cw=Math.ceil(pW/S), ch=Math.ceil((H+1800)/S), hs=new Float32Array(cw*ch);
-  for(let j=0;j<ch;j++) for(let i=0;i<cw;i++) hs[j*cw+i]=pHgt(i*S,Y0+j*S);
-  const cv=document.createElement('canvas'); cv.width=cw; cv.height=ch; const cx=cv.getContext('2d'), im=cx.createImageData(cw,ch), d=im.data, CL=34;
+  const G=3, Y0=-900, gw=Math.ceil(pW/G)+2, gh=Math.ceil((H+1800)/G)+2, g=new Float32Array(gw*gh);
+  for(let j=0;j<gh;j++) for(let i=0;i<gw;i++) g[j*gw+i]=pHgt(i*G,Y0+j*G);
+  const R=Math.min(2,window.devicePixelRatio||1)>1.5?1.5:1, cw=Math.ceil(pW*R), ch=Math.ceil((H+1800)*R), hs=new Float32Array(cw*ch);
+  for(let j=0;j<ch;j++){ const gy=j/R/G, j0=Math.min(gh-2,gy|0), fy=gy-j0; for(let i=0;i<cw;i++){ const gx=i/R/G, i0=Math.min(gw-2,gx|0), fx=gx-i0, o=j0*gw+i0, a1=g[o], b1=g[o+1], c1=g[o+gw], d1=g[o+gw+1]; hs[j*cw+i]=a1+(b1-a1)*fx+(c1-a1)*fy+(a1-b1-c1+d1)*fx*fy; } }
+  const cv=document.createElement('canvas'); cv.width=cw; cv.height=ch; const cx=cv.getContext('2d'), im=cx.createImageData(cw,ch), d=im.data, CL=34, SH=9*1.5/(R*G/2);
   for(let j=0;j<ch;j++) for(let i=0;i<cw;i++){ const o=j*cw+i, h=hs[o], p=o*4; let c;
     const hr=hs[o+(i<cw-1?1:0)], hd=hs[o+(j<ch-1?cw:0)], hl=hs[o-(i>0?1:0)], hu=hs[o-(j>0?cw:0)];
-    if(h<P_SEA){ const shallow=Math.min(hr,hd,hl,hu)>=P_SEA-.03?1:0, near=(P_SEA-h)<.025; c=near?[111,135,146]:[75,95,104];
+    if(h<P_SEA){ const near=(P_SEA-h)<.025; c=near?[111,135,146]:[75,95,104];
       if(hr>=P_SEA||hd>=P_SEA||hl>=P_SEA||hu>=P_SEA) c=[58,52,34]; }
-    else { const t=(h-P_SEA)/(1-P_SEA); c=pRamp(t).slice(); const sh=((hl-hr)+(hu-hd))*9; const m=Math.max(.72,Math.min(1.22,1+sh)); c=[c[0]*m,c[1]*m,c[2]*m];
-      // 等高線
+    else { const t=(h-P_SEA)/(1-P_SEA); c=pRamp(t).slice(); const sh=((hl-hr)+(hu-hd))*SH*3; const m=Math.max(.72,Math.min(1.22,1+sh)); c=[c[0]*m,c[1]*m,c[2]*m];
       const b0=Math.floor(t*CL), b1=Math.floor(((hr-P_SEA)/(1-P_SEA))*CL), b2=Math.floor(((hd-P_SEA)/(1-P_SEA))*CL);
       if(b0!==b1||b0!==b2){ const k2=b0%5===0?.6:.8; c=[c[0]*k2,c[1]*k2,c[2]*k2]; } }
     d[p]=c[0]; d[p+1]=c[1]; d[p+2]=c[2]; d[p+3]=255; }
@@ -3198,8 +3199,8 @@ function pMapArt(k,H){
   const water=[], nearWater=(x,y,d)=>pHgt(x,y)<P_SEA+.03||(d>0&&(pHgt(x+d,y)<P_SEA||pHgt(x-d,y)<P_SEA||pHgt(x,y+d)<P_SEA||pHgt(x,y-d)<P_SEA))||water.some(([wx,wy,wr])=>Math.hypot(x-wx,y-wy)<wr+d);
   // 川：谷（低い所）をたどって流れる
   let bridges='', wt='';
-  for(let i=0,nr=1+Math.floor(rnd()*2.2);i<nr;i++){ const fromL=rnd()<.5; let y=Y0+200+rnd()*(Y1-Y0-400), d='', pts=[];
-    for(let st=0;st<=Math.ceil((W+20)/6);st++){ const x=fromL?-10+st*6:W+10-st*6; let best=y, bh=1e9; for(let dy=-6;dy<=6;dy+=2){ const hh=pHgt(x,y+dy)+Math.abs(dy)*.004; if(hh<bh){ bh=hh; best=y+dy; } } y=best; pts.push([x,y]); d+=(d?'L':'M')+x+' '+y.toFixed(1); water.push([x,y,5]); }
+  for(let i=0,nr=1+Math.floor(rnd()*2.2);i<nr;i++){ const fromL=rnd()<.5; let y=Y0+200+rnd()*(Y1-Y0-400), d='', pts=[], pen=false;
+    for(let st=0;st<=Math.ceil((W+20)/6);st++){ const x=fromL?-10+st*6:W+10-st*6; let best=y, bh=1e9; for(let dy=-6;dy<=6;dy+=2){ const hh=pHgt(x,y+dy)+Math.abs(dy)*.004; if(hh<bh){ bh=hh; best=y+dy; } } y=best; const inW=pHgt(x,y)<P_SEA+.012; if(inW){ pen=false; continue; } pts.push([x,y]); d+=(pen?'L':'M')+x+' '+y.toFixed(1); pen=true; water.push([x,y,5]); }
     const rw=3.5+rnd()*2.5; wt+=`<path class="mp-river" d="${d}" style="stroke-width:${rw.toFixed(1)}"/><path class="mp-river-d" d="${d}" style="stroke-width:${(rw*.4).toFixed(1)}"/>`;
     pts.forEach(([x,y],ix)=>{ if(y<0||y>H||ix%1) return; });
     let bx=null,bd=1e9; pts.forEach(([x,y])=>{ if(y<0||y>H) return; const dd=Math.abs(x-pRX(y)); if(dd<bd){ bd=dd; bx=[x,y]; } });
