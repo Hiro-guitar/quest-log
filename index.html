@@ -374,7 +374,7 @@ select{max-width:100%;text-overflow:ellipsis}
 .rd-stamp rect{fill:#c9a46a;stroke:#3a2a12;stroke-width:1.2}
 .rd-stamp circle{fill:#3a2a12}
 .rd-stamp.done{opacity:.55}
-.rd-reg{color:rgba(232,210,140,.75)!important;letter-spacing:.32em!important;font-size:14px!important}
+.rd-reg{color:#e1c46c!important;letter-spacing:.18em!important;font-size:16px!important;font-family:inherit!important;font-weight:700;text-shadow:0 1px 3px rgba(30,22,8,.9),0 0 6px rgba(30,22,8,.6)!important}
 .rd-reg::before{display:none!important}
 .rd-reg.lft{right:auto!important;left:10px!important;text-align:left}.rd-reg.lft i{margin-left:0!important}
 .rd-reg i{display:block;height:5px;margin:3px 0 0 auto;width:70%;background:repeating-linear-gradient(90deg,rgba(232,210,140,.55) 0 3px,transparent 3px 5px,rgba(232,210,140,.55) 5px 6px,transparent 6px 9px)}
@@ -439,6 +439,7 @@ select{max-width:100%;text-overflow:ellipsis}
 .mp-lab.wt{fill:#f2ead0;stroke:rgba(40,32,16,.8);font-weight:500}
 .mp-lab.mt{fill:#f5efd8;font-weight:500;letter-spacing:.14em}
 .slate.z0 .mp-lab:not(.poi){display:none}
+.mp-trail{fill:none;stroke:rgba(232,214,160,.55);stroke-width:1.2;stroke-linecap:round;stroke-linejoin:round}
 .mp-river{fill:none;stroke:#6f8792;stroke-width:4;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 1px rgba(30,24,12,.6))}
 .mp-river-d{fill:none;stroke:#4f646d;stroke-linecap:round;stroke-linejoin:round}
 .mp-river2{fill:none;stroke:#465a66;stroke-width:6;stroke-linecap:round}
@@ -2977,7 +2978,7 @@ function stepCat(dir){
   col.addEventListener('touchstart',e=>{
     const t=e.touches[0], mobile=window.innerWidth<=820;
     top = e.touches.length===1 && !editing && !!e.target.closest('.topbar');
-    ok = !top && e.touches.length===1 && tab==='list' && !editing && !(mobile&&selId) && !e.target.closest('#detail,.hints,input,textarea,select,[data-drag],.week');
+    ok = !top && e.touches.length===1 && tab==='list' && !editing && !(mobile&&selId) && !e.target.closest('#detail,.hints,input,textarea,select,[data-drag],.week,.slate');
     sx=t.clientX; sy=t.clientY; st=Date.now();
   },{passive:true});
   col.addEventListener('touchend',e=>{
@@ -3157,61 +3158,82 @@ function pRng(k,salt){ let h=salt; for(const c of k) h=(h*131+c.charCodeAt(0))>>
 function pNamer(k){ const r=pRng(k,991), used=new Set(); return t=>{ let n; for(let i=0;i<20;i++){ n=PN_A[Math.floor(r()*PN_A.length)]; if(!used.has(n)) break; } used.add(n); return n+PN[t]; }; }
 function pRegions(k){ const name=pNamer(k), r=pRng(k,77), out=[]; let m=PATH_H0+20/PX; while(m<PATH_H1){ out.push([m,name(r()<.6?'region':['plain','hill','high','vale','marsh'][Math.floor(r()*5)])]); m+=150+r()*150; } return out; }
 // 地形：山（雪の頂）、湖、川と橋、森、村、馬宿、塔、遺跡を日ごとに散らす
+// ブレワイの地図のように、高さの地図（ハイトマップ）から地形を作る：低地は濃い茶、高地ほど明るく、山頂は白。細かい等高線と陰影。低い所は水。
+let pSeedN=1;
+const pHash=(ix,iy)=>{ let h=(ix*374761393+iy*668265263+pSeedN*1442695041)|0; h=Math.imul(h^(h>>>13),1274126177); h^=h>>>16; return (h>>>0)/4294967296; };
+const pNoise=(x,y)=>{ const ix=Math.floor(x), iy=Math.floor(y), fx=x-ix, fy=y-iy, sx=fx*fx*(3-2*fx), sy=fy*fy*(3-2*fy), a=pHash(ix,iy), b=pHash(ix+1,iy), c=pHash(ix,iy+1), d=pHash(ix+1,iy+1); return a+(b-a)*sx+(c-a)*sy+(a-b-c+d)*sx*sy; };
+const P_SEA=.27;
+// 高さ（0〜1）。x は画面の横位置、y は地図の縦位置（ズームの影響を受けない単位に直して計算）
+function pHgt(x,y){ const v=y/PX, u=x*1.05; let f=0,amp=.5,fr=1/170; for(let o=0;o<5;o++){ f+=amp*pNoise(u*fr+o*17,v*fr+o*31); amp*=.5; fr*=2.03; }
+  const r=1-Math.abs(2*pNoise(u/240+9,v/240+3)-1); let h=.62*f+.5*r*r*r-.08;
+  // 道のまわりは陸地にする（道が水に沈まないように）
+  const dd=Math.abs(x-pRX(Math.max(-900,Math.min(pm2y(PATH_H1)+900,y)))); if(dd<40&&h<P_SEA+.03){ const t=1-dd/40; h=Math.max(h,P_SEA+.03*t*t*(3-2*t)+.0001); }
+  return Math.max(0,Math.min(1,h)); }
+const P_RAMP=[[0,[64,52,27]],[.12,[82,68,36]],[.24,[103,86,46]],[.36,[124,106,58]],[.48,[146,128,76]],[.6,[170,154,104]],[.72,[195,184,140]],[.84,[219,211,180]],[.93,[236,232,214]],[1,[246,244,236]]];
+const pRamp=t=>{ for(let i=1;i<P_RAMP.length;i++){ if(t<=P_RAMP[i][0]){ const [t0,c0]=P_RAMP[i-1], [t1,c1]=P_RAMP[i], k=(t-t0)/(t1-t0); return [c0[0]+(c1[0]-c0[0])*k,c0[1]+(c1[1]-c0[1])*k,c0[2]+(c1[2]-c0[2])*k]; } } return P_RAMP[P_RAMP.length-1][1]; };
+const pTerCache={};
+function pTerrain(k,H){
+  const key=k+'|'+PX+'|'+pW; if(pTerCache[key]) return pTerCache[key];
+  const S=1.5, Y0=-900, cw=Math.ceil(pW/S), ch=Math.ceil((H+1800)/S), hs=new Float32Array(cw*ch);
+  for(let j=0;j<ch;j++) for(let i=0;i<cw;i++) hs[j*cw+i]=pHgt(i*S,Y0+j*S);
+  const cv=document.createElement('canvas'); cv.width=cw; cv.height=ch; const cx=cv.getContext('2d'), im=cx.createImageData(cw,ch), d=im.data, CL=34;
+  for(let j=0;j<ch;j++) for(let i=0;i<cw;i++){ const o=j*cw+i, h=hs[o], p=o*4; let c;
+    const hr=hs[o+(i<cw-1?1:0)], hd=hs[o+(j<ch-1?cw:0)], hl=hs[o-(i>0?1:0)], hu=hs[o-(j>0?cw:0)];
+    if(h<P_SEA){ const shallow=Math.min(hr,hd,hl,hu)>=P_SEA-.03?1:0, near=(P_SEA-h)<.025; c=near?[111,135,146]:[75,95,104];
+      if(hr>=P_SEA||hd>=P_SEA||hl>=P_SEA||hu>=P_SEA) c=[58,52,34]; }
+    else { const t=(h-P_SEA)/(1-P_SEA); c=pRamp(t).slice(); const sh=((hl-hr)+(hu-hd))*9; const m=Math.max(.72,Math.min(1.22,1+sh)); c=[c[0]*m,c[1]*m,c[2]*m];
+      // 等高線
+      const b0=Math.floor(t*CL), b1=Math.floor(((hr-P_SEA)/(1-P_SEA))*CL), b2=Math.floor(((hd-P_SEA)/(1-P_SEA))*CL);
+      if(b0!==b1||b0!==b2){ const k2=b0%5===0?.6:.8; c=[c[0]*k2,c[1]*k2,c[2]*k2]; } }
+    d[p]=c[0]; d[p+1]=c[1]; d[p+2]=c[2]; d[p+3]=255; }
+  cx.putImageData(im,0,0); const url=cv.toDataURL('image/png');
+  const keys=Object.keys(pTerCache); if(keys.length>6) delete pTerCache[keys[0]];
+  return pTerCache[key]=url;
+}
 function pMapArt(k,H){
+  pSeedN=0; for(const c of k) pSeedN=(pSeedN*131+c.charCodeAt(0))>>>0;
   const rnd=pRng(k,5), name=pNamer(k+'#'), W=pW, Y0=-900, Y1=H+900;
-  const band=[[0,'#6a5d36'],[pm2y(6*60),'#7a6b3e'],[pm2y(11*60),'#857543'],[pm2y(15*60),'#7b6a3c'],[pm2y(18*60),'#6a5b34'],[pm2y(21*60),'#56492b'],[H,'#4c4026']];
-  let o=`<defs><linearGradient id="mpBand" x1="0" y1="0" x2="0" y2="${H}" gradientUnits="userSpaceOnUse">${band.map(([y,c])=>`<stop offset="${(y/H).toFixed(3)}" stop-color="${c}"/>`).join('')}</linearGradient></defs><rect x="0" y="${Y0}" width="100%" height="${Y1-Y0}" fill="url(#mpBand)"/>`;
+  let o=`<image href="${pTerrain(k,H)}" x="0" y="${Y0}" width="${W}" height="${Y1-Y0}" preserveAspectRatio="none"/>`;
   const labs=[], far=(x,y,d)=>Math.abs(x-pRX(Math.max(0,Math.min(H,y))))>d||y<0||y>H;
-  const blob=(cx,cy,R,sx,f,n=36)=>{ let d=''; for(let t=0;t<=n;t++){ const a=t/n*Math.PI*2, rr=R*(1+.2*Math.sin(3*a+f)+.1*Math.sin(5*a+f*2)); d+=(t?'L':'M')+(cx+rr*Math.cos(a)*sx).toFixed(1)+' '+(cy+rr*Math.sin(a)).toFixed(1); } return d+'Z'; };
-  const shore=(cx,cy,R,sx,f,n=90)=>{ let d=''; for(let t=0;t<=n;t++){ const a=t/n*Math.PI*2, rr=R*(1+.22*Math.sin(3*a+f)+.12*Math.sin(5*a+f*2)+.07*Math.sin(11*a+f*3)+.04*Math.sin(23*a+f)+(rnd()-.5)*.08); d+=(t?'L':'M')+(cx+rr*Math.cos(a)*sx).toFixed(1)+' '+(cy+rr*Math.sin(a)).toFixed(1); } return d+'Z'; };
-  // 地形は「川 → 湖 → 山」の順に決めて、互いに矛盾しないようにする（川は湖に流れ込むか地図の外へ、山は水の上に置かない）
-  const rivers=[], lakes=[], water=[];
-  const nearWater=(x,y,d)=>water.some(([wx,wy,wr])=>Math.hypot(x-wx,y-wy)<wr+d);
+  const water=[], nearWater=(x,y,d)=>pHgt(x,y)<P_SEA+.03||(d>0&&(pHgt(x+d,y)<P_SEA||pHgt(x-d,y)<P_SEA||pHgt(x,y+d)<P_SEA||pHgt(x,y-d)<P_SEA))||water.some(([wx,wy,wr])=>Math.hypot(x-wx,y-wy)<wr+d);
+  // 川：谷（低い所）をたどって流れる
   let bridges='', wt='';
-  for(let i=0,nr=1+Math.floor(rnd()*2.4);i<nr;i++){ const y0=rnd()*H, A=10+rnd()*24, w=50+rnd()*60, f=rnd()*6, tilt=(rnd()-.5)*.5, fy=x=>y0+tilt*x+A*Math.sin(x/w+f)+6*Math.sin(x/17+f*2);
-    const fromL=rnd()<.5; let toLake=rnd()<.5, endX=W*(.35+rnd()*.5), lr=20+rnd()*22;
-    if(toLake){ const cx=endX+(fromL?lr*1.2:-lr*1.2), cy=fy(endX); if(lakes.some(L=>Math.hypot(L[0]-cx,L[1]-cy)<L[2]+lr+20)||!far(cx,cy,lr*1.6+14)) toLake=false; else lakes.push([cx,cy,lr,rnd()*6]); }
-    if(!toLake) endX=fromL?W+10:-10;
-    const xs=[]; if(fromL){ for(let x=-10;x<=endX;x+=8) xs.push(x); } else { for(let x=W+10;x>=endX;x-=8) xs.push(x); }
-    const pts=xs.map(x=>[x,fy(x)+2.2*Math.sin(x/5.3+f)]); let d=''; pts.forEach(([x,y])=>{ d+=(d?'L':'M')+x+' '+y.toFixed(1); water.push([x,y,7]); });
-    { const rw=4+rnd()*3; wt+=`<path class="mp-river" d="${d}" style="stroke-width:${rw.toFixed(1)}"/><path class="mp-river-d" d="${d}" style="stroke-width:${(rw*.4).toFixed(1)}"/>`; }
+  for(let i=0,nr=1+Math.floor(rnd()*2.2);i<nr;i++){ const fromL=rnd()<.5; let y=Y0+200+rnd()*(Y1-Y0-400), d='', pts=[];
+    for(let st=0;st<=Math.ceil((W+20)/6);st++){ const x=fromL?-10+st*6:W+10-st*6; let best=y, bh=1e9; for(let dy=-6;dy<=6;dy+=2){ const hh=pHgt(x,y+dy)+Math.abs(dy)*.004; if(hh<bh){ bh=hh; best=y+dy; } } y=best; pts.push([x,y]); d+=(d?'L':'M')+x+' '+y.toFixed(1); water.push([x,y,5]); }
+    const rw=3.5+rnd()*2.5; wt+=`<path class="mp-river" d="${d}" style="stroke-width:${rw.toFixed(1)}"/><path class="mp-river-d" d="${d}" style="stroke-width:${(rw*.4).toFixed(1)}"/>`;
+    pts.forEach(([x,y],ix)=>{ if(y<0||y>H||ix%1) return; });
     let bx=null,bd=1e9; pts.forEach(([x,y])=>{ if(y<0||y>H) return; const dd=Math.abs(x-pRX(y)); if(dd<bd){ bd=dd; bx=[x,y]; } });
-    if(bx&&bd<10){ const [x,y]=bx, ry=pts.reduce((m,[px,py])=>Math.abs(px-pRX(py))<12?[Math.min(m[0],py),Math.max(m[1],py)]:m,[y,y]); const y0=ry[0]-10, y1=ry[1]+10; let L='',R='';
-      for(let yy=y0;yy<=y1;yy+=4){ const cx=pRX(yy), wv=7+(Math.abs(yy-y)<5?2:0)+(rnd()-.5)*1.4; L+=(L?'L':'M')+(cx-wv).toFixed(1)+' '+yy.toFixed(1); R=`L${(cx+wv).toFixed(1)} ${yy.toFixed(1)}`+R; }
+    if(bx&&bd<8){ const [x,y]=bx, y0=y-12, y1=y+12; let L='',R=''; for(let yy=y0;yy<=y1;yy+=4){ const cx=pRX(yy), wv=7+(Math.abs(yy-y)<5?2:0); L+=(L?'L':'M')+(cx-wv).toFixed(1)+' '+yy.toFixed(1); R=`L${(cx+wv).toFixed(1)} ${yy.toFixed(1)}`+R; }
       bridges+=`<path class="mp-bridge" d="${L}${R}Z"/>`; if(rnd()<.7) labs.push([x+14,y-10,name('bridge'),'']); }
-    const li=Math.floor(pts.length*(.3+rnd()*.4)), lp=pts[li]; if(lp) labs.push([lp[0],lp[1]-12,name(rnd()<.2&&!toLake?'falls':'river'),'wt']); }
-  // 川とつながらない湖も少し（川や道から離れた所に）
-  for(let i=0,nl=Math.floor(rnd()*2.2);i<nl;i++){ for(let t=0;t<10;t++){ const R=16+rnd()*24, x=W*.15+rnd()*W*.75, y=rnd()*H; if(nearWater(x,y,R*1.5+14)||lakes.some(L=>Math.hypot(L[0]-x,L[1]-y)<L[2]+R+30)||!far(x,y,R*1.5+14)) continue; lakes.push([x,y,R,rnd()*6]); break; } }
-  lakes.forEach(([x,y,R,f])=>{ wt+=`<path class="mp-lake" d="${shore(x,y,R,1.5,f)}"/>`; if(R>28&&rnd()<.6){ const ix=x+(rnd()-.5)*R*.6, iy=y+(rnd()-.5)*R*.4, ir=R*(.15+rnd()*.12), isd=shore(ix,iy,ir,1.3,f+1,40); wt+=`<path class="mp-isle-h" d="${isd}"/><path class="mp-isle" d="${isd}"/>`; } for(let a=0;a<6.3;a+=.5) water.push([x+Math.cos(a)*R*1.2,y+Math.sin(a)*R*.9,R*.5]); water.push([x,y,R*1.4]); labs.push([x-R*.6,y+R+14,name('lake'),'wt']); });
-  // 小さな池をあちこちに
-  for(let i=0,np=4+Math.floor(rnd()*6);i<np;i++){ const x=rnd()*W, y=Y0+rnd()*(Y1-Y0), R=3+rnd()*6; if(nearWater(x,y,R+6)||!far(x,y,R+10)) continue; wt+=`<path class="mp-lake" d="${shore(x,y,R,1.3,rnd()*6,28)}"/>`; water.push([x,y,R+3]); }
-  // 山（水にかからない所だけ。雪の頂は道から離れた大きな山）
-  let mt=''; for(let y=Y0+60;y<Y1;y+=110+rnd()*150){ for(let t=0;t<8;t++){ const cx=rnd()*W, R=34+rnd()*66, sx=1.1+rnd()*.5;
-      if(nearWater(cx,y,R*sx+10)) continue;
-      const f=rnd()*6, n=3+Math.floor(rnd()*4), snow=n>=5&&R>60&&far(cx,y,R*.6);
-      for(let j=n;j>=1;j--){ const lv=(n-j)/(n-1||1); mt+=`<path d="${blob(cx,y,R*j/n,sx,f+j*.15)}" style="fill:rgba(${210+lv*30|0},${198+lv*30|0},${160+lv*34|0},${(.1+lv*.18).toFixed(2)})"/>`; }
-      if(snow) mt+=`<path class="mp-snow" d="${blob(cx,y,R/n*.75,sx,f)}"/>`;
-      water.push([cx,y,R*.35]); // 山の頂には森や湖を置かない
-      if(rnd()<.5&&y>-200&&y<H+200) labs.push([cx+R*.2,y+4,name('mount'),'mt']); break; } }
-  o+=`<g class="mp-topo">${mt}</g>`+wt;
-  o+='<g class="mp-grid">'; for(let y=Y0+60;y<Y1;y+=120) o+=`<line x1="0" x2="100%" y1="${y}" y2="${y}"/>`; for(let x=0;x<900;x+=120) o+=`<line y1="${Y0}" y2="${Y1}" x1="${x}" x2="${x}"/>`; o+='</g>';
-  // 森
-  o+='<g class="mp-tree">'; for(let y=Y0+30;y<Y1;y+=45+rnd()*50){ const x=rnd()<.4?6+rnd()*34:110+rnd()*(W-120), n=5+Math.floor(rnd()*16), sp=14+rnd()*30;
-    for(let j=0;j<n;j++){ const tx=x+(rnd()-.5)*sp*1.6, ty=y+(rnd()-.5)*sp; if(!far(tx,ty,11)||nearWater(tx,ty,4)) continue; o+=`<circle cx="${tx.toFixed(1)}" cy="${ty.toFixed(1)}" r="${(2.1+rnd()*1.8).toFixed(1)}"/>`; }
-    if(n>14&&rnd()<.5&&y>0&&y<H) labs.push([x,y+sp*.6+12,name('wood'),'']); } o+='</g>';
+    const lp=pts[Math.floor(pts.length*(.3+rnd()*.4))]; if(lp) labs.push([lp[0],lp[1]-12,name(rnd()<.2?'falls':'river'),'wt']); }
+  o+=wt;
+  // 山・湖の名前：高さの地図から頂と水たまりを探す
+  { const peaks=[], pools=[]; for(let y=Y0+40;y<Y1-40;y+=34) for(let x=20;x<W-20;x+=34){ const h=pHgt(x,y);
+      if(h>.72&&[[-34,0],[34,0],[0,-34],[0,34]].every(([a,b])=>pHgt(x+a,y+b)<=h)) peaks.push([x,y,h]);
+      if(h<P_SEA-.06&&!pools.some(([px,py])=>Math.hypot(px-x,py-y)<120)) pools.push([x,y]); }
+    peaks.sort((a,b)=>b[2]-a[2]).forEach(([x,y],i)=>{ if(i<8&&!peaks.slice(0,i).some(([px,py])=>Math.hypot(px-x,py-y)<150)) labs.push([x+8,y+4,name('mount'),'mt']); });
+    pools.forEach(([x,y])=>labs.push([x-20,y+4,name('lake'),'wt'])); }
+  // 小道：道から枝分かれして村や遠くへ向かう細い道
+  let trails='';
+  // 森（中くらいの高さの所に）
+  o+='<g class="mp-tree">'; for(let y=Y0+30;y<Y1;y+=40+rnd()*45){ const x=rnd()*W, h=pHgt(x,y); if(h<P_SEA+.04||h>.7) continue; const n=6+Math.floor(rnd()*18), sp=16+rnd()*30;
+    for(let j=0;j<n;j++){ const tx=x+(rnd()-.5)*sp*1.6, ty=y+(rnd()-.5)*sp; if(!far(tx,ty,11)||nearWater(tx,ty,3)) continue; o+=`<circle cx="${tx.toFixed(1)}" cy="${ty.toFixed(1)}" r="${(2+rnd()*1.6).toFixed(1)}"/>`; }
+    if(n>16&&rnd()<.5&&y>0&&y<H) labs.push([x,y+sp*.6+12,name('wood'),'']); } o+='</g>';
   o+=bridges;
-  // 村・馬宿・塔・遺跡（道のそば）
+  // 村・馬宿・塔・遺跡（道のそば）＋そこへ向かう小道
   const ic={village:'<g class="mp-ic vil"><path d="M-9 2l5-5 5 5v6h-10Z"/><path d="M1 0l5-5 5 5v8h-10Z"/></g>',
     stable:'<g class="mp-ic stb"><path d="M-10 7 0-7 10 7Z"/><path d="M-3 7v-5h6v5" class="dk"/></g>',
     tower:'<g class="mp-ic twr"><path d="M-4 9 -2.5-12h5L4 9Z"/><circle cy="-14" r="3.2" class="gl"/></g>',
     ruin:'<g class="mp-ic run"><path d="M-9 8V-3h3V8M-2 8V-7h3V8M5 8V1h3v7"/><path d="M-11 9h22" class="dk"/></g>'};
-  let pois=''; for(let y=40+rnd()*120;y<H-30;y+=150+rnd()*170){ const t=['village','village','stable','stable','tower','ruin'][Math.floor(rnd()*6)], side=rnd()<.5?-1:1;
-    let x=pRX(y)+side*(26+rnd()*20); if(x<14||x>W-90) x=pRX(y)-side*(30+rnd()*14); if(nearWater(x,y,10)) continue; pois+=`<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)})">${ic[t]}</g>`; labs.push([x+14,y+4,name(t),'poi',x]); }
-  o+=pois;
-  // 地名どうしが重ならないものだけ出す（村・馬宿などを優先）
+  let pois=''; for(let y=40+rnd()*120;y<H-30;y+=130+rnd()*150){ const t=['village','village','stable','stable','tower','ruin'][Math.floor(rnd()*6)], side=rnd()<.5?-1:1;
+    let x=pRX(y)+side*(40+rnd()*50); if(x<20||x>W-90) x=pRX(y)-side*(40+rnd()*30); if(x<14||x>W-20||nearWater(x,y,8)) continue;
+    const sx=pRX(y-10), mx=(sx+x)/2+(rnd()-.5)*30; trails+=`<path class="mp-trail" d="M${sx.toFixed(1)} ${(y-10).toFixed(1)}Q${mx.toFixed(1)} ${(y-4+(rnd()-.5)*30).toFixed(1)} ${x.toFixed(1)} ${(y+4).toFixed(1)}"/>`;
+    pois+=`<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)})">${ic[t]}</g>`; labs.push([x+14,y+4,name(t),'poi',x]); }
+  for(let i=0,nt=2+Math.floor(rnd()*3);i<nt;i++){ const y=rnd()*H, sx=pRX(y), ex=sx<W/2?W+10:-10, ey=y+(rnd()-.5)*260; let dd=`M${sx.toFixed(1)} ${y.toFixed(1)}`; for(let t=1;t<=8;t++){ const xx=sx+(ex-sx)*t/8+(rnd()-.5)*24, yy=y+(ey-y)*t/8+(rnd()-.5)*24; dd+=`L${xx.toFixed(1)} ${yy.toFixed(1)}`; } trails+=`<path class="mp-trail" d="${dd}"/>`; }
+  o+=trails+pois;
   // 地名どうし・道・地方名と重ならないように置く（だめなら道の反対側へ、それでもだめなら出さない）
   const placed=[]; labs.sort((a,b)=>(b[3]==='poi')-(a[3]==='poi'));
-  pRegions(k).forEach(([m,n])=>{ const y=pm2y(m)+14, w=n.length*24, lft=Math.max(pRX(y),pRX(y+20))>pW*.5; placed.push(lft?[0,y-2,w+20,y+34]:[W-w-20,y-2,W,y+34]); });
+  pRegions(k).forEach(([m,n])=>{ const y=pm2y(m)+14, w=n.length*20, lft=Math.max(pRX(y),pRX(y+20))>pW*.5; placed.push(lft?[0,y-2,w+20,y+34]:[W-w-20,y-2,W,y+34]); });
   const hitRoad=b=>{ for(let yy=b[1]-4;yy<=b[3]+4;yy+=4){ if(yy<0||yy>H) continue; const rx=pRX(yy); if(rx>b[0]-8&&rx<b[2]+8) return true; } return false; };
   const hit=b=>hitRoad(b)||b[0]<2||b[2]>W-2||placed.some(q=>b[0]<q[2]&&b[2]>q[0]&&b[1]<q[3]&&b[3]>q[1]);
   o+=labs.filter(L=>{ const [x,y,t]=L, w=t.length*10.5+6; const cands=L[4]!=null?[x,L[4]-w-12]:[x, pRX(y-4)+18, pRX(y-4)-w-18, x-w*.6];
@@ -3252,6 +3274,11 @@ function pathAfter(){
 // ズーム：照準の時刻を保ったまま、地図をひろく／くわしく
 function pZoomBy(d){ const nz=Math.max(0,Math.min(2,pZoom+d)); if(nz===pZoom) return; const sv=$('slView'); const m=sv?PATH_H0+sv.scrollTop/PX:null;
   pZoom=nz; PX=PZOOM[nz]; renderList(); const s2=$('slView'); if(s2&&m!=null){ pPad(); s2.scrollTop=pm2y(m); } pRetUpdate(); }
+// 地図を開いている時：左右にスワイプで前後の日へ
+(function(){ let sx=null, sy=null, st=0; document.addEventListener('touchstart',e=>{ if(listCat!=='path'||e.touches.length!==1||!e.target.closest('#slView')||e.target.closest('.sl-sheet')){ sx=null; return; } sx=e.touches[0].clientX; sy=e.touches[0].clientY; st=Date.now(); },{passive:true});
+  document.addEventListener('touchend',e=>{ if(sx==null||pathDrag) { sx=null; return; } const t=e.changedTouches[0], dx=t.clientX-sx, dy=t.clientY-sy; sx=null;
+    if(Math.abs(dx)>70&&Math.abs(dx)>Math.abs(dy)*1.8&&Date.now()-st<700){ const sl=document.querySelector('.sl-view'); if(sl){ sl.style.transition='transform .18s,opacity .18s'; sl.style.transform=`translateX(${dx<0?-40:40}px)`; sl.style.opacity='.2'; }
+      setTimeout(()=>{ pathAct('pathday',{dataset:{v:dx<0?'1':'-1'}}); const s2=document.querySelector('.sl-view'); if(s2){ s2.style.transition='none'; s2.style.transform=`translateX(${dx<0?40:-40}px)`; s2.style.opacity='.2'; requestAnimationFrame(()=>{ s2.style.transition='transform .2s,opacity .2s'; s2.style.transform=''; s2.style.opacity=''; }); } },160); } },{passive:true}); })();
 // 2本指でつまんでズーム
 (function(){ let d0=null; document.addEventListener('touchstart',e=>{ if(e.touches.length===2&&e.target.closest('#slView')){ d0=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY); } },{passive:true});
   document.addEventListener('touchmove',e=>{ if(d0&&e.touches.length===2){ e.preventDefault(); const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY); if(d/d0>1.35){ pZoomBy(1); d0=d; } else if(d/d0<.74){ pZoomBy(-1); d0=d; } } },{passive:false});
