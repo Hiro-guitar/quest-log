@@ -261,6 +261,8 @@ select{max-width:100%;text-overflow:ellipsis}
 .estep .ic{color:var(--dim);width:26px;height:30px;font-size:13px;border-radius:3px}
 .estep .ic:hover{color:var(--text);background:rgba(255,255,255,.06)}
 .hint{font-size:12px;color:var(--dim)}
+.tr-fin{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:18px 0 4px;padding-top:12px;border-top:1px solid var(--line)}
+.tr-fin.done .r-clear{font-size:15px}
 .tr-carry{position:relative;display:flex;gap:12px;align-items:center;margin:16px -6px 6px;padding:12px 14px;background:linear-gradient(90deg,rgba(0,0,0,0),rgba(0,0,0,.32) 12%,rgba(0,0,0,.32) 88%,rgba(0,0,0,0))}
 .tr-carry::before,.tr-carry::after{content:"";position:absolute;left:4%;right:4%;height:1px;background:linear-gradient(90deg,transparent,rgba(242,194,48,.55),transparent)}
 .tr-carry::before{top:0}.tr-carry::after{bottom:0}
@@ -1364,7 +1366,7 @@ function todayList(){
   let h=catBar('today')+chapLine()+weekStrip();
   h+=`<div class="day-h"><span>${dayView===ymd()?'今日':''}　${d.getMonth()+1}/${d.getDate()}（${'日月火水木金土'[d.getDay()]}）${holiday(dayView)?`<b class="hol">${holiday(dayView)}</b>`:''}</span><span>${items.filter(x=>x.s?x.s.done:x.q.done).length} / ${items.length}</span></div><div class="rows">`;
   if((state.rested||{})[dayView]) h+=`<div class="sec-empty">🔥 この日は焚き火で休みました</div>`;
-  { const tt=trType(dayView); if(tt&&tt!=='R'){ const dn=trDone(dayView), tot=trChecks(dayView).length; h+=`<button class="row tr-today ${dn===tot?'done':''}" data-act="trday" data-v="${dayView}"><span class="r-mark">${ico('train')}</span><span class="r-main"><span class="r-title">鍛錬：${TR_NAME[tt]}</span><span class="r-sub">チェック ${dn}/${tot}</span></span><span class="r-side">${dn===tot?'<span class="r-clear">CLEAR</span>':''}</span><span class="r-notch"></span></button>`; } }
+  { const tt=trType(dayView); if(tt&&tt!=='R'){ const cl=trClear(dayView); h+=`<button class="row tr-today ${cl?'done':''}" data-act="trday" data-v="${dayView}"><span class="r-mark">${ico('train')}</span><span class="r-main"><span class="r-title">鍛錬：${TR_NAME[tt]}</span><span class="r-sub">約${trSets(dayView)===2?15:20}分</span></span><span class="r-side">${cl?'<span class="r-clear">CLEAR</span>':''}</span><span class="r-notch"></span></button>`; } }
   // 工程はチャレンジごとにまとめて、その下に並べる
   { const seen=new Map(); const blocks=[];
     items.forEach(x=>{ if(!x.s){ blocks.push(x); return; } let g=seen.get(x.q.id); if(!g){ g={q:x.q,steps:[]}; seen.set(x.q.id,g); blocks.push(g); } g.steps.push(x.s); });
@@ -1631,6 +1633,9 @@ document.addEventListener('click',e=>{
     case 'trday': selId=null; trSel=b.dataset.v; tab='list'; if(listCat!=='train'){ listCat='train'; } if(/^\d/.test(trSel)) trWeek=trWeekStart(trSel); render(); window.innerWidth<=820&&window.scrollTo({top:0}); break;
     case 'trweek': { const d=new Date((trWeek||trWeekStart(trDefaultDay()))+'T00:00:00'); d.setDate(d.getDate()+7*(+b.dataset.v)); const k=ymd(d); if(k<=trLast()&&ymd(new Date(d.getTime()+6*DAY))>=TR_START) trWeek=k; renderList(); break; }
     case 'trback': trSel=null; render(); break;
+    case 'trfin': { const k=trSel, H=hm(), on=b.dataset.v==='1', was=!!(H.days[k]||{}).train; if(!k||on===was) break; if(on) trPin(k); const vb=trVessels(); H.days[k]={...(H.days[k]||{}),train:on}; hmTouch('days',k);
+      if(on){ gain(30); earnRupee(20); toast('鍛錬クリア  +30 XP ・ +20ルピー'); maybeSeed(); const p=TR_PART[trType(k)]; if(p) setTimeout(()=>toast(`克服の証（${PART_NAME[p]}）を手に入れた`),1300); trVesselBanner(vb); } else gain(-30);
+      save(); render(); break; }
     case 'trsw': { const H=hm(); H.ovr={...H.ovr,[trSel]:b.dataset.v}; hmTouch('ovr',trSel); save(); render(); break; }
     case 'trbody': { const d=$('trBd').value, kg=parseFloat($('trKg').value), cm=parseFloat($('trCm').value); if(!d||!(kg>40||cm>50)){ toast('体重かお腹まわりを入れてください'); break; } const H=hm(); H.body={...H.body,[d]:{...(H.body[d]||{}),...(kg>40&&kg<120?{kg:Math.round(kg*10)/10}:{}),...(cm>50&&cm<130?{cm:Math.round(cm*2)/2}:{})}}; hmTouch('body',d); save(); renderDetail(); toast('記録しました'); break; }
     case 'trbdel': { const H=hm(); const o={...H.body}; delete o[b.dataset.v]; H.body=o; hmTouch('body',b.dataset.v); save(); renderDetail(); break; }
@@ -2209,8 +2214,11 @@ function trPinDone(){ const H=hm(), t=ymd(); let ch=false; Object.keys({...H.day
 function trLast(){ const S=trSched(); let l=TR_END; for(const k in S) if(S[k].t&&k>l) l=k; return l; }
 function trWhere(k){ const S=trSched(), x=S[k]; if(!x||x.skip===null) return null; for(let d=trAdd(k,1);d<=TR_LATE;d=trAdd(d,1)) if(S[d]&&S[d].i===x.skip) return d; return ''; }
 const trMD=k=>{ const d=new Date(k+'T00:00:00'); return (d.getMonth()+1)+'/'+d.getDate()+'（'+'日月火水木金土'[d.getDay()]+'）'; };
-const trChecks=k=>[...(trType(k)!=='R'?[['train','筋トレ']]:[]),['bfast','朝：卵・納豆'],['prot','プロテイン'],['rice','夜ごはん200g'],['walk','散歩・自転車'],['sleep','7時間寝た'],['grip','握力（ついでに）']];
+const trChecks=k=>trType(k)&&trType(k)!=='R'?[['train','筋トレ']]:[];
 const trDone=k=>{ const d=hm().days[k]||{}; return trChecks(k).filter(([c])=>d[c]).length; };
+// その日の種目を、決められたセット数ぶん全部記録したら鍛錬クリア
+const trAllSets=k=>{ const t=trType(k); if(!TR_MENU[t]) return false; const L=hm().lift[k]||{}, n=trSets(k); return TR_MENU[t].every(id=>{ const a=L[id]||[]; for(let i=0;i<n;i++) if(!(a[i]&&a[i][1])) return false; return true; }); };
+const trClear=k=>trChecks(k).length>0&&trDone(k)===trChecks(k).length;
 function trPhase(k){
   if(k<'2026-11-16') return '最初の2週間は慣らし：各種目2セット。重さは「あと3〜4回できる」くらいで、フォームを覚える';
   if(k>='2026-12-28') return '年末：できる日にやればOK。体重とお腹まわりを測って、ここまでを振り返る';
@@ -2249,11 +2257,11 @@ function trList(){
   h+=`<div class="tr-week"><button class="cat-arrow" data-act="trweek" data-v="-1" aria-label="前の週">‹</button><span>${ws.getMonth()+1}/${ws.getDate()} 〜 ${we.getMonth()+1}/${we.getDate()}</span><button class="cat-arrow" data-act="trweek" data-v="1" aria-label="次の週">›</button></div><div class="rows">`;
   for(let i=0;i<7;i++){
     const d=new Date(ws.getTime()+i*DAY), k=ymd(d), t=trType(k); if(!t) continue;
-    const dn=trDone(k), tot=trChecks(k).length, isT=k===ymd(), w=d.getDay();
+    const cl=trClear(k), isT=k===ymd(), w=d.getDay();
     h+=`<button class="row tr-row ${trSel===k?'sel':''} ${t==='R'?'rest':''} ${isT?'today':''}" data-act="trday" data-v="${k}">
       <span class="r-mark tr-date ${w===0||holiday(k)?'sun':w===6?'sat':''}"><b>${d.getDate()}</b><small>${'日月火水木金土'[w]}</small></span>
-      <span class="r-main"><span class="r-title">${t==='R'?'休みの日':'鍛錬：'+TR_NAME[t]}</span><span class="r-sub">${isT?'今日　':''}チェック ${dn}/${tot}</span><i class="tr-bar"><i style="width:${Math.round(dn/tot*100)}%"></i></i></span>
-      <span class="r-side">${dn===tot?'<span class="r-clear">CLEAR</span>':''}</span><span class="r-notch"></span></button>`;
+      <span class="r-main"><span class="r-title">${t==='R'?'休みの日':'鍛錬：'+TR_NAME[t]}</span><span class="r-sub">${isT?'今日':''}</span></span>
+      <span class="r-side">${cl?'<span class="r-clear">CLEAR</span>':''}</span><span class="r-notch"></span></button>`;
   }
   h+=`</div><div class="rows" style="margin-top:12px">`;
   h+=`<button class="row ${trSel==='log'?'sel':''}" data-act="trday" data-v="log"><span class="r-mark">📈</span><span class="r-main"><span class="r-title">記録（体重・種目ごとの伸び）</span></span><span class="r-notch"></span></button>`;
@@ -2294,9 +2302,7 @@ function trDayPanel(k){
   } else {
     h+=`<div class="sec-h"><span>筋トレ</span>${dd.train?'':'<button class="btn small ghost" data-act="trsw" data-v="R">休みにする</button>'}</div><p class="hint" style="margin:0 0 6px">ダンベルの重さは片手1個あたり。セットの間は1〜2分休む。</p>${TR_MENU[t].map(id=>trExHtml(id,k)).join('')}`;
   }
-  h+=`<div class="sec-h"><span>食事</span><span>約2,100〜2,200 kcal・たんぱく質約120g</span></div><div class="tr-food">
-    <div><b>朝</b>プロテイン1杯＋ごはん150g＋納豆＋卵2個</div><div><b>昼</b>約600kcalまで。たんぱく質20g以上（サラダチキン、鮭おにぎり＋ゆで卵など）</div><div><b>夜</b>奥さんと同じおかず1人前＋ごはん200g</div>${t!=='R'?'<div><b>筋トレ後</b>プロテイン1杯</div>':''}</div>`;
-  h+=`<div class="sec-h"><span>今日のチェック</span><span>${trDone(k)} / ${trChecks(k).length}</span></div><div class="tr-checks">${trChecks(k).map(([c,l])=>`<label class="${dd[c]?'on':''}"><input type="checkbox" data-trc="${c}"${dd[c]?' checked':''}><i></i>${l}</label>`).join('')}</div>`;
+  if(t!=='R') h+=dd.train?`<div class="tr-fin done"><span class="r-clear">CLEAR</span><button class="btn small ghost" data-act="trfin" data-v="0">クリアを取り消す</button></div>`:`<div class="tr-fin"><span class="hint">全部のセットを記録すると、自動でクリアになる</span><button class="btn small" data-act="trfin" data-v="1">ここで終える</button></div>`;
   h+=`<div class="sec-h"><span>メモ（体調・痛み・サッカーなど）</span></div><textarea id="trMemo" class="tr-memo">${esc(dd.memo||'')}</textarea></div>`;
   return h;
 }
@@ -2376,8 +2382,8 @@ function trOnChange(e){
     save(); renderLv(); renderList(); renderDetail(); return true; }
   if(el.dataset.trex){ const id=el.dataset.trex, ix=+el.dataset.i, f=+el.dataset.f, v=el.value===''?null:Math.max(0,parseFloat(el.value)); if(v) trPin(k);
     const day={...(H.lift[k]||{})}, arr=(day[id]||[]).slice(), s=(arr[ix]||[null,null]).slice(); s[f]=v; arr[ix]=s; day[id]=arr; H.lift[k]=day; hmTouch('lift',k);
-    if(f===1&&v&&!(H.days[k]||{}).train){ H.days[k]={...(H.days[k]||{}),train:true}; hmTouch('days',k); gain(30); earnRupee(20); toast('鍛錬クリア  +30 XP ・ +20ルピー'); maybeSeed();
-      const cb=document.querySelector('input[data-trc=train]'); if(cb){ cb.checked=true; cb.closest('label').classList.add('on'); }
+    if(f===1&&v&&!(H.days[k]||{}).train&&trAllSets(k)){ H.days[k]={...(H.days[k]||{}),train:true}; hmTouch('days',k); gain(30); earnRupee(20); toast('鍛錬クリア  +30 XP ・ +20ルピー'); maybeSeed();
+      const fin=document.querySelector('.tr-fin'); if(fin){ fin.classList.add('done'); fin.innerHTML='<span class="r-clear">CLEAR</span><button class="btn small ghost" data-act="trfin" data-v="0">クリアを取り消す</button>'; }
       const p=TR_PART[trType(k)]; if(p) setTimeout(()=>toast(`克服の証（${PART_NAME[p]}）を手に入れた`),1300); trVesselBanner(vb); }
     if(f===1&&v) trCheckPR(id,k);
     // 入力中の欄が消えないよう、右の画面は描き直さない
