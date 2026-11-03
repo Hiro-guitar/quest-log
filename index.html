@@ -264,7 +264,6 @@ select{max-width:100%;text-overflow:ellipsis}
 
 /* スマホ：旅程は画面いっぱいの地図（ブレワイでマップを開いた時のように） */
 .sl-close,.sl-list{display:none}
-.sl-dbg{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:99;font:11px monospace;color:#fff;background:#c00;padding:4px 6px;pointer-events:none}
 @media (max-width:820px){
   body.pfull{overflow:hidden}
   body.pfull .hints{display:none}
@@ -278,7 +277,10 @@ select{max-width:100%;text-overflow:ellipsis}
   body.pfull [data-act=pathhere]{font-size:0;gap:0}body.pfull [data-act=pathhere] i{font-size:10px}
   body.pfull .sl-p{font-size:12px}
   .sl-list.on{color:#fff;text-shadow:0 0 6px rgba(95,212,239,.8)}
-  body.pfull{background:#08141b}
+  html.pfull-on,body.pfull{background:#08141b}
+  /* ホーム画面から開いたiPhoneでは、画面の下の端が表示領域の外になる（ホームバーの分の余白はいらない）／上の端は時計の下がかすむので少し下げる */
+  html.ios-gap body.pfull .sl-bot{padding-bottom:8px}
+  html.ios-gap body.pfull .sl-top{padding-top:calc(env(safe-area-inset-top) + 20px)}
   body.pfull .app,body.pfull .bg-name,body.pfull .fab{display:none!important}
   body.pfull .slate{display:flex;flex-direction:column;top:0;bottom:0;height:auto}
   body.pfull .sl-top{position:relative;z-index:6;flex:none;height:auto;padding:calc(env(safe-area-inset-top) + 4px) 14px 8px;background:#08141b;border-bottom:1px solid rgba(95,212,239,.4);box-shadow:none}
@@ -1207,7 +1209,7 @@ function addSteps(q,text){
 const CAT_NAMES={today:'今日の冒険',path:'旅程',main:'メインチャレンジ',challenge:'チャレンジ',mini:'ミニチャレンジ',train:'鍛錬',memory:'思い出'};
 const CATS=['today','path','main','challenge','mini','train'];
 let toolSel='sync', bkList=null, memEdit=null;
-function render(){ try{ document.documentElement.style.setProperty('--vh',Math.max(window.innerHeight,document.documentElement.clientHeight,navigator.standalone?screen.height:0)+'px'); }catch(e){} { const pf=window.innerWidth<=820&&tab==='list'&&listCat==='path'&&!pathSel&&!selId; if(pf){ try{ window.scrollTo(0,0); document.body.scrollTop=0; document.documentElement.scrollTop=0; }catch(e){} } document.body.classList.toggle('pfull',pf); } sortAllSteps();renderLv();renderHud();renderTabs();renderList();renderDetail();renderHints();
+function render(){ try{ document.documentElement.style.setProperty('--vh',Math.max(window.innerHeight,document.documentElement.clientHeight,navigator.standalone?screen.height:0)+'px'); }catch(e){} { const pf=window.innerWidth<=820&&tab==='list'&&listCat==='path'&&!pathSel&&!selId; document.documentElement.classList.toggle('pfull-on',pf); document.documentElement.classList.toggle('ios-gap',!!navigator.standalone&&screen.height-window.innerHeight>20); if(pf){ try{ window.scrollTo(0,0); document.body.scrollTop=0; document.documentElement.scrollTop=0; }catch(e){} } document.body.classList.toggle('pfull',pf); } sortAllSteps();renderLv();renderHud();renderTabs();renderList();renderDetail();renderHints();
   $('split').classList.toggle('has-sel',!!selId||(tab==='tools'&&toolPicked)||(tab==='pouch'&&!!pouchSel)||(tab==='list'&&listCat==='train'&&!!trSel)||(tab==='list'&&listCat==='path'&&!!pathSel));
 }
 let toolPicked=false;
@@ -3101,9 +3103,6 @@ function pathList(){
   const md=x=>{ const t=new Date(k+'T00:00:00'); t.setDate(t.getDate()+x); return (t.getMonth()+1)+'/'+t.getDate(); };
   const nb=bls.filter(b=>!b.fix), nd=nb.filter(pDone).length; let wx=null; try{ wx=JSON.parse(localStorage.getItem(WX_KEY)||'null'); }catch(e){}
   const hud=`<div class="sl-hud">${nb.length?`<b>${nd}/${nb.length}</b><i></i>`:''}${isT?`<b>${now>=6*60&&now<18*60?'<i class="ck-sun"></i>':'<i class="ck-moon"></i>'}${now<12*60?'AM':'PM'} ${String(Math.floor(now/60)%12||12).padStart(2,'0')}:${String(now%60).padStart(2,'0')}</b><i></i>`:''}${isT&&wx&&wx.temp!=null?`<b>${wx.temp>0?'+':''}${Math.round(wx.temp)}℃</b><i></i>`:''}</div>`;
-  if(document.body.classList.contains('pfull')) setTimeout(()=>{ try{ const sl=$('slFull'); if(!sl) return; const r=sl.getBoundingClientRect(), pr=document.createElement('div'); pr.style.cssText='position:fixed;top:0;left:0;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);visibility:hidden'; document.body.appendChild(pr); const cs=getComputedStyle(pr), vv=window.visualViewport||{};
-    let d=sl.querySelector('.sl-dbg'); if(!d){ d=document.createElement('div'); d.className='sl-dbg'; sl.appendChild(d); }
-    d.textContent=`v3 ih${innerHeight} sh${screen.height} vv${Math.round(vv.height||0)}/${Math.round(vv.offsetTop||0)} sl${Math.round(r.top)}-${Math.round(r.bottom)} st${cs.paddingTop}/${cs.paddingBottom} ${navigator.standalone?'PWA':'web'}`; pr.remove(); }catch(e){} },400);
   h+=`<div class="slate z${pZoom} ${pathBoot?'boot':''}">${SL_DEFS}<i class="sl-cn c1">${slCorner(0,0)}</i><i class="sl-cn c2">${slCorner(1,0)}</i><i class="sl-cn c3">${slCorner(0,1)}</i><i class="sl-cn c4">${slCorner(1,1)}</i>
     ${slBand('t')}<div class="sl-top"><button class="sl-tab" data-act="pathday" data-v="-1">${md(-1)} <i>L</i></button><div class="sl-title"><b>${isT?'今日の旅程':'旅程'}</b><small>${d.getMonth()+1}/${d.getDate()}（${'日月火水木金土'[d.getDay()]}）${holiday(k)?' '+holiday(k):''}</small></div><button class="sl-tab" data-act="pathday" data-v="1"><i>R</i> ${md(1)}</button></div>
     <div class="sl-body"><div class="sl-view" id="slView"><div class="tl road" id="tl" style="height:${H}px"><svg class="rd-svg" width="100%" height="${H}" aria-hidden="true">${svg}</svg>${regs}${hrs}${mtags}${cards}${nowM}</div></div><div class="sl-fx" aria-hidden="true"></div>${hud}${pathSheet&&unH?`<div class="sl-sheet">${unH}</div>`:''}<div class="sl-ret" id="slRet" aria-hidden="true"><i class="rt-c"></i><span class="rt-l" id="slRetL"></span></div></div>
