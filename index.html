@@ -349,6 +349,10 @@ select{max-width:100%;text-overflow:ellipsis}
 .pu-gh .ico{width:14px;height:14px;color:var(--muted)}
 .pu-gh small{margin-left:auto;font-weight:400;font-size:10.5px;color:var(--muted)}
 .pu-i.st{padding-left:24px;font-size:12.5px}
+.rc-dots{flex:none;display:inline-flex;gap:3px;align-items:center;margin-left:2px}
+.rc-dots i{width:6px;height:6px;transform:rotate(45deg);border:1.3px solid #e8952f}
+.rc-dots i.on{background:#5fd4ef;border-color:#5fd4ef;box-shadow:0 0 4px rgba(95,212,239,.8)}
+.rc-dots.big i{width:8px;height:8px}
 .pu-all{margin-left:8px;font-size:11px;font-weight:700;color:#06121a;background:#bfeefa;border-radius:10px;padding:2px 9px}
 .pb-steps{display:grid;gap:4px;margin-bottom:8px}
 .pb-st{display:flex;align-items:center;gap:8px;font-size:13px;padding:4px 2px}
@@ -2954,7 +2958,7 @@ function pSyncTime(k,id){ const b=(plan().d[k]||{})[id]; if(!b||b.del||!b.q) ret
 // 何に結びついた区間か
 function pRef(b){ if(b.q){ const q=findQ(b.q); if(!q) return null;
     if(b.sids&&b.sids.length){ const ss=b.sids.map(id=>(q.steps||[]).find(x=>x.id===id)).filter(Boolean); if(!ss.length) return null; if(ss.length===1) return {q,s:ss[0],done:!!ss[0].done,title:ss[0].text,sub:q.title};
-      return {q,ss,done:ss.every(x=>x.done),title:`${q.title||'(無題)'}（工程${ss.length}）`,sub:ss.map(x=>x.text).join('・')}; }
+      return {q,ss,done:ss.every(x=>x.done),title:q.title||'(無題)',sub:ss.map(x=>x.text).join('・')}; }
     const s=b.sid?(q.steps||[]).find(x=>x.id===b.sid):null; return {q,s,done:s?!!s.done:!!q.done,title:s?s.text:q.title,sub:s?q.title:''}; } return null; }
 const pHasStep=(b,q,sid)=>b.q===q&&((b.sid||'')===(sid||'')||(!!sid&&(b.sids||[]).includes(sid)));
 function pTitle(b){ if(b.tr) return '鍛錬：'+(TR_LAB[trType(b.tr)]||'鍛錬'); const r=pRef(b); return r?r.title:(b.t||''); }
@@ -2982,7 +2986,7 @@ function pathList(){
   if(un.length){ const grp=[]; un.forEach((x,i)=>{ const key=x.sid?x.q:'_'+i; let g=grp.find(z=>z.key===key); if(!g){ g={key,x,items:[]}; grp.push(g); } g.items.push([x,i]); });
     h+=`<div class="path-un"><div class="pu-h">まだ道に置いていない冒険<small>押すと空いている時間に置く</small></div>${grp.map(g=>{ const q=g.x.q&&findQ(g.x.q);
       if(!g.x.sid) return `<button class="pu-i ${g.x.tr?'tr':''}" data-act="pathput" data-i="${g.items[0][1]}"><i class="pu-pin" aria-hidden="true"></i><span>${esc(g.x.t||'(無題)')}</span></button>`;
-      return `<div class="pu-g"><div class="pu-gh">${q?ico(q.type):''}<span>${esc(g.x.sub||'')}</span><small>工程 ${g.items.length}</small>${g.items.length>1?`<button class="pu-all" data-act="pathputg" data-q="${g.x.q}">まとめて置く</button>`:''}</div>${g.items.map(([x,i])=>`<button class="pu-i st" data-act="pathput" data-i="${i}"><i class="pu-pin" aria-hidden="true"></i><span>${esc(x.t||'(無題)')}</span></button>`).join('')}</div>`; }).join('')}</div>`; }
+      return `<div class="pu-g"><div class="pu-gh">${q?ico(q.type):''}<span>${esc(g.x.sub||'')}</span>${g.items.length>1?`<button class="pu-all" data-act="pathputg" data-q="${g.x.q}">まとめて置く</button>`:''}</div>${g.items.map(([x,i])=>`<button class="pu-i st" data-act="pathput" data-i="${i}"><i class="pu-pin" aria-hidden="true"></i><span>${esc(x.t||'(無題)')}</span></button>`).join('')}</div>`; }).join('')}</div>`; }
   if(!bl.length) h+=`<div class="path-empty">${tpl.length?`<button class="btn" data-act="pathtpl">いつもの旅程（${tk==='we'?'休日':'平日'}）を敷く</button>`:''}<p class="hint">道をタップすると、その時刻に予定を置けます</p></div>`;
   // 時間の道：1日を地図の上の一本の道にして、予定は道しるべ（ピン）として立てる
   const now=pnow(), H=pm2y(PATH_H1)+10, L=b=>pathDrag&&pathDrag.id===b.id?{...b,s:pathDrag.s,e:pathDrag.e}:b;
@@ -3009,7 +3013,7 @@ function pathList(){
       :`<g class="rd-pin k-${kd} ${dn?'done':''} ${cur?'cur':''} ${pathSel===b.id?'sel':''}" transform="translate(${x.toFixed(1)} ${y})"><rect class="pn-g" x="-9" y="-9" width="18" height="18" rx="3" transform="rotate(45)"/><rect class="pn-b" x="-6.5" y="-6.5" width="13" height="13" rx="2" transform="rotate(45)"/>${b.tr?'<path class="pn-c" d="M-3.5 0h7M-3.5-2v4M3.5-2v4"/>':'<path class="pn-c" d="M0-3.2 3.2 0 0 3.2-3.2 0Z"/>'}</g>`;
     return `<i class="rd-knob k-${kd}" data-pgrip="${b.id}" style="top:${y2}px;left:${pRX(y2).toFixed(1)}px" aria-hidden="true"></i>
       <div class="rd-card k-${kd} ${dn?'done':''} ${past&&!dn?'past':''} ${cur?'cur':''} ${pathSel===b.id?'sel':''} ${pathDrag&&pathDrag.id===b.id?'drag':''}" data-pb="${b.id}" style="top:${cy}px">
-        <span class="rc-t"><span class="rc-time">${pfmt(b.s)}${b.wake&&!b.woke?'<small>〜起きるまで</small>':''}</span><b>${esc(ttl||'（名前なし）')}</b>${dn?'<em class="tb-clear">CLEAR</em>':''}</span>
+        <span class="rc-t"><span class="rc-time">${pfmt(b.s)}${b.wake&&!b.woke?'<small>〜起きるまで</small>':''}</span><b>${esc(ttl||'（名前なし）')}</b>${r&&r.ss?`<span class="rc-dots">${r.ss.map(z=>`<i class="${z.done?'on':''}"></i>`).join('')}</span>`:''}${dn?'<em class="tb-clear">CLEAR</em>':''}</span>
         ${late?`<button class="rc-act" data-act="pathlate" data-v="${b.id}"><i>⟳</i>遅れた　今から始める</button>`:''}${wake?`<button class="rc-act" data-act="pathwake" data-v="${b.id}"><i>☀</i>起きた</button>`:''}</div>`; }).join('');
   svg+=foot;
   let nowM=''; if(isT&&now>=PATH_H0&&now<PATH_H1){ const y=pm2y(now), x=pRX(y), day=now>=6*60&&now<18*60, ang=Math.atan2(6,pRX(y+3)-pRX(y-3))*180/Math.PI-90;
@@ -3113,7 +3117,7 @@ function pathPanel(){
   let h=`<div class="panel path-panel"><button class="back" data-act="pathback">‹ 道へもどる</button>
   <h2 class="p-title">${esc(pTitle(b)||'（名前なし）')}</h2>`;
   if(r) h+=`<div class="p-giver"><span>${ico(r.q.type)} ${esc(r.ss?TYPES[r.q.type].label:(r.sub||TYPES[r.q.type].label))}</span><button class="btn small ghost" data-act="openq" data-id="${r.q.id}">冒険を開く</button></div>`;
-  if(r&&r.ss) h+=`<div class="sec-h"><span>まとめた工程</span><span>${r.ss.filter(z=>z.done).length} / ${r.ss.length}</span></div><div class="pb-steps">${r.ss.map(z=>`<div class="pb-st ${z.done?'on':''}"><button class="pb-ck" data-act="pathsstep" data-v="${z.id}">${z.done?'✓':''}</button><span>${esc(z.text)}</span><button class="pb-x" data-act="pathsout" data-v="${z.id}" aria-label="まとめから外す">×</button></div>`).join('')}</div><div class="p-acts"><button class="btn ${dn?'':'primary'}" data-act="pathsall">${dn?'印を外す':'まとめて終えた'}</button></div>`;
+  if(r&&r.ss) h+=`<div class="sec-h"><span>この道しるべでやること</span><span class="rc-dots big">${r.ss.map(z=>`<i class="${z.done?'on':''}"></i>`).join('')}</span></div><div class="pb-steps">${r.ss.map(z=>`<div class="pb-st ${z.done?'on':''}"><button class="pb-ck" data-act="pathsstep" data-v="${z.id}">${z.done?'✓':''}</button><span>${esc(z.text)}</span><button class="pb-x" data-act="pathsout" data-v="${z.id}" aria-label="まとめから外す">×</button></div>`).join('')}</div><div class="p-acts"><button class="btn ${dn?'':'primary'}" data-act="pathsall">${dn?'印を外す':'まとめて終えた'}</button></div>`;
   if(b.tr) h+=`<div class="p-giver"><span>${ico('train')} 鍛錬</span><button class="btn small ghost" data-act="trday" data-v="${b.tr}">鍛錬を開く</button></div>`;
   h+=`<div class="form" style="margin-top:12px">`;
   if(kd==='free'||kd==='fix') h+=`<div class="f"><label>予定</label><input type="text" id="pbTitle" value="${esc(b.t||'')}" placeholder="例：図書館で仕事、子どもと散歩"></div>`;
@@ -3125,8 +3129,8 @@ function pathPanel(){
   h+=`</div>`;
   if(!r&&!b.tr) h+=`<div class="p-acts"><button class="btn ${dn?'':'primary'}" data-act="pathdone">${dn?'終えた印を外す':'この予定を終えた'}</button></div>`;
   else if(r&&!r.s&&!r.ss) h+=`<p class="hint">終えたら、冒険の画面で達成を報告しよう。</p>`;
-  else if(r&&r.s) h+=`<div class="p-acts"><button class="btn ${dn?'':'primary'}" data-act="pathstep">${dn?'工程の印を外す':'この工程を終えた'}</button></div>`;
-  if(r&&(r.s||r.ss)){ const ad=pUnplaced(k).filter(x=>x.q===r.q.id&&x.sid); if(ad.length) h+=`<div class="sec-h"><span>同じチャレンジの工程を足す</span></div><div class="pb-steps">${ad.map(x=>`<button class="pb-add" data-act="pathsadd" data-v="${x.sid}">＋ ${esc(x.t)}</button>`).join('')}</div>`; }
+  else if(r&&r.s) h+=`<div class="p-acts"><button class="btn ${dn?'':'primary'}" data-act="pathstep">${dn?'終えた印を外す':'これを終えた'}</button></div>`;
+  if(r&&(r.s||r.ss)){ const ad=pUnplaced(k).filter(x=>x.q===r.q.id&&x.sid); if(ad.length) h+=`<div class="sec-h"><span>同じチャレンジから足す</span></div><div class="pb-steps">${ad.map(x=>`<button class="pb-add" data-act="pathsadd" data-v="${x.sid}">＋ ${esc(x.t)}</button>`).join('')}</div>`; }
   h+=`<div class="sec-h"><span>遅れたとき</span></div><p class="hint">この予定から後ろを、まとめてずらす（毎日のことは動かさない）</p>
   <div class="p-acts">${[15,30,60].map(n=>`<button class="btn small" data-act="pathshift" data-v="${n}">＋${n<60?n+'分':'1時間'}</button>`).join('')}${[-15].map(n=>`<button class="btn small ghost" data-act="pathshift" data-v="${n}">−15分</button>`).join('')}</div>
   <div class="p-acts" style="margin-top:22px"><button class="btn small ghost danger" data-act="pathdel">この予定を道から外す</button></div></div>`;
@@ -3141,7 +3145,7 @@ function pathAct(a,b){
     case 'pathday': dayView=ymd(new Date(new Date(dayView+'T00:00:00').getTime()+(+b.dataset.v)*DAY+DAY/2)); pathSel=null; pathScrolled=null; render(); return true;
     case 'pathback': { const x=pBlocks(k).find(y=>y.id===pathSel); pathSel=null; if(x&&window.innerWidth<=820){ pathFocus=x.s; pathScrolled=null; } render(); return true; }
     case 'pathputg': { const xs=pUnplaced(k).filter(x=>x.q===b.dataset.q&&x.sid); if(!xs.length) return true; const s=pFree(k,60), id=uid();
-      pSet(k,id,{s,e:Math.min(PATH_H1,s+60),q:b.dataset.q,sids:xs.map(x=>x.sid)}); pathSel=id; pathScrolled=null; pathFocus=s; render(); toast(`工程${xs.length}つを1つの道しるべにまとめた`); return true; }
+      pSet(k,id,{s,e:Math.min(PATH_H1,s+60),q:b.dataset.q,sids:xs.map(x=>x.sid)}); pathSel=id; pathScrolled=null; pathFocus=s; render(); toast('1つの道しるべにまとめた'); return true; }
     case 'pathsstep': { const x=pBlocks(k).find(y=>y.id===pathSel); if(x) toggleStep(x.q,b.dataset.v); render(); return true; }
     case 'pathsall': { const x=pBlocks(k).find(y=>y.id===pathSel), r=x&&pRef(x); if(r&&r.ss){ const all=r.ss.every(z=>z.done); r.ss.filter(z=>all||!z.done).forEach(z=>toggleStep(r.q.id,z.id)); } render(); return true; }
     case 'pathsout': { const x=pBlocks(k).find(y=>y.id===pathSel); if(x&&x.sids){ const n=x.sids.filter(v=>v!==b.dataset.v); pSet(k,x.id,n.length===1?{sids:null,sid:n[0]}:{sids:n}); } render(); return true; }
