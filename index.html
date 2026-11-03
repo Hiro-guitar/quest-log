@@ -3156,26 +3156,35 @@ function pMapArt(k,H){
   let o=`<defs><linearGradient id="mpBand" x1="0" y1="0" x2="0" y2="${H}" gradientUnits="userSpaceOnUse">${band.map(([y,c])=>`<stop offset="${(y/H).toFixed(3)}" stop-color="${c}"/>`).join('')}</linearGradient></defs><rect x="0" y="${Y0}" width="100%" height="${Y1-Y0}" fill="url(#mpBand)"/>`;
   const labs=[], far=(x,y,d)=>Math.abs(x-pRX(Math.max(0,Math.min(H,y))))>d||y<0||y>H;
   const blob=(cx,cy,R,sx,f,n=36)=>{ let d=''; for(let t=0;t<=n;t++){ const a=t/n*Math.PI*2, rr=R*(1+.2*Math.sin(3*a+f)+.1*Math.sin(5*a+f*2)); d+=(t?'L':'M')+(cx+rr*Math.cos(a)*sx).toFixed(1)+' '+(cy+rr*Math.sin(a)).toFixed(1); } return d+'Z'; };
-  // 山
-  let mt=''; for(let y=Y0+60;y<Y1;y+=120+rnd()*160){ const cx=rnd()<.35?rnd()*W*.3:W*.35+rnd()*W*.7, R=36+rnd()*70, f=rnd()*6, n=3+Math.floor(rnd()*4), snow=rnd()<.35, sx=1.1+rnd()*.6;
-    for(let j=n;j>=1;j--){ const lv=(n-j)/(n-1||1); mt+=`<path d="${blob(cx,y,R*j/n,sx,f+j*.15)}" style="fill:rgba(${210+lv*30|0},${198+lv*30|0},${160+lv*34|0},${(.1+lv*.18).toFixed(2)})"/>`; }
-    if(snow) mt+=`<path class="mp-snow" d="${blob(cx,y,R/n*.75,sx,f)}"/>`;
-    if(rnd()<.45&&y>-200&&y<H+200) labs.push([cx+R*.2,y+4,name('mount'),'mt']); }
-  o+=`<g class="mp-topo">${mt}</g>`;
-  // 湖
-  for(let i=0,nl=1+Math.floor(rnd()*3);i<nl;i++){ const y=rnd()*H, x=W*.4+rnd()*W*.55, R=18+rnd()*30, f=rnd()*6; o+=`<path class="mp-lake" d="${blob(x,y,R,1.5,f)}"/><path class="mp-lake2" d="${blob(x,y,R*.62,1.5,f+.3)}"/>`; labs.push([x-R*.6,y+R+14,name('lake'),'wt']); }
-  // 川（道を横切るところに橋）
-  let bridges='';
-  for(let i=0,nr=1+Math.floor(rnd()*2.4);i<nr;i++){ const y0=rnd()*H, A=10+rnd()*24, w=50+rnd()*60, f=rnd()*6, tilt=(rnd()-.5)*.5; let d='', pts=[];
-    for(let x=-10;x<=W+10;x+=8){ const y=y0+tilt*x+A*Math.sin(x/w+f)+6*Math.sin(x/17+f*2); pts.push([x,y]); d+=(d?'L':'M')+x+' '+y.toFixed(1); }
-    o+=`<path class="mp-river" d="${d}"/><path class="mp-river2" d="${d}"/>`;
+  // 地形は「川 → 湖 → 山」の順に決めて、互いに矛盾しないようにする（川は湖に流れ込むか地図の外へ、山は水の上に置かない）
+  const rivers=[], lakes=[], water=[];
+  const nearWater=(x,y,d)=>water.some(([wx,wy,wr])=>Math.hypot(x-wx,y-wy)<wr+d);
+  let bridges='', wt='';
+  for(let i=0,nr=1+Math.floor(rnd()*2.4);i<nr;i++){ const y0=rnd()*H, A=10+rnd()*24, w=50+rnd()*60, f=rnd()*6, tilt=(rnd()-.5)*.5, fy=x=>y0+tilt*x+A*Math.sin(x/w+f)+6*Math.sin(x/17+f*2);
+    const fromL=rnd()<.5, toLake=rnd()<.5, endX=toLake?W*(.35+rnd()*.5):(fromL?W+10:-10), lr=toLake?20+rnd()*22:0;
+    const xs=[]; if(fromL){ for(let x=-10;x<=endX;x+=8) xs.push(x); } else { for(let x=W+10;x>=endX;x-=8) xs.push(x); }
+    if(toLake){ const cx=endX+(fromL?lr*1.2:-lr*1.2), cy=fy(endX); if(lakes.some(L=>Math.hypot(L[0]-cx,L[1]-cy)<L[2]+lr+20)) continue; lakes.push([cx,cy,lr,rnd()*6]); }
+    const pts=xs.map(x=>[x,fy(x)]); let d=''; pts.forEach(([x,y])=>{ d+=(d?'L':'M')+x+' '+y.toFixed(1); water.push([x,y,7]); });
+    wt+=`<path class="mp-river" d="${d}"/><path class="mp-river2" d="${d}"/>`;
     let bx=null,bd=1e9; pts.forEach(([x,y])=>{ if(y<0||y>H) return; const dd=Math.abs(x-pRX(y)); if(dd<bd){ bd=dd; bx=[x,y]; } });
     if(bx&&bd<10){ const [x,y]=bx; bridges+=`<g class="mp-bridge" transform="translate(${x} ${y})"><rect x="-7" y="-9" width="14" height="18" rx="1.5"/><path d="M-7 -5h14M-7 0h14M-7 5h14"/></g>`; if(rnd()<.7) labs.push([x+14,y-10,name('bridge'),'']); }
-    const lx=W*.55+rnd()*W*.3, ly=y0+tilt*lx+A*Math.sin(lx/w+f)-12; labs.push([lx,ly,name(rnd()<.2?'falls':'river'),'wt']); }
+    const li=Math.floor(pts.length*(.3+rnd()*.4)), lp=pts[li]; if(lp) labs.push([lp[0],lp[1]-12,name(rnd()<.2&&!toLake?'falls':'river'),'wt']); }
+  // 川とつながらない湖も少し（川や道から離れた所に）
+  for(let i=0,nl=Math.floor(rnd()*2.2);i<nl;i++){ for(let t=0;t<10;t++){ const R=16+rnd()*24, x=W*.15+rnd()*W*.75, y=rnd()*H; if(nearWater(x,y,R*1.5+14)||lakes.some(L=>Math.hypot(L[0]-x,L[1]-y)<L[2]+R+30)||!far(x,y,R*1.5+14)) continue; lakes.push([x,y,R,rnd()*6]); break; } }
+  lakes.forEach(([x,y,R,f])=>{ wt+=`<path class="mp-lake" d="${blob(x,y,R,1.5,f)}"/><path class="mp-lake2" d="${blob(x,y,R*.62,1.5,f+.3)}"/>`; for(let a=0;a<6.3;a+=.5) water.push([x+Math.cos(a)*R*1.2,y+Math.sin(a)*R*.9,R*.5]); water.push([x,y,R*1.4]); labs.push([x-R*.6,y+R+14,name('lake'),'wt']); });
+  // 山（水にかからない所だけ。雪の頂は道から離れた大きな山）
+  let mt=''; for(let y=Y0+60;y<Y1;y+=110+rnd()*150){ for(let t=0;t<8;t++){ const cx=rnd()*W, R=34+rnd()*66, sx=1.1+rnd()*.5;
+      if(nearWater(cx,y,R*sx+10)) continue;
+      const f=rnd()*6, n=3+Math.floor(rnd()*4), snow=n>=5&&R>60&&far(cx,y,R*.6);
+      for(let j=n;j>=1;j--){ const lv=(n-j)/(n-1||1); mt+=`<path d="${blob(cx,y,R*j/n,sx,f+j*.15)}" style="fill:rgba(${210+lv*30|0},${198+lv*30|0},${160+lv*34|0},${(.1+lv*.18).toFixed(2)})"/>`; }
+      if(snow) mt+=`<path class="mp-snow" d="${blob(cx,y,R/n*.75,sx,f)}"/>`;
+      water.push([cx,y,R*.35]); // 山の頂には森や湖を置かない
+      if(rnd()<.5&&y>-200&&y<H+200) labs.push([cx+R*.2,y+4,name('mount'),'mt']); break; } }
+  o+=`<g class="mp-topo">${mt}</g>`+wt;
   o+='<g class="mp-grid">'; for(let y=Y0+60;y<Y1;y+=120) o+=`<line x1="0" x2="100%" y1="${y}" y2="${y}"/>`; for(let x=0;x<900;x+=120) o+=`<line y1="${Y0}" y2="${Y1}" x1="${x}" x2="${x}"/>`; o+='</g>';
   // 森
   o+='<g class="mp-tree">'; for(let y=Y0+30;y<Y1;y+=45+rnd()*50){ const x=rnd()<.4?6+rnd()*34:110+rnd()*(W-120), n=5+Math.floor(rnd()*16), sp=14+rnd()*30;
-    for(let j=0;j<n;j++){ const tx=x+(rnd()-.5)*sp*1.6, ty=y+(rnd()-.5)*sp; if(!far(tx,ty,11)) continue; o+=`<circle cx="${tx.toFixed(1)}" cy="${ty.toFixed(1)}" r="${(2.1+rnd()*1.8).toFixed(1)}"/>`; }
+    for(let j=0;j<n;j++){ const tx=x+(rnd()-.5)*sp*1.6, ty=y+(rnd()-.5)*sp; if(!far(tx,ty,11)||nearWater(tx,ty,4)) continue; o+=`<circle cx="${tx.toFixed(1)}" cy="${ty.toFixed(1)}" r="${(2.1+rnd()*1.8).toFixed(1)}"/>`; }
     if(n>14&&rnd()<.5&&y>0&&y<H) labs.push([x,y+sp*.6+12,name('wood'),'']); } o+='</g>';
   o+=bridges;
   // 村・馬宿・塔・遺跡（道のそば）
@@ -3184,7 +3193,7 @@ function pMapArt(k,H){
     tower:'<g class="mp-ic twr"><path d="M-4 9 -2.5-12h5L4 9Z"/><circle cy="-14" r="3.2" class="gl"/></g>',
     ruin:'<g class="mp-ic run"><path d="M-9 8V-3h3V8M-2 8V-7h3V8M5 8V1h3v7"/><path d="M-11 9h22" class="dk"/></g>'};
   let pois=''; for(let y=40+rnd()*120;y<H-30;y+=150+rnd()*170){ const t=['village','village','stable','stable','tower','ruin'][Math.floor(rnd()*6)], side=rnd()<.5?-1:1;
-    let x=pRX(y)+side*(26+rnd()*20); if(x<14||x>W-90) x=pRX(y)-side*(30+rnd()*14); pois+=`<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)})">${ic[t]}</g>`; labs.push([x+14,y+4,name(t),'poi',x]); }
+    let x=pRX(y)+side*(26+rnd()*20); if(x<14||x>W-90) x=pRX(y)-side*(30+rnd()*14); if(nearWater(x,y,10)) continue; pois+=`<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)})">${ic[t]}</g>`; labs.push([x+14,y+4,name(t),'poi',x]); }
   o+=pois;
   // 地名どうしが重ならないものだけ出す（村・馬宿などを優先）
   // 地名どうし・道・地方名と重ならないように置く（だめなら道の反対側へ、それでもだめなら出さない）
