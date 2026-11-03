@@ -279,17 +279,16 @@ select{max-width:100%;text-overflow:ellipsis}
 .pu-i.tr .pu-pin{border-color:var(--orange);box-shadow:0 0 6px rgba(240,166,64,.5)}
 .path-empty{text-align:center;padding:4px 0 10px;display:grid;gap:6px;justify-items:center}
 .tl{position:relative;margin:6px 0 30px;user-select:none;-webkit-user-select:none;touch-action:pan-y;cursor:crosshair}
-.tl.road{background:#3d453a;border:1px solid rgba(216,208,180,.28);border-radius:3px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(0,0,0,.6),inset 0 0 50px rgba(0,0,0,.45),0 6px 18px rgba(0,0,0,.4)}
+.tl.road{background:#5f503a;border:1px solid rgba(216,208,180,.28);border-radius:3px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(0,0,0,.6),inset 0 0 50px rgba(0,0,0,.45),0 6px 18px rgba(0,0,0,.4)}
 .rd-svg{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
 .rd-bed{fill:none;stroke:rgba(30,26,20,.8);stroke-width:7.5;stroke-linecap:round}
-.rd-edge{fill:none;stroke:#bfb08a;stroke-width:4.5;stroke-linecap:round}
-.rd-foot ellipse{fill:rgba(70,52,30,.85)}
-.mp-wood path{fill:rgba(28,40,26,.55);stroke:rgba(20,28,18,.6);stroke-width:1}
-.mp-river{fill:none;stroke:#3d5560;stroke-width:9;stroke-linecap:round}
-.mp-river2{fill:none;stroke:rgba(150,190,200,.25);stroke-width:2;stroke-linecap:round}
+.rd-edge{fill:none;stroke:#d9caa0;stroke-width:4.5;stroke-linecap:round}
+.rd-hero{fill:none;stroke:#8be04e;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 2px rgba(139,224,78,.7))}
+.mp-river{fill:none;stroke:#3f6378;stroke-width:11;stroke-linecap:round}
+.mp-river2{fill:none;stroke:#5f8aa0;stroke-width:4;stroke-linecap:round}
 .mp-grid line{stroke:rgba(0,0,0,.14);stroke-width:1}
-.mp-topo path{fill:none;stroke:rgba(225,215,180,.13);stroke-width:1}
-.mp-tree path{fill:#2b3a27;stroke:rgba(150,170,130,.35);stroke-width:.6}
+.mp-topo path{stroke:rgba(60,45,28,.45);stroke-width:.9}
+.mp-tree circle{fill:#4f4a2c;stroke:rgba(40,34,20,.7);stroke-width:.7}
 .rd-reg{position:absolute;right:8px;font-family:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;font-size:15px;letter-spacing:.5em;color:rgba(242,236,214,.42);pointer-events:none;z-index:1;text-shadow:0 1px 3px rgba(0,0,0,.6)}
 .rd-reg::before{content:"";display:inline-block;width:18px;height:1px;background:rgba(242,236,214,.18);vertical-align:middle;margin-right:10px}
 .rd-line{fill:none;stroke:rgba(10,13,15,.55);stroke-width:5;stroke-linecap:round}
@@ -2874,10 +2873,8 @@ function pathList(){
   const bls=bl.map(L).sort((a,b)=>a.s-b.s);
   const seg=(m0,m1)=>{ let d=''; for(let y=pm2y(m0);;y+=6){ const yy=Math.min(y,pm2y(m1)); d+=(d?'L':'M')+pRX(yy).toFixed(1)+' '+yy.toFixed(1); if(yy>=pm2y(m1)) break; } return d; };
   let svg=pMapArt(k,H)+`<path class="rd-bed" d="${seg(PATH_H0,PATH_H1)}"/><path class="rd-edge" d="${seg(PATH_H0,PATH_H1)}"/>`;
-  // 今日通ってきた道には足あと
-  let foot='';
-  if(isT&&now>PATH_H0){ let f='', side=1; for(let y=pm2y(PATH_H0)+8;y<pm2y(Math.min(now,PATH_H1))-12;y+=11){ const dx=pRX(y+2)-pRX(y-2), ang=Math.atan2(4,dx)*180/Math.PI-90, L=Math.hypot(dx,4), nx=-4/L*side*1.9, ny=dx/L*side*1.9, cx=(pRX(y)+nx).toFixed(1), cy=(y+ny).toFixed(1);
-    f+=`<g transform="translate(${cx} ${cy}) rotate(${ang.toFixed(0)})"><ellipse cx="0" cy="-.6" rx="1.05" ry="1.5"/><ellipse cx="0" cy="1.6" rx=".85" ry=".8"/></g>`; side=-side; } foot=`<g class="rd-foot">${f}</g>`; }
+  // 今日通ってきた道（ブレワイの「足跡モード」のように緑の線で残す）
+  const foot=isT&&now>PATH_H0?`<path class="rd-hero" d="${seg(PATH_H0,Math.min(now,PATH_H1))}"/>`:'';
   let hrs=''; for(let m=PATH_H0+60;m<PATH_H1;m+=60){ const y=pm2y(m), x=pRX(y); svg+=`<circle class="rd-stone" cx="${x.toFixed(1)}" cy="${y}" r="2"/>`; hrs+=`<span class="rd-hr ${m%180===0?'big':''}" style="top:${y}px;left:${(x-46).toFixed(1)}px">${m/60}:00</span>`; }
   // 地方の名前（地図の地名のように）
   const REG=[[PATH_H0,'暁の丘'],[6*60,'朝の平原'],[11*60,'真昼の街道'],[15*60,'夕暮れの坂'],[18*60,'灯りの宿場'],[21*60,'夜の森']];
@@ -2903,17 +2900,16 @@ function pathList(){
 // 地図の地形（日ごとに少し違う等高線・森・岩）
 function pMapArt(k,H){
   let sd=0; for(const c of k) sd=(sd*31+c.charCodeAt(0))>>>0; const rnd=()=>{ sd=(sd*1664525+1013904223)>>>0; return sd/4294967296; };
-  const band=[[0,'#4b4a41'],[pm2y(6*60),'#47503f'],[pm2y(11*60),'#4f5643'],[pm2y(15*60),'#57503f'],[pm2y(18*60),'#4a4539'],[pm2y(21*60),'#2f3a2d'],[H,'#26301f']];
+  const band=[[0,'#5b4c37'],[pm2y(6*60),'#64553d'],[pm2y(11*60),'#6b5b41'],[pm2y(15*60),'#62523b'],[pm2y(18*60),'#564734'],[pm2y(21*60),'#4a3d2c'],[H,'#43372a']];
   let o=`<defs><linearGradient id="mpBand" x1="0" y1="0" x2="0" y2="${H}" gradientUnits="userSpaceOnUse">${band.map(([y,c])=>`<stop offset="${(y/H).toFixed(3)}" stop-color="${c}"/>`).join('')}</linearGradient></defs><rect x="0" y="0" width="100%" height="${H}" fill="url(#mpBand)"/>`;
-  // 森のかたまり
-  o+='<g class="mp-wood">'; for(let i=0;i<Math.ceil(H/260);i++){ const cx=rnd()*420, cy=60+i*260+rnd()*140, R=34+rnd()*40; let d=''; for(let t=0;t<=24;t++){ const a=t/24*Math.PI*2, rr=R*(1+.22*Math.sin(4*a+i)+.12*Math.sin(7*a+rnd())); d+=(t?'L':'M')+(cx+rr*Math.cos(a)*1.5).toFixed(1)+' '+(cy+rr*Math.sin(a)).toFixed(1); } o+=`<path d="${d}Z"/>`; } o+='</g>';
   // 川（道と交わる所は橋になる）
   { const ry=pm2y(8*60)+rnd()*pm2y(10*60); let d=''; for(let x=-10;x<=520;x+=10){ const y=ry+18*Math.sin(x/70+rnd()*.2)+10*Math.sin(x/23); d+=(d?'L':'M')+x+' '+y.toFixed(1); } o+=`<path class="mp-river" d="${d}"/><path class="mp-river2" d="${d}"/>`; }
   o+='<g class="mp-grid">'; for(let y=0;y<H;y+=120) o+=`<line x1="0" x2="100%" y1="${y}" y2="${y}"/>`; for(let x=0;x<900;x+=120) o+=`<line y1="0" y2="${H}" x1="${x}" x2="${x}"/>`; o+='</g><g class="mp-topo">';
   for(let i=0;i<Math.ceil(H/170);i++){ const cx=130+rnd()*320, cy=40+i*170+rnd()*90, R=40+rnd()*50, f1=rnd()*6, f2=rnd()*6, n=3+Math.floor(rnd()*3);
-    for(let j=1;j<=n;j++){ const r=R*j/n; let d=''; for(let t=0;t<=40;t++){ const a=t/40*Math.PI*2, rr=r*(1+.18*Math.sin(3*a+f1)+.09*Math.sin(5*a+f2)); d+=(t?'L':'M')+(cx+rr*Math.cos(a)*1.4).toFixed(1)+' '+(cy+rr*Math.sin(a)).toFixed(1); } o+=`<path d="${d}Z"/>`; } }
+    for(let j=n;j>=1;j--){ const r=R*j/n, lv=(n-j)/(n-1||1); let d=''; for(let t=0;t<=40;t++){ const a=t/40*Math.PI*2, rr=r*(1+.18*Math.sin(3*a+f1)+.09*Math.sin(5*a+f2)); d+=(t?'L':'M')+(cx+rr*Math.cos(a)*1.4).toFixed(1)+' '+(cy+rr*Math.sin(a)).toFixed(1); } o+=`<path d="${d}Z" style="fill:rgba(${190+lv*30|0},${170+lv*30|0},${125+lv*30|0},${(.08+lv*.12).toFixed(2)})"/>`; } }
   o+='</g><g class="mp-tree">';
-  for(let i=0;i<Math.ceil(H/60);i++){ const y=20+i*60+rnd()*40, x=rnd()<.5?6+rnd()*26:pRX(y)+18+rnd()*40; if(Math.abs(x-pRX(y))<14) continue; const n=2+Math.floor(rnd()*3); for(let j=0;j<n;j++){ const tx=x+j*6+rnd()*3, ty=y+rnd()*6; o+=`<path d="M${tx.toFixed(1)} ${(ty-6).toFixed(1)}l-3.2 6h6.4Z"/>`; } }
+  for(let i=0;i<Math.ceil(H/70);i++){ const y=20+i*70+rnd()*40, x=rnd()<.45?6+rnd()*30:pRX(y)+22+rnd()*60; if(Math.abs(x-pRX(y))<16) continue; const n=4+Math.floor(rnd()*7);
+    for(let j=0;j<n;j++){ const tx=x+(rnd()-.5)*26, ty=y+(rnd()-.5)*18, r=2.2+rnd()*1.6; if(Math.abs(tx-pRX(ty))<10) continue; o+=`<circle cx="${tx.toFixed(1)}" cy="${ty.toFixed(1)}" r="${r.toFixed(1)}"/>`; } }
   return o+'</g>';
 }
 function pathAfter(){
