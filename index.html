@@ -1849,7 +1849,7 @@ document.addEventListener('click',e=>{
     case 'step': toggleStep(b.dataset.q,b.dataset.s); break;
     case 'new': newQuest(b.dataset.type,null); break;
     case 'day': dayView=b.dataset.v; if(!editing) selId=null; render(); break;
-    case 'cat': if(b.dataset.v==='path'&&listCat!=='path') pathBoot=true; listCat=b.dataset.v; if(listCat==='today') dayView=ymd(); showCleared=false; miniOpen=false; if(!editing){selId=null;} render(); break;
+    case 'cat': if(listCat==='path'&&b.dataset.v!=='path'){ pDropEmpty(); pathSel=null; } if(b.dataset.v==='path'&&listCat!=='path') pathBoot=true; listCat=b.dataset.v; if(listCat==='today') dayView=ymd(); showCleared=false; miniOpen=false; if(!editing){selId=null;} render(); break;
     case 'catprev': case 'catnext': { const i=CATS.indexOf(listCat); listCat=CATS[(i+(a==='catnext'?1:CATS.length-1))%CATS.length]; showCleared=false; miniOpen=false; if(!editing) selId=null; render(); break; }
     case 'newcur': if(listCat==='today'){ newQuest('challenge',null); const nq=findQ(selId); if(nq){ nq.doDate=dayView; listCat='today'; save(); render(); } break; } if(listCat==='mini'){ miniOpen=true; renderList(); setTimeout(()=>{const el=$('miniAdd'); el&&el.focus()},20);} else newQuest(listCat,null); break;
     case 'tool': if(b.dataset.v==='moon'){ openMoon(); break; } toolSel=b.dataset.v; toolPicked=true; render(); break;
@@ -2958,6 +2958,8 @@ function pDay(k){ const P=plan(); return P.d[k]||{}; }
 function pBlocks(k){ return Object.entries(pDay(k)).filter(([id,b])=>b&&!b.del).map(([id,b])=>({id,...b})).sort((a,b)=>a.s-b.s||a.e-b.e); }
 function pSet(k,id,patch){ const P=plan(); const day={...(P.d[k]||{})}; day[id]={...(day[id]||{}),...patch,u:Date.now()}; P.d={...P.d,[k]:day}; save(); if('s' in patch) pSyncTime(k,id); }
 function pDel(k,id){ pSet(k,id,{del:1}); }
+// 名前を入れずに離れた予定は残さない
+function pDropEmpty(){ if(!pathSel) return; const b=(plan().d[dayView]||{})[pathSel]; if(b&&!b.del&&!b.q&&!b.tr&&!(b.t||'').trim()) pDel(dayView,pathSel); }
 const pTm=t=>{ const m=/^(\d{1,2}):(\d{2})/.exec(t||''); return m?+m[1]*60+ +m[2]:null; }, pHM=m=>String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
 // 「やる日」に時刻まで入っている冒険は、はじめから旅程に置いておく（外した物は置き直さない／やる時刻を変えたら道しるべも動く）
 function pAutoPlace(k){
@@ -3003,7 +3005,7 @@ function pathList(){
       return `<div class="pu-g"><div class="pu-gh">${q?ico(q.type):''}<span>${esc(g.x.sub||'')}</span>${g.items.length>1&&!(puSel&&puSel.q===g.x.q)?`<button class="pu-all" data-act="pathpusel" data-q="${g.x.q}">まとめて置く</button>`:''}</div>${puSel&&puSel.q===g.x.q
         ?g.items.map(([x,i])=>`<button class="pu-i st pick ${puSel.ids.has(x.sid)?'on':''}" data-act="pathpupick" data-v="${x.sid}"><i class="pu-ck" aria-hidden="true">${puSel.ids.has(x.sid)?'✓':''}</i><span>${esc(x.t||'(無題)')}</span></button>`).join('')+`<div class="pu-selbar"><span class="hint">一緒にやるものを選んで</span><button class="btn small" data-act="pathpusel" data-q="">やめる</button><button class="btn small primary" data-act="pathputg" data-q="${g.x.q}" ${puSel.ids.size?'':'disabled'}>選んだ${puSel.ids.size}つをまとめて置く</button></div>`
         :g.items.map(([x,i])=>`<button class="pu-i st" data-act="pathput" data-i="${i}"><i class="pu-pin" aria-hidden="true"></i><span>${esc(x.t||'(無題)')}</span></button>`).join('')}</div>`; }).join('')}</div>`; }
-  if(!bl.length) h+=`<div class="path-empty">${tpl.length?`<button class="btn" data-act="pathtpl">いつもの旅程（${tk==='we'?'休日':'平日'}）を敷く</button>`:''}<p class="hint">道をタップすると、その時刻に予定を置けます</p></div>`;
+  if(!bl.length) h+=`<div class="path-empty">${tpl.length?`<button class="btn" data-act="pathtpl">いつもの旅程（${tk==='we'?'休日':'平日'}）を敷く</button>`:''}<p class="hint">地図を動かして照準を合わせ、A で予定を置けます</p></div>`;
   // 時間の道：1日を地図の上の一本の道にして、予定は道しるべ（ピン）として立てる
   const now=pnow(), H=pm2y(PATH_H1)+10, L=b=>pathDrag&&pathDrag.id===b.id?{...b,s:pathDrag.s,e:pathDrag.e}:b;
   const bls=bl.map(L).sort((a,b)=>a.s-b.s);
@@ -3129,7 +3131,7 @@ function pathPanel(){
   const k=dayView, b=pathSel&&pBlocks(k).find(x=>x.id===pathSel);
   if(!b){ const P=plan(), tk=pTpl(k), n=pBlocks(k).filter(x=>!x.q&&!x.tr&&x.fix).length;
     return `<div class="panel path-panel"><div class="p-wm">${SECBG.today}</div><h2 class="p-title">旅程</h2>
-    <div class="p-desc"><p>その日の予定を、時間の道に置いていこう。道の空いている所をタップすると予定を置ける。置いた予定は、押したまま動かすと時間をずらせる（下の端を動かすと長さが変わる）。</p></div>
+    <div class="p-desc"><p>その日の予定を、時間の道に置いていこう。地図を動かして照準を合わせ、A（置く）で予定を置ける。空いている所をタップすると、照準がそこへ動く。置いた予定は、押したまま動かすと時間をずらせる（下の端を動かすと長さが変わる）。</p></div>
     <div class="sec-h"><span>いつもの旅程</span></div>
     <p class="hint">起床・散歩・夕食のように毎日ほぼ同じ予定は、予定を開いて「毎日のこと」に印を付けてから、ここで型にする。何も置いていない日に、型をまとめて敷ける。</p>
     <div class="p-acts"><button class="btn small" data-act="pathsave" data-v="wk" ${n?'':'disabled'}>この日の予定を平日の型にする</button><button class="btn small" data-act="pathsave" data-v="we" ${n?'':'disabled'}>休日の型にする</button></div>
@@ -3163,8 +3165,8 @@ function pathShift(k,from,n){ const P=plan(), day={...(P.d[k]||{})}, now=Date.no
 function pathAct(a,b){
   const k=dayView;
   switch(a){
-    case 'pathday': dayView=ymd(new Date(new Date(dayView+'T00:00:00').getTime()+(+b.dataset.v)*DAY+DAY/2)); pathSel=null; pathScrolled=null; render(); return true;
-    case 'pathback': { const x=pBlocks(k).find(y=>y.id===pathSel); pathSel=null; if(x&&window.innerWidth<=820){ pathFocus=x.s; pathScrolled=null; } render(); return true; }
+    case 'pathday': pDropEmpty(); dayView=ymd(new Date(new Date(dayView+'T00:00:00').getTime()+(+b.dataset.v)*DAY+DAY/2)); pathSel=null; pathScrolled=null; render(); return true;
+    case 'pathback': { const x=pBlocks(k).find(y=>y.id===pathSel); pDropEmpty(); pathSel=null; if(x&&window.innerWidth<=820){ pathFocus=x.s; pathScrolled=null; } render(); return true; }
     case 'pathpusel': puSel=b.dataset.q?{q:b.dataset.q,ids:new Set()}:null; renderList(); return true;
     case 'pathpupick': if(puSel){ const v=b.dataset.v; puSel.ids.has(v)?puSel.ids.delete(v):puSel.ids.add(v); renderList(); } return true;
     case 'pathputg': { const xs=pUnplaced(k).filter(x=>x.q===b.dataset.q&&x.sid&&(!puSel||puSel.q!==b.dataset.q||puSel.ids.has(x.sid))); puSel=null; if(!xs.length) return true; const s=pFree(k,60), id=uid();
@@ -3186,7 +3188,7 @@ function pathAct(a,b){
     case 'pathmg': { const x=pBlocks(k).find(y=>y.id===pathSel); if(x){ pSet(k,x.id,{[b.dataset.f]:+b.dataset.v}); render(); } return true; }
     case 'pathzoom': pZoomBy(+b.dataset.v); return true;
     case 'pathhere': { const sv=$('slView'); if(sv) sv.scrollTo({top:Math.max(0,pm2y(pnow())-pRetY(sv)),behavior:'smooth'}); return true; }
-    case 'pathA': { const r=$('slRet'); if(!r) return true; if(r.dataset.id){ pathSel=r.dataset.id; render(); if(window.innerWidth<=820) pScroll(0); return true; }
+    case 'pathA': { const r=$('slRet'); if(!r) return true; pDropEmpty(); if(r.dataset.id){ pathSel=r.dataset.id; render(); if(window.innerWidth<=820) pScroll(0); return true; }
       const s0=Math.max(PATH_H0,Math.min(PATH_H1-SNAP,+r.dataset.m)), bl=pBlocks(k), nx=bl.filter(x=>x.s>=s0+SNAP).map(x=>x.s)[0]||PATH_H1, id=uid();
       pSet(k,id,{s:s0,e:Math.max(s0+SNAP,Math.min(s0+60,nx,PATH_H1)),t:''}); pathSel=id; render(); if(window.innerWidth<=820) pScroll(0); setTimeout(()=>{ const i=$('pbTitle'); i&&i.focus(); },60); return true; }
     case 'pathdel': { if(pathSel){ pDel(k,pathSel); pathSel=null; render(); } return true; }
@@ -3230,12 +3232,9 @@ function pathInput(e){
     clearTimeout(timer); if(!pend) return; const p=pend; pend=null; document.body.classList.remove('pdrag');
     if(p.started){ pathDrag=null; if(p.ns!=null) pSet(dayView,p.id,{s:p.ns,e:p.ne}); render(); return; }
     if(p.moved) return;
-    if(p.id){ pathSel=p.id; render(); if(window.innerWidth<=820) pScroll(0); return; }
-    // 空いている所：その時刻に1時間の予定を置く
-    const m=snap(PATH_H0+yOf(e,p.tl)/PX-SNAP/2), bl=pBlocks(dayView), s=Math.max(PATH_H0,Math.min(PATH_H1-SNAP,m));
-    const nx=bl.filter(x=>x.s>=s+SNAP).map(x=>x.s)[0]||PATH_H1, en=Math.min(s+60,nx,PATH_H1), id=uid();
-    pSet(dayView,id,{s,e:Math.max(en,s+SNAP),t:''}); pathSel=id; render(); if(window.innerWidth<=820) pScroll(0);
-    setTimeout(()=>{ const i=$('pbTitle'); i&&i.focus(); },60);
+    if(p.id){ if(p.id!==pathSel) pDropEmpty(); pathSel=p.id; render(); if(window.innerWidth<=820) pScroll(0); return; }
+    // 空いている所：その場所へ照準を動かすだけ（置くのは A を押した時）
+    const sv=$('slView'); if(sv) sv.scrollTo({top:Math.max(0,yOf(e,p.tl)-pRetY(sv)),behavior:'smooth'});
   }
   document.addEventListener('pointerdown',start);
   document.addEventListener('pointermove',move,{passive:false});
