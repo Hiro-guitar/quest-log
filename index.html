@@ -454,6 +454,9 @@ select{max-width:100%;text-overflow:ellipsis}
 
 .rd-pre{fill:none;stroke:#7fe0f7;stroke-width:4.5;stroke-dasharray:.1 6.5;stroke-linecap:round;filter:drop-shadow(0 0 3px rgba(95,212,239,.9))}
 .rd-pre-dot{fill:#06202b;stroke:#7fe0f7;stroke-width:1.6}
+.pe-rec{position:absolute;transform:translateY(-50%);z-index:3;display:flex;gap:6px;align-items:center;white-space:nowrap}
+.pe-btn{font:inherit;font-size:12px;font-weight:700;letter-spacing:.1em;color:#f4e7bc;background:rgba(18,22,20,.86);border:1px solid rgba(225,196,108,.75);border-radius:14px;padding:3px 11px;box-shadow:0 1px 4px rgba(0,0,0,.6),0 0 6px rgba(225,196,108,.25);cursor:pointer}
+.pe-time{font-size:11.5px;font-weight:700;letter-spacing:.06em;color:#f2ecd6;background:rgba(18,22,20,.72);border-radius:9px;padding:1px 7px;text-shadow:0 1px 2px #000}.pe-time.sub{font-weight:500;color:rgba(242,236,214,.78)}
 .rd-tag{position:absolute;transform:translateY(-50%);z-index:2;font-size:9.5px;font-weight:700;letter-spacing:.08em;padding:1px 5px;border-radius:8px;pointer-events:none;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.5)}
 .rd-tag.pre{color:#06202b;background:#7fe0f7}
 .rd-tag.post{color:#2a1a08;background:#e8c46a}
@@ -1917,6 +1920,8 @@ document.addEventListener('click',e=>{
       save(); render(); break; }
     case 'trsw': { const H=hm(); H.ovr={...H.ovr,[trSel]:b.dataset.v}; hmTouch('ovr',trSel); save(); render(); break; }
     case 'trbody': { const d=$('trBd').value, kg=parseFloat($('trKg').value), cm=parseFloat($('trCm').value); if(!d||!(kg>40||cm>50)){ toast('体重かお腹まわりを入れてください'); break; } const H=hm(); H.body={...H.body,[d]:{...(H.body[d]||{}),...(kg>40&&kg<120?{kg:Math.round(kg*10)/10}:{}),...(cm>50&&cm<130?{cm:Math.round(cm*2)/2}:{})}}; hmTouch('body',d); save(); renderDetail(); toast('記録しました'); break; }
+    case 'slsave': { const d=$('slD').value, tw=pTm($('slW').value), tb=pTm($('slB').value); if(!d||(tw==null&&tb==null)){ toast('起きた時間か寝た時間を入れてください'); break; } if(tw!=null) slSet(d,'w',tw); if(tb!=null) slSet(d,'b',tb<PATH_H0?tb+1440:tb); renderDetail(); toast('記録しました'); break; }
+    case 'sldel': { const H=hm(); const o={...H.sleep}; delete o[b.dataset.v]; H.sleep=o; hmTouch('sleep',b.dataset.v); save(); renderDetail(); break; }
     case 'trbdel': { const H=hm(); const o={...H.body}; delete o[b.dataset.v]; H.body=o; hmTouch('body',b.dataset.v); save(); renderDetail(); break; }
     case 'step': toggleStep(b.dataset.q,b.dataset.s); break;
     case 'new': newQuest(b.dataset.type,null); break;
@@ -2468,8 +2473,15 @@ const TR_LAB={P:'押す鍛錬',L1:'脚の鍛錬',L2:'脚の鍛錬',U:'引く鍛�
 const TR_WEEK=['P','L1','U','P','L2','U','R']; // 月〜日
 const trSets=k=>k<'2026-11-16'?2:3;
 let trSel=null, trWeek=null;
-function hm(){ state.hm=state.hm||{}; ['days','lift','ovr','body','u'].forEach(k=>{ if(!state.hm[k]||typeof state.hm[k]!=='object') state.hm[k]={}; }); return state.hm; }
+function hm(){ state.hm=state.hm||{}; ['days','lift','ovr','body','sleep','u'].forEach(k=>{ if(!state.hm[k]||typeof state.hm[k]!=='object') state.hm[k]={}; }); return state.hm; }
 function hmTouch(kind,k){ hm().u[kind+':'+k]=Date.now(); }
+// 起きた時間・寝た時間（4時より前に寝たら前の日の夜として記録）
+const slFmt=m=>m==null?'':pfmt(m%1440);
+function slSet(d,f,m){ const H=hm(); H.sleep={...H.sleep,[d]:{...(H.sleep[d]||{}),[f]:m}}; if(m==null) delete H.sleep[d][f]; if(!Object.keys(H.sleep[d]).length){ const o={...H.sleep}; delete o[d]; H.sleep=o; } hmTouch('sleep',d); save(); }
+function slNow(f){ const n=pnow(), t=ymd(); if(f==='b'&&n<PATH_H0){ slSet(ymd(new Date(Date.now()-DAY)),'b',n+1440); return; } slSet(t,f,n); }
+// その日の朝の睡眠時間（前の晩に寝てからその朝起きるまで）
+function slDur(d){ const S=hm().sleep, w=(S[d]||{}).w, pv=S[ymd(new Date(new Date(d+'T12:00:00').getTime()-DAY))], b=pv&&pv.b; if(w==null||b==null) return null; const m=w+1440-b; return m>0&&m<20*60?m:null; }
+const slDurFmt=m=>m==null?'':`${Math.floor(m/60)}時間${m%60?(m%60)+'分':''}`;
 const trAdd=(k,n)=>{ const d=new Date(k+'T00:00:00'); d.setDate(d.getDate()+n); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
 // 予定は「押す→脚→引く→押す→脚→引く」の順番待ち。休みにした日の分は消さずに後ろへずらし、遅れは日曜で1日分ずつ取り戻す
 const TR_ROT=['P','L1','U','P','L2','U'];
@@ -2513,9 +2525,9 @@ function trImport(){
   H.imported=1; return n>0;
 }
 function mergeHm(a,b){
-  a=a||{}; b=b||{}; const o={days:{},lift:{},ovr:{},body:{},u:{},imported:(a.imported||b.imported)?1:0};
+  a=a||{}; b=b||{}; const o={days:{},lift:{},ovr:{},body:{},sleep:{},u:{},imported:(a.imported||b.imported)?1:0};
   const ua=a.u||{}, ub=b.u||{};
-  ['days','lift','ovr','body'].forEach(kind=>{
+  ['days','lift','ovr','body','sleep'].forEach(kind=>{
     const keys=new Set([...Object.keys((a[kind])||{}),...Object.keys((b[kind])||{}),...Object.keys(ua).concat(Object.keys(ub)).filter(x=>x.startsWith(kind+':')).map(x=>x.slice(kind.length+1))]);
     keys.forEach(k=>{ const ta=ua[kind+':'+k]||0, tb=ub[kind+':'+k]||0, src=tb>ta?b:a, alt=tb>ta?a:b;
       const v=(src[kind]||{})[k]!==undefined?(src[kind]||{})[k]:(Math.max(ta,tb)?undefined:(alt[kind]||{})[k]);
@@ -2602,6 +2614,11 @@ function trLogPanel(){
   const ws=[['2026-10-29',65.7],...bs.filter(([,v])=>v&&v.kg).map(([d,v])=>[d,v.kg])];
   if(ws.length>=2) h+=trSpark(ws);
   h+=bs.length?`<div class="kids">${bs.slice().reverse().map(([d,v])=>`<div class="kid"><span>${d.slice(5).replace('-','/')}　${v.kg?v.kg.toFixed(1)+' kg':''}　${v.cm?v.cm+' cm':''}</span><button class="btn small ghost" data-act="trbdel" data-v="${d}">消す</button></div>`).join('')}</div>`:'<p class="hint">まだ記録はありません。</p>';
+  { const S=H.sleep, ds=Object.keys(S).sort().reverse(), last=ds.slice(0,14), du=ds.slice(0,7).map(slDur).filter(x=>x!=null), av=du.length?Math.round(du.reduce((a,b)=>a+b,0)/du.length):null;
+    h+=`<div class="sec-h"><span>起きた時間と寝た時間</span></div><p class="hint" style="margin:0 0 8px">旅程の地図の「目覚め」で〈起きた〉、「焚き火で休む」で〈休む〉を押すと記録されます。あとから入れるときはここで。0時すぎに寝た日は、寝た時刻に 0:30 のように入れれば前の日の夜として残ります。${av!=null?`<br>この1週間の睡眠：平均 <b style="color:var(--blue)">${slDurFmt(av)}</b>`:''}</p>
+    <div class="tr-bin"><input type="date" id="slD" value="${t}"><input type="time" id="slW" aria-label="起きた時間"><input type="time" id="slB" aria-label="寝た時間"><button class="btn primary small" data-act="slsave">記録する</button></div>
+    <p class="hint" style="margin:-2px 0 8px">左から：日付・起きた時間・寝た時間</p>`;
+    h+=last.length?`<div class="kids">${last.map(d=>{ const v=S[d]||{}, m=slDur(d); return `<div class="kid"><span>${d.slice(5).replace('-','/')}　${v.w!=null?'起床 '+slFmt(v.w):''}　${v.b!=null?'就寝 '+slFmt(v.b):''}${m!=null?`　<span class="hint">${slDurFmt(m)}眠った</span>`:''}</span><button class="btn small ghost" data-act="sldel" data-v="${d}">消す</button></div>`; }).join('')}</div>`:'<p class="hint">まだ記録はありません。</p>'; }
   h+=`<div class="sec-h"><span>種目ごとの伸び（いちばん良かったセット）</span></div><div class="kids">`;
   Object.entries(EX).forEach(([id,e])=>{ const L=H.lift, ds=Object.keys(L).filter(d=>L[d][id]&&L[d][id].some(s=>s&&s[1])).sort();
     const best=d=>{ const s=L[d][id].filter(x=>x&&x[1]).sort((a,b)=>((b[0]||0)-(a[0]||0))||(b[1]-a[1]))[0]; return (e.kg?(s[0]||0)+'kg×':'')+s[1]+'回'; };
@@ -3119,6 +3136,15 @@ function pathList(){
         <span class="rc-head"><span class="rc-time">${pfmt(b.s)}${b.wake&&!b.woke?'<small>〜起きるまで</small>':''}</span>${r&&r.ss?`<span class="rc-dots">${r.ss.map(z=>`<i class="${z.done?'on':''}"></i>`).join('')}</span>`:''}${dn?'<em class="tb-clear">CLEAR</em>':''}</span><b class="rc-name">${esc(ttl||'（名前なし）')}</b>
         ${late?`<button class="rc-act" data-act="pathlate" data-v="${b.id}"><i>⟳</i>遅れた　今から始める</button>`:''}${wake?`<button class="rc-act" data-act="pathwake" data-v="${b.id}"><i>☀</i>起きた</button>`:''}</div>`; }).join('');
   svg+=foot+pCliff(k,H);
+  // 目覚めと焚き火のそばに「起きた」「休む」。今日の4時より前は、上の焚き火（昨夜の野営地）で「休む」を押すと昨日の夜として記録
+  { const S=hm().sleep, sd=S[k]||{}, yd=S[ymd(new Date(new Date(k+'T12:00:00').getTime()-DAY))]||{}, x0=pRX(0), x1=pRX(pm2y(PATH_H1)), y1=pm2y(PATH_H1);
+    const chip=(y,x,l,inner)=>x>pW*.5?`<div class="pe-rec" style="top:${y}px;right:${(pW-x+16).toFixed(1)}px;flex-direction:row-reverse">${inner}</div>`:`<div class="pe-rec" style="top:${y}px;left:${(x+16+l*13+8).toFixed(1)}px">${inner}</div>`, btn=(f,t)=>`<button class="pe-btn" data-act="pathsleep" data-v="${f}">${t}</button>`, rec=(t,m)=>`<span class="pe-time">${t} ${slFmt(m)}</span>`;
+    let top='', bot='';
+    if(isT&&now<PATH_H0&&yd.b==null) top=btn('b','休む');
+    else if(sd.w!=null) top=rec('起床',sd.w)+(slDur(k)!=null?`<span class="pe-time sub">${slDurFmt(slDur(k))}眠った</span>`:'');
+    else if(isT&&now>=PATH_H0) top=btn('w','起きた');
+    if(sd.b!=null) bot=rec('就寝',sd.b); else if(isT&&now>=PATH_H0) bot=btn('b','休む');
+    mtags+=(top?chip(0,x0,3,top):'')+(bot?chip(y1,x1,6,bot):''); }
   let nowM=''; if(isT&&now>=PATH_H0&&now<PATH_H1){ const y=pm2y(now), x=pRX(y), day=now>=6*60&&now<18*60, ang=Math.atan2(6,pRX(y+3)-pRX(y-3))*180/Math.PI-90;
     nowM=`<div class="rd-link" style="top:${y}px;left:${x.toFixed(1)}px;transform:rotate(${ang.toFixed(0)}deg)" aria-hidden="true"></div>`; }
   const md=x=>{ const t=new Date(k+'T00:00:00'); t.setDate(t.getDate()+x); return (t.getMonth()+1)+'/'+t.getDate(); };
@@ -3397,7 +3423,8 @@ function pathAct(a,b){
     case 'pathstep': { const x=pBlocks(k).find(y=>y.id===pathSel), r=x&&pRef(x); if(r&&r.s) toggleStep(r.q.id,r.s.id); render(); return true; }
     case 'pathshift': { const x=pBlocks(k).find(y=>y.id===pathSel); if(x){ pathShift(k,x.s,+b.dataset.v); render(); } return true; }
     case 'pathlate': { const x=pBlocks(k).find(y=>y.id===b.dataset.v); if(x){ const d=Math.ceil((pnow()-x.s)/SNAP)*SNAP; if(d>0){ pathShift(k,x.s,d); toast(`${pfmt(x.s+d)}から始める。後ろの予定も${d}分ずらした`); } render(); } return true; }
-    case 'pathwake': { const x=pBlocks(k).find(y=>y.id===b.dataset.v); if(x){ const e=Math.max(x.s+SNAP,Math.round(pnow()/SNAP)*SNAP); pSet(k,x.id,{e,done:1,woke:1}); toast('おはよう。ここから今日の冒険'); render(); } return true; }
+    case 'pathsleep': { const f=b.dataset.v; slNow(f); toast(f==='w'?'おはよう。起きた時間を記録しました':'おやすみ。寝た時間を記録しました'); render(); return true; }
+    case 'pathwake': { const x=pBlocks(k).find(y=>y.id===b.dataset.v); if(x&&k===ymd()&&(hm().sleep[k]||{}).w==null) slSet(k,'w',pnow()); if(x){ const e=Math.max(x.s+SNAP,Math.round(pnow()/SNAP)*SNAP); pSet(k,x.id,{e,done:1,woke:1}); toast('おはよう。ここから今日の冒険'); render(); } return true; }
     case 'pathmorning': { tab='list'; listCat='path'; dayView=ymd(); pathSel=null; pathScrolled=null; const tpl=(plan().tpl[pTpl(dayView)]||{}).b||[]; if(!pBlocks(dayView).length&&tpl.length){ const P=plan(), day={...(P.d[dayView]||{})}, now=Date.now(); tpl.forEach(t=>{ day[uid()]={s:t.s,e:t.e,t:t.t,fix:1,...(t.wake?{wake:1}:{}),u:now}; }); P.d={...P.d,[dayView]:day}; save(); } render(); return true; }
     case 'pathmg': { const x=pBlocks(k).find(y=>y.id===pathSel); if(x){ pSet(k,x.id,{[b.dataset.f]:+b.dataset.v}); render(); } return true; }
     case 'pathsheet': pathSheet=!pathSheet; renderList(); return true;
