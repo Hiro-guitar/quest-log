@@ -525,7 +525,8 @@ body.pdrag{cursor:grabbing}
 .rd-ride{fill:none;stroke:#8be04e;stroke-width:1.8;stroke-linecap:round;stroke-dasharray:3 4;opacity:.8;filter:drop-shadow(0 0 2px rgba(139,224,78,.6))}
 .rd-epona{position:absolute;width:24px;height:24px;margin:-15px 0 0 -12px;z-index:4;pointer-events:none;filter:drop-shadow(0 0 1px #000) drop-shadow(0 0 4px rgba(247,211,107,.55))}
 .rd-epona svg{display:block;overflow:visible}.rd-epona .ec{fill:#9a5428;stroke:#2b1a0c;stroke-width:.9;stroke-linejoin:round}.rd-epona .ew{fill:#f4efe0;stroke:#2b1a0c;stroke-width:.7;stroke-linejoin:round}
-.rd-epona.park{z-index:3;width:20px;height:20px;margin:-10px 0 0 -10px;filter:drop-shadow(0 0 1px #000)}.rd-epona.park svg{width:20px;height:20px}
+.rd-epona.awake{filter:drop-shadow(0 0 1px #000) drop-shadow(0 0 5px rgba(247,211,107,.95))}
+.pe-rec.at{z-index:2}.pe-dot{width:7px;height:7px;border-radius:50%;background:#f7d36b;box-shadow:0 0 0 2px rgba(18,22,20,.8);flex:none;margin:0 4px 0 0}.pe-rec.at[style*=row-reverse] .pe-dot{margin:0 0 0 4px}
 .rd-epona i{position:absolute;font-style:normal;font-weight:700;color:#e8f2ff;text-shadow:0 0 3px #000;font-size:10px;left:4px;top:-10px;animation:zz 2.4s ease-in-out infinite;opacity:0}
 .rd-epona i+i{font-size:8px;left:9px;top:-15px;animation-delay:1.2s}
 @keyframes zz{0%{opacity:0;transform:translate(0,4px)}30%{opacity:1}100%{opacity:0;transform:translate(-5px,-6px)}}
@@ -3180,15 +3181,17 @@ function pathList(){
     const chip=(y,x,l,inner)=>x>pW*.5?`<div class="pe-rec" style="top:${y}px;right:${(pW-x+16).toFixed(1)}px;flex-direction:row-reverse">${inner}</div>`:`<div class="pe-rec" style="top:${y}px;left:${(x+16+l*13+8).toFixed(1)}px">${inner}</div>`, btn=(f,t)=>`<button class="pe-btn" data-act="pathsleep" data-v="${f}">${t}</button>`, rec=(t,m)=>`<span class="pe-time">${t} ${slFmt(m)}</span>`;
     let top='', bot='';
     if(isT&&now<PATH_H0&&yd.b==null) top=btn('b','休む');
-    else if(sd.w!=null) top=rec('起床',sd.w)+(slDur(k)!=null?`<span class="pe-time sub">${slDurFmt(slDur(k))}眠った</span>`:'');
-    else if(isT&&now>=PATH_H0) top=btn('w','起きた');
-    if(sd.b!=null) bot=rec('就寝',sd.b); else if(isT&&now>=PATH_H0) bot=btn('b','休む');
-    mtags+=(top?chip(0,x0,3,top):'')+(bot?chip(y1,x1,6,bot):''); }
-  let nowM=''; if(isT&&!asleep&&slp.w!=null&&slp.w>=PATH_H0&&slp.w<PATH_H1){ const y=pm2y(slp.w), x=pRX(y), sd=x>pW*.5?-1:1; nowM+=`<div class="rd-epona park" style="top:${y}px;left:${(x+sd*17).toFixed(1)}px" title="エポナ" aria-hidden="true">${EPONA}</div>`; }
+    else if(sd.w==null&&isT&&now>=PATH_H0) top=btn('w','起きた');
+    if(sd.b==null&&isT&&now>=PATH_H0) bot=btn('b','休む'); else if(sd.b!=null&&sd.b>=PATH_H1) bot=rec('就寝',sd.b);
+    mtags+=(top?chip(0,x0,3,top):'')+(bot?chip(y1,x1,6,bot):'');
+    // 起きた時刻・寝た時刻は、道のその時刻の所に立てる（予定の札とは反対側に）
+    const at=(m,inner)=>{ const y=pm2y(m), x=pRX(y), lft=pSide(y)==='r'; return `<div class="pe-rec at" style="top:${y}px;${lft?`right:${(pW-x-5.5).toFixed(1)}px;flex-direction:row-reverse`:`left:${(x-5.5).toFixed(1)}px`}"><i class="pe-dot"></i>${inner}</div>`; };
+    if(sd.w!=null&&sd.w>=PATH_H0&&sd.w<PATH_H1) mtags+=at(sd.w,rec('起床',sd.w)+(slDur(k)!=null?`<span class="pe-time sub">${slDurFmt(slDur(k))}眠った</span>`:''));
+    if(sd.b!=null&&sd.b>=PATH_H0&&sd.b<PATH_H1) mtags+=at(sd.b,rec('就寝',sd.b)); }
+  let nowM='';
   if(isT&&now>=PATH_H0&&now<PATH_H1){ const y=pm2y(now), x=pRX(y), day=now>=6*60&&now<18*60, ang=Math.atan2(6,pRX(y+3)-pRX(y-3))*180/Math.PI-90;
     // 寝ている間はエポナの背で眠ったまま道を進む（よく慣れた馬は地図の道をひとりでたどる）
-    nowM+=asleep?`<div class="rd-epona ride" style="top:${y}px;left:${x.toFixed(1)}px" aria-hidden="true">${EPONA}<i>z</i><i>z</i></div>`
-      :`<div class="rd-link" style="top:${y}px;left:${x.toFixed(1)}px;transform:rotate(${ang.toFixed(0)}deg)" aria-hidden="true"></div>`; }
+    nowM+=`<div class="rd-epona ${asleep?'ride':'awake'}" style="top:${y}px;left:${x.toFixed(1)}px" aria-hidden="true">${EPONA}${asleep?'<i>z</i><i>z</i>':''}</div>`; }
   const md=x=>{ const t=new Date(k+'T00:00:00'); t.setDate(t.getDate()+x); return (t.getMonth()+1)+'/'+t.getDate(); };
   const nb=bls.filter(b=>!b.fix), nd=nb.filter(pDone).length; let wx=null; try{ wx=JSON.parse(localStorage.getItem(WX_KEY)||'null'); }catch(e){}
   const hud=`<div class="sl-hud">${nb.length?`<b>${nd}/${nb.length}</b><i></i>`:''}${isT?`<b>${now>=6*60&&now<18*60?'<i class="ck-sun"></i>':'<i class="ck-moon"></i>'}${now<12*60?'AM':'PM'} ${String(Math.floor(now/60)%12||12).padStart(2,'0')}:${String(now%60).padStart(2,'0')}</b><i></i>`:''}${isT&&wx&&wx.temp!=null?`<b>${wx.temp>0?'+':''}${Math.round(wx.temp)}℃</b><i></i>`:''}</div>`;
@@ -3465,7 +3468,7 @@ function pathAct(a,b){
     case 'pathstep': { const x=pBlocks(k).find(y=>y.id===pathSel), r=x&&pRef(x); if(r&&r.s) toggleStep(r.q.id,r.s.id); render(); return true; }
     case 'pathshift': { const x=pBlocks(k).find(y=>y.id===pathSel); if(x){ pathShift(k,x.s,+b.dataset.v); render(); } return true; }
     case 'pathlate': { const x=pBlocks(k).find(y=>y.id===b.dataset.v); if(x){ const d=Math.ceil((pnow()-x.s)/SNAP)*SNAP; if(d>0){ pathShift(k,x.s,d); toast(`${pfmt(x.s+d)}から始める。後ろの予定も${d}分ずらした`); } render(); } return true; }
-    case 'pathsleep': { const f=b.dataset.v; slNow(f); toast(f==='w'?'おはよう。エポナはここで待っている':'おやすみ。あとはエポナにまかせよう'); render(); return true; }
+    case 'pathsleep': { const f=b.dataset.v; slNow(f); toast(f==='w'?'おはよう。手綱をとって進もう':'おやすみ。あとはエポナにまかせよう'); render(); return true; }
     case 'pathwake': { const x=pBlocks(k).find(y=>y.id===b.dataset.v); if(x&&k===ymd()&&(hm().sleep[k]||{}).w==null) slSet(k,'w',pnow()); if(x){ const e=Math.max(x.s+SNAP,Math.round(pnow()/SNAP)*SNAP); pSet(k,x.id,{e,done:1,woke:1}); toast('おはよう。ここから今日の冒険'); render(); } return true; }
     case 'pathmorning': { tab='list'; listCat='path'; dayView=ymd(); pathSel=null; pathScrolled=null; const tpl=(plan().tpl[pTpl(dayView)]||{}).b||[]; if(!pBlocks(dayView).length&&tpl.length){ const P=plan(), day={...(P.d[dayView]||{})}, now=Date.now(); tpl.forEach(t=>{ day[uid()]={s:t.s,e:t.e,t:t.t,fix:1,...(t.wake?{wake:1}:{}),u:now}; }); P.d={...P.d,[dayView]:day}; save(); } render(); return true; }
     case 'pathmg': { const x=pBlocks(k).find(y=>y.id===pathSel); if(x){ pSet(k,x.id,{[b.dataset.f]:+b.dataset.v}); render(); } return true; }
