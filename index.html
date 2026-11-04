@@ -3111,6 +3111,12 @@ function pAutoPlace(k){
 function pSyncTime(k,id){ const b=(plan().d[k]||{})[id]; if(!b||b.del||!b.q) return; const r=pRef(b); if(!r) return; const t=pHM(b.s), now=Date.now();
   // 旅程に置いた冒険は、冒険手帳の「やる日・やる時刻」もその道しるべに合わせる（工程があるチャレンジは工程に入れる）
   const os=r.ss?r.ss:[r.s||r.q]; let ch=0; os.forEach(x=>{ if(x.doDate!==k||x.doTime!==t){ if(x.doDate!==k) x.carry=0; x.doDate=k; x.doTime=t; ch=1; } }); if(ch){ r.q.u=now; if(!r.ss) b.at=t; save(); } }
+// 冒険手帳でやる日を別の日に変えた冒険（工程）は、その日の旅程から外す（今日から先の日だけ。過去の旅程は記録として残す）
+function pPrune(k){ if(k<ymd()) return; const P=plan(), day={...(P.d[k]||{})}, now=Date.now(); let ch=false;
+  Object.entries(day).forEach(([id,b])=>{ if(!b||b.del||!b.q) return; const q=findQ(b.q); if(!q) return; const on=x=>x&&x.doDate===k;
+    if(b.sids&&b.sids.length){ const keep=b.sids.filter(sid=>on((q.steps||[]).find(x=>x.id===sid))); if(keep.length===b.sids.length) return; day[id]=keep.length?{...b,sids:keep,u:now}:{...b,del:1,u:now}; ch=true; return; }
+    const o=b.sid?(q.steps||[]).find(x=>x.id===b.sid):(q.steps&&q.steps.length?null:q); if(b.sid&&!o){ day[id]={...b,del:1,u:now}; ch=true; return; } if(o&&!on(o)){ day[id]={...b,del:1,u:now}; ch=true; } });
+  if(ch){ P.d={...P.d,[k]:day}; save(); } }
 // すでに旅程に置いてある冒険（今日から先）の時刻を、冒険手帳にも入れておく。やる日を別の日に変えた物はさわらない
 function pBackfill(){ const t=ymd(), P=plan(); let n=0;
   Object.keys(P.d).filter(k=>k>=t).forEach(k=>Object.entries(P.d[k]||{}).forEach(([id,b])=>{ if(!b||b.del||!b.q) return; const r=pRef(b); if(!r) return; const tm=pHM(b.s);
@@ -3142,7 +3148,7 @@ function pFree(k,len){ const bl=pBlocks(k).map(b=>({...b,s:b.s-(b.pre||0),e:b.e+
 function pTpl(k){ const wd=new Date(k+'T00:00:00').getDay(); return (wd===0||wd===6||holiday(k))?'we':'wk'; }
 
 function pathList(){
-  pAutoPlace(dayView); pSeedRoad(dayView); pW=Math.max(300,(($('slView')||{}).clientWidth)||(document.body.classList.contains('pfull')?window.innerWidth:(($('list')||{}).clientWidth||380)));
+  pPrune(dayView); pAutoPlace(dayView); pSeedRoad(dayView); pW=Math.max(300,(($('slView')||{}).clientWidth)||(document.body.classList.contains('pfull')?window.innerWidth:(($('list')||{}).clientWidth||380)));
   const k=dayView, d=new Date(k+'T00:00:00'), isT=k===ymd(), bl=pBlocks(k), P=plan(), tk=pTpl(k), tpl=(P.tpl[tk]||{}).b||[];
   let h=`<div class="cat-bar"><div class="cat-name">旅程</div></div>`;
   const un=pUnplaced(k), unAt=h.length;
