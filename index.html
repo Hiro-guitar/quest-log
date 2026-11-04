@@ -3111,6 +3111,11 @@ function pAutoPlace(k){
 function pSyncTime(k,id){ const b=(plan().d[k]||{})[id]; if(!b||b.del||!b.q) return; const r=pRef(b); if(!r) return; const t=pHM(b.s), now=Date.now();
   // 旅程に置いた冒険は、冒険手帳の「やる日・やる時刻」もその道しるべに合わせる（工程があるチャレンジは工程に入れる）
   const os=r.ss?r.ss:[r.s||r.q]; let ch=0; os.forEach(x=>{ if(x.doDate!==k||x.doTime!==t){ if(x.doDate!==k) x.carry=0; x.doDate=k; x.doTime=t; ch=1; } }); if(ch){ r.q.u=now; if(!r.ss) b.at=t; save(); } }
+// すでに旅程に置いてある冒険（今日から先）の時刻を、冒険手帳にも入れておく。やる日を別の日に変えた物はさわらない
+function pBackfill(){ const t=ymd(), P=plan(); let n=0;
+  Object.keys(P.d).filter(k=>k>=t).forEach(k=>Object.entries(P.d[k]||{}).forEach(([id,b])=>{ if(!b||b.del||!b.q) return; const r=pRef(b); if(!r) return; const tm=pHM(b.s);
+    (r.ss?r.ss:[r.s||r.q]).forEach(x=>{ if(x.doDate===k&&x.doTime!==tm&&!x.done){ x.doTime=tm; n++; } }); if(!r.ss&&b.at!==tm) b.at=tm; }));
+  if(n) save(); return n; }
 // 道しるべを外したら、冒険手帳の時刻だけ外す（やる日は残す）
 function pUnsyncTime(k,id){ const b=(plan().d[k]||{})[id]; if(!b||!b.q) return; const r=pRef(b); if(!r) return; const t=pHM(b.s); let ch=0; (r.ss?r.ss:[r.s||r.q]).forEach(x=>{ if(x.doDate===k&&x.doTime===t){ x.doTime=''; ch=1; } }); if(ch){ r.q.u=Date.now(); save(); } }
 // 何に結びついた区間か
@@ -3607,7 +3612,7 @@ document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==
 (function(){ const m=location.hash.match(/^#q=([\w-]+)/); const q=m&&findQ(m[1]); if(q){ selId=q.id; tab='list'; listCat=q.type; } if(m){ try{ history.replaceState(null,'',location.pathname+location.search); }catch(e){} } })();
 
 stamp(); window.__qlReady=true;
-render(); if(moveDoToSteps()){ save(); render(); } if(trImport()){ state.pristine=false; save(); render(); } runCarry();
+render(); if(moveDoToSteps()){ save(); render(); } if(trImport()){ state.pristine=false; save(); render(); } runCarry(); if(pBackfill()) render();
 // 起動して少ししたら、今日の地図を裏で描いておく（開いたときに待たないように）
 setTimeout(()=>{ try{ const w=+localStorage.getItem('ql-pw'); if(!w||pTerCache[ymd()+'|'+PX+'|'+w]) return; const sv=pW; pW=w; pTerAsk(ymd(),pm2y(PATH_H1)+10,false); pW=sv; }catch(e){} },1200);
 if(sync.url){ syncScan(); flush(); loadData().then(pull); }
