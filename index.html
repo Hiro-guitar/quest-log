@@ -3095,7 +3095,7 @@ function plan(){ state.plan=state.plan||{}; if(!state.plan.d||typeof state.plan.
 function pDay(k){ const P=plan(); return P.d[k]||{}; }
 function pBlocks(k){ return Object.entries(pDay(k)).filter(([id,b])=>b&&!b.del).map(([id,b])=>({id,...b})).sort((a,b)=>a.s-b.s||a.e-b.e); }
 function pSet(k,id,patch){ const P=plan(); const day={...(P.d[k]||{})}; day[id]={...(day[id]||{}),...patch,u:Date.now()}; P.d={...P.d,[k]:day}; save(); if('s' in patch) pSyncTime(k,id); }
-function pDel(k,id){ pSet(k,id,{del:1}); }
+function pDel(k,id){ pUnsyncTime(k,id); pSet(k,id,{del:1}); }
 // 名前を入れずに離れた予定は残さない
 function pDropEmpty(){ if(!pathSel) return; const b=(plan().d[dayView]||{})[pathSel]; if(b&&!b.del&&!b.q&&!b.tr&&!(b.t||'').trim()) pDel(dayView,pathSel); }
 const pTm=t=>{ const m=/^(\d{1,2}):(\d{2})/.exec(t||''); return m?+m[1]*60+ +m[2]:null; }, pHM=m=>String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
@@ -3108,7 +3108,11 @@ function pAutoPlace(k){
     const [id,b]=ex; if(b.sids) return; if(!b.del&&b.at!==x.time&&(!b.at||b.s===pTm(b.at))){ const len=b.e-b.s; day[id]={...b,s:m,e:Math.min(PATH_H1,m+len),at:x.time,u:now}; ch=true; } });
   if(ch){ P.d={...P.d,[k]:day}; save(); } }
 // 道しるべを動かしたら、冒険の「やる時刻」もそろえる（時刻が入っていた物だけ）
-function pSyncTime(k,id){ const b=(plan().d[k]||{})[id]; if(!b||b.del||!b.q) return; const r=pRef(b); if(!r) return; if(r.ss){ const t=pHM(b.s); let ch=0; r.ss.forEach(x=>{ if(x.doTime&&x.doTime!==t){ x.doTime=t; ch=1; } }); if(ch) save(); return; } const o=r.s||r.q; if(!o.doTime) return; const t=pHM(b.s); if(o.doTime===t) return; o.doTime=t; b.at=t; save(); }
+function pSyncTime(k,id){ const b=(plan().d[k]||{})[id]; if(!b||b.del||!b.q) return; const r=pRef(b); if(!r) return; const t=pHM(b.s), now=Date.now();
+  // 旅程に置いた冒険は、冒険手帳の「やる日・やる時刻」もその道しるべに合わせる（工程があるチャレンジは工程に入れる）
+  const os=r.ss?r.ss:[r.s||r.q]; let ch=0; os.forEach(x=>{ if(x.doDate!==k||x.doTime!==t){ if(x.doDate!==k) x.carry=0; x.doDate=k; x.doTime=t; ch=1; } }); if(ch){ r.q.u=now; if(!r.ss) b.at=t; save(); } }
+// 道しるべを外したら、冒険手帳の時刻だけ外す（やる日は残す）
+function pUnsyncTime(k,id){ const b=(plan().d[k]||{})[id]; if(!b||!b.q) return; const r=pRef(b); if(!r) return; const t=pHM(b.s); let ch=0; (r.ss?r.ss:[r.s||r.q]).forEach(x=>{ if(x.doDate===k&&x.doTime===t){ x.doTime=''; ch=1; } }); if(ch){ r.q.u=Date.now(); save(); } }
 // 何に結びついた区間か
 function pRef(b){ if(b.q){ const q=findQ(b.q); if(!q) return null;
     if(b.sids&&b.sids.length){ const ss=b.sids.map(id=>(q.steps||[]).find(x=>x.id===id)).filter(Boolean); if(!ss.length) return null; if(ss.length===1) return {q,s:ss[0],done:!!ss[0].done,title:ss[0].text,sub:q.title};
