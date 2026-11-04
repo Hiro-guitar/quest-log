@@ -443,7 +443,8 @@ select{max-width:100%;text-overflow:ellipsis}
 .slate.z0 .mp-lab:not(.poi){display:none}
 .mp-ter-bg{fill:#695a30}.mp-ter{opacity:0;transition:opacity .35s}.mp-ter.on{opacity:1}
 .mp-trail{fill:none;stroke:rgba(232,214,160,.55);stroke-width:1.2;stroke-linecap:round;stroke-linejoin:round}
-.mp-river{fill:none;stroke:#6f8792;stroke-width:4;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 1px rgba(30,24,12,.6))}
+.mp-river{fill:none;stroke:#6f8792;stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+.mp-river-o{fill:none;stroke:#3a3422;stroke-linecap:round;stroke-linejoin:round}
 .mp-river-d{fill:none;stroke:#4f646d;stroke-linecap:round;stroke-linejoin:round}
 .mp-river2{fill:none;stroke:#465a66;stroke-width:6;stroke-linecap:round}
 .mp-grid line{stroke:rgba(0,0,0,.14);stroke-width:1}
@@ -1631,7 +1632,7 @@ function restList(){
   let h=`<div class="cat-bar"><div class="cat-name">焚き火</div><div class="cat-icons"><span class="cat on" style="cursor:default">🔥</span></div></div>`;
   const bodyRow=`<div class="rows" style="margin-top:14px"><button class="row ${restSel==='body'?'sel':''}" data-act="restsel" data-v="body"><span class="r-mark">📖</span><span class="r-main"><span class="r-title">からだの手記</span><span class="r-sub">体重・お腹まわり・起きた時間と寝た時間</span></span><span class="r-notch"></span></button></div>`;
   if(rested) return h+`<div class="sec-empty">🔥 今日はもう焚き火で休みました。ゆっくりしよう</div>`+bodyRow;
-  h+=`<div class="rows" style="margin-bottom:14px"><button class="row morning-row" data-act="pathmorning"><span class="r-mark">${ico('path')}</span><span class="r-main"><span class="r-title">今日の段取りを組む</span><span class="r-sub">${pBlocks(t).length?`道しるべ ${pBlocks(t).length}本`:'まだ何も置いていない'}</span></span><span class="r-notch"></span></button></div>`;
+  h+=`<div class="rows" style="margin-bottom:14px"><button class="row morning-row" data-act="pathmorning"><span class="r-mark">${ico('path')}</span><span class="r-main"><span class="r-title">今日の段取りを組む</span><span class="r-sub">${pBlocks(t).length?`道しるべ ${pBlocks(t).length}本`:'まだ道しるべを立てていない'}</span></span><span class="r-notch"></span></button></div>`;
   const grp=[]; items.forEach(x=>{ let g=grp.find(z=>z.q===x.q); if(!g){ g={q:x.q,ss:[]}; grp.push(g); } if(x.s) g.ss.push(x.s); });
   h+=`<div class="day-h"><span>今日やる予定だった残り</span><span>${grp.length}件</span></div><div class="rows">`;
   // 冒険手帳の「今日」と同じ見せ方：工程はチャレンジの見出しの下に並べる
@@ -3176,12 +3177,12 @@ function pathList(){
   let h=`<div class="cat-bar"><div class="cat-name">旅程</div></div>`;
   const un=pUnplaced(k), unAt=h.length;
   if(un.length){ const grp=[]; un.forEach((x,i)=>{ const key=x.sid?x.q:'_'+i; let g=grp.find(z=>z.key===key); if(!g){ g={key,x,items:[]}; grp.push(g); } g.items.push([x,i]); });
-    h+=`<div class="path-un"><div class="pu-h">まだ道に置いていない冒険<small>押すと空いている時間に置く</small></div>${grp.map(g=>{ const q=g.x.q&&findQ(g.x.q);
+    h+=`<div class="path-un"><div class="pu-h">道しるべのない冒険<small>押すと空いている時間に道しるべを立てる</small></div>${grp.map(g=>{ const q=g.x.q&&findQ(g.x.q);
       if(!g.x.sid) return `<button class="pu-i ${g.x.tr?'tr':''}" data-act="pathput" data-i="${g.items[0][1]}"><i class="pu-pin" aria-hidden="true"></i><span>${esc(g.x.t||'(無題)')}</span></button>`;
-      return `<div class="pu-g"><div class="pu-gh">${q?ico(q.type):''}<span>${esc(g.x.sub||'')}</span>${g.items.length>1&&!(puSel&&puSel.q===g.x.q)?`<button class="pu-all" data-act="pathpusel" data-q="${g.x.q}">まとめて置く</button>`:''}</div>${puSel&&puSel.q===g.x.q
-        ?g.items.map(([x,i])=>`<button class="pu-i st pick ${puSel.ids.has(x.sid)?'on':''}" data-act="pathpupick" data-v="${x.sid}"><i class="pu-ck" aria-hidden="true">${puSel.ids.has(x.sid)?'✓':''}</i><span>${esc(x.t||'(無題)')}</span></button>`).join('')+`<div class="pu-selbar"><span class="hint">一緒にやるものを選んで</span><button class="btn small" data-act="pathpusel" data-q="">やめる</button><button class="btn small primary" data-act="pathputg" data-q="${g.x.q}" ${puSel.ids.size?'':'disabled'}>選んだ${puSel.ids.size}つをまとめて置く</button></div>`
+      return `<div class="pu-g"><div class="pu-gh">${q?ico(q.type):''}<span>${esc(g.x.sub||'')}</span>${g.items.length>1&&!(puSel&&puSel.q===g.x.q)?`<button class="pu-all" data-act="pathpusel" data-q="${g.x.q}">まとめて立てる</button>`:''}</div>${puSel&&puSel.q===g.x.q
+        ?g.items.map(([x,i])=>`<button class="pu-i st pick ${puSel.ids.has(x.sid)?'on':''}" data-act="pathpupick" data-v="${x.sid}"><i class="pu-ck" aria-hidden="true">${puSel.ids.has(x.sid)?'✓':''}</i><span>${esc(x.t||'(無題)')}</span></button>`).join('')+`<div class="pu-selbar"><span class="hint">一緒にやるものを選んで</span><button class="btn small" data-act="pathpusel" data-q="">やめる</button><button class="btn small primary" data-act="pathputg" data-q="${g.x.q}" ${puSel.ids.size?'':'disabled'}>選んだ${puSel.ids.size}つをまとめて立てる</button></div>`
         :g.items.map(([x,i])=>`<button class="pu-i st" data-act="pathput" data-i="${i}"><i class="pu-pin" aria-hidden="true"></i><span>${esc(x.t||'(無題)')}</span></button>`).join('')}</div>`; }).join('')}</div>`; }
-  if(!bl.length) h+=`<div class="path-empty">${tpl.length?`<button class="btn" data-act="pathtpl">いつもの旅程（${tk==='we'?'休日':'平日'}）を敷く</button>`:''}<p class="hint">地図を動かして照準を合わせ、A で予定を置けます</p></div>`;
+  if(!bl.length) h+=`<div class="path-empty">${tpl.length?`<button class="btn" data-act="pathtpl">いつもの旅程（${tk==='we'?'休日':'平日'}）を敷く</button>`:''}<p class="hint">地図を動かして照準を合わせ、A で道しるべを立てられます</p></div>`;
   const unH=h.slice(unAt);
   // 時間の道：1日を地図の上の一本の道にして、予定は道しるべ（ピン）として立てる
   const now=pJNow(), H=pm2y(PATH_H1)+10, L=b=>pathDrag&&pathDrag.id===b.id?{...b,s:pathDrag.s,e:pathDrag.e}:b;
@@ -3235,7 +3236,7 @@ function pathList(){
   h+=`<div class="slate z${pZoom} ${pathBoot?'boot':''}">${SL_DEFS}<i class="sl-cn c1">${slCorner(0,0)}</i><i class="sl-cn c2">${slCorner(1,0)}</i><i class="sl-cn c3">${slCorner(0,1)}</i><i class="sl-cn c4">${slCorner(1,1)}</i>
     ${slBand('t')}<div class="sl-top"><button class="sl-tab" data-act="pathday" data-v="-1">${md(-1)} <i>L</i></button><div class="sl-title"><b>${isT?'今日の旅程':'旅程'}</b><small>${d.getMonth()+1}/${d.getDate()}（${'日月火水木金土'[d.getDay()]}）${holiday(k)?' '+holiday(k):''}</small></div><button class="sl-tab" data-act="pathday" data-v="1"><i>R</i> ${md(1)}</button></div>
     <div class="sl-body"><div class="sl-view" id="slView"><div class="tl road" id="tl" style="height:${H}px"><svg class="rd-svg" width="100%" height="${H}" aria-hidden="true">${svg}</svg>${regs}${hrs}${mtags}${cards}${nowM}</div></div><div class="sl-fx" aria-hidden="true"></div>${hud}${pathSheet&&unH?`<div class="sl-sheet">${unH}</div>`:''}<div class="sl-ret" id="slRet" aria-hidden="true"><i class="rt-c"></i><span class="rt-l" id="slRetL"></span></div></div>
-    <div class="sl-bot"><button class="sl-p sl-close" data-act="pathclose"><i>B</i>とじる</button>${un.length?`<button class="sl-p sl-list ${pathSheet?'on':''}" data-act="pathsheet"><i>X</i>置く冒険<b class="sl-n">${un.length}</b></button>`:''}<span class="sl-zoom"><button data-act="pathzoom" data-v="-1" aria-label="ひろく見る" ${pZoom===0?'disabled':''}>−</button>ズーム<button data-act="pathzoom" data-v="1" aria-label="くわしく見る" ${pZoom===2?'disabled':''}>＋</button></span>${isT?'<button class="sl-p" data-act="pathhere">現在地<i>Y</i></button>':''}<button class="sl-p sl-a" data-act="pathA" id="slA"><span id="slAt">置く</span><i>A</i></button></div>${slBand('b')}</div>`;
+    <div class="sl-bot"><button class="sl-p sl-close" data-act="pathclose"><i>B</i>とじる</button>${un.length?`<button class="sl-p sl-list ${pathSheet?'on':''}" data-act="pathsheet"><i>X</i>道しるべのない冒険<b class="sl-n">${un.length}</b></button>`:''}<span class="sl-zoom"><button data-act="pathzoom" data-v="-1" aria-label="ひろく見る" ${pZoom===0?'disabled':''}>−</button>ズーム<button data-act="pathzoom" data-v="1" aria-label="くわしく見る" ${pZoom===2?'disabled':''}>＋</button></span>${isT?'<button class="sl-p" data-act="pathhere">現在地<i>Y</i></button>':''}<button class="sl-p sl-a" data-act="pathA" id="slA"><span id="slAt">立てる</span><i>A</i></button></div>${slBand('b')}</div>`;
   pathBoot=false;
   return h;
 }
@@ -3279,7 +3280,8 @@ function pCliff(k,H,m0,m1,open,openT){
 // 地名：ブレワイの地図のような「〜地方」「〜村」「〜馬宿」…を日ごとに組み合わせる（すべてこの旅のための架空の地名）
 const PN_A=['ミズナラ','カゼノネ','シラユキ','アカツチ','ホタル','ツユクサ','コケムス','ヒバリ','タソガレ','イワツツジ','ハヤテ','サザナミ','ヒカゲ','ユウナギ','アオバ','カタクリ','ナギサ','オボロ','ツララ','キリフ','ヒイラギ','クモマ','ススキ','ヤマセ','ワタリ','コダマ','ハルカ','トキワ','アサギ','ムラサメ','カゲロウ','ヨモギ','シノノメ','ユキワリ','マツカゼ','イナホ','フブキ','ホムラ','サギリ','アマツ','イソラ','ウツギ','エニシ','オモダカ','カスミ','キササゲ','クヌギ','ケヤキ','コノハ','サクヤ','シオン','スズラン','セキレイ','タチバナ','チドリ','ツバキ','トウゲ','ナツメ','ニレ','ヌマタ','ネムノキ','ノギク','ハクロ','フジナミ','ホオズキ','マソホ','ミサゴ','ムクゲ','モズ','ヤマブキ','ユズリハ','ヨシキリ','リンドウ','ワカバ','アケボノ','イサリビ','ウスズミ','エボシ','オキナ','カガリ','カワセミ','クサナギ','コガネ','サンゴ','シジマ','スミレ','セセラギ','タマユラ','ツクバネ','トバリ','ナナカマド','ハシバミ','ヒスイ','ホシクズ','マホロ','ミナモ','ヤマナミ','ユウヅツ','ワダツミ'];
 const PN={region:'地方',village:'村',stable:'馬宿',lake:'湖',mount:'山',river:'川',tower:'の塔',ruin:'の遺跡',wood:'の森',bridge:'大橋',plain:'平原',hill:'丘陵',vale:'渓谷',high:'高原',pass:'峠',marsh:'湿原',falls:'の滝'};
-function pRng(k,salt){ let h=salt; for(const c of k) h=(h*131+c.charCodeAt(0))>>>0; return ()=>{ h=(h*1664525+1013904223)>>>0; return h/4294967296; }; }
+// 似た名前（rv12とrv13など）でも最初の値がばらけるよう、混ぜてから使う
+function pRng(k,salt){ let h=salt; for(const c of k) h=(h*131+c.charCodeAt(0))>>>0; h=Math.imul(h^(h>>>16),2246822507)>>>0; h=Math.imul(h^(h>>>13),3266489909)>>>0; h=(h^(h>>>16))>>>0; return ()=>{ h=(h*1664525+1013904223)>>>0; return h/4294967296; }; }
 function pNamer(k){ const r=pRng(k,991), used=new Set(); return t=>{ let n; for(let i=0;i<20;i++){ n=PN_A[Math.floor(r()*PN_A.length)]; if(!used.has(n)) break; } used.add(n); return n+PN[t]; }; }
 const pNm=(sd,t)=>{ const r=pRng(sd,991); return PN_A[Math.floor(r()*PN_A.length)]+PN[t]; };
 // 地方の境目も世界に固定。日のはじめは、前の日から続いている地方の名前を出す
@@ -3294,10 +3296,12 @@ const pHash=(ix,iy)=>{ let h=(ix*374761393+iy*668265263+pSeedN*1442695041)|0; h=
 const pNoise=(x,y)=>{ const ix=Math.floor(x), iy=Math.floor(y), fx=x-ix, fy=y-iy, sx=fx*fx*(3-2*fx), sy=fy*fy*(3-2*fy), a=pHash(ix,iy), b=pHash(ix+1,iy), c=pHash(ix,iy+1), d=pHash(ix+1,iy+1); return a+(b-a)*sx+(c-a)*sy+(a-b-c+d)*sx*sy; };
 const P_SEA=.27;
 // 高さ（0〜1）。x は画面の横位置、y は地図の縦位置（ズームの影響を受けない単位に直して計算）
-function pHgt(x,y){ const v=y/PX+pOff, u=x*1.05; let f=0,amp=.5,fr=1/170; for(let o=0;o<5;o++){ f+=amp*pNoise(u*fr+o*17,v*fr+o*31); amp*=.5; fr*=2.03; }
+function pHgt(x,y){ return pHgtC(x,y,true); }
+// raw=false で道のまわりの盛り土をしない高さ（川の流れを決めるのに使う）
+function pHgtC(x,y,road){ const v=y/PX+pOff, u=x*1.05; let f=0,amp=.5,fr=1/170; for(let o=0;o<5;o++){ f+=amp*pNoise(u*fr+o*17,v*fr+o*31); amp*=.5; fr*=2.03; }
   const r=1-Math.abs(2*pNoise(u/240+9,v/240+3)-1); let h=.62*f+.5*r*r*r-.08;
   // 道のまわりは陸地にする（道が水に沈まないように）
-  const dd=Math.abs(x-pRX(y)); if(dd<80){ const t=1-dd/80, m=P_SEA+.07*t*t*(3-2*t); if(h<m) h=m+(h-m)*.15*(1-t); }
+  const dd=road?Math.abs(x-pRX(y)):1e9; if(dd<80){ const t=1-dd/80, m=P_SEA+.07*t*t*(3-2*t); if(h<m) h=m+(h-m)*.15*(1-t); }
   return Math.max(0,Math.min(1,h)); }
 const P_RAMP=[[0,[64,52,27]],[.12,[82,68,36]],[.24,[103,86,46]],[.36,[124,106,58]],[.48,[146,128,76]],[.6,[170,154,104]],[.72,[195,184,140]],[.84,[219,211,180]],[.93,[236,232,214]],[1,[246,244,236]]];
 const pRamp=t=>{ for(let i=1;i<P_RAMP.length;i++){ if(t<=P_RAMP[i][0]){ const [t0,c0]=P_RAMP[i-1], [t1,c1]=P_RAMP[i], k=(t-t0)/(t1-t0); return [c0[0]+(c1[0]-c0[0])*k,c0[1]+(c1[1]-c0[1])*k,c0[2]+(c1[2]-c0[2])*k]; } } return P_RAMP[P_RAMP.length-1][1]; };
@@ -3359,17 +3363,31 @@ function pMapArt(k,H){
   let o=`<rect class="mp-ter-bg" x="0" y="${Y0}" width="${W}" height="${Y1-Y0}"/><image class="mp-ter ${tu?'on':''}" data-k="${tk}" href="${tu||''}" x="0" y="${Y0}" width="${W}" height="${Y1-Y0}" preserveAspectRatio="none"/>`;
   const labs=[], inR=y=>y>Y0+10&&y<Y1-10, far=(x,y,d)=>Math.abs(x-pRX(y))>d;
   const water=[], nearWater=(x,y,d)=>pHgt(x,y)<P_SEA+.03||(d>0&&(pHgt(x+d,y)<P_SEA||pHgt(x-d,y)<P_SEA||pHgt(x,y+d)<P_SEA||pHgt(x,y-d)<P_SEA))||water.some(([wx,wy,wr])=>Math.hypot(x-wx,y-wy)<wr+d);
-  // 川：谷（低い所）をたどって流れる
-  let bridges='', wt='';
-  for(let c=c0-2;c<=c1+2;c++){ const r=pRng('rv'+c,5); if(r()>.3) continue; const fromL=r()<.5; let v=c*CW+r()*CW, d='', pts=[], pen=false;
-    for(let st=0;st<=Math.ceil((W+20)/6);st++){ const x=fromL?-10+st*6:W+10-st*6; let best=v, bh=1e9; for(let dv=-6;dv<=6;dv+=2){ const hh=pHgt(x,v2y(v+dv))+Math.abs(dv)*.004; if(hh<bh){ bh=hh; best=v+dv; } } v=best; const y=v2y(v);
-      const inW=pHgt(x,y)<P_SEA+.012; if(inW){ pen=false; continue; } pts.push([x,y]); d+=(pen?'L':'M')+x+' '+y.toFixed(1); pen=true; water.push([x,y,5]); }
-    if(!pts.some(([x,y])=>inR(y))) continue;
-    const rw=3.5+r()*2.5; wt+=`<path class="mp-river" d="${d}" style="stroke-width:${rw.toFixed(1)}"/><path class="mp-river-d" d="${d}" style="stroke-width:${(rw*.4).toFixed(1)}"/>`;
-    let bx=null,bd=1e9; pts.forEach(([x,y])=>{ const dd=Math.abs(x-pRX(y)); if(dd<bd){ bd=dd; bx=[x,y]; } });
-    if(bx&&bd<8){ const [x,y]=bx, y0=y-12, y1=y+12; let L='',R=''; for(let yy=y0;yy<=y1;yy+=4){ const cx=pRX(yy), wv=7+(Math.abs(yy-y)<5?2:0); L+=(L?'L':'M')+(cx-wv).toFixed(1)+' '+yy.toFixed(1); R=`L${(cx+wv).toFixed(1)} ${yy.toFixed(1)}`+R; }
+  // 川：ブレワイの地図のように、高い所から低い方へ曲がりくねって流れ、湖や海に注ぐ。下流ほど太く、水と同じ色で岸の線がつく
+  let bridges='', wt=''; const lakes=[]; for(let vv=Math.floor((vA-400)/30)*30;vv<vB+400;vv+=30) for(let xx=15;xx<W;xx+=30) if(pHgtC(xx,v2y(vv),false)<P_SEA-.02) lakes.push([xx,vv]);
+  for(let cc=(c0-3)*2;cc<=(c1+3)*2+1;cc++){ const c=cc, r=pRng('rv'+c,5); if(r()>.8) continue;
+    let x=0,v=0,ok=false; for(let t=0;t<6&&!ok;t++){ x=20+r()*(W-40); v=c*CW/2+r()*CW/2; ok=pHgtC(x,v2y(v),false)>.4; } if(!ok) continue;
+    // 行き先：近くの湖（なければ地図の端＝海へ）。坂を下る向きと行き先へ向かう向きをまぜて、曲がりくねりながら進む
+    let tg=null, td=1e9; lakes.forEach(([lx,lv])=>{ const d=Math.hypot(lx-x,lv-v); if(d<td&&d>40&&d<760){ td=d; tg=[lx,lv]; } }); if(!tg) tg=[x<W/2?-40:W+40, v+(r()-.5)*300];
+    const ph=r()*100, pts=[]; let dx=0,dv=0, wet=false;
+    for(let st=0;st<900;st++){ const y=v2y(v); pts.push([x,v]); if(pHgt(x,y)<P_SEA&&st>3){ wet=true; break; } if(x<-12||x>W+12){ wet=true; break; }
+      const e=5, gx=pHgtC(x+e,y,false)-pHgtC(x-e,y,false), gv=pHgtC(x,v2y(v+e),false)-pHgtC(x,v2y(v-e),false), gl=Math.hypot(gx,gv)||1, ax=tg[0]-x, av=tg[1]-v, al=Math.hypot(ax,av)||1;
+      const pull=Math.min(1,.35+st/400); let tx=-gx/gl*(1-pull)+ax/al*pull, tv=-gv/gl*(1-pull)+av/al*pull;
+      const mw=(pNoise(st*.03+ph,ph)-.5)*1.1, ca=Math.cos(mw), sa=Math.sin(mw); [tx,tv]=[tx*ca-tv*sa,tx*sa+tv*ca];
+      dx=dx*.87+tx*.13; dv=dv*.87+tv*.13; const dl=Math.hypot(dx,dv)||1; x+=dx/dl*4; v+=dv/dl*4; }
+    if(!wet||pts.length<24) continue;
+    // なめらかに（角を落とす）
+    let P=pts.map(([x,v])=>[x,v2y(v)]); for(let it=0;it<3;it++){ const Q=[P[0]]; for(let i=0;i<P.length-1;i++){ const [a1,b1]=P[i],[a2,b2]=P[i+1]; Q.push([a1*.75+a2*.25,b1*.75+b2*.25],[a1*.25+a2*.75,b1*.25+b2*.75]); } Q.push(P[P.length-1]); P=Q; }
+    if(!P.some(([x,y])=>inR(y))) continue;
+    const n=P.length, w0=1.6+r()*1.2, w1=w0+2.8+r()*3.2, CH=20; let ol='', wa='';
+    for(let i=0;i<n-1;i+=CH){ const seg=P.slice(i,Math.min(n,i+CH+1)), w=w0+(w1-w0)*(i/n), d='M'+seg.map(([x,y])=>x.toFixed(1)+' '+y.toFixed(1)).join('L');
+      ol+=`<path class="mp-river-o" d="${d}" style="stroke-width:${(w+2.4).toFixed(1)}"/>`; wa+=`<path class="mp-river" d="${d}" style="stroke-width:${w.toFixed(1)}"/>`; }
+    wt+=ol+wa; P.forEach(([x,y],i)=>{ if(i%3===0) water.push([x,y,(w0+(w1-w0)*i/n)/2+3]); });
+    // 道とまじわる所に橋（道の盛り土の上を渡る）
+    let bx=null,bd=1e9,bi=0; P.forEach(([x,y],i)=>{ const dd=Math.abs(x-pRX(y)); if(dd<bd){ bd=dd; bx=[x,y]; bi=i; } });
+    if(bx&&bd<6){ const [x,y]=bx, w=w0+(w1-w0)*bi/n, hw=w/2+6, y0=y-hw, y1=y+hw; let L='',R=''; for(let yy=y0;yy<=y1+.01;yy+=(y1-y0)/6){ const cx=pRX(yy); L+=(L?'L':'M')+(cx-8).toFixed(1)+' '+yy.toFixed(1); R=`L${(cx+8).toFixed(1)} ${yy.toFixed(1)}`+R; }
       bridges+=`<path class="mp-bridge" d="${L}${R}Z"/>`; if(r()<.7) labs.push([x+14,y-10,pNm('br'+c,'bridge'),'']); }
-    const lp=pts[Math.floor(pts.length*(.3+r()*.4))]; if(lp) labs.push([lp[0],lp[1]-12,pNm('rv'+c,r()<.2?'falls':'river'),'wt']); }
+    const lp=P[Math.floor(n*(.35+r()*.3))]; if(lp) labs.push([lp[0]+8,lp[1]-8,pNm('rv'+c,r()<.15?'falls':'river'),'wt']); }
   o+=wt;
   // 山・湖の名前：世界に固定した格子で、まわりでいちばん高い所／低い所を探す
   { const S=34, R4=4, gv0=Math.ceil((vA+40/PX)/S), gv1=Math.floor((vB-40/PX)/S), hAt=(gx,gv)=>pHgt(20+gx*S,v2y(gv*S)), nx=Math.floor((W-40)/S);
@@ -3418,7 +3436,7 @@ function pRetUpdate(){
   const yy=hit?pm2y(hit.s):y, x=pRX(yy), off=tl.getBoundingClientRect().left-sv.parentNode.getBoundingClientRect().left;
   ret.style.top=(yy+ry-sv.scrollTop)+'px'; ret.style.left=(off+x)+'px'; ret.classList.toggle('hit',!!hit); ret.classList.toggle('nolab',!!hit&&pZoom>0);
   const sm=Math.round(m/SNAP)*SNAP; $('slRetL').innerHTML=hit?esc(pTitle(hit)||'（名前なし）')+(hit.pre||hit.post?`<small>${hit.pre?`支度 ${pfmt(hit.s-hit.pre)}〜`:''}${hit.pre&&hit.post?'　':''}${hit.post?`ゆとり 〜${pfmt(hit.e+hit.post)}`:''}</small>`:''):pfmt(sm);
-  const at=$('slAt'); if(at) at.textContent=hit?'開く':'置く';
+  const at=$('slAt'); if(at) at.textContent=hit?'開く':'立てる';
   if((hit&&hit.id)!==pHover){ document.querySelectorAll('.rd-card.hover').forEach(e=>e.classList.remove('hover')); pHover=hit&&hit.id; if(pHover){ const c=document.querySelector(`.rd-card[data-pb="${pHover}"]`); c&&c.classList.add('hover'); } }
   ret.dataset.m=hit?'':sm; ret.dataset.id=hit?hit.id:'';
 }
@@ -3453,7 +3471,7 @@ function pathPanel(){
   const k=dayView, b=pathSel&&pBlocks(k).find(x=>x.id===pathSel);
   if(!b){ const P=plan(), tk=pTpl(k), n=pBlocks(k).filter(x=>!x.q&&!x.tr&&x.fix).length;
     return `<div class="panel path-panel"><div class="p-wm">${SECBG.today}</div><h2 class="p-title">旅程</h2>
-    <div class="p-desc"><p>その日の予定を、時間の道に置いていこう。地図を動かして照準を合わせ、A（置く）で予定を置ける。空いている所をタップすると、照準がそこへ動く。置いた予定は、押したまま動かすと時間をずらせる（下の端を動かすと長さが変わる）。</p></div>
+    <div class="p-desc"><p>その日の予定を、時間の道に道しるべとして立てていこう。地図を動かして照準を合わせ、A（立てる）で道しるべを立てられる。空いている所をタップすると、照準がそこへ動く。立てた道しるべは、押したまま動かすと時間をずらせる（下の端を動かすと長さが変わる）。</p></div>
     <div class="sec-h"><span>いつもの旅程</span></div>
     <p class="hint">起床・散歩・夕食のように毎日ほぼ同じ予定は、予定を開いて「毎日のこと」に印を付けてから、ここで型にする。何も置いていない日に、型をまとめて敷ける。</p>
     <div class="p-acts"><button class="btn small" data-act="pathsave" data-v="wk" ${n?'':'disabled'}>この日の予定を平日の型にする</button><button class="btn small" data-act="pathsave" data-v="we" ${n?'':'disabled'}>休日の型にする</button></div>
@@ -3530,7 +3548,7 @@ function pathInput(e){
   if(t.id==='pbWake'){ pSet(k,id,{wake:t.checked?1:0}); render(); return true; }
   return false;
 }
-// 道の上の操作：空いている所をタップ→予定を置く／予定を押したまま動かす→時間をずらす／下の端→長さを変える
+// 道の上の操作：空いている所をタップ→道しるべを立てる／予定を押したまま動かす→時間をずらす／下の端→長さを変える
 (function(){
   const snap=m=>Math.round(m/SNAP)*SNAP;
   const yOf=(e,tl)=>e.clientY-tl.getBoundingClientRect().top;
