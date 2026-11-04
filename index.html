@@ -437,6 +437,8 @@ select{max-width:100%;text-overflow:ellipsis}
 .mp-ic .dk{fill:#2e2614;stroke:#2e2614}
 .mp-ic.twr path{fill:#9f927a}.mp-ic.twr .gl{fill:#f0a640;stroke:#5a2f05;filter:drop-shadow(0 0 3px rgba(240,166,64,.9))}
 .mp-ic.run path{fill:#a99a78}
+.mp-ic.bdg rect{fill:#cfb06c;stroke:#4e3d1c;stroke-width:.9;filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.55))}
+.mp-ic.bdg .gy{fill:#4a3818;stroke:none}.mp-ic.bdg .gh{fill:#f6eed6;stroke:#4a3818;stroke-width:.7}.mp-ic.bdg .gm{fill:none;stroke:#4a3818;stroke-width:.7}
 .mp-lab{font-size:10px;font-weight:700;letter-spacing:.08em;fill:#efe3bf;paint-order:stroke;stroke:rgba(40,32,16,.8);stroke-width:2.6px;pointer-events:none}
 .mp-lab.wt{fill:#f2ead0;stroke:rgba(40,32,16,.8);font-weight:500}
 .mp-lab.mt{fill:#f5efd8;font-weight:500;letter-spacing:.14em}
@@ -3424,8 +3426,9 @@ function pMapArt(k,H){
     if(n>16&&lb<.5) labs.push([x,y+sp*.6+12,pNm('wd'+c+','+Math.round(v),'wood'),'']); } } o+='</g>';
   o+=bridges;
   // 村・馬宿・塔・遺跡（道のそば）＋そこへ向かう小道
-  const ic={village:'<g class="mp-ic vil"><path d="M-9 2l5-5 5 5v6h-10Z"/><path d="M1 0l5-5 5 5v8h-10Z"/></g>',
-    stable:'<g class="mp-ic stb"><path d="M-10 7 0-7 10 7Z"/><path d="M-3 7v-5h6v5" class="dk"/></g>',
+  // 村・馬宿はブレワイの地図と同じく、金色の角丸の札に家／馬の頭の絵
+  const ic={village:'<g class="mp-ic bdg"><rect x="-8" y="-8" width="16" height="16" rx="3.2"/><path class="gy" d="M-4.8.4 0-4.6 4.8.4V4.8H1.5V1.7H-1.5V4.8H-4.8Z"/></g>',
+    stable:'<g class="mp-ic bdg"><rect x="-8" y="-8" width="16" height="16" rx="3.2"/><path class="gh" d="M3.4 5.2 3.3 1Q3.1-2.6.5-4.4L-.3-6-1.1-4.3Q-3.3-3.5-4.7-1.1L-5.2.3Q-5 1.5-3.7 1.4L-1.9.7Q-1.2 2.8-1.7 5.2Z"/><path class="gm" d="M.5-4.4Q2.6-2.4 2.4 1.2"/></g>',
     tower:'<g class="mp-ic twr"><path d="M-4 9 -2.5-12h5L4 9Z"/><circle cy="-14" r="3.2" class="gl"/></g>',
     ruin:'<g class="mp-ic run"><path d="M-9 8V-3h3V8M-2 8V-7h3V8M5 8V1h3v7"/><path d="M-11 9h22" class="dk"/></g>'};
   let pois=''; for(let c=c0;c<=c1;c++){ const r=pRng('po'+c,5); for(let v=c*CW+r()*120;v<(c+1)*CW;v+=130+r()*150){ const y=v2y(v), t=['village','village','stable','stable','tower','ruin'][Math.floor(r()*6)], side=r()<.5?-1:1, d1=40+r()*50, d2=40+r()*30, q1=r(), q2=r();
