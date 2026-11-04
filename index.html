@@ -275,7 +275,7 @@ select{max-width:100%;text-overflow:ellipsis}
   body.pfull .sl-zoom{margin-left:auto}
   body.pfull .sl-zoom{font-size:0;gap:4px}body.pfull .sl-zoom button{font-size:14px}
   body.pfull [data-act=pathhere]{font-size:0;gap:0}body.pfull [data-act=pathhere] i{font-size:10px}
-  body.pfull .sl-p{font-size:12px}
+  body.pfull .sl-p{font-size:12px;letter-spacing:0;gap:5px}
   .sl-list.on{color:#fff;text-shadow:0 0 6px rgba(95,212,239,.8)}
   html.pfull-on,body.pfull{background:#08141b}
   /* ホーム画面から開いたiPhoneでは、画面の下の端が表示領域の外になる（ホームバーの分の余白はいらない）／上の端は時計の下がかすむので少し下げる */
@@ -307,7 +307,7 @@ select{max-width:100%;text-overflow:ellipsis}
 .sl-zoom{display:flex;align-items:center;gap:6px}
 .sl-zoom button{width:22px;height:20px;border-radius:4px;background:rgba(95,212,239,.85);color:#06121a;font-weight:800;line-height:1}
 .sl-zoom button:disabled{opacity:.3}
-.sl-p{display:flex;align-items:center;gap:6px;font-size:11.5px;color:#bfeefa;letter-spacing:.06em}
+.sl-p{display:flex;align-items:center;gap:6px;font-size:11.5px;color:#bfeefa;letter-spacing:.06em;white-space:nowrap;flex:none}
 .sl-p i{font-style:normal;font-size:10px;font-weight:800;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;background:rgba(95,212,239,.9);color:#06121a}
 .sl-a{font-size:13px;font-weight:700;color:#fff;text-shadow:0 0 6px rgba(95,212,239,.8)}
 .sl-a i{width:24px;height:24px;font-size:11px;background:#e9fbff;box-shadow:0 0 8px rgba(95,212,239,.9)}
@@ -425,6 +425,7 @@ select{max-width:100%;text-overflow:ellipsis}
 .rd-bed{fill:none;stroke:rgba(60,50,25,.55);stroke-width:5;stroke-linecap:round}
 .rd-edge{fill:none;stroke:#e6d9a8;stroke-width:2.6;stroke-linecap:round}
 .rd-ghost{opacity:.7}
+.sl-n{display:inline-block;min-width:17px;margin-left:5px;padding:0 5px;border-radius:9px;background:rgba(95,212,239,.22);color:#dff6ff;font-size:11px;font-weight:700;line-height:17px;text-align:center}
 .rd-hero{fill:none;stroke:#8be04e;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 2px rgba(139,224,78,.7))}
 .mp-snow{fill:#eee9d8;opacity:.85}
 .mp-lake{fill:#4f646d;stroke:#6f8792;stroke-width:7;stroke-linejoin:round;paint-order:stroke;filter:drop-shadow(0 0 1.5px rgba(30,24,12,.6))}
@@ -3234,7 +3235,7 @@ function pathList(){
   h+=`<div class="slate z${pZoom} ${pathBoot?'boot':''}">${SL_DEFS}<i class="sl-cn c1">${slCorner(0,0)}</i><i class="sl-cn c2">${slCorner(1,0)}</i><i class="sl-cn c3">${slCorner(0,1)}</i><i class="sl-cn c4">${slCorner(1,1)}</i>
     ${slBand('t')}<div class="sl-top"><button class="sl-tab" data-act="pathday" data-v="-1">${md(-1)} <i>L</i></button><div class="sl-title"><b>${isT?'今日の旅程':'旅程'}</b><small>${d.getMonth()+1}/${d.getDate()}（${'日月火水木金土'[d.getDay()]}）${holiday(k)?' '+holiday(k):''}</small></div><button class="sl-tab" data-act="pathday" data-v="1"><i>R</i> ${md(1)}</button></div>
     <div class="sl-body"><div class="sl-view" id="slView"><div class="tl road" id="tl" style="height:${H}px"><svg class="rd-svg" width="100%" height="${H}" aria-hidden="true">${svg}</svg>${regs}${hrs}${mtags}${cards}${nowM}</div></div><div class="sl-fx" aria-hidden="true"></div>${hud}${pathSheet&&unH?`<div class="sl-sheet">${unH}</div>`:''}<div class="sl-ret" id="slRet" aria-hidden="true"><i class="rt-c"></i><span class="rt-l" id="slRetL"></span></div></div>
-    <div class="sl-bot"><button class="sl-p sl-close" data-act="pathclose"><i>B</i>とじる</button>${un.length?`<button class="sl-p sl-list ${pathSheet?'on':''}" data-act="pathsheet"><i>X</i>冒険${un.length}</button>`:''}<span class="sl-zoom"><button data-act="pathzoom" data-v="-1" aria-label="ひろく見る" ${pZoom===0?'disabled':''}>−</button>ズーム<button data-act="pathzoom" data-v="1" aria-label="くわしく見る" ${pZoom===2?'disabled':''}>＋</button></span>${isT?'<button class="sl-p" data-act="pathhere">現在地<i>Y</i></button>':''}<button class="sl-p sl-a" data-act="pathA" id="slA"><span id="slAt">置く</span><i>A</i></button></div>${slBand('b')}</div>`;
+    <div class="sl-bot"><button class="sl-p sl-close" data-act="pathclose"><i>B</i>とじる</button>${un.length?`<button class="sl-p sl-list ${pathSheet?'on':''}" data-act="pathsheet"><i>X</i>置く冒険<b class="sl-n">${un.length}</b></button>`:''}<span class="sl-zoom"><button data-act="pathzoom" data-v="-1" aria-label="ひろく見る" ${pZoom===0?'disabled':''}>−</button>ズーム<button data-act="pathzoom" data-v="1" aria-label="くわしく見る" ${pZoom===2?'disabled':''}>＋</button></span>${isT?'<button class="sl-p" data-act="pathhere">現在地<i>Y</i></button>':''}<button class="sl-p sl-a" data-act="pathA" id="slA"><span id="slAt">置く</span><i>A</i></button></div>${slBand('b')}</div>`;
   pathBoot=false;
   return h;
 }
