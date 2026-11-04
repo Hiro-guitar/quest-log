@@ -432,7 +432,7 @@ select{max-width:100%;text-overflow:ellipsis}
 .mp-isle-h{fill:none;stroke:#6f8792;stroke-width:6;stroke-linejoin:round}
 .mp-isle{fill:#8a7440;stroke:#4a3d20;stroke-width:1}
 .mp-lake2{fill:#33424b}
-.mp-bridge{fill:#8a7440;stroke:#3e321a;stroke-width:1.2;stroke-linejoin:round}
+.mp-bridge-o{fill:none;stroke:#241d12;stroke-width:7;stroke-linecap:butt}.mp-bridge{fill:none;stroke:#5e4c2c;stroke-width:3.4;stroke-linecap:butt}
 .mp-ic path,.mp-ic circle{fill:#e7dbb2;stroke:#2e2614;stroke-width:1.1;stroke-linejoin:round}
 .mp-ic .dk{fill:#2e2614;stroke:#2e2614}
 .mp-ic.twr path{fill:#9f927a}.mp-ic.twr .gl{fill:#f0a640;stroke:#5a2f05;filter:drop-shadow(0 0 3px rgba(240,166,64,.9))}
@@ -3191,7 +3191,7 @@ function pathList(){
   // 焚き火（休む）は押したときに立つ。今日と先の日で、まだ休んでいなければ焚き火は出さず、道は24時まで続く
   const G=pGeo(k), slp=hm().sleep[k]||{}, openEnd=!G.slept, openTop=!pSleptBefore(k), gS=openTop?PATH_H0:G.s, gE=openEnd?PATH_H1:G.e;
   const gA=seg(PATH_H0-900/PX,gS), gB=seg(gE,PATH_H1+900/PX);
-  let svg=pMapArt(k,H)+`<path class="rd-bed" d="${gA}"/><path class="rd-edge rd-ghost" d="${gA}"/><path class="rd-bed" d="${gB}"/><path class="rd-edge rd-ghost" d="${gB}"/><path class="rd-bed" d="${seg(gS,gE)}"/><path class="rd-edge" d="${seg(gS,gE)}"/>`;
+  let svg=pMapArt(k,H)+`<path class="rd-bed" d="${gA}"/><path class="rd-edge rd-ghost" d="${gA}"/><path class="rd-bed" d="${gB}"/><path class="rd-edge rd-ghost" d="${gB}"/><path class="rd-bed" d="${seg(gS,gE)}"/><path class="rd-edge" d="${seg(gS,gE)}"/>`+pBridgeSvg;
   // 今日通ってきた道（ブレワイの「足跡モード」のように緑の線で残す）。寝ている間（休む〜起きた）は進まない
   const hn=!G.woke?G.s:G.slept?G.e:Math.max(G.s,Math.min(PATH_H1,now)), asleep=isT&&(!G.woke||G.slept);
   const foot=isT&&G.woke&&hn>G.s?`<path class="rd-hero" d="${seg(G.s,hn)}"/>`:'';
@@ -3308,9 +3308,33 @@ const pRamp=t=>{ for(let i=1;i<P_RAMP.length;i++){ if(t<=P_RAMP[i][0]){ const [t
 // 地形の絵は重いので、少しずつ（画面を止めずに）描く。今日と前後の日は先に描いておく
 const pTerCache={}, pTerOrd=[], pTerJobs=[]; let pTerBusy=false, pTerShown='';
 const pTerKey=(k,off)=>k+'|'+PX+'|'+pW+'|'+(off==null?pOffOf(k):off);
+// 川の流れ（世界に固定）：高い所から坂を下り、近くの湖か地図の端（海）へ。曲がりくねり、下流ほど太く、ところどころ広がる
+let pBridgeSvg=''; const pRivCache={};
+function pRivers(H){ const it=pRiversGen(H); let r; while(!(r=it.next()).done); return r.value; }
+function* pRiversGen(H){ const key=PX+'|'+pW+'|'+pOff+'|'+H; if(pRivCache[key]) return pRivCache[key];
+  const W=pW, Y0=-900, Y1=H+900, off=pOff, CW=300, v2y=v=>(v-off)*PX, vA=off+Y0/PX, vB=off+Y1/PX, c0=Math.floor(vA/CW), c1=Math.floor(vB/CW), out=[];
+  const lakes=[]; for(let vv=Math.floor((vA-400)/30)*30;vv<vB+400;vv+=30) for(let xx=15;xx<W;xx+=30) if(pHgtC(xx,v2y(vv),false)<P_SEA-.02) lakes.push([xx,vv]);
+  for(let c=(c0-3)*2;c<=(c1+3)*2+1;c++){ const r=pRng('rv'+c,5); if(r()>.8) continue;
+    let x=0,v=0,ok=false; for(let t=0;t<6&&!ok;t++){ x=20+r()*(W-40); v=c*CW/2+r()*CW/2; ok=pHgtC(x,v2y(v),false)>.4; } if(!ok) continue;
+    let tg=null, td=1e9; lakes.forEach(([lx,lv])=>{ const d=Math.hypot(lx-x,lv-v); if(d<td&&d>40&&d<760){ td=d; tg=[lx,lv]; } }); if(!tg) tg=[x<W/2?-40:W+40, v+(r()-.5)*300];
+    const ph=r()*100, pts=[]; let dx=0,dv=0, wet=false;
+    for(let st=0;st<900;st++){ const y=v2y(v); pts.push([x,v]); if(pHgt(x,y)<P_SEA&&st>3){ wet=true; break; } if(x<-12||x>W+12){ wet=true; break; }
+      const e=5, gx=pHgtC(x+e,y,false)-pHgtC(x-e,y,false), gv=pHgtC(x,v2y(v+e),false)-pHgtC(x,v2y(v-e),false), gl=Math.hypot(gx,gv)||1, ax=tg[0]-x, av=tg[1]-v, al=Math.hypot(ax,av)||1;
+      const pull=Math.min(1,.35+st/400); let tx=-gx/gl*(1-pull)+ax/al*pull, tv=-gv/gl*(1-pull)+av/al*pull;
+      const mw=(pNoise(st*.03+ph,ph)-.5)*1.1, ca=Math.cos(mw), sa=Math.sin(mw); [tx,tv]=[tx*ca-tv*sa,tx*sa+tv*ca];
+      dx=dx*.87+tx*.13; dv=dv*.87+tv*.13; const dl=Math.hypot(dx,dv)||1; x+=dx/dl*4; v+=dv/dl*4; }
+    if(!wet||pts.length<24) continue;
+    let P=pts.map(([x,v])=>[x,v2y(v)]); for(let it=0;it<2;it++){ const Q=[P[0]]; for(let i=0;i<P.length-1;i++){ const [a1,b1]=P[i],[a2,b2]=P[i+1]; Q.push([a1*.75+a2*.25,b1*.75+b2*.25],[a1*.25+a2*.75,b1*.25+b2*.75]); } Q.push(P[P.length-1]); P=Q; }
+    const n=P.length, w0=3+r()*2.5, w1=w0+6+r()*8, ph2=r()*50, ws=P.map((_,i)=>{ const t=i/n; return (w0+(w1-w0)*Math.sqrt(t))*(.62+.8*pNoise(i*.018+ph2,7.7)); });
+    out.push({c,P,ws,bl:r()<.7,fl:r()<.15,lp:.35+r()*.3}); yield; }
+  const ks=Object.keys(pRivCache); if(ks.length>12) delete pRivCache[ks[0]]; return pRivCache[key]=out; }
 function* pTerGen(H){
   const G=3, Y0=-900, gw=Math.ceil(pW/G)+2, gh=Math.ceil((H+1800)/G)+2, g=new Float32Array(gw*gh);
   for(let j=0;j<gh;j++){ for(let i=0;i<gw;i++) g[j*gw+i]=pHgt(i*G,Y0+j*G); if(j%24===0) yield; }
+  // 川を水として彫る：真ん中は深く、岸に近いほど浅い（湖と同じ色・同じ岸の描き方になる）
+  const rit=pRiversGen(H); let rres; while(!(rres=rit.next()).done) yield; const RV=rres.value;
+  for(const R of RV){ const P=R.P; for(let k=0;k<P.length;k++){ const [px,py]=P[k], rr=R.ws[k]/2, i0=Math.max(0,Math.floor((px-rr-6)/G)), i1=Math.min(gw-1,Math.ceil((px+rr+6)/G)), j0=Math.max(0,Math.floor((py-rr-6-Y0)/G)), j1=Math.min(gh-1,Math.ceil((py+rr+6-Y0)/G));
+      for(let j=j0;j<=j1;j++) for(let i=i0;i<=i1;i++){ const d=Math.hypot(i*G-px,Y0+j*G-py); if(d>=rr+6) continue; const t=d/rr, tgt=d<rr?P_SEA-.003-.06*(1-t*t):P_SEA-.003+.01*(d-rr), o=j*gw+i; if(g[o]>tgt) g[o]=tgt; } } yield; }
   const R=Math.min(2,window.devicePixelRatio||1)>1.5?1.5:1, cw=Math.ceil(pW*R), ch=Math.ceil((H+1800)*R), hs=new Float32Array(cw*ch);
   for(let j=0;j<ch;j++){ const gy=j/R/G, j0=Math.min(gh-2,gy|0), fy=gy-j0; for(let i=0;i<cw;i++){ const gx=i/R/G, i0=Math.min(gw-2,gx|0), fx=gx-i0, o=j0*gw+i0, a1=g[o], b1=g[o+1], c1=g[o+gw], d1=g[o+gw+1]; hs[j*cw+i]=a1+(b1-a1)*fx+(c1-a1)*fy+(a1-b1-c1+d1)*fx*fy; } if(j%200===0) yield; }
   const cv=document.createElement('canvas'); cv.width=cw; cv.height=ch; const cx=cv.getContext('2d'), im=cx.createImageData(cw,ch), d=im.data, CL=34, SH=9*1.5/(R*G/2);
@@ -3363,32 +3387,14 @@ function pMapArt(k,H){
   let o=`<rect class="mp-ter-bg" x="0" y="${Y0}" width="${W}" height="${Y1-Y0}"/><image class="mp-ter ${tu?'on':''}" data-k="${tk}" href="${tu||''}" x="0" y="${Y0}" width="${W}" height="${Y1-Y0}" preserveAspectRatio="none"/>`;
   const labs=[], inR=y=>y>Y0+10&&y<Y1-10, far=(x,y,d)=>Math.abs(x-pRX(y))>d;
   const water=[], nearWater=(x,y,d)=>pHgt(x,y)<P_SEA+.03||(d>0&&(pHgt(x+d,y)<P_SEA||pHgt(x-d,y)<P_SEA||pHgt(x,y+d)<P_SEA||pHgt(x,y-d)<P_SEA))||water.some(([wx,wy,wr])=>Math.hypot(x-wx,y-wy)<wr+d);
-  // 川：ブレワイの地図のように、高い所から低い方へ曲がりくねって流れ、湖や海に注ぐ。下流ほど太く、水と同じ色で岸の線がつく
-  let bridges='', wt=''; const lakes=[]; for(let vv=Math.floor((vA-400)/30)*30;vv<vB+400;vv+=30) for(let xx=15;xx<W;xx+=30) if(pHgtC(xx,v2y(vv),false)<P_SEA-.02) lakes.push([xx,vv]);
-  for(let cc=(c0-3)*2;cc<=(c1+3)*2+1;cc++){ const c=cc, r=pRng('rv'+c,5); if(r()>.8) continue;
-    let x=0,v=0,ok=false; for(let t=0;t<6&&!ok;t++){ x=20+r()*(W-40); v=c*CW/2+r()*CW/2; ok=pHgtC(x,v2y(v),false)>.4; } if(!ok) continue;
-    // 行き先：近くの湖（なければ地図の端＝海へ）。坂を下る向きと行き先へ向かう向きをまぜて、曲がりくねりながら進む
-    let tg=null, td=1e9; lakes.forEach(([lx,lv])=>{ const d=Math.hypot(lx-x,lv-v); if(d<td&&d>40&&d<760){ td=d; tg=[lx,lv]; } }); if(!tg) tg=[x<W/2?-40:W+40, v+(r()-.5)*300];
-    const ph=r()*100, pts=[]; let dx=0,dv=0, wet=false;
-    for(let st=0;st<900;st++){ const y=v2y(v); pts.push([x,v]); if(pHgt(x,y)<P_SEA&&st>3){ wet=true; break; } if(x<-12||x>W+12){ wet=true; break; }
-      const e=5, gx=pHgtC(x+e,y,false)-pHgtC(x-e,y,false), gv=pHgtC(x,v2y(v+e),false)-pHgtC(x,v2y(v-e),false), gl=Math.hypot(gx,gv)||1, ax=tg[0]-x, av=tg[1]-v, al=Math.hypot(ax,av)||1;
-      const pull=Math.min(1,.35+st/400); let tx=-gx/gl*(1-pull)+ax/al*pull, tv=-gv/gl*(1-pull)+av/al*pull;
-      const mw=(pNoise(st*.03+ph,ph)-.5)*1.1, ca=Math.cos(mw), sa=Math.sin(mw); [tx,tv]=[tx*ca-tv*sa,tx*sa+tv*ca];
-      dx=dx*.87+tx*.13; dv=dv*.87+tv*.13; const dl=Math.hypot(dx,dv)||1; x+=dx/dl*4; v+=dv/dl*4; }
-    if(!wet||pts.length<24) continue;
-    // なめらかに（角を落とす）
-    let P=pts.map(([x,v])=>[x,v2y(v)]); for(let it=0;it<3;it++){ const Q=[P[0]]; for(let i=0;i<P.length-1;i++){ const [a1,b1]=P[i],[a2,b2]=P[i+1]; Q.push([a1*.75+a2*.25,b1*.75+b2*.25],[a1*.25+a2*.75,b1*.25+b2*.75]); } Q.push(P[P.length-1]); P=Q; }
-    if(!P.some(([x,y])=>inR(y))) continue;
-    const n=P.length, w0=1.6+r()*1.2, w1=w0+2.8+r()*3.2, CH=20; let ol='', wa='';
-    for(let i=0;i<n-1;i+=CH){ const seg=P.slice(i,Math.min(n,i+CH+1)), w=w0+(w1-w0)*(i/n), d='M'+seg.map(([x,y])=>x.toFixed(1)+' '+y.toFixed(1)).join('L');
-      ol+=`<path class="mp-river-o" d="${d}" style="stroke-width:${(w+2.4).toFixed(1)}"/>`; wa+=`<path class="mp-river" d="${d}" style="stroke-width:${w.toFixed(1)}"/>`; }
-    wt+=ol+wa; P.forEach(([x,y],i)=>{ if(i%3===0) water.push([x,y,(w0+(w1-w0)*i/n)/2+3]); });
-    // 道とまじわる所に橋（道の盛り土の上を渡る）
+  // 川（地形の絵に水として彫りこんである）：橋・名前・水辺の判定だけここで
+  let bridges=''; const RV=pRivers(H);
+  RV.forEach(R=>{ const P=R.P, n=P.length; if(!P.some(([x,y])=>inR(y))) return; P.forEach(([x,y],i)=>{ if(i%4===0) water.push([x,y,R.ws[i]/2+3]); });
     let bx=null,bd=1e9,bi=0; P.forEach(([x,y],i)=>{ const dd=Math.abs(x-pRX(y)); if(dd<bd){ bd=dd; bx=[x,y]; bi=i; } });
-    if(bx&&bd<6){ const [x,y]=bx, w=w0+(w1-w0)*bi/n, hw=w/2+6, y0=y-hw, y1=y+hw; let L='',R=''; for(let yy=y0;yy<=y1+.01;yy+=(y1-y0)/6){ const cx=pRX(yy); L+=(L?'L':'M')+(cx-8).toFixed(1)+' '+yy.toFixed(1); R=`L${(cx+8).toFixed(1)} ${yy.toFixed(1)}`+R; }
-      bridges+=`<path class="mp-bridge" d="${L}${R}Z"/>`; if(r()<.7) labs.push([x+14,y-10,pNm('br'+c,'bridge'),'']); }
-    const lp=P[Math.floor(n*(.35+r()*.3))]; if(lp) labs.push([lp[0]+8,lp[1]-8,pNm('rv'+c,r()<.15?'falls':'river'),'wt']); }
-  o+=wt;
+    if(bx&&bd<4){ const [x,y]=bx, hw=R.ws[bi]/2+3; let d=''; for(let yy=y-hw;yy<=y+hw+.01;yy+=hw/4) d+=(d?'L':'M')+pRX(yy).toFixed(1)+' '+yy.toFixed(1);
+      bridges+=`<path class="mp-bridge-o" d="${d}"/><path class="mp-bridge" d="${d}"/>`; if(R.bl) labs.push([x+14,y-10,pNm('br'+R.c,'bridge'),'']); }
+    const lp=P[Math.floor(n*R.lp)]; if(lp) labs.push([lp[0]+R.ws[Math.floor(n*R.lp)]/2+6,lp[1]-6,pNm('rv'+R.c,R.fl?'falls':'river'),'wt']); });
+  pBridgeSvg=bridges; bridges='';
   // 山・湖の名前：世界に固定した格子で、まわりでいちばん高い所／低い所を探す
   { const S=34, R4=4, gv0=Math.ceil((vA+40/PX)/S), gv1=Math.floor((vB-40/PX)/S), hAt=(gx,gv)=>pHgt(20+gx*S,v2y(gv*S)), nx=Math.floor((W-40)/S);
     for(let gv=gv0;gv<=gv1;gv++) for(let gx=0;gx<=nx;gx++){ const h=hAt(gx,gv), x=20+gx*S, y=v2y(gv*S);
