@@ -437,6 +437,8 @@ select{max-width:100%;text-overflow:ellipsis}
 .mp-ic .dk{fill:#2e2614;stroke:#2e2614}
 .mp-ic.twr path{fill:#9f927a}.mp-ic.twr .gl{fill:#f0a640;stroke:#5a2f05;filter:drop-shadow(0 0 3px rgba(240,166,64,.9))}
 .mp-ic.run path{fill:#a99a78}
+.mp-ic.sk path{fill:#3db8ff;stroke:#e9fbff;stroke-width:.7;stroke-linejoin:round}.mp-ic.sk .dt{fill:#e9fbff;stroke:none}.mp-ic.sk{filter:drop-shadow(0 0 2px #1d8fff) drop-shadow(0 0 4px rgba(60,180,255,.8))}
+.mp-ic.shr rect{fill:#1a7fd0;stroke:#c9f3ff;stroke-width:.9}.mp-ic.shr path{fill:#e6faff;stroke:none}.mp-ic.shr{filter:drop-shadow(0 0 3px rgba(60,180,255,.85))}
 .mp-ic.bdg rect{fill:#cfb06c;stroke:#4e3d1c;stroke-width:.9;filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.55))}
 .mp-ic.bdg .gy{fill:#4a3818;stroke:none}.mp-ic.bdg .gh{fill:#f6eed6;stroke:#4a3818;stroke-width:.7}.mp-ic.bdg .gm{fill:none;stroke:#4a3818;stroke-width:.7}
 .mp-lab{font-size:10px;font-weight:700;letter-spacing:.08em;fill:#efe3bf;paint-order:stroke;stroke:rgba(40,32,16,.8);stroke-width:2.6px;pointer-events:none}
@@ -3281,7 +3283,7 @@ function pCliff(k,H,m0,m1,open,openT){
 }
 // 地名：ブレワイの地図のような「〜地方」「〜村」「〜馬宿」…を日ごとに組み合わせる（すべてこの旅のための架空の地名）
 const PN_A=['ミズナラ','カゼノネ','シラユキ','アカツチ','ホタル','ツユクサ','コケムス','ヒバリ','タソガレ','イワツツジ','ハヤテ','サザナミ','ヒカゲ','ユウナギ','アオバ','カタクリ','ナギサ','オボロ','ツララ','キリフ','ヒイラギ','クモマ','ススキ','ヤマセ','ワタリ','コダマ','ハルカ','トキワ','アサギ','ムラサメ','カゲロウ','ヨモギ','シノノメ','ユキワリ','マツカゼ','イナホ','フブキ','ホムラ','サギリ','アマツ','イソラ','ウツギ','エニシ','オモダカ','カスミ','キササゲ','クヌギ','ケヤキ','コノハ','サクヤ','シオン','スズラン','セキレイ','タチバナ','チドリ','ツバキ','トウゲ','ナツメ','ニレ','ヌマタ','ネムノキ','ノギク','ハクロ','フジナミ','ホオズキ','マソホ','ミサゴ','ムクゲ','モズ','ヤマブキ','ユズリハ','ヨシキリ','リンドウ','ワカバ','アケボノ','イサリビ','ウスズミ','エボシ','オキナ','カガリ','カワセミ','クサナギ','コガネ','サンゴ','シジマ','スミレ','セセラギ','タマユラ','ツクバネ','トバリ','ナナカマド','ハシバミ','ヒスイ','ホシクズ','マホロ','ミナモ','ヤマナミ','ユウヅツ','ワダツミ'];
-const PN={region:'地方',village:'村',stable:'馬宿',lake:'湖',mount:'山',river:'川',tower:'の塔',ruin:'の遺跡',wood:'の森',bridge:'大橋',plain:'平原',hill:'丘陵',vale:'渓谷',high:'高原',pass:'峠',marsh:'湿原',falls:'の滝'};
+const PN={region:'地方',village:'村',stable:'馬宿',lake:'湖',mount:'山',river:'川',tower:'の塔',ruin:'の遺跡',shrine:'の祠',wood:'の森',bridge:'大橋',plain:'平原',hill:'丘陵',vale:'渓谷',high:'高原',pass:'峠',marsh:'湿原',falls:'の滝'};
 // 似た名前（rv12とrv13など）でも最初の値がばらけるよう、混ぜてから使う
 function pRng(k,salt){ let h=salt; for(const c of k) h=(h*131+c.charCodeAt(0))>>>0; h=Math.imul(h^(h>>>16),2246822507)>>>0; h=Math.imul(h^(h>>>13),3266489909)>>>0; h=(h^(h>>>16))>>>0; return ()=>{ h=(h*1664525+1013904223)>>>0; return h/4294967296; }; }
 function pNamer(k){ const r=pRng(k,991), used=new Set(); return t=>{ let n; for(let i=0;i<20;i++){ n=PN_A[Math.floor(r()*PN_A.length)]; if(!used.has(n)) break; } used.add(n); return n+PN[t]; }; }
@@ -3429,13 +3431,15 @@ function pMapArt(k,H){
   // 村・馬宿はブレワイの地図と同じく、金色の角丸の札に家／馬の頭の絵
   const ic={village:'<g class="mp-ic bdg"><rect x="-8" y="-8" width="16" height="16" rx="3.2"/><path class="gy" d="M-4.8.4 0-4.6 4.8.4V4.8H1.5V1.7H-1.5V4.8H-4.8Z"/></g>',
     stable:'<g class="mp-ic bdg"><rect x="-8" y="-8" width="16" height="16" rx="3.2"/><path class="gh" d="M3.4 5.2 3.3 1Q3.1-2.6.5-4.4L-.3-6-1.1-4.3Q-3.3-3.5-4.7-1.1L-5.2.3Q-5 1.5-3.7 1.4L-1.9.7Q-1.2 2.8-1.7 5.2Z"/><path class="gm" d="M.5-4.4Q2.6-2.4 2.4 1.2"/></g>',
-    tower:'<g class="mp-ic twr"><path d="M-4 9 -2.5-12h5L4 9Z"/><circle cy="-14" r="3.2" class="gl"/></g>',
-    ruin:'<g class="mp-ic run"><path d="M-9 8V-3h3V8M-2 8V-7h3V8M5 8V1h3v7"/><path d="M-11 9h22" class="dk"/></g>'};
-  let pois=''; for(let c=c0;c<=c1;c++){ const r=pRng('po'+c,5); for(let v=c*CW+r()*120;v<(c+1)*CW;v+=130+r()*150){ const y=v2y(v), t=['village','village','stable','stable','tower','ruin'][Math.floor(r()*6)], side=r()<.5?-1:1, d1=40+r()*50, d2=40+r()*30, q1=r(), q2=r();
+    // シーカータワー：青く光る塔の形（札なし）。祠：青い菱形の札。遺跡はブレワイと同じく印を付けず名前だけ
+    tower:'<g class="mp-ic sk"><path d="M0-10 4.2-3.6H-4.2Z"/><path d="M-5.6-2.4H5.6V-.6H1.6L4.8 2.6 0 9-4.8 2.6-1.6-.6H-5.6Z"/><circle cy="-5.6" r=".9" class="dt"/></g>',
+    shrine:'<g class="mp-ic shr"><rect x="-5.6" y="-5.6" width="11.2" height="11.2" rx="2" transform="rotate(45)"/><path d="M-2.6 3V-.4Q-2.6-3 0-3 2.6-3 2.6-.4V3H1.1V-.2Q1.1-1.5 0-1.5-1.1-1.5-1.1-.2V3Z"/></g>',
+    ruin:''};
+  let pois=''; for(let c=c0;c<=c1;c++){ const r=pRng('po'+c,5); for(let v=c*CW+r()*120;v<(c+1)*CW;v+=130+r()*150){ const y=v2y(v), t=['village','village','stable','stable','tower','ruin','shrine','shrine'][Math.floor(r()*8)], side=r()<.5?-1:1, d1=40+r()*50, d2=40+r()*30, q1=r(), q2=r();
     let x=pRX(y)+side*d1; if(x<20||x>W-90) x=pRX(y)-side*d2; if(x<14||x>W-20||nearWater(x,y,8)) continue;
     const sx=pRX(y-10), mx=(sx+x)/2+(q1-.5)*30, my=y-4+(q2-.5)*30; let wet=false; for(let t=0;t<=1;t+=.05){ const u=1-t, qx=u*u*sx+2*u*t*mx+t*t*x, qy=u*u*(y-10)+2*u*t*my+t*t*(y+4); if(!dry(qx,qy)){ wet=true; break; } }
     if(!wet) trails+=`<path class="mp-trail" d="M${sx.toFixed(1)} ${(y-10).toFixed(1)}Q${mx.toFixed(1)} ${my.toFixed(1)} ${x.toFixed(1)} ${(y+4).toFixed(1)}"/>`;
-    pois+=`<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)})">${ic[t]}</g>`; labs.push([x+14,y+4,pNm('po'+c+','+Math.round(v),t),'poi',x]); } }
+    if(ic[t]) pois+=`<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)})">${ic[t]}</g>`; labs.push([ic[t]?x+14:x-10,y+4,pNm('po'+c+','+Math.round(v),t),'poi',ic[t]?x:null]); } }
   // 遠くへ向かう小道（水辺に着いたらそこで終わる）
   for(let c=c0;c<=c1;c++){ const r=pRng('tl'+c,5); if(r()>.7) continue; const y=v2y(c*CW+r()*CW), sx=pRX(y), ex=sx<W/2?W+10:-10, ey=y+(r()-.5)*260, jit=[...Array(16)].map(()=>(r()-.5)*24); let dd=`M${sx.toFixed(1)} ${y.toFixed(1)}`, px=sx, py=y, n=0;
     for(let t=1;t<=8;t++){ const xx=sx+(ex-sx)*t/8+jit[t*2-2], yy=y+(ey-y)*t/8+jit[t*2-1]; let ok=true; for(let f=.1;f<=1;f+=.1) if(!dry(px+(xx-px)*f,py+(yy-py)*f)){ ok=false; break; } if(!ok) break; dd+=`L${xx.toFixed(1)} ${yy.toFixed(1)}`; px=xx; py=yy; n++; }
