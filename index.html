@@ -1245,7 +1245,7 @@ function renderHud(){
 // 旅程は上の帯（冒険手帳・ポーチと同じ並び）から開く。中身は冒険手帳の画面を借りて出している
 const curTab=()=>tab==='list'&&listCat==='path'?'path':tab;
 function goTab(v){
-  if(v==='path'){ if(listCat!=='path'){ pathBoot=true; pathScrolled=null; listCat='path'; } tab='list'; }
+  if(v==='path'){ if(listCat!=='path'){ pathBoot=true; pathScrolled=null; listCat='path'; dayView=pJDay(); } tab='list'; }
   else { if(listCat==='path'){ pDropEmpty(); pathSel=null; pathSheet=false; listCat='today'; dayView=ymd(); } tab=v; }
   if(window.innerWidth<=820) selId=null; render();
 }
@@ -3077,7 +3077,7 @@ document.addEventListener('keydown',e=>{
 });
 
 /* ---------- 旅程（その日の予定を時間の道に置く） ---------- */
-const PATH_H0=4*60, PATH_H1=24*60, SNAP=15, pCardX=118, PZOOM=[.55,1,1.7];
+const PATH_H0=4*60, PATH_H1=28*60, SNAP=15, pCardX=118, PZOOM=[.55,1,1.7];
 let pZoom=1, PX=PZOOM[1], pathBoot=false;
 // 旅の世界は一枚の大きな地図：日ごとにその続きの部分を見る（前の日の焚き火の場所＝次の日の目覚めの場所）
 let pOff=0;
@@ -3102,7 +3102,9 @@ let pathSheet=false;
 let puSel=null; // まとめて置く工程を選んでいる途中 {q, ids:Set}
 let pathSel=null, pathScrolled=null, pathDrag=null, pathFocus=null;
 const pm2y=m=>(m-PATH_H0)*PX;
-const pfmt=m=>Math.floor(m/60)+':'+String(m%60).padStart(2,'0');
+const pfmt=m=>Math.floor((m%1440)/60)+':'+String(m%60).padStart(2,'0');
+// 旅の「今日」：0時を過ぎても4時までは前の日の旅の続き（0時すぎに寝ることもあるので）。時刻は24時より先を25:00…のように数える
+const pJDay=()=>pnow()<PATH_H0?ymd(new Date(Date.now()-DAY)):ymd(), pJNow=()=>{ const n=pnow(); return n<PATH_H0?n+1440:n; };
 const pScroll=y=>{ window.scrollTo({top:y}); document.body.scrollTo({top:y}); }, pScrollY=()=>window.scrollY||document.body.scrollTop||0;
 const pnow=()=>{ const d=new Date(); return d.getHours()*60+d.getMinutes(); };
 function plan(){ state.plan=state.plan||{}; if(!state.plan.d||typeof state.plan.d!=='object') state.plan.d={}; if(!state.plan.tpl||typeof state.plan.tpl!=='object') state.plan.tpl={}; return state.plan; }
@@ -3122,7 +3124,7 @@ function pAutoPlace(k){
     const [id,b]=ex; if(b.sids) return; if(!b.del&&b.at!==x.time&&(!b.at||b.s===pTm(b.at))){ const len=b.e-b.s; day[id]={...b,s:m,e:Math.min(PATH_H1,m+len),at:x.time,u:now}; ch=true; } });
   if(ch){ P.d={...P.d,[k]:day}; save(); } }
 // 道しるべを動かしたら、冒険の「やる時刻」もそろえる（時刻が入っていた物だけ）
-function pSyncTime(k,id){ const b=(plan().d[k]||{})[id]; if(!b||b.del||!b.q) return; const r=pRef(b); if(!r) return; const t=pHM(b.s), now=Date.now();
+function pSyncTime(k,id){ const b=(plan().d[k]||{})[id]; if(!b||b.del||!b.q||b.s>=1440) return; const r=pRef(b); if(!r) return; const t=pHM(b.s), now=Date.now();
   // 旅程に置いた冒険は、冒険手帳の「やる日・やる時刻」もその道しるべに合わせる（工程があるチャレンジは工程に入れる）
   const os=r.ss?r.ss:[r.s||r.q]; let ch=0; os.forEach(x=>{ if(x.doDate!==k||x.doTime!==t){ if(x.doDate!==k) x.carry=0; x.doDate=k; x.doTime=t; ch=1; } }); if(ch){ r.q.u=now; if(!r.ss) b.at=t; save(); } }
 // 冒険手帳でやる日を別の日に変えた冒険（工程）は、その日の旅程から外す（今日から先の日だけ。過去の旅程は記録として残す）
@@ -3133,7 +3135,7 @@ function pPrune(k){ if(k<ymd()) return; const P=plan(), day={...(P.d[k]||{})}, n
   if(ch){ P.d={...P.d,[k]:day}; save(); } }
 // すでに旅程に置いてある冒険（今日から先）の時刻を、冒険手帳にも入れておく。やる日を別の日に変えた物はさわらない
 function pBackfill(){ const t=ymd(), P=plan(); let n=0;
-  Object.keys(P.d).filter(k=>k>=t).forEach(k=>Object.entries(P.d[k]||{}).forEach(([id,b])=>{ if(!b||b.del||!b.q) return; const r=pRef(b); if(!r) return; const tm=pHM(b.s);
+  Object.keys(P.d).filter(k=>k>=t).forEach(k=>Object.entries(P.d[k]||{}).forEach(([id,b])=>{ if(!b||b.del||!b.q||b.s>=1440) return; const r=pRef(b); if(!r) return; const tm=pHM(b.s);
     (r.ss?r.ss:[r.s||r.q]).forEach(x=>{ if(x.doDate===k&&x.doTime!==tm&&!x.done){ x.doTime=tm; n++; } }); if(!r.ss&&b.at!==tm) b.at=tm; }));
   if(n) save(); return n; }
 // 道しるべを外したら、冒険手帳の時刻だけ外す（やる日は残す）
@@ -3155,7 +3157,7 @@ function pUnplaced(k){
   return out;
 }
 // 空いている時間を探す（今より後、なければ朝から）
-function pFree(k,len){ const bl=pBlocks(k).map(b=>({...b,s:b.s-(b.pre||0),e:b.e+(b.post||0)})), start=k===ymd()?Math.ceil(Math.max(pnow(),6*60)/SNAP)*SNAP:9*60;
+function pFree(k,len){ const bl=pBlocks(k).map(b=>({...b,s:b.s-(b.pre||0),e:b.e+(b.post||0)})), start=k===pJDay()?Math.ceil(Math.max(pJNow(),6*60)/SNAP)*SNAP:9*60;
   for(let s=start;s+len<=PATH_H1;s+=SNAP){ if(!bl.some(b=>b.s<s+len&&b.e>s)) return s; }
   for(let s=6*60;s+len<=PATH_H1;s+=SNAP){ if(!bl.some(b=>b.s<s+len&&b.e>s)) return s; }
   return start; }
@@ -3163,7 +3165,7 @@ function pTpl(k){ const wd=new Date(k+'T00:00:00').getDay(); return (wd===0||wd=
 
 function pathList(){
   pPrune(dayView); pAutoPlace(dayView); pSeedRoad(dayView); pW=Math.max(300,(($('slView')||{}).clientWidth)||(document.body.classList.contains('pfull')?window.innerWidth:(($('list')||{}).clientWidth||380)));
-  const k=dayView, d=new Date(k+'T00:00:00'), isT=k===ymd(), bl=pBlocks(k), P=plan(), tk=pTpl(k), tpl=(P.tpl[tk]||{}).b||[];
+  const k=dayView, d=new Date(k+'T00:00:00'), isT=k===pJDay(), bl=pBlocks(k), P=plan(), tk=pTpl(k), tpl=(P.tpl[tk]||{}).b||[];
   let h=`<div class="cat-bar"><div class="cat-name">旅程</div></div>`;
   const un=pUnplaced(k), unAt=h.length;
   if(un.length){ const grp=[]; un.forEach((x,i)=>{ const key=x.sid?x.q:'_'+i; let g=grp.find(z=>z.key===key); if(!g){ g={key,x,items:[]}; grp.push(g); } g.items.push([x,i]); });
@@ -3175,17 +3177,17 @@ function pathList(){
   if(!bl.length) h+=`<div class="path-empty">${tpl.length?`<button class="btn" data-act="pathtpl">いつもの旅程（${tk==='we'?'休日':'平日'}）を敷く</button>`:''}<p class="hint">地図を動かして照準を合わせ、A で予定を置けます</p></div>`;
   const unH=h.slice(unAt);
   // 時間の道：1日を地図の上の一本の道にして、予定は道しるべ（ピン）として立てる
-  const now=pnow(), H=pm2y(PATH_H1)+10, L=b=>pathDrag&&pathDrag.id===b.id?{...b,s:pathDrag.s,e:pathDrag.e}:b;
+  const now=pJNow(), H=pm2y(PATH_H1)+10, L=b=>pathDrag&&pathDrag.id===b.id?{...b,s:pathDrag.s,e:pathDrag.e}:b;
   const bls=bl.map(L).sort((a,b)=>a.s-b.s);
   const seg=(m0,m1)=>{ let d=''; for(let y=pm2y(m0);;y+=6){ const yy=Math.min(y,pm2y(m1)); d+=(d?'L':'M')+pRX(yy).toFixed(1)+' '+yy.toFixed(1); if(yy>=pm2y(m1)) break; } return d; };
   // 焚き火（休む）は押したときに立つ。今日と先の日で、まだ休んでいなければ焚き火は出さず、道は24時まで続く
-  const G=pGeo(k), slp=hm().sleep[k]||{}, openEnd=!G.slept&&k>=ymd(), gE=openEnd?PATH_H1:G.e;
+  const G=pGeo(k), slp=hm().sleep[k]||{}, openEnd=!G.slept&&k>=pJDay(), gE=openEnd?PATH_H1:G.e;
   const gA=seg(PATH_H0-900/PX,G.s), gB=seg(gE,PATH_H1+900/PX);
   let svg=pMapArt(k,H)+`<path class="rd-bed" d="${gA}"/><path class="rd-edge rd-ghost" d="${gA}"/><path class="rd-bed" d="${gB}"/><path class="rd-edge rd-ghost" d="${gB}"/><path class="rd-bed" d="${seg(G.s,gE)}"/><path class="rd-edge" d="${seg(G.s,gE)}"/>`;
   // 今日通ってきた道（ブレワイの「足跡モード」のように緑の線で残す）。寝ている間（休む〜起きた）は進まない
   const hn=!G.woke?G.s:G.slept?G.e:Math.max(G.s,Math.min(PATH_H1,now)), asleep=isT&&(!G.woke||G.slept);
   const foot=isT&&G.woke&&hn>G.s?`<path class="rd-hero" d="${seg(G.s,hn)}"/>`:'';
-  let hrs=''; for(let m=PATH_H0+60;m<PATH_H1;m+=60){ const y=pm2y(m), x=pRX(y); svg+=`<circle class="rd-stone" cx="${x.toFixed(1)}" cy="${y}" r="2"/>`; hrs+=`<span class="rd-hr ${m%180===0?'big':''}" style="top:${y}px;left:${(x<52?x+8:x-46).toFixed(1)}px;${x<52?'text-align:left':''}">${m/60}:00</span>`; }
+  let hrs=''; for(let m=PATH_H0+60;m<PATH_H1;m+=60){ const y=pm2y(m), x=pRX(y); svg+=`<circle class="rd-stone" cx="${x.toFixed(1)}" cy="${y}" r="2"/>`; hrs+=`<span class="rd-hr ${m%180===0?'big':''}" style="top:${y}px;left:${(x<52?x+8:x-46).toFixed(1)}px;${x<52?'text-align:left':''}">${(m/60)%24}:00</span>`; }
   // 地方の名前（地図の地名のように）
   const regs=pRegions(k).map(([m,n])=>{ const y=pm2y(m)+24, lft=Math.max(pRX(y-10),pRX(y+10))>pW*.5; return `<div class="rd-reg ${lft?'lft':''}" style="top:${pm2y(m)+14}px">${n}<i></i></div>`; }).join('');
   const lateId=isT?(bls.find(b=>!pDone(b)&&!b.fix&&!b.wake&&b.s<now-4&&b.e>now-120)||{}).id:null;
@@ -3218,7 +3220,8 @@ function pathList(){
   let nowM='';
   if(isT){ const y=pm2y(hn), x=pRX(y), day=now>=6*60&&now<18*60, ang=Math.atan2(6,pRX(y+3)-pRX(y-3))*180/Math.PI-90;
     // 寝ている間もエポナが道をたどって運んでくれる（よく慣れた馬は地図の道をひとりでたどる）。印はいつもの矢印、寝ている間は z z
-    nowM+=`<div class="rd-link" style="top:${y}px;left:${x.toFixed(1)}px;transform:rotate(${ang.toFixed(0)}deg)" aria-hidden="true"><svg viewBox="0 0 22 30" width="22" height="30"><path d="M11 28.5 2 2.5h18Z" fill="#2f8cff" stroke="#fff" stroke-width="2" stroke-linejoin="round"/><circle cx="11" cy="8.5" r="2.6" fill="#fff"/></svg></div>${asleep?`<div class="rd-zz" style="top:${y}px;left:${x.toFixed(1)}px" aria-hidden="true"><i>z</i><i>z</i></div>`:''}`; }
+    if(!asleep) nowM+=`<div class="rd-link" style="top:${y}px;left:${x.toFixed(1)}px;transform:rotate(${ang.toFixed(0)}deg)" aria-hidden="true"><svg viewBox="0 0 22 30" width="22" height="30"><path d="M11 28.5 2 2.5h18Z" fill="#2f8cff" stroke="#fff" stroke-width="2" stroke-linejoin="round"/><circle cx="11" cy="8.5" r="2.6" fill="#fff"/></svg></div>`;
+    nowM+=`${asleep?`<div class="rd-zz" style="top:${y}px;left:${x.toFixed(1)}px" aria-hidden="true"><i>z</i><i>z</i></div>`:''}`; }
   const md=x=>{ const t=new Date(k+'T00:00:00'); t.setDate(t.getDate()+x); return (t.getMonth()+1)+'/'+t.getDate(); };
   const nb=bls.filter(b=>!b.fix), nd=nb.filter(pDone).length; let wx=null; try{ wx=JSON.parse(localStorage.getItem(WX_KEY)||'null'); }catch(e){}
   const hud=`<div class="sl-hud">${nb.length?`<b>${nd}/${nb.length}</b><i></i>`:''}${isT?`<b>${now>=6*60&&now<18*60?'<i class="ck-sun"></i>':'<i class="ck-moon"></i>'}${now<12*60?'AM':'PM'} ${String(Math.floor(now/60)%12||12).padStart(2,'0')}:${String(now%60).padStart(2,'0')}</b><i></i>`:''}${isT&&wx&&wx.temp!=null?`<b>${wx.temp>0?'+':''}${Math.round(wx.temp)}℃</b><i></i>`:''}</div>`;
@@ -3424,7 +3427,7 @@ function pathAfter(){
   if(!sv.__ret){ sv.__ret=1; sv.addEventListener('scroll',()=>requestAnimationFrame(pRetUpdate),{passive:true});
     sv.addEventListener('wheel',e=>{ if(!e.ctrlKey) return; e.preventDefault(); pZoomBy(e.deltaY<0?1:-1); },{passive:false}); }
   const key=dayView; try{ localStorage.setItem('ql-pw',pW); }catch(e){} setTimeout(()=>{ if(listCat==='path') pTerPrefetch(key); },60);
-  if(pathScrolled!==key){ pathScrolled=key; const bl=pBlocks(key), m=pathFocus!=null?pathFocus:key===ymd()?pnow():(bl[0]?bl[0].s:8*60); pathFocus=null; sv.scrollTop=pm2y(Math.max(PATH_H0,m)); }
+  if(pathScrolled!==key){ pathScrolled=key; const bl=pBlocks(key), m=pathFocus!=null?pathFocus:key===pJDay()?pJNow():(bl[0]?bl[0].s:8*60); pathFocus=null; sv.scrollTop=pm2y(Math.max(PATH_H0,m)); }
   pRetUpdate();
 }
 // ズーム：照準の時刻を保ったまま、地図をひろく／くわしく
@@ -3494,15 +3497,15 @@ function pathAct(a,b){
     case 'pathdone': { const x=pBlocks(k).find(y=>y.id===pathSel); if(x){ pSet(k,x.id,{done:!x.done}); if(!x.done) gain(5); render(); } return true; }
     case 'pathstep': { const x=pBlocks(k).find(y=>y.id===pathSel), r=x&&pRef(x); if(r&&r.s) toggleStep(r.q.id,r.s.id); render(); return true; }
     case 'pathshift': { const x=pBlocks(k).find(y=>y.id===pathSel); if(x){ pathShift(k,x.s,+b.dataset.v); render(); } return true; }
-    case 'pathlate': { const x=pBlocks(k).find(y=>y.id===b.dataset.v); if(x){ const d=Math.ceil((pnow()-x.s)/SNAP)*SNAP; if(d>0){ pathShift(k,x.s,d); toast(`${pfmt(x.s+d)}から始める。後ろの予定も${d}分ずらした`); } render(); } return true; }
+    case 'pathlate': { const x=pBlocks(k).find(y=>y.id===b.dataset.v); if(x){ const d=Math.ceil((pJNow()-x.s)/SNAP)*SNAP; if(d>0){ pathShift(k,x.s,d); toast(`${pfmt(x.s+d)}から始める。後ろの予定も${d}分ずらした`); } render(); } return true; }
     case 'pathsleep': { const f=b.dataset.v; slNow(f); toast(f==='w'?'おはよう。手綱をとって進もう':'おやすみ。あとはエポナにまかせよう'); render(); return true; }
-    case 'pathwake': { const x=pBlocks(k).find(y=>y.id===b.dataset.v); if(x&&k===ymd()&&(hm().sleep[k]||{}).w==null) slSet(k,'w',pnow()); if(x){ const e=Math.max(x.s+SNAP,Math.round(pnow()/SNAP)*SNAP); pSet(k,x.id,{e,done:1,woke:1}); toast('おはよう。ここから今日の冒険'); render(); } return true; }
+    case 'pathwake': { const x=pBlocks(k).find(y=>y.id===b.dataset.v); if(x&&k===pJDay()&&(hm().sleep[k]||{}).w==null) slSet(k,'w',pnow()); if(x){ const e=Math.max(x.s+SNAP,Math.round(pnow()/SNAP)*SNAP); pSet(k,x.id,{e,done:1,woke:1}); toast('おはよう。ここから今日の冒険'); render(); } return true; }
     case 'pathmorning': { tab='list'; listCat='path'; dayView=ymd(); pathSel=null; pathScrolled=null; const tpl=(plan().tpl[pTpl(dayView)]||{}).b||[]; if(!pBlocks(dayView).length&&tpl.length){ const P=plan(), day={...(P.d[dayView]||{})}, now=Date.now(); tpl.forEach(t=>{ day[uid()]={s:t.s,e:t.e,t:t.t,fix:1,...(t.wake?{wake:1}:{}),u:now}; }); P.d={...P.d,[dayView]:day}; save(); } render(); return true; }
     case 'pathmg': { const x=pBlocks(k).find(y=>y.id===pathSel); if(x){ pSet(k,x.id,{[b.dataset.f]:+b.dataset.v}); render(); } return true; }
     case 'pathsheet': pathSheet=!pathSheet; renderList(); return true;
     case 'pathclose': pDropEmpty(); pathSel=null; pathSheet=false; listCat='today'; dayView=ymd(); render(); return true;
     case 'pathzoom': pZoomBy(+b.dataset.v); return true;
-    case 'pathhere': { const sv=$('slView'); if(sv) sv.scrollTo({top:pm2y(pnow()),behavior:'smooth'}); return true; }
+    case 'pathhere': { const sv=$('slView'); if(sv) sv.scrollTo({top:pm2y(pJNow()),behavior:'smooth'}); return true; }
     case 'pathA': { const r=$('slRet'); if(!r) return true; pDropEmpty(); if(r.dataset.id){ pathSel=r.dataset.id; render(); if(window.innerWidth<=820) pScroll(0); return true; }
       const s0=Math.max(PATH_H0,Math.min(PATH_H1-SNAP,+r.dataset.m)), bl=pBlocks(k), nx=bl.filter(x=>x.s>=s0+SNAP).map(x=>x.s)[0]||PATH_H1, id=uid();
       pSet(k,id,{s:s0,e:Math.max(s0+SNAP,Math.min(s0+60,nx,PATH_H1)),t:''}); pathSel=id; render(); if(window.innerWidth<=820) pScroll(0); setTimeout(()=>{ const i=$('pbTitle'); i&&i.focus(); },60); return true; }
@@ -3558,7 +3561,7 @@ function pathInput(e){
   document.addEventListener('pointerup',end);
   document.addEventListener('pointercancel',()=>{ clearTimeout(timer); if(pend&&pend.started){ pend=null; pathDrag=null; document.body.classList.remove('pdrag'); render(); } else pend=null; });
   document.addEventListener('touchmove',e=>{ if(pend&&pend.started) e.preventDefault(); },{passive:false});
-  setInterval(()=>{ if(listCat==='path'&&tab==='list'&&!pend&&dayView===ymd()&&!document.hidden&&!(document.activeElement&&/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))) renderList(); },60000);
+  setInterval(()=>{ if(listCat==='path'&&tab==='list'&&!pend&&dayView===pJDay()&&!document.hidden&&!(document.activeElement&&/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))) renderList(); },60000);
 })();
 
 /* ---------- PCとスマホのデータ同期 ---------- */
