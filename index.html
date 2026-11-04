@@ -3332,7 +3332,7 @@ const P_VC=2600, pVcMemo=new Map();
 // 火山：たまに（約2〜3日に1度）、道から離れた側に1つ。c=区画番号
 function pVolc(c){ const key=c+'|'+(pW|0); if(pVcMemo.has(key)) return pVcMemo.get(key); const r=pRng('vc'+c,5); let o=null;
   if(P_VOLC&&r()<.4){ const v=c*P_VC+500+r()*(P_VC-1000), W=pW||380, q=v, rx=Math.max(30,Math.min(W-30,W/2+(W/2-34)*(.62*Math.sin(q/(150*1.05)+4.1)+.28*Math.sin(q/61+1.3)+.1*Math.sin(q/27+2.2)))), x=rx<W/2?W*.74:W*.26;
-    o={x,v,R:32+r()*8,RV:250+r()*60,ph:r()*50,c,N:12+Math.floor(r()*5)}; }
+    o={x,v,R:40+r()*8,RV:250+r()*60,ph:r()*50,c,N:12+Math.floor(r()*5)}; }
   pVcMemo.set(key,o); return o; }
 function pVolcAt(v){ const c=Math.floor(v/P_VC); let b=null,bd=1e9; for(let k=c-1;k<=c+1;k++){ const o=pVolc(k); if(o){ const d=Math.abs(v-o.v); if(d<o.RV*1.4&&d<bd){ bd=d; b=o; } } } return b; }
 // 火山の強さ（0〜1）：火口からの距離で決まり、ふちは少しうねる
@@ -3374,7 +3374,7 @@ const P_FS=3100, pFsMemo=new Map();
 function pFiss(c){ const key=c+'|'+(pW|0); if(pFsMemo.has(key)) return pFsMemo.get(key); const r=pRng('fs'+c,5); let o=null;
   if(r()<.35){ const v=c*P_FS+600+r()*(P_FS-1200), W=pW||380, q=v, rx=Math.max(30,Math.min(W-30,W/2+(W/2-34)*(.62*Math.sin(q/(150*1.05)+4.1)+.28*Math.sin(q/61+1.3)+.1*Math.sin(q/27+2.2)))), x=rx<W/2?W*(.72+r()*.1):W*(.18+r()*.1); if(pVolcW(x,v)<.05&&!pVolcAt(v)){ const dir=(r()<.5?1:-1)*Math.PI/2+(r()-.5)*.6, fa=dir+Math.PI/2; o={x,v,fa,dir,L:40+r()*30,len:150+r()*120,ph:r()*50,c}; } }
   pFsMemo.set(key,o); return o; }
-function pFissPix(x,v){ const c=Math.floor(v/P_FS); for(let k=c-1;k<=c+1;k++){ const o=pFiss(k); if(!o) continue; const dx=x-o.x, dv=v-o.v; if(Math.abs(dv)>o.len+80||Math.abs(dx)>o.len+80) continue;
+function pFissPix(x,v){ return null; const c=Math.floor(v/P_FS); for(let k=c-1;k<=c+1;k++){ const o=pFiss(k); if(!o) continue; const dx=x-o.x, dv=v-o.v; if(Math.abs(dv)>o.len+80||Math.abs(dx)>o.len+80) continue;
     const ca=Math.cos(o.dir), sa=Math.sin(o.dir), t=dx*ca+dv*sa, sl=-dx*sa+dv*ca; // t:流れる向き、sl:割れ目に沿う向き
     if(Math.abs(x-pRX((v-pOff)*PX))<14) return null;
     if(Math.abs(t)<2.2&&Math.abs(sl)<o.L/2&&pNoise(sl/4+o.ph,1)>.3) return [222,128,40]; // 割れ目の火口の列
@@ -3392,7 +3392,7 @@ function pVolcLava(x,v){ if(pFissPix(x,v)) return true; if(pVolcW(x,v)<.05) retu
 function pCone(x,v,o){ const dx=x-o.x, dv=v-o.v, D=Math.hypot(dx,dv), a=Math.atan2(dv,dx), w=1+.12*(pNoise(Math.cos(a)*2+o.ph,Math.sin(a)*2)-.5);
   const Rr=o.R*w, d=D/Rr; return d<1.05?.78-.15*(1.05-d):.78-.3*pSm(1.05,o.RV*1.15/Rr,d)-.05*Math.max(0,d-o.RV*1.15/Rr); }
 // 火山の山の形（溶岩なし）：火口を頂にした1つの山。山腹には頂から放射状にのびる尾根と谷。頂は火口のくぼみ
-const P_VLAVA=true;
+const P_VLAVA=true, P_DM=true;
 // 溶岩（地理院地図の浅間山・鬼押出し溶岩、桜島の大正・昭和溶岩から）：
 //  ・火口から山の片側へ1〜2本。四方に広がらない
 //  ・坂のいちばん急な向き（谷）へ下る。火口のそばは細く、下るほど広がる
@@ -3406,6 +3406,7 @@ function pFlows(o){ if(o.fl) return o.fl; const r=pRng('fl'+o.c,5), G=(x,v)=>pVo
   const trace=(x,v,len,ph,bend)=>{ const P=[]; let dx=Math.cos(bend),dv=Math.sin(bend); for(let i=0;i<len;i++){ const e=3, gx=G(x+e,v)-G(x-e,v), gv=G(x,v+e)-G(x,v-e), gl=Math.hypot(gx,gv)||1; let tx=-gx/gl, tv=-gv/gl;
       const mw=.2*(pNoise(i*.05+ph,ph)-.5)*2, c2=Math.cos(mw), s2=Math.sin(mw); [tx,tv]=[tx*c2-tv*s2,tx*s2+tv*c2]; dx=dx*.8+tx*.2; dv=dv*.8+tv*.2; const dl=Math.hypot(dx,dv)||1; x+=dx/dl*3; v+=dv/dl*3;
       if(pVolcW(x,v)<.4||Math.abs(x-pRX((v-pOff)*PX))<26||x<4||x>(pW||380)-4) break; P.push([x,v]); } return P; };
+  if(P_DM){ const k=3+Math.floor(r()*3); for(let f=0;f<k;f++){ const a=gapA+(f/(k-1)-.5)*2.2+(r()-.5)*.3, rr=o.RV*(.55+r()*.35); const P=trace(o.x+Math.cos(a)*rr,o.v+Math.sin(a)*rr,Math.floor((40+r()*60)/3),r()*40,a), m=P.length; out.push({P:P.map(([x,v],i)=>[x,v,(3.6+r()*1.2)*(1-.45*i/m)])}); } return o.fl=out; }
   for(let f=0;f<nf;f++){ const a=gapA+(f?Math.PI+(r()-.5)*.6:0), L=Math.floor((o.RV*(f?.42:.62)+r()*o.RV*.12)/3);
     const lead=[]; for(let k=0;k<10;k++){ const rr=o.R*(.85+.65*k/10); lead.push([o.x+Math.cos(a)*rr,o.v+Math.sin(a)*rr]); }
     const P=lead.concat(trace(o.x+Math.cos(a)*o.R*1.5,o.v+Math.sin(a)*o.R*1.5,Math.floor(L*.45),r()*40,a)), n=P.length, len=n*3, W=3.2;
@@ -3421,6 +3422,65 @@ function pFlows(o){ if(o.fl) return o.fl; const r=pRng('fl'+o.c,5), G=(x,v)=>pVo
 //  ・取り残された元の土地の島：坂を下る向きに細長い。下の方に多い
 //  ・新しい溶岩（橙）：火口のそばで太い1つのかたまり、先で坂の向きに長い指のように何本も分かれる。中に小さな穴
 //  ・今流れている溶岩：火口から細い1本
+// デスマウンテン（ブレワイ）の見た目：
+//  ・山頂の火口：花びらのような岩の板が内と外の2重に並び、すき間（割れ目）と真ん中は紅のマグマ
+//  ・火口のまわり：橙の太いマグマの輪（ふちは紅がにじむ）。まんまるではない
+//  ・片側へ広い溶岩原：紅と橙が大きくまだらにまじり、くだけた岩の島が浮かぶ
+//  ・溶岩原のふちから、紅の細い流れが坂を下る
+const pCraterR=(o,a)=>{ const ca=Math.cos(a), sa=Math.sin(a); return o.R*(1+.16*Math.cos(2*(a-o.ph))+.07*Math.cos(3*a+o.ph*2)+.16*(pNoise(ca*1.3+o.ph,sa*1.3)-.5)*2+.06*(pNoise(ca*3+o.ph+3,sa*3)-.5)*2); };
+const pRingW=(o,x,v,a)=>.42+.22*(pNoise(x/22+o.ph,v/22)-.5)*2+.08*(pNoise(Math.cos(a)*5+o.ph,Math.sin(a)*5)-.5)*2;
+function pDeath(x,v,o){ const dx=x-o.x, dv=v-o.v, D=Math.hypot(dx,dv), a=Math.atan2(dv,dx), ca=Math.cos(a), sa=Math.sin(a);
+  const Rc=pCraterR(o,a), d=D/Rc, rd=Math.abs(x-pRX((v-pOff)*PX));
+  const n1=pNoise(x/22+o.ph,v/22), n2=pNoise(x/9+3,v/9+o.ph), n3=pNoise(x/4,v/4);
+  if(d<1){ // 火口の中
+    if(d<.16+.05*(n2-.5)) return P_LV_R;
+    const inner=d<.55+.05*(n1-.5), r0=inner?.16:.55, r1=inner?.55:1, N=inner?9:15, ofs=inner?0:.5+o.ph, aw=a+.18*(pNoise(d*2.5+o.ph,ca+sa)-.5), q=aw/6.2832*N+ofs, f=((q%1)+1)%1;
+    const da=Math.min(f,1-f)*6.2832/N*D, dr=Math.min(d-r0,r1-d)*Rc, kk=3, ec=-kk*Math.log(Math.exp(-da/kk)+Math.exp(-dr/kk))+kk*.69+2.2*(n2-.5)+1*(n3-.5), w=1+2.2*Math.pow(1-d,1.4);
+    return ec<w?P_LV_R:null; }
+  const rw=.42+.22*(n1-.5)*2+.08*(pNoise(ca*5+o.ph,sa*5)-.5)*2; // 輪の太さ（でこぼこ）
+  const g=pGapA(o); let gd=a-g; gd=Math.atan2(Math.sin(gd),Math.cos(gd));
+  if(d<1+rw){ const t=(d-1)/rw; if(rd<12) return null; return (t<.1+.12*n2||t>.86-.15*n2||n1+.3*n3>1.02)?P_LV_R:P_LV_O; }
+  const gapW=.45+.12*(pNoise(d*3+o.ph,1.1)-.5)*2, rimW=.2+.08*(n1-.5)*2;
+  if(d<1+rw+.25){ if(Math.abs(gd)>gapW) return null; return rd<12?null:(n1>.62?P_LV_R:P_LV_O); } // 岩のふち（せきとめる）。切れ目だけ溶岩があふれ出る
+  // 火口の外：溶岩は火口のふちの切れ目からあふれ、山の地形にそって坂を下りながら広がる（下で計算しておいた流れを読む）
+  const L=pLavaAt(x,v,o); if(L) return L;
+  return null; }
+// 溶岩の流れの計算：切れ目から出た溶岩が、いちばん楽に進める所（下り坂）から順に地面をおおっていく。
+// 上り坂は進みにくいので、高い岩は島として残り、谷にそって舌のようにのびる。量が尽きた所で止まる。
+// 早く届いた所（流れの道すじ）は橙、遅く届いた所（ふち・先）は紅
+function pLavaSim(o){ const key=(pW|0)+"|"+pOff; o.sims=o.sims||{}; if(o.sims[key]) return o.sims[key];
+  const C=3, W=pW||380, x0=Math.max(-10,o.x-o.RV*1.3), x1=Math.min(W+10,o.x+o.RV*1.3), v0=o.v-o.RV*1.3, v1=o.v+o.RV*1.3, nx=Math.ceil((x1-x0)/C)+1, nv=Math.ceil((v1-v0)/C)+1, N=nx*nv;
+  const g=new Float32Array(N), cost=new Float64Array(N).fill(1e9), blk=new Uint8Array(N), src=[];
+  const ga=pGapA(o);
+  for(let j=0;j<nv;j++) for(let i=0;i<nx;i++){ const k=j*nx+i, x=x0+i*C, v=v0+j*C; g[k]=pVolcH(x,v,o)+pVRockH(x,v,o)*.06;
+    const dx=x-o.x, dv=v-o.v, D=Math.hypot(dx,dv), a=Math.atan2(dv,dx), d=D/pCraterR(o,a); let gd=a-ga; gd=Math.atan2(Math.sin(gd),Math.cos(gd));
+    const rd=Math.abs(x-pRX((v-pOff)*PX)), out=d>=1+pRingW(o,x,v,a)+.2;
+    if(!out){ blk[k]=1; if(d>1.15&&Math.abs(gd)<.42) src.push(k); continue; }
+    if(rd<20||pVolcW(x,v)<.12) blk[k]=1;
+    else if(D>o.R*2.1){ const isl=pNoise(x/17+o.ph,v/17+7.7)*.75+pNoise(x/7+3,v/7+o.ph)*.25; if(isl>.66) blk[k]=2; } }
+  // 細かいでこぼこではなく、大きな地形（尾根と谷）にそって流れるよう、高さをならしておく
+  for(let it=0;it<3;it++){ const t=new Float32Array(g); for(let j=1;j<nv-1;j++) for(let i=1;i<nx-1;i++){ const k=j*nx+i; let a=0; for(let dj=-1;dj<=1;dj++) for(let di=-1;di<=1;di++) a+=t[k+dj*nx+di]; g[k]=a/9; } }
+  // 小さい順に取り出すヒープ
+  const hk=[], hc=[]; const push=(k,c)=>{ hk.push(k); hc.push(c); let i=hk.length-1; while(i>0){ const p=(i-1)>>1; if(hc[p]<=hc[i]) break; [hk[p],hk[i]]=[hk[i],hk[p]]; [hc[p],hc[i]]=[hc[i],hc[p]]; i=p; } };
+  const pop=()=>{ const k=hk[0], c=hc[0], lk=hk.pop(), lc=hc.pop(); if(hk.length){ hk[0]=lk; hc[0]=lc; let i=0; for(;;){ const l=2*i+1, r=l+1; let m=i; if(l<hk.length&&hc[l]<hc[m]) m=l; if(r<hk.length&&hc[r]<hc[m]) m=r; if(m===i) break; [hk[m],hk[i]]=[hk[i],hk[m]]; [hc[m],hc[i]]=[hc[i],hc[m]]; i=m; } } return [k,c]; };
+  src.forEach(k=>{ cost[k]=0; push(k,0); });
+  const r=pRng('ls'+o.c,5), budget=Math.round((o.RV*o.RV/(C*C))*(.28+.2*r())), done=new Uint8Array(N); let n=0, cmax=0;
+  const nb=[[1,0,1],[-1,0,1],[0,1,1],[0,-1,1],[1,1,1.414],[1,-1,1.414],[-1,1,1.414],[-1,-1,1.414]];
+  while(hk.length&&n<budget){ const [k,c]=pop(); if(done[k]||c>cost[k]) continue; done[k]=1; if(!blk[k]){ n++; cmax=c; } const i=k%nx, j=(k/nx)|0;
+    for(const [di,dj,dl] of nb){ const ii=i+di, jj=j+dj; if(ii<0||jj<0||ii>=nx||jj>=nv) continue; const q=jj*nx+ii; if(done[q]||(blk[q]&&!src.includes(q))) continue;
+      const dh=g[q]-g[k], st=dl*Math.max(.15,1+90*dh/dl)*(.55+.9*pNoise(i*.07+o.ph,j*.07+3)); if(c+st<cost[q]){ cost[q]=c+st; push(q,c+st); } } }
+  for(let k=0;k<N;k++) if(!done[k]||blk[k]) cost[k]=1e9;
+  // 溶岩原のふちから、紅の細い流れが坂を下る（ブレワイのデスマウンテンのすそ）
+  { const fr=[]; for(let k=0;k<N;k++){ if(cost[k]>1e8) continue; const i=k%nx, j=(k/nx)|0; if(i<2||j<2||i>nx-3||j>nv-3) continue; if(cost[k-1]>1e8||cost[k+1]>1e8||cost[k-nx]>1e8||cost[k+nx]>1e8){ const D=Math.hypot(x0+i*C-o.x,v0+j*C-o.v), xx=x0+i*C; if(D<o.RV*.95&&xx>10&&xx<W-10) fr.push([D+40*r(),k]); } }
+    fr.sort((a,b)=>b[0]-a[0]); const picks=[]; for(const [D,k] of fr){ if(picks.length>=5+Math.floor(r()*3)) break; const i=k%nx, j=(k/nx)|0; if(picks.some(q=>Math.hypot((q%nx)-i,((q/nx)|0)-j)<14)) continue; if(r()<.35) picks.push(k); }
+    for(const k0 of picks){ let k=k0, len=25+Math.floor(r()*35), w=1; for(let st=0;st<len;st++){ const i=k%nx, j=(k/nx)|0; let best=-1, bh=g[k]+.0005; for(const [di,dj] of nb){ const ii=i+di, jj=j+dj; if(ii<1||jj<1||ii>=nx-1||jj>=nv-1) continue; const q=jj*nx+ii; if(blk[q]===1) continue; const hh=g[q]+.0006*(pNoise(ii*.4+o.ph,jj*.4)-.5); if(hh<bh){ bh=hh; best=q; } } if(best<0) break; k=best; cost[k]=cmax*.98;
+        if(w){ const i2=k%nx; if(i2+1<nx) cost[k+1]=Math.min(cost[k+1],cmax*.98); if(k+nx<N&&st<len*.6) cost[k+nx]=Math.min(cost[k+nx],cmax*.98); } } } }
+  const ks=Object.keys(o.sims); if(ks.length>6) delete o.sims[ks[0]]; return o.sims[key]={key,x0,v0,nx,nv,C,cost,cmax}; }
+function pLavaAt(x,v,o){ const S=pLavaSim(o), fi=(x-S.x0)/S.C, fj=(v-S.v0)/S.C, i=Math.floor(fi), j=Math.floor(fj); if(i<0||j<0||i>=S.nx-1||j>=S.nv-1) return null;
+  const k=j*S.nx+i, c4=[S.cost[k],S.cost[k+1],S.cost[k+S.nx],S.cost[k+S.nx+1]], fx=fi-i, fy=fj-j, w4=[(1-fx)*(1-fy),fx*(1-fy),(1-fx)*fy,fx*fy];
+  let ins=0, cs=0, ws=0; for(let q=0;q<4;q++){ if(c4[q]<1e8){ ins+=w4[q]; cs+=c4[q]*w4[q]; ws+=w4[q]; } }
+  if(ins<.5+.35*(pNoise(x/5+o.ph,v/5)-.5)) return null; const t=cs/ws/S.cmax;
+  return t<.5+.38*(pNoise(x/24+o.ph,v/24+2)-.5)*2+.1*(pNoise(x/8,v/8+o.ph)-.5)*2?P_LV_O:P_LV_R; }
 function pKilauea(x,v,o){ const dx=x-o.x, dv=v-o.v, D=Math.hypot(dx,dv); if(D<o.R*.98) return null; const g=pGapA(o); let da=Math.atan2(dv,dx)-g; da=Math.atan2(Math.sin(da),Math.cos(da));
   const rd=Math.abs(x-pRX((v-pOff)*PX)); if(rd<14) return null;
   const Rf=o.RV*1.1, t=(D-o.R)/(Rf-o.R); if(t>1.1) return null;
@@ -3453,6 +3513,7 @@ function pVolcH(x,v,o){ const dx=x-o.x, dv=v-o.v, D=Math.hypot(dx,dv), a=Math.at
   h+=(.004+.01*s)*(pNoise(x/26+o.ph,v/26)-.5)*2+(.002+.004*s)*(pNoise(x/9+3,v/9+o.ph)-.5)*2;
   // 寄生火山（丸い小山）
   for(const [px,pv,pr] of pParas(o)){ const dd=Math.hypot(x-px,v-pv); if(dd<pr*2){ const k=Math.max(0,1-dd/(pr*2)); h+=.035*k*k*(3-2*k); } }
+  if(P_DM) return h;
   // 山頂：古い大きな火口のふち（馬てい形で一方が切れる）、その内側の平らな底、中央の円すいと小さな火口
   const d=D/(o.R*(1+.06*(pNoise(ca*2+o.ph,sa*2)-.5)*2));
   let gap=a-pGapA(o); gap=Math.atan2(Math.sin(gap),Math.cos(gap)); const open=pSm(.5,.9,Math.abs(gap)); // 1=ふちがある 0=切れ目
@@ -3467,12 +3528,8 @@ function pVolcPix(x,v,o,hg){ pVolcEdge=false; const q=pCaldera(x,v,o);
   let lava=null, hv;
   hv=pVolcH(x,v,o)+pVRockH(x,v,o)*.06;
   if(!P_VLAVA) return {hv,edge:false};
-  { // 火口：古いふちの内側の底は溶岩の池（中央の円すいは頭を出す）。中央の円すいの小さな火口にも溶岩
-    const D=Math.hypot(x-o.x,v-o.v), a=Math.atan2(v-o.v,x-o.x), d=D/(o.R*(1+.06*(pNoise(Math.cos(a)*2+o.ph,Math.sin(a)*2)-.5)*2)), cc=d/.45;
-    let gap=a-pGapA(o); gap=Math.atan2(Math.sin(gap),Math.cos(gap)); const open=pSm(.5,.9,Math.abs(gap));
-    if((d<.88+.14*(1-open)&&cc>1.12)||cc<.22) return {lava:(cc<.22||(d>.4&&d<.75&&pNoise(x/9+o.ph,v/9)>.5))?P_LV_O:P_LV_R};
-    const f=pFlowAt(x,v,o); if(f>=0) return {lava:[214,120,40]}; const L=pKilauea(x,v,o); if(L) return {lava:L};
-    return {hv,edge:pFlowAt(x,v,o)<0&&false}; }
+  if(P_DM){ const L=pDeath(x,v,o); return L?{lava:L}:{hv,edge:false}; }
+
   if(q){ if(q.k==='ring') { const n=pNoise(x/26+o.ph,v/26)*.55+pNoise(x/10+3,v/10+o.ph)*.3+pNoise(x/4,v/4)*.15, edge=Math.min(q.t,1-q.t); lava=(n>.36+.18*pSm(.12,0,edge)*(pNoise(x/15+9,v/15)>.5?1:0))?P_LV_O:P_LV_R; } // 輪は紅と橙がまだら（ふち寄りは紅が多い）
     else if(q.k==='crack'||q.k==='pool') lava=(q.k==='crack'&&q.lo>.35&&q.ed>2.2+1.5*pNoise(x/7,v/7+o.ph))||(q.k==='pool'&&pNoise(x/9,v/9+o.ph)>.55)?P_LV_O:P_LV_R;
     else hv=pCone(x,v,o)+pVRockH(x,v,o)*.3; }
@@ -3610,7 +3667,7 @@ function pTerAsk(k,H,first){
   if(!pTerBusy){ pTerBusy=true; setTimeout(pTerStep,0); }
 }
 // 一度描いた地形の絵は端末に取っておく（次に開いたときは描かずにすぐ出す）。描き方を変えたら版を上げて作り直す
-const P_TER_V='t72|', P_TER_MAX=36;
+const P_TER_V="t85|", P_TER_MAX=36;
 const pIDB=(()=>{ let dbp=null; const open=()=>dbp||(dbp=new Promise((res,rej)=>{ try{ const r=indexedDB.open('ql-ter',1); r.onupgradeneeded=()=>r.result.createObjectStore('img'); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }catch(e){ rej(e); } }));
   const st=m=>open().then(db=>db.transaction('img',m).objectStore('img'));
   const keys=()=>{ try{ return JSON.parse(localStorage.getItem('ql-ter-keys')||'[]'); }catch(e){ return []; } }, setKeys=a=>{ try{ localStorage.setItem('ql-ter-keys',JSON.stringify(a)); }catch(e){} };
