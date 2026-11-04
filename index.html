@@ -3081,7 +3081,16 @@ const PATH_H0=4*60, PATH_H1=24*60, SNAP=15, pCardX=118, PZOOM=[.55,1,1.7];
 let pZoom=1, PX=PZOOM[1], pathBoot=false;
 // 旅の世界は一枚の大きな地図：日ごとにその続きの部分を見る（前の日の焚き火の場所＝次の日の目覚めの場所）
 let pOff=0;
-const pOffOf=k=>Math.round((new Date(k+'T12:00:00')-new Date('2026-01-01T12:00:00'))/DAY)*(PATH_H1-PATH_H0);
+// 1日の道は「起きてから休むまで」：起きた時刻が道のはじまり（目覚めの焚き火）、休んだ時刻が終わり（焚き火）。
+// 寝ている間は進まないので、前の日の焚き火の場所から次の日がそのまま始まる（道は1本につながったまま）
+const P_WAKE=5*60, P_BED=22*60, P_EPOCH='2026-10-01';
+function pGeo(k){ const S=(hm().sleep||{})[k]||{}, wb=Object.values(pDay(k)).find(b=>b&&!b.del&&b.wake), plan0=wb?wb.s:P_WAKE;
+  let s=S.w!=null?S.w:plan0, e=S.b!=null?Math.min(S.b,PATH_H1):P_BED; s=Math.max(PATH_H0,Math.min(PATH_H1-60,s)); e=Math.max(s+60,Math.min(PATH_H1,e)); return {s,e,woke:S.w!=null,slept:S.b!=null}; }
+// その日の道のはじまりが、世界の地図のどこにあたるか（それまでの日の「起きていた長さ」を足していく）
+function pStartW(k){ let W=0; const d=new Date(P_EPOCH+'T12:00:00'), end=new Date(k+'T12:00:00'); if(end<d) return Math.round((end-d)/DAY)*(P_BED-P_WAKE);
+  for(;d<end;d.setDate(d.getDate()+1)){ const g=pGeo(ymd(d)); W+=g.e-g.s; } return W; }
+// 地形の計算で使うずらし：道の座標（4時が0）→ 世界の位置
+const pOffOf=k=>pStartW(k)-(pGeo(k).s-PATH_H0);
 function pSeedRoad(k){ pOff=pOffOf(k); }
 // 道の曲がり具合（日ごとに違う。ズームしても形は同じ）
 let pW=380;
@@ -3169,16 +3178,12 @@ function pathList(){
   const now=pnow(), H=pm2y(PATH_H1)+10, L=b=>pathDrag&&pathDrag.id===b.id?{...b,s:pathDrag.s,e:pathDrag.e}:b;
   const bls=bl.map(L).sort((a,b)=>a.s-b.s);
   const seg=(m0,m1)=>{ let d=''; for(let y=pm2y(m0);;y+=6){ const yy=Math.min(y,pm2y(m1)); d+=(d?'L':'M')+pRX(yy).toFixed(1)+' '+yy.toFixed(1); if(yy>=pm2y(m1)) break; } return d; };
-  const gA=seg(PATH_H0-900/PX,PATH_H0), gB=seg(PATH_H1,PATH_H1+900/PX);
-  let svg=pMapArt(k,H)+`<path class="rd-bed" d="${gA}"/><path class="rd-edge rd-ghost" d="${gA}"/><path class="rd-bed" d="${gB}"/><path class="rd-edge rd-ghost" d="${gB}"/><path class="rd-bed" d="${seg(PATH_H0,PATH_H1)}"/><path class="rd-edge" d="${seg(PATH_H0,PATH_H1)}"/>`;
-  // 今日通ってきた道（ブレワイの「足跡モード」のように緑の線で残す）
-  // 寝ている間は馬が運んでくれる：〈起きた〉までと〈休む〉のあとは馬の足あと、起きている間は緑の足跡
-  // 22時〜5時は野営の時間：予定は置けるが、自分の印は止まって動かない（5時の所で待ち、22時の所で止まる）
-  const RST1=22*60, RST0=5*60, hn=Math.max(RST0,Math.min(RST1,now)), rest=now<RST0||now>=RST1;
-  const slp=hm().sleep[k]||{}, asleep=isT&&(rest||slp.w==null||(slp.b!=null&&now>=slp.b));
-  let foot=''; if(isT&&hn>RST0&&now>=RST0){ const end=Math.min(hn,PATH_H1), w=slp.w, bd=slp.b, a=w!=null?Math.max(RST0,Math.min(end,w)):end;
-    if(a>RST0) foot+=`<path class="rd-ride" d="${seg(RST0,a)}"/>`;
-    if(w!=null&&w<end){ const z=bd!=null?Math.max(w,Math.min(end,bd)):end; if(z>w) foot+=`<path class="rd-hero" d="${seg(Math.max(RST0,w),z)}"/>`; if(bd!=null&&bd<end) foot+=`<path class="rd-ride" d="${seg(Math.max(RST0,bd),end)}"/>`; } }
+  const G=pGeo(k), slp=hm().sleep[k]||{}, gE=isT&&!G.slept?Math.min(PATH_H1,Math.max(G.e,now)):G.e;
+  const gA=seg(PATH_H0-900/PX,G.s), gB=seg(gE,PATH_H1+900/PX);
+  let svg=pMapArt(k,H)+`<path class="rd-bed" d="${gA}"/><path class="rd-edge rd-ghost" d="${gA}"/><path class="rd-bed" d="${gB}"/><path class="rd-edge rd-ghost" d="${gB}"/><path class="rd-bed" d="${seg(G.s,gE)}"/><path class="rd-edge" d="${seg(G.s,gE)}"/>`;
+  // 今日通ってきた道（ブレワイの「足跡モード」のように緑の線で残す）。寝ている間（休む〜起きた）は進まない
+  const hn=!G.woke?G.s:G.slept?G.e:Math.max(G.s,Math.min(PATH_H1,now)), asleep=isT&&(!G.woke||G.slept);
+  const foot=isT&&G.woke&&hn>G.s?`<path class="rd-hero" d="${seg(G.s,hn)}"/>`:'';
   let hrs=''; for(let m=PATH_H0+60;m<PATH_H1;m+=60){ const y=pm2y(m), x=pRX(y); svg+=`<circle class="rd-stone" cx="${x.toFixed(1)}" cy="${y}" r="2"/>`; hrs+=`<span class="rd-hr ${m%180===0?'big':''}" style="top:${y}px;left:${(x<52?x+8:x-46).toFixed(1)}px;${x<52?'text-align:left':''}">${m/60}:00</span>`; }
   // 地方の名前（地図の地名のように）
   const regs=pRegions(k).map(([m,n])=>{ const y=pm2y(m)+24, lft=Math.max(pRX(y-10),pRX(y+10))>pW*.5; return `<div class="rd-reg ${lft?'lft':''}" style="top:${pm2y(m)+14}px">${n}<i></i></div>`; }).join('');
@@ -3198,19 +3203,16 @@ function pathList(){
       <div class="rd-card k-${kd} ${dn?'done':''} ${past&&!dn?'past':''} ${cur?'cur':''} ${pathSel===b.id?'sel':''} ${pathDrag&&pathDrag.id===b.id?'drag':''}" data-pb="${b.id}" data-x="${x.toFixed(1)}" data-y="${y}" data-sd="${pSide(y)}" style="top:${cy}px;${pSide(y)==='r'?`left:${(pSpan(y)[1]+30).toFixed(0)}px;max-width:${(pW-pSpan(y)[1]-36).toFixed(0)}px`:`left:auto;right:${(pW-pSpan(y)[0]+30).toFixed(0)}px;max-width:${(pSpan(y)[0]-36).toFixed(0)}px`}">
         <span class="rc-head"><span class="rc-time">${pfmt(b.s)}${b.wake&&!b.woke?'<small>〜起きるまで</small>':''}</span>${r&&r.ss?`<span class="rc-dots">${r.ss.map(z=>`<i class="${z.done?'on':''}"></i>`).join('')}</span>`:''}${dn?'<em class="tb-clear">CLEAR</em>':''}</span><b class="rc-name">${esc(ttl||'（名前なし）')}</b>
         ${late?`<button class="rc-act" data-act="pathlate" data-v="${b.id}"><i>⟳</i>遅れた　今から始める</button>`:''}${wake?`<button class="rc-act" data-act="pathwake" data-v="${b.id}"><i>☀</i>起きた</button>`:''}</div>`; }).join('');
-  svg+=foot+pCliff(k,H);
+  svg+=foot+pCliff(k,H,G.s,gE);
   // 目覚めと焚き火のそばに「起きた」「休む」。今日の4時より前は、上の焚き火（昨夜の野営地）で「休む」を押すと昨日の夜として記録
-  { const S=hm().sleep, sd=S[k]||{}, yd=S[ymd(new Date(new Date(k+'T12:00:00').getTime()-DAY))]||{}, x0=pRX(0), x1=pRX(pm2y(PATH_H1)), y1=pm2y(PATH_H1);
+  { const S=hm().sleep, sd=S[k]||{}, yd=S[ymd(new Date(new Date(k+'T12:00:00').getTime()-DAY))]||{}, y0=pm2y(G.s), x0=pRX(y0), y1=pm2y(gE), x1=pRX(y1);
     const chip=(y,x,l,inner)=>x>pW*.5?`<div class="pe-rec" style="top:${y}px;right:${(pW-x+16).toFixed(1)}px;flex-direction:row-reverse">${inner}</div>`:`<div class="pe-rec" style="top:${y}px;left:${(x+16+l*13+8).toFixed(1)}px">${inner}</div>`, btn=(f,t)=>`<button class="pe-btn" data-act="pathsleep" data-v="${f}">${t}</button>`, rec=(t,m)=>`<span class="pe-time">${t} ${slFmt(m)}</span>`;
     let top='', bot='';
     if(isT&&now<PATH_H0&&yd.b==null) top=btn('b','休む');
     else if(sd.w==null&&isT&&now>=PATH_H0) top=btn('w','起きた');
-    if(sd.b==null&&isT&&now>=PATH_H0) bot=btn('b','休む'); else if(sd.b!=null&&sd.b>=PATH_H1) bot=rec('就寝',sd.b);
-    mtags+=(top?chip(0,x0,3,top):'')+(bot?chip(y1,x1,6,bot):'');
-    // 起きた時刻・寝た時刻は、道のその時刻の所に立てる（予定の札とは反対側に）
-    const at=(m,inner)=>{ const y=pm2y(m), x=pRX(y), lft=pSide(y)==='r'; return `<div class="pe-rec at" style="top:${y}px;${lft?`right:${(pW-x-5.5).toFixed(1)}px;flex-direction:row-reverse`:`left:${(x-5.5).toFixed(1)}px`}"><i class="pe-dot"></i>${inner}</div>`; };
-    if(sd.w!=null&&sd.w>=PATH_H0&&sd.w<PATH_H1) mtags+=at(sd.w,rec('起床',sd.w)+(slDur(k)!=null?`<span class="pe-time sub">${slDurFmt(slDur(k))}眠った</span>`:''));
-    if(sd.b!=null&&sd.b>=PATH_H0&&sd.b<PATH_H1) mtags+=at(sd.b,rec('就寝',sd.b)); }
+    else if(sd.w!=null) top=rec('起床',sd.w)+(slDur(k)!=null?`<span class="pe-time sub">${slDurFmt(slDur(k))}眠った</span>`:'');
+    if(sd.b==null&&isT&&now>=PATH_H0) bot=btn('b','休む'); else if(sd.b!=null) bot=rec('就寝',sd.b);
+    mtags+=(top?chip(y0,x0,3,top):'')+(bot?chip(y1,x1,6,bot):''); }
   let nowM='';
   if(isT){ const y=pm2y(hn), x=pRX(y), day=now>=6*60&&now<18*60, ang=Math.atan2(6,pRX(y+3)-pRX(y-3))*180/Math.PI-90;
     // 寝ている間もエポナが道をたどって運んでくれる（よく慣れた馬は地図の道をひとりでたどる）。印はいつもの矢印、寝ている間は z z
@@ -3257,10 +3259,10 @@ const SL_CP='M9 82L9 38C9 20 21 9 38 9L82 9M21 70L21 40C21 29 29 21 40 21L51 21C
 // 四隅は向きをそろえるため、座標そのものを反転させた形を描く（CSSで反転すると光の当たり方が崩れる）
 const slCorner=(fx,fy)=>`<svg viewBox="0 0 84 84" aria-hidden="true"><path d="${SL_CP.replace(/(-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?)/g,(m,x,y)=>`${fx?84-x:x} ${fy?84-y:y}`)}" fill="none" stroke="#000" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round" filter="url(#slStone)"/></svg>`;
 // 1日の道のはじまりと終わり：道は寝床から出て、夜の焚き火で終わる。その先の大地は、まだ足を踏み入れていない場所として少し暗く
-function pCliff(k,H){
-  const fire=(y,lab,up)=>{ const x=pRX(Math.max(0,Math.min(H,y))); return `<g class="pe-mark" transform="translate(${x.toFixed(1)} ${y})"><circle r="11" class="pe-bg"/><path class="pe-fire" d="M0 6c-4.5 0-6.5-3-6-6.5.5-3 3-4.5 3.5-8 2 1.5 2.5 3.5 2 5.5 1.5-.8 2.2-2.4 2.2-3.8 2.8 2.4 4.3 5.3 4.3 7.8 0 3-2.5 5-6 5Z"/><text class="pe-lab" x="16" y="${up?-2:4}">${lab}</text></g>`; };
-  return `<defs><linearGradient id="peTop" x1="0" y1="-900" x2="0" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#0b0f0c" stop-opacity=".62"/><stop offset=".86" stop-color="#0b0f0c" stop-opacity=".45"/><stop offset="1" stop-color="#0b0f0c" stop-opacity="0"/></linearGradient><linearGradient id="peBot" x1="0" y1="${H}" x2="0" y2="${H+900}" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#0b0f0c" stop-opacity="0"/><stop offset=".14" stop-color="#0b0f0c" stop-opacity=".45"/><stop offset="1" stop-color="#0b0f0c" stop-opacity=".62"/></linearGradient></defs>
-    <rect x="0" y="-900" width="100%" height="900" fill="url(#peTop)"/><rect x="0" y="${H}" width="100%" height="900" fill="url(#peBot)"/>${fire(0,'目覚め',1)}${fire(pm2y(PATH_H1),'焚き火で休む',0)}`;
+function pCliff(k,H,m0,m1){
+  const Y0=pm2y(m0), Y1=pm2y(m1), fire=(y,lab,up)=>{ const x=pRX(y); return `<g class="pe-mark" transform="translate(${x.toFixed(1)} ${y})"><circle r="11" class="pe-bg"/><path class="pe-fire" d="M0 6c-4.5 0-6.5-3-6-6.5.5-3 3-4.5 3.5-8 2 1.5 2.5 3.5 2 5.5 1.5-.8 2.2-2.4 2.2-3.8 2.8 2.4 4.3 5.3 4.3 7.8 0 3-2.5 5-6 5Z"/><text class="pe-lab" x="16" y="${up?-2:4}">${lab}</text></g>`; };
+  return `<defs><linearGradient id="peTop" x1="0" y1="${Y0-900}" x2="0" y2="${Y0}" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#0b0f0c" stop-opacity=".62"/><stop offset=".86" stop-color="#0b0f0c" stop-opacity=".45"/><stop offset="1" stop-color="#0b0f0c" stop-opacity="0"/></linearGradient><linearGradient id="peBot" x1="0" y1="${Y1}" x2="0" y2="${Y1+900}" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#0b0f0c" stop-opacity="0"/><stop offset=".14" stop-color="#0b0f0c" stop-opacity=".45"/><stop offset="1" stop-color="#0b0f0c" stop-opacity=".62"/></linearGradient></defs>
+    <rect x="0" y="${Y0-1800}" width="100%" height="1800" fill="url(#peTop)"/><rect x="0" y="${Y1}" width="100%" height="1800" fill="url(#peBot)"/>${fire(Y0,'目覚め',1)}${fire(Y1,'焚き火で休む',0)}`;
 }
 // 地名：ブレワイの地図のような「〜地方」「〜村」「〜馬宿」…を日ごとに組み合わせる（すべてこの旅のための架空の地名）
 const PN_A=['ミズナラ','カゼノネ','シラユキ','アカツチ','ホタル','ツユクサ','コケムス','ヒバリ','タソガレ','イワツツジ','ハヤテ','サザナミ','ヒカゲ','ユウナギ','アオバ','カタクリ','ナギサ','オボロ','ツララ','キリフ','ヒイラギ','クモマ','ススキ','ヤマセ','ワタリ','コダマ','ハルカ','トキワ','アサギ','ムラサメ','カゲロウ','ヨモギ','シノノメ','ユキワリ','マツカゼ','イナホ','フブキ','ホムラ','サギリ','アマツ','イソラ','ウツギ','エニシ','オモダカ','カスミ','キササゲ','クヌギ','ケヤキ','コノハ','サクヤ','シオン','スズラン','セキレイ','タチバナ','チドリ','ツバキ','トウゲ','ナツメ','ニレ','ヌマタ','ネムノキ','ノギク','ハクロ','フジナミ','ホオズキ','マソホ','ミサゴ','ムクゲ','モズ','ヤマブキ','ユズリハ','ヨシキリ','リンドウ','ワカバ','アケボノ','イサリビ','ウスズミ','エボシ','オキナ','カガリ','カワセミ','クサナギ','コガネ','サンゴ','シジマ','スミレ','セセラギ','タマユラ','ツクバネ','トバリ','ナナカマド','ハシバミ','ヒスイ','ホシクズ','マホロ','ミナモ','ヤマナミ','ユウヅツ','ワダツミ'];
@@ -3269,10 +3271,10 @@ function pRng(k,salt){ let h=salt; for(const c of k) h=(h*131+c.charCodeAt(0))>>
 function pNamer(k){ const r=pRng(k,991), used=new Set(); return t=>{ let n; for(let i=0;i<20;i++){ n=PN_A[Math.floor(r()*PN_A.length)]; if(!used.has(n)) break; } used.add(n); return n+PN[t]; }; }
 const pNm=(sd,t)=>{ const r=pRng(sd,991); return PN_A[Math.floor(r()*PN_A.length)]+PN[t]; };
 // 地方の境目も世界に固定。日のはじめは、前の日から続いている地方の名前を出す
-function pRegions(k){ const off=pOffOf(k), L=PATH_H1-PATH_H0, CW=300, out=[], mk=c=>{ const r=pRng('rg'+c,77); return [c*CW+r()*200, pNm('rg'+c,r()<.6?'region':['plain','hill','high','vale','marsh'][Math.floor(r()*5)])]; };
-  for(let c=Math.floor(off/CW)-1;c<=Math.floor((off+L)/CW);c++){ const [v,n]=mk(c); if(v>=off&&v<off+L) out.push([PATH_H0+v-off,n]); }
-  if(!out.length||out[0][0]>PATH_H0+90){ let c=Math.floor(off/CW); while(mk(c)[0]>=off) c--; out.unshift([PATH_H0+20/PX,mk(c)[1]]); }
-  return out; }
+function pRegions(k){ const g=pGeo(k), off=pOffOf(k)+(g.s-PATH_H0), L=g.e-g.s, CW=300, out=[], mk=c=>{ const r=pRng('rg'+c,77); return [c*CW+r()*200, pNm('rg'+c,r()<.6?'region':['plain','hill','high','vale','marsh'][Math.floor(r()*5)])]; };
+  for(let c=Math.floor(off/CW)-1;c<=Math.floor((off+L)/CW);c++){ const [v,n]=mk(c); if(v>=off&&v<off+L) out.push([g.s+v-off,n]); }
+  if(!out.length||out[0][0]>g.s+90){ let c=Math.floor(off/CW); while(mk(c)[0]>=off) c--; out.unshift([g.s+20/PX,mk(c)[1]]); }
+  return out.filter((x,i)=>!i||x[1]!==out[i-1][1]); }
 // 地形：山（雪の頂）、湖、川と橋、森、村、馬宿、塔、遺跡を日ごとに散らす
 // ブレワイの地図のように、高さの地図（ハイトマップ）から地形を作る：低地は濃い茶、高地ほど明るく、山頂は白。細かい等高線と陰影。低い所は水。
 const pSeedN=7;
@@ -3289,7 +3291,7 @@ const P_RAMP=[[0,[64,52,27]],[.12,[82,68,36]],[.24,[103,86,46]],[.36,[124,106,58
 const pRamp=t=>{ for(let i=1;i<P_RAMP.length;i++){ if(t<=P_RAMP[i][0]){ const [t0,c0]=P_RAMP[i-1], [t1,c1]=P_RAMP[i], k=(t-t0)/(t1-t0); return [c0[0]+(c1[0]-c0[0])*k,c0[1]+(c1[1]-c0[1])*k,c0[2]+(c1[2]-c0[2])*k]; } } return P_RAMP[P_RAMP.length-1][1]; };
 // 地形の絵は重いので、少しずつ（画面を止めずに）描く。今日と前後の日は先に描いておく
 const pTerCache={}, pTerOrd=[], pTerJobs=[]; let pTerBusy=false, pTerShown='';
-const pTerKey=k=>k+'|'+PX+'|'+pW;
+const pTerKey=(k,off)=>k+'|'+PX+'|'+pW+'|'+(off==null?pOffOf(k):off);
 function* pTerGen(H){
   const G=3, Y0=-900, gw=Math.ceil(pW/G)+2, gh=Math.ceil((H+1800)/G)+2, g=new Float32Array(gw*gh);
   for(let j=0;j<gh;j++){ for(let i=0;i<gw;i++) g[j*gw+i]=pHgt(i*G,Y0+j*G); if(j%24===0) yield; }
@@ -3341,7 +3343,7 @@ function pTerPrefetch(k){
 function pMapArt(k,H){
   // 世界を縦 CW ずつの区画に分け、区画ごとに決まった乱数で川・森・村などを置く（隣の日と同じ場所には同じ物がある）
   const W=pW, Y0=-900, Y1=H+900, off=pOff, CW=300, v2y=v=>(v-off)*PX, vA=off+Y0/PX, vB=off+Y1/PX, c0=Math.floor(vA/CW), c1=Math.floor(vB/CW);
-  const tk=pTerKey(k), tu=pTerCache[tk]; if(tu) pTerShown=tk; else pTerAsk(k,H,true);
+  const tk=pTerKey(k,pOff), tu=pTerCache[tk]; if(tu) pTerShown=tk; else pTerAsk(k,H,true);
   let o=`<rect class="mp-ter-bg" x="0" y="${Y0}" width="${W}" height="${Y1-Y0}"/><image class="mp-ter ${tu?'on':''}" data-k="${tk}" href="${tu||''}" x="0" y="${Y0}" width="${W}" height="${Y1-Y0}" preserveAspectRatio="none"/>`;
   const labs=[], inR=y=>y>Y0+10&&y<Y1-10, far=(x,y,d)=>Math.abs(x-pRX(y))>d;
   const water=[], nearWater=(x,y,d)=>pHgt(x,y)<P_SEA+.03||(d>0&&(pHgt(x+d,y)<P_SEA||pHgt(x-d,y)<P_SEA||pHgt(x,y+d)<P_SEA||pHgt(x,y-d)<P_SEA))||water.some(([wx,wy,wr])=>Math.hypot(x-wx,y-wy)<wr+d);
@@ -3384,7 +3386,7 @@ function pMapArt(k,H){
     if(n>=2) trails+=`<path class="mp-trail" d="${dd}"/>`; }
   o+=trails+pois;
   // 地名どうし・道・地方名と重ならないように置く（だめなら道の反対側へ、それでもだめなら出さない）
-  const placed=[[0,pm2y(PATH_H1)].map(y=>[pRX(y)-16,y-16,pRX(y)+96,y+16])][0]; labs.sort((a,b)=>(b[3]==='poi')-(a[3]==='poi')||a[1]-b[1]);
+  const G=pGeo(k), placed=[pm2y(G.s),pm2y(G.e)].map(y=>[pRX(y)-16,y-16,pRX(y)+96,y+16]); labs.sort((a,b)=>(b[3]==='poi')-(a[3]==='poi')||a[1]-b[1]);
   pRegions(k).forEach(([m,n])=>{ const y=pm2y(m)+14, w=n.length*20, lft=Math.max(pRX(y),pRX(y+20))>pW*.5; placed.push(lft?[0,y-2,w+20,y+34]:[W-w-20,y-2,W,y+34]); });
   const hitRoad=b=>{ for(let yy=b[1]-4;yy<=b[3]+4;yy+=4){ const rx=pRX(yy); if(rx>b[0]-8&&rx<b[2]+8) return true; } return false; };
   const hit=b=>hitRoad(b)||b[0]<2||b[2]>W-2||placed.some(q=>b[0]<q[2]&&b[2]>q[0]&&b[1]<q[3]&&b[3]>q[1]);
@@ -3646,7 +3648,7 @@ document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==
 stamp(); window.__qlReady=true;
 render(); if(moveDoToSteps()){ save(); render(); } if(trImport()){ state.pristine=false; save(); render(); } runCarry(); if(pBackfill()) render();
 // 起動して少ししたら、今日の地図を裏で描いておく（開いたときに待たないように）
-setTimeout(()=>{ try{ const w=+localStorage.getItem('ql-pw'); if(!w||pTerCache[ymd()+'|'+PX+'|'+w]) return; const sv=pW; pW=w; pTerAsk(ymd(),pm2y(PATH_H1)+10,false); pW=sv; }catch(e){} },1200);
+setTimeout(()=>{ try{ const w=+localStorage.getItem('ql-pw'); if(!w) return; const sv=pW; pW=w; pTerAsk(ymd(),pm2y(PATH_H1)+10,false); pW=sv; }catch(e){} },1200);
 if(sync.url){ syncScan(); flush(); loadData().then(pull); }
 })();
 </script>
