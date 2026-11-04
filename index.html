@@ -3324,7 +3324,9 @@ function pHgtC(x,y,road){ const v=y/PX+pOff, u=x*1.05; let f=0,amp=.5,fr=1/170; 
 // 地方ごとの景色（ブレワイのオルディン＝火山とマグマ、ゲルド＝砂漠、ラネール＝湿地）：世界の位置で決まる、ゆるやかに入れ替わる
 const pSm=(a,b,x)=>{ let t=(x-a)/(b-a); t=t<0?0:t>1?1:t; return t*t*(3-2*t); };
 // 実際のブレワイの地図を見て：火山（デスマウンテン）は地図の一角にまとまってたまに出る。雪山（ヘブラ）は高い山が白い。砂漠（ゲルド）は平らでくすんだ土地。湿原（ラネール）は浅い水に島が散らばる
-function pBiomeW(x,v){ const u=x*1.05, W=pW||380, side=pNoise(v/2600+13.1,1.7)>.5?x/W:1-x/W;
+// 火山・雪山・砂漠・湿原・城は作り直し中のため止めている（本物の地図と並べて確かめてから1つずつ戻す）
+const P_BIOMES=false, P_BZ=[0,0,0,0];
+function pBiomeW(x,v){ if(!P_BIOMES) return P_BZ; const u=x*1.05, W=pW||380, side=pNoise(v/2600+13.1,1.7)>.5?x/W:1-x/W;
   const vo=pNoise(v/2100+41.3,7.1), wv=pSm(.79,.84,vo)*pSm(.2,.6,side);
   const sn=pNoise(v/2300+5.3,22.9), wsn=pSm(.78,.83,sn)*(1-wv);
   const dr=pNoise(v/2200+3.7,91.9), wd=pSm(.79,.84,dr)*(1-wv)*(1-wsn);
@@ -3333,7 +3335,7 @@ function pBiomeW(x,v){ const u=x*1.05, W=pW||380, side=pNoise(v/2600+13.1,1.7)>.
 const pBiome=(x,y)=>pBiomeW(x,y/PX+pOff);
 // ハイラル城のような大きな城：たまに（約3日に1度）、道のそばの堀の中の島に建つ
 const P_CA=3000, pCaMemo=new Map();
-function pCastle(c){ const key=c+'|'+(pW|0); if(pCaMemo.has(key)) return pCaMemo.get(key); const r=pRng('ca'+c,5); let o=null;
+function pCastle(c){ if(!P_BIOMES) return null; const key=c+'|'+(pW|0); if(pCaMemo.has(key)) return pCaMemo.get(key); const r=pRng('ca'+c,5); let o=null;
   if(r()<.7){ const v=c*P_CA+400+r()*(P_CA-800), q=v, R=pRoadOf0(), W=pW||380, cxr=W/2+(W/2-34)*(.62*Math.sin(q/(150*1.05)+4.1)+.28*Math.sin(q/61+1.3)+.1*Math.sin(q/27+2.2)), rx=Math.max(30,Math.min(W-30,cxr)), x=rx<W/2?Math.min(W-30,rx+175):Math.max(30,rx-175);
     const b=pBiomeW(x,v); if(b[0]<.2&&b[1]<.3&&b[2]<.3&&b[3]<.3) o=[x,v,c]; }
   pCaMemo.set(key,o); return o; }
@@ -3422,7 +3424,7 @@ function pTerAsk(k,H,first){
   if(!pTerBusy){ pTerBusy=true; setTimeout(pTerStep,0); }
 }
 // 一度描いた地形の絵は端末に取っておく（次に開いたときは描かずにすぐ出す）。描き方を変えたら版を上げて作り直す
-const P_TER_V='t12|', P_TER_MAX=36;
+const P_TER_V='t13|', P_TER_MAX=36;
 const pIDB=(()=>{ let dbp=null; const open=()=>dbp||(dbp=new Promise((res,rej)=>{ try{ const r=indexedDB.open('ql-ter',1); r.onupgradeneeded=()=>r.result.createObjectStore('img'); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }catch(e){ rej(e); } }));
   const st=m=>open().then(db=>db.transaction('img',m).objectStore('img'));
   const keys=()=>{ try{ return JSON.parse(localStorage.getItem('ql-ter-keys')||'[]'); }catch(e){ return []; } }, setKeys=a=>{ try{ localStorage.setItem('ql-ter-keys',JSON.stringify(a)); }catch(e){} };
