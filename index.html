@@ -3173,10 +3173,12 @@ function pathList(){
   let svg=pMapArt(k,H)+`<path class="rd-bed" d="${gA}"/><path class="rd-edge rd-ghost" d="${gA}"/><path class="rd-bed" d="${gB}"/><path class="rd-edge rd-ghost" d="${gB}"/><path class="rd-bed" d="${seg(PATH_H0,PATH_H1)}"/><path class="rd-edge" d="${seg(PATH_H0,PATH_H1)}"/>`;
   // 今日通ってきた道（ブレワイの「足跡モード」のように緑の線で残す）
   // 寝ている間は馬が運んでくれる：〈起きた〉までと〈休む〉のあとは馬の足あと、起きている間は緑の足跡
-  const slp=hm().sleep[k]||{}, asleep=isT&&(slp.w==null||(slp.b!=null&&now>=slp.b));
-  let foot=''; if(isT&&now>PATH_H0){ const end=Math.min(now,PATH_H1), w=slp.w, bd=slp.b, a=w!=null?Math.max(PATH_H0,Math.min(end,w)):end;
-    if(a>PATH_H0) foot+=`<path class="rd-ride" d="${seg(PATH_H0,a)}"/>`;
-    if(w!=null&&w<end){ const z=bd!=null?Math.max(w,Math.min(end,bd)):end; if(z>w) foot+=`<path class="rd-hero" d="${seg(Math.max(PATH_H0,w),z)}"/>`; if(bd!=null&&bd<end) foot+=`<path class="rd-ride" d="${seg(Math.max(PATH_H0,bd),end)}"/>`; } }
+  // 22時〜5時は野営の時間：予定は置けるが、自分の印は止まって動かない（5時の所で待ち、22時の所で止まる）
+  const RST1=22*60, RST0=5*60, hn=Math.max(RST0,Math.min(RST1,now)), rest=now<RST0||now>=RST1;
+  const slp=hm().sleep[k]||{}, asleep=isT&&(rest||slp.w==null||(slp.b!=null&&now>=slp.b));
+  let foot=''; if(isT&&hn>RST0&&now>=RST0){ const end=Math.min(hn,PATH_H1), w=slp.w, bd=slp.b, a=w!=null?Math.max(RST0,Math.min(end,w)):end;
+    if(a>RST0) foot+=`<path class="rd-ride" d="${seg(RST0,a)}"/>`;
+    if(w!=null&&w<end){ const z=bd!=null?Math.max(w,Math.min(end,bd)):end; if(z>w) foot+=`<path class="rd-hero" d="${seg(Math.max(RST0,w),z)}"/>`; if(bd!=null&&bd<end) foot+=`<path class="rd-ride" d="${seg(Math.max(RST0,bd),end)}"/>`; } }
   let hrs=''; for(let m=PATH_H0+60;m<PATH_H1;m+=60){ const y=pm2y(m), x=pRX(y); svg+=`<circle class="rd-stone" cx="${x.toFixed(1)}" cy="${y}" r="2"/>`; hrs+=`<span class="rd-hr ${m%180===0?'big':''}" style="top:${y}px;left:${(x<52?x+8:x-46).toFixed(1)}px;${x<52?'text-align:left':''}">${m/60}:00</span>`; }
   // 地方の名前（地図の地名のように）
   const regs=pRegions(k).map(([m,n])=>{ const y=pm2y(m)+24, lft=Math.max(pRX(y-10),pRX(y+10))>pW*.5; return `<div class="rd-reg ${lft?'lft':''}" style="top:${pm2y(m)+14}px">${n}<i></i></div>`; }).join('');
@@ -3210,7 +3212,7 @@ function pathList(){
     if(sd.w!=null&&sd.w>=PATH_H0&&sd.w<PATH_H1) mtags+=at(sd.w,rec('起床',sd.w)+(slDur(k)!=null?`<span class="pe-time sub">${slDurFmt(slDur(k))}眠った</span>`:''));
     if(sd.b!=null&&sd.b>=PATH_H0&&sd.b<PATH_H1) mtags+=at(sd.b,rec('就寝',sd.b)); }
   let nowM='';
-  if(isT&&now>=PATH_H0&&now<PATH_H1){ const y=pm2y(now), x=pRX(y), day=now>=6*60&&now<18*60, ang=Math.atan2(6,pRX(y+3)-pRX(y-3))*180/Math.PI-90;
+  if(isT){ const y=pm2y(hn), x=pRX(y), day=now>=6*60&&now<18*60, ang=Math.atan2(6,pRX(y+3)-pRX(y-3))*180/Math.PI-90;
     // 寝ている間もエポナが道をたどって運んでくれる（よく慣れた馬は地図の道をひとりでたどる）。印はいつもの矢印、寝ている間は z z
     nowM+=`<div class="rd-link" style="top:${y}px;left:${x.toFixed(1)}px;transform:rotate(${ang.toFixed(0)}deg)" aria-hidden="true"><svg viewBox="0 0 22 30" width="22" height="30"><path d="M11 28.5 2 2.5h18Z" fill="#2f8cff" stroke="#fff" stroke-width="2" stroke-linejoin="round"/><circle cx="11" cy="8.5" r="2.6" fill="#fff"/></svg></div>${asleep?`<div class="rd-zz" style="top:${y}px;left:${x.toFixed(1)}px" aria-hidden="true"><i>z</i><i>z</i></div>`:''}`; }
   const md=x=>{ const t=new Date(k+'T00:00:00'); t.setDate(t.getDate()+x); return (t.getMonth()+1)+'/'+t.getDate(); };
