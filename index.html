@@ -3369,8 +3369,17 @@ function pTerAsk(k,H,first){
   first?pTerJobs.unshift(j):pTerJobs.push(j);
   if(!pTerBusy){ pTerBusy=true; setTimeout(pTerStep,0); }
 }
+// 一度描いた地形の絵は端末に取っておく（次に開いたときは描かずにすぐ出す）。描き方を変えたら版を上げて作り直す
+const P_TER_V='t4|', P_TER_MAX=36;
+const pIDB=(()=>{ let dbp=null; const open=()=>dbp||(dbp=new Promise((res,rej)=>{ try{ const r=indexedDB.open('ql-ter',1); r.onupgradeneeded=()=>r.result.createObjectStore('img'); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }catch(e){ rej(e); } }));
+  const st=m=>open().then(db=>db.transaction('img',m).objectStore('img'));
+  const keys=()=>{ try{ return JSON.parse(localStorage.getItem('ql-ter-keys')||'[]'); }catch(e){ return []; } }, setKeys=a=>{ try{ localStorage.setItem('ql-ter-keys',JSON.stringify(a)); }catch(e){} };
+  return { get:k=>st('readonly').then(o=>new Promise(res=>{ const q=o.get(P_TER_V+k); q.onsuccess=()=>res(q.result||null); q.onerror=()=>res(null); })).catch(()=>null),
+    put:(k,b)=>st('readwrite').then(o=>{ o.put(b,P_TER_V+k); let a=keys().filter(x=>x!==P_TER_V+k); a.push(P_TER_V+k); while(a.length>P_TER_MAX){ o.delete(a.shift()); } a.filter(x=>!x.startsWith(P_TER_V)).forEach(x=>o.delete(x)); setKeys(a.filter(x=>x.startsWith(P_TER_V))); }).catch(()=>{}) }; })();
 function pTerStep(){
   const j=pTerJobs[0]; if(!j){ pTerBusy=false; return; }
+  // まず端末に取ってある絵を探す
+  if(!j.checked){ j.checked=true; pIDB.get(j.key).then(b=>{ if(b&&pTerJobs.includes(j)){ pTerJobs.splice(pTerJobs.indexOf(j),1); pTerDone(j.key,URL.createObjectURL(b)); } setTimeout(pTerStep,0); }); return; }
   const sv=[PX,pW,pOff]; ({PX,pW,pOff}=j.ctx);
   const t0=performance.now(); let res;
   try{ if(!j.gen) j.gen=pTerGen(j.H); do{ res=j.gen.next(); }while(!res.done&&performance.now()-t0<9); }
@@ -3379,8 +3388,8 @@ function pTerStep(){
   if(!res.done){ setTimeout(pTerStep,0); return; }
   pTerJobs.shift(); const cv=res.value, next=()=>setTimeout(pTerStep,0);
   if(!cv){ next(); return; }
-  if(cv.toBlob) cv.toBlob(bl=>{ pTerDone(j.key,bl?URL.createObjectURL(bl):cv.toDataURL('image/png')); next(); },'image/png');
-  else { pTerDone(j.key,cv.toDataURL('image/png')); next(); }
+  if(cv.toBlob) cv.toBlob(bl=>{ if(bl) pIDB.put(j.key,bl); pTerDone(j.key,bl?URL.createObjectURL(bl):cv.toDataURL('image/jpeg',.9)); next(); },'image/jpeg',.9);
+  else { pTerDone(j.key,cv.toDataURL('image/jpeg',.9)); next(); }
 }
 // 今の日のまわり（前後の日・ほかのズーム）を先に描いておく
 function pTerPrefetch(k){
@@ -3692,7 +3701,7 @@ document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==
 stamp(); window.__qlReady=true;
 render(); if(moveDoToSteps()){ save(); render(); } if(trImport()){ state.pristine=false; save(); render(); } runCarry(); if(pBackfill()) render();
 // 起動して少ししたら、今日の地図を裏で描いておく（開いたときに待たないように）
-setTimeout(()=>{ try{ const w=+localStorage.getItem('ql-pw'); if(!w) return; const sv=pW; pW=w; pTerAsk(ymd(),pm2y(PATH_H1)+10,false); pW=sv; }catch(e){} },1200);
+setTimeout(()=>{ try{ const w=+localStorage.getItem('ql-pw'); if(!w) return; const sv=pW; pW=w; pTerAsk(pJDay(),pm2y(PATH_H1)+10,false); pTerPrefetch(pJDay()); pW=sv; }catch(e){} },400);
 if(sync.url){ syncScan(); flush(); loadData().then(pull); }
 })();
 </script>
