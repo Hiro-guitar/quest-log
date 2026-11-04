@@ -3556,11 +3556,28 @@ function pathInput(e){
 })();
 
 /* ---------- PCとスマホのデータ同期 ---------- */
-let qSigs=null;
+let qSigs=null, qFS={};
+// 項目ごとの変更時刻：チャレンジの名前・完了・やる日…と、工程の1つ1つの項目ごとに「いつ変えたか」を覚えておく。
+// 2台で同じチャレンジの別の所をさわっても、新しい方で丸ごと上書きせずに、さわった項目だけを合わせる
+const qGrp=k=>k==='done'||k==='doneAt'?'d':(k==='doDate'||k==='doTime'||k==='carry')?'t':k==='text'||k==='title'?'x':'o';
+function qFields(q){ const m={}, add=(key,v)=>{ m[key]=(m[key]||'')+JSON.stringify(v)+'|'; };
+  Object.keys(q).sort().forEach(k=>{ if(k==='u'||k==='_f'||k==='steps') return; add(qGrp(k),[k,q[k]]); });
+  (q.steps||[]).forEach(st=>{ m['s:'+st.id]='1'; Object.keys(st).sort().forEach(fk=>{ if(fk!=='id') add('s:'+st.id+':'+qGrp(fk),[fk,st[fk]]); }); }); m.so=(q.steps||[]).map(x=>x.id).join(','); return m; }
+function qTouch(q,now){ const cur=qFields(q), prev=qFS[q.id], t=Math.floor(now/1000); if(prev){ const f=q._f||(q._f={}); new Set([...Object.keys(cur),...Object.keys(prev)]).forEach(k=>{ if(cur[k]!==prev[k]) f[k]=t; }); } qFS[q.id]=cur; }
+function mergeQ(a,b){
+  const A=a._f||{}, B=b._f||{}, base=(b.u||0)>(a.u||0)?b:a, oth=base===a?b:a, Fb=base._f||{}, Fo=oth._f||{}, o={}, pick=(k,hb,ho)=>{ const tb=Fb[k]||0, to=Fo[k]||0; return to>tb?'o':tb>to?'b':(hb?'b':ho?'o':'b'); };
+  new Set([...Object.keys(a),...Object.keys(b)]).forEach(k=>{ if(k==='u'||k==='_f'||k==='steps') return; const w=pick(qGrp(k),k in base,k in oth), src=w==='b'?base:oth; if(k in src) o[k]=src[k]; });
+  const sb=base.steps||[], so=oth.steps||[], mb=new Map(sb.map(x=>[x.id,x])), mo=new Map(so.map(x=>[x.id,x])), ids=new Set([...mb.keys(),...mo.keys()]), keep=new Map();
+  ids.forEach(id=>{ const xb=mb.get(id), xo=mo.get(id), w=pick('s:'+id,true,false); const ex=w==='b'?!!xb:!!xo; if(!ex) return;
+    if(!xb||!xo){ keep.set(id,{...(xb||xo)}); return; } const st={id}; new Set([...Object.keys(xb),...Object.keys(xo)]).forEach(fk=>{ if(fk==='id') return; const k='s:'+id+':'+qGrp(fk), w2=pick(k,fk in xb,fk in xo), src=w2==='b'?xb:xo; if(fk in src) st[fk]=src[fk]; }); keep.set(id,st); });
+  const ord=pick('so',true,false)==='b'?[sb,so]:[so,sb], steps=[]; ord.forEach(L=>L.forEach(x=>{ if(keep.has(x.id)&&!steps.some(y=>y.id===x.id)) steps.push(keep.get(x.id)); }));
+  if(a.steps||b.steps) o.steps=steps;
+  const f={...A}; Object.entries(B).forEach(([k,v])=>{ if(!f[k]||f[k]<v) f[k]=v; }); o._f=f; o.u=Math.max(a.u||0,b.u||0); return o; }
 function stamp(){
   const now=Date.now(); state.deleted=state.deleted||{}; const cur={};
-  state.quests.forEach(q=>{ const {u,...rest}=q; const sg=JSON.stringify(rest); cur[q.id]=sg;
-    if(qSigs&&qSigs[q.id]!==sg){ q.u=now; state.pristine=false; } if(!q.u) q.u=q.created||now; });
+  state.quests.forEach(q=>{ const {u,_f,...rest}=q; const sg=JSON.stringify(rest); cur[q.id]=sg;
+    if(qSigs&&qSigs[q.id]!==sg){ q.u=now; state.pristine=false; qTouch(q,now); } else if(!qSigs||!qFS[q.id]) qFS[q.id]=qFields(q); if(!q.u) q.u=q.created||now;
+    if(q._f){ for(const k in q._f) if(now/1000-q._f[k]>120*86400&&!(k in qFS[q.id])) delete q._f[k]; } });
   if(qSigs) Object.keys(qSigs).forEach(id=>{ if(!cur[id]){ state.deleted[id]=now; state.pristine=false; } });
   const ex=[state.xp,state.seeds||0,state.moonDone||'',Object.keys(state.rested||{}).length,hmRev(),state.rupeeEarned||0,state.shrines||0,Object.keys(state.purchases||{}).length,JSON.stringify(state.shop||{}),JSON.stringify(state.chap||{}),JSON.stringify(state.rev||{}),JSON.stringify(state.mats||{}),JSON.stringify(state.matHist||{}),JSON.stringify(state.plan||{})].join('|');
   if(qSigs&&ex!==stamp.ex) state.pristine=false;
@@ -3572,7 +3589,7 @@ function mergeStates(a,b){
   const del={...(a.deleted||{})};
   Object.entries(b.deleted||{}).forEach(([k,v])=>{ if(!del[k]||del[k]<v) del[k]=v; });
   const map={};
-  [...(a.quests||[]),...(b.quests||[])].forEach(q=>{ const e=map[q.id]; if(!e||(q.u||0)>(e.u||0)) map[q.id]=q; });
+  [...(a.quests||[]),...(b.quests||[])].forEach(q=>{ const e=map[q.id]; map[q.id]=e?mergeQ(e,q):q; });
   const quests=Object.values(map).filter(q=>!(del[q.id]&&del[q.id]>=(q.u||0)));
   return {xp:Math.max(a.xp||0,b.xp||0),seeds:Math.max(a.seeds||0,b.seeds||0),rested:{...(a.rested||{}),...(b.rested||{})},hm:mergeHm(a.hm,b.hm),rupeeEarned:Math.max(a.rupeeEarned||0,b.rupeeEarned||0),shrines:Math.max(a.shrines||0,b.shrines||0),purchases:{...(a.purchases||{}),...(b.purchases||{})},shop:(()=>{const o={...(a.shop||{})}; Object.entries(b.shop||{}).forEach(([k,v])=>{ if(!o[k]||(v.u||0)>(o[k].u||0)) o[k]=v; }); return o;})(),moonDone:[a.moonDone||'',b.moonDone||''].sort().pop(),mats:(()=>{const o={...(a.mats||{})}; Object.entries(b.mats||{}).forEach(([k,v])=>{ if(!o[k]||(v.u||0)>(o[k].u||0)) o[k]=v; }); return o;})(),matHist:(()=>{const o={...(a.matHist||{})}; Object.entries(b.matHist||{}).forEach(([k,v])=>{ o[k]=Math.max(o[k]||0,v); }); return o;})(),chap:((b.chap&&(b.chap.u||0)>((a.chap||{}).u||0))?b.chap:(a.chap||b.chap)),plan:mergePlan(a.plan,b.plan),rev:(()=>{const A=a.rev||{},B=b.rev||{},n={...(A.notes||{})}; Object.entries(B.notes||{}).forEach(([k,v])=>{ if(!n[k]||(v.u||0)>(n[k].u||0)) n[k]=v; }); return {day:[A.day||'',B.day||''].sort().pop(),month:[A.month||'',B.month||''].sort().pop(),notes:n,u:Math.max(A.u||0,B.u||0)};})(),quests,deleted:del,pristine:false};
 }
@@ -3581,7 +3598,7 @@ const planU=st=>{ let m=0; const P=st.plan||{}; Object.values(P.d||{}).forEach(d
 function fingerprint(st){ return JSON.stringify([(st.quests||[]).map(q=>q.id+':'+(q.u||0)).sort(),st.xp||0,st.seeds||0,Object.keys(st.rested||{}).length,st.moonDone||'',st.rupeeEarned||0,st.shrines||0,Object.keys(st.purchases||{}).length,JSON.stringify(st.shop||{}).length,((st.chap||{}).u||0),((st.rev||{}).u||0),Object.values(st.mats||{}).reduce((m,v)=>Math.max(m,v.u||0),0),planU(st),(()=>{const u=(st.hm||{}).u||{};let m=0;for(const k in u)if(u[k]>m)m=u[k];return m})()]); }
 function applyState(ns){
   state=ns; if(!Array.isArray(state.quests)) state.quests=[];
-  migrate(); qSigs=null; stamp();
+  migrate(); qSigs=null; qFS={}; stamp();
   try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}
   syncScan();
   if(selId&&!findQ(selId)){ selId=null; editing=false; }
@@ -3594,7 +3611,7 @@ async function pushData(){
   if(!sync.url) return; if(pushing){ pushAgain=true; return; }
   pushing=true;
   try{
-    const j=await gas({action:'save',data:state,baseRev:sync.rev||0});
+    const j=await gas({action:'save',data:{...state,_rev:(sync.rev||0)+1},baseRev:sync.rev||0});
     if(j.conflict){ sync.rev=j.rev; saveSync(); applyState(mergeStates(state,j.data||{})); pushAgain=true; }
     else { sync.rev=j.rev; sync.dataAt=Date.now(); sync.err=''; saveSync(); refreshStatus(); }
   }catch(err){ sync.err=String(err.message||err); saveSync(); refreshStatus(); clearTimeout(pushT); pushT=setTimeout(pushData,30000); }
@@ -3607,8 +3624,10 @@ async function loadData(){
     if(sync.err){ sync.err=''; saveSync(); refreshStatus(); }
     if(!j.data){ schedulePush(100); return; }
     if(j.rev===sync.rev) return;
+    // 読んでいる途中にほかの端末が保存すると、中身は古いのに番号だけ新しくなることがある。そのときは番号を進めずに読み直す
+    const torn=j.data._rev&&j.data._rev!==j.rev;
     const m=state.pristine ? {...j.data,pristine:false} : mergeStates(state,j.data);
-    sync.rev=j.rev; sync.dataAt=Date.now(); saveSync();
+    if(torn) setTimeout(loadData,2500); else { sync.rev=j.rev; sync.dataAt=Date.now(); saveSync(); }
     const needPush=fingerprint(m)!==fingerprint(j.data);
     const changed=fingerprint(m)!==fingerprint(state);
     applyState(m);
