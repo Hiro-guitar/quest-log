@@ -3085,7 +3085,9 @@ let pOff=0;
 // 寝ている間は進まないので、前の日の焚き火の場所から次の日がそのまま始まる（道は1本につながったまま）
 const P_WAKE=5*60, P_BED=22*60, P_EPOCH='2026-10-01';
 function pGeo(k){ const S=(hm().sleep||{})[k]||{}, wb=Object.values(pDay(k)).find(b=>b&&!b.del&&b.wake), plan0=wb?wb.s:P_WAKE;
-  let s=S.w!=null?S.w:plan0, e=S.b!=null?Math.min(S.b,PATH_H1):P_BED; s=Math.max(PATH_H0,Math.min(PATH_H1-60,s)); e=Math.max(s+60,Math.min(PATH_H1,e)); return {s,e,woke:S.w!=null,slept:S.b!=null}; }
+  // まだ起きていない今日は、目覚めの焚き火＝今の時刻（寝ている間は時間だけが進む。5分ごとに合わせる）。先の日は予定の起床時刻で仮に置く
+  const jn=k===pJDay()?Math.floor(pJNow()/5)*5:null;
+  let s=S.w!=null?S.w:jn!=null?jn:plan0, e=S.b!=null?Math.min(S.b,PATH_H1):P_BED; s=Math.max(PATH_H0,Math.min(PATH_H1-60,s)); e=Math.max(s+60,Math.min(PATH_H1,e)); return {s,e,woke:S.w!=null,slept:S.b!=null}; }
 // その日の道のはじまりが、世界の地図のどこにあたるか（それまでの日の「起きていた長さ」を足していく）
 function pStartW(k){ let W=0; const d=new Date(P_EPOCH+'T12:00:00'), end=new Date(k+'T12:00:00'); if(end<d) return Math.round((end-d)/DAY)*(P_BED-P_WAKE);
   for(;d<end;d.setDate(d.getDate()+1)){ const g=pGeo(ymd(d)); W+=g.e-g.s; } return W; }
