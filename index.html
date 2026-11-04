@@ -1129,7 +1129,7 @@ function gain(n){
 /* ---------- actions ---------- */
 function toggleStep(qid,sid){
   const q=findQ(qid), s=q&&q.steps.find(x=>x.id===sid); if(!s||s.qref) return;
-  s.done=!s.done; s.doneAt=s.done?Date.now():null; gain((s.done?1:-1)*10*(q.rank||1)); if(s.done) earnRupee(5);
+  s.done=!s.done; s.doneAt=s.done?Date.now():null; if(s.done) doneToday(s); gain((s.done?1:-1)*10*(q.rank||1)); if(s.done) earnRupee(5);
   save(); render();
   if(s.done){
     toast(`工程クリア  +${10*(q.rank||1)} XP ・ +5ルピー`); maybeSeed();
@@ -1144,8 +1144,10 @@ function maybeSeed(){
   return true;
 }
 function xpFor(q){return (q.type==='mini'?15:50)*(q.rank||1)}
+// 先の日にやる予定だった物を今日クリアしたら、やる日を今日にする（今日やったことになる）
+function doneToday(o){ const t=ymd(); if(o.doDate&&o.doDate>t){ o.doDate=t; o.doTime=''; o.carry=0; } }
 function completeQuest(q){
-  q.done=true; q.doneAt=Date.now(); q.accepted=false;
+  q.done=true; q.doneAt=Date.now(); q.accepted=false; doneToday(q);
   const xp=xpFor(q), rp=q.type==='mini'?10:30*(q.rank||1); gain(xp); earnRupee(rp); save();
   if(q.type==='mini'){ render(); toast(`ミニチャレンジ達成  +${xp} XP ・ +${rp}ルピー`); maybeSeed(); return; }
   $('clearT').textContent=q.title; $('clearXp').textContent=`+${xp} XP ・ +${rp}ルピー${q.reward?'　報酬：'+q.reward:''}`;
