@@ -3351,6 +3351,11 @@ function* pTerGen(H){
   const dw=new Float32Array(gw*gh); for(let o=0;o<gw*gh;o++) dw[o]=g[o]<P_SEA?1e4:0;
   for(let j=0;j<gh;j++) for(let i=0;i<gw;i++){ const o=j*gw+i; if(!dw[o]) continue; let m=dw[o]; if(i>0) m=Math.min(m,dw[o-1]+1); if(j>0){ m=Math.min(m,dw[o-gw]+1); if(i>0) m=Math.min(m,dw[o-gw-1]+1.414); if(i<gw-1) m=Math.min(m,dw[o-gw+1]+1.414); } dw[o]=m; }
   for(let j=gh-1;j>=0;j--) for(let i=gw-1;i>=0;i--){ const o=j*gw+i; if(!dw[o]) continue; let m=dw[o]; if(i<gw-1) m=Math.min(m,dw[o+1]+1); if(j<gh-1){ m=Math.min(m,dw[o+gw]+1); if(i<gw-1) m=Math.min(m,dw[o+gw+1]+1.414); if(i>0) m=Math.min(m,dw[o+gw-1]+1.414); } dw[o]=m; }
+  // ひとつながりの水（湖と、そこへ流れる川）ごとに、火山帯の中にある割合でマグマか水かを決める
+  const lab=new Int32Array(gw*gh), lavaOf=[0]; { let nl=0; const qu=new Int32Array(gw*gh);
+    for(let o0=0;o0<gw*gh;o0++){ if(lab[o0]||g[o0]>=P_SEA) continue; nl++; let qh=0,qt=0,sw=0,n=0; qu[qt++]=o0; lab[o0]=nl;
+      while(qh<qt){ const o=qu[qh++], i=o%gw; sw+=bV[o]; n++; const nb=[i>0?o-1:-1,i<gw-1?o+1:-1,o-gw,o+gw]; for(const q of nb){ if(q<0||q>=gw*gh||lab[q]||g[q]>=P_SEA) continue; lab[q]=nl; qu[qt++]=q; } }
+      lavaOf[nl]=sw/n>.5?1:0; } }
   yield;
   const R=Math.min(2,window.devicePixelRatio||1)>1.5?1.5:1, cw=Math.ceil(pW*R), ch=Math.ceil((H+1800)*R), hs=new Float32Array(cw*ch);
   for(let j=0;j<ch;j++){ const gy=j/R/G, j0=Math.min(gh-2,gy|0), fy=gy-j0; for(let i=0;i<cw;i++){ const gx=i/R/G, i0=Math.min(gw-2,gx|0), fx=gx-i0, o=j0*gw+i0, a1=g[o], b1=g[o+1], c1=g[o+gw], d1=g[o+gw+1]; hs[j*cw+i]=a1+(b1-a1)*fx+(c1-a1)*fy+(a1-b1-c1+d1)*fx*fy; } if(j%200===0) yield; }
@@ -3359,14 +3364,15 @@ function* pTerGen(H){
     const gx=i/R/G, i0=Math.min(gw-2,gx|0), fx=gx-i0, oo=j0*gw+i0, L=A=>(A[oo]*(1-fx)+A[oo+1]*fx)*(1-fy)+(A[oo+gw]*(1-fx)+A[oo+gw+1]*fx)*fy, wv=L(bV);
     const hr=hs[o+(i<cw-1?1:0)], hd=hs[o+(j<ch-1?cw:0)], hl=hs[o-(i>0?1:0)], hu=hs[o-(j>0?cw:0)];
     if(h<P_SEA){ const dd=L(dw)*G, shore=hr>=P_SEA||hd>=P_SEA||hl>=P_SEA||hu>=P_SEA;
-      if(wv>.5){ // マグマ：ふちは明るい橙、真ん中は赤
-        const q=Math.max(0,Math.min(1,(dd-1)/8)); const sp=L(bS); c=shore?[62,20,16]:[214-58*q+18*sp,80-50*q+30*sp,40]; }
+      const lb=lab[oo]||lab[oo+1]||lab[oo+gw]||lab[oo+gw+1];
+      if(lb?lavaOf[lb]:wv>.5){ // マグマ（デスマウンテンの地図のように、濃い紅と橙の2色がくっきり分かれる）
+        const sp=L(bS); c=shore?[64,26,20]:(dd<3.5||sp>.56)?[142,31,37]:[184,97,29]; }
       else { // 岸ぞいは浅い色、そこから先は底の深さでむらをつける（湖の中の深い所・浅い所）
         const dq=Math.max(0,Math.min(1,(dd-2)/9)), hq=Math.max(0,Math.min(1,(P_SEA-h)/.09)), q=dq*dq*(3-2*dq)*(.5+.5*hq*hq*(3-2*hq)); c=[118-62*q,142-66*q,152-66*q];
         if(shore) c=[58,52,34]; } }
     else { const t=(h-P_SEA)/(1-P_SEA); c=pRamp(t).slice(); const wd=L(bD), ww=L(bW);
       // 火山：灰色がかった岩肌　砂漠：明るい砂色　湿地：くすんだ緑がかった土と小さな水たまり
-      if(wv>.01){ const vc=[78+96*t,64+78*t,54+70*t], wq=wv*.85; c=[c[0]+(vc[0]-c[0])*wq,c[1]+(vc[1]-c[1])*wq,c[2]+(vc[2]-c[2])*wq]; }
+      if(wv>.01){ const vc=[150+60*t,144+58*t,122+52*t], wq=wv*.9; c=[c[0]+(vc[0]-c[0])*wq,c[1]+(vc[1]-c[1])*wq,c[2]+(vc[2]-c[2])*wq]; }
       if(wd>.01){ const dc=[176+52*t,152+56*t,100+64*t]; c=[c[0]+(dc[0]-c[0])*wd,c[1]+(dc[1]-c[1])*wd,c[2]+(dc[2]-c[2])*wd]; }
       if(ww>.01){ const mc=[78+66*t,80+58*t,44+40*t]; c=[c[0]+(mc[0]-c[0])*ww,c[1]+(mc[1]-c[1])*ww,c[2]+(mc[2]-c[2])*ww]; }
       const sh=((hl-hr)+(hu-hd))*SH*3; const m=Math.max(.72,Math.min(1.22,1+sh)); c=[c[0]*m,c[1]*m,c[2]*m];
@@ -3390,7 +3396,7 @@ function pTerAsk(k,H,first){
   if(!pTerBusy){ pTerBusy=true; setTimeout(pTerStep,0); }
 }
 // 一度描いた地形の絵は端末に取っておく（次に開いたときは描かずにすぐ出す）。描き方を変えたら版を上げて作り直す
-const P_TER_V='t6|', P_TER_MAX=36;
+const P_TER_V='t7|', P_TER_MAX=36;
 const pIDB=(()=>{ let dbp=null; const open=()=>dbp||(dbp=new Promise((res,rej)=>{ try{ const r=indexedDB.open('ql-ter',1); r.onupgradeneeded=()=>r.result.createObjectStore('img'); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }catch(e){ rej(e); } }));
   const st=m=>open().then(db=>db.transaction('img',m).objectStore('img'));
   const keys=()=>{ try{ return JSON.parse(localStorage.getItem('ql-ter-keys')||'[]'); }catch(e){ return []; } }, setKeys=a=>{ try{ localStorage.setItem('ql-ter-keys',JSON.stringify(a)); }catch(e){} };
