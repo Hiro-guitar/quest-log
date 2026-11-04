@@ -531,8 +531,8 @@ body.pdrag{cursor:grabbing}
 .rd-zz i,.rd-epona i{position:absolute;font-style:normal;font-weight:700;color:#e8f2ff;text-shadow:0 0 3px #000;font-size:10px;left:4px;top:-10px;animation:zz 2.4s ease-in-out infinite;opacity:0}
 .rd-zz i+i,.rd-epona i+i{font-size:8px;left:9px;top:-15px;animation-delay:1.2s}
 @keyframes zz{0%{opacity:0;transform:translate(0,4px)}30%{opacity:1}100%{opacity:0;transform:translate(-5px,-6px)}}
-.rd-link{position:absolute;width:0;height:0;margin:-9px 0 0 -7px;border-left:7px solid transparent;border-right:7px solid transparent;border-top:13px solid var(--blue);filter:drop-shadow(0 0 5px var(--blue));z-index:4;pointer-events:none}
-.rd-link::after{content:"";position:absolute;left:-2.5px;top:-11px;width:5px;height:5px;border-radius:50%;background:#e8fbff}
+.rd-link{position:absolute;width:0;height:0;margin:-9px 0 0 -6px;border-left:6px solid transparent;border-right:6px solid transparent;border-top:18px solid var(--blue);filter:drop-shadow(0 0 5px var(--blue));z-index:4;pointer-events:none}
+.rd-link::after{content:"";position:absolute;left:-2.5px;top:-15px;width:5px;height:5px;border-radius:50%;background:#e8fbff}
 .rd-clock{position:absolute;transform:translateY(-50%);display:flex;align-items:center;gap:4px;font-size:10.5px;color:#f7e3a0;letter-spacing:.04em;text-shadow:0 0 6px rgba(0,0,0,.8);pointer-events:none;z-index:4;font-variant-numeric:tabular-nums}
 .ck-sun{width:9px;height:9px;border-radius:50%;background:#f7d36b;box-shadow:0 0 0 2px rgba(247,211,107,.25),0 0 8px #f7d36b}
 .ck-moon{width:9px;height:9px;border-radius:50%;box-shadow:inset -3px -1px 0 0 #e8e4d4;transform:rotate(-20deg)}
@@ -3192,7 +3192,7 @@ function pathList(){
   let nowM='';
   if(isT&&now>=PATH_H0&&now<PATH_H1){ const y=pm2y(now), x=pRX(y), day=now>=6*60&&now<18*60, ang=Math.atan2(6,pRX(y+3)-pRX(y-3))*180/Math.PI-90;
     // 寝ている間もエポナが道をたどって運んでくれる（よく慣れた馬は地図の道をひとりでたどる）。印はいつもの矢印、寝ている間は z z
-    nowM+=`<div class="rd-link" style="top:${y}px;left:${x.toFixed(1)}px" aria-hidden="true"></div>${asleep?`<div class="rd-zz" style="top:${y}px;left:${x.toFixed(1)}px" aria-hidden="true"><i>z</i><i>z</i></div>`:''}`; }
+    nowM+=`<div class="rd-link" style="top:${y}px;left:${x.toFixed(1)}px;transform:rotate(${ang.toFixed(0)}deg)" aria-hidden="true"></div>${asleep?`<div class="rd-zz" style="top:${y}px;left:${x.toFixed(1)}px" aria-hidden="true"><i>z</i><i>z</i></div>`:''}`; }
   const md=x=>{ const t=new Date(k+'T00:00:00'); t.setDate(t.getDate()+x); return (t.getMonth()+1)+'/'+t.getDate(); };
   const nb=bls.filter(b=>!b.fix), nd=nb.filter(pDone).length; let wx=null; try{ wx=JSON.parse(localStorage.getItem(WX_KEY)||'null'); }catch(e){}
   const hud=`<div class="sl-hud">${nb.length?`<b>${nd}/${nb.length}</b><i></i>`:''}${isT?`<b>${now>=6*60&&now<18*60?'<i class="ck-sun"></i>':'<i class="ck-moon"></i>'}${now<12*60?'AM':'PM'} ${String(Math.floor(now/60)%12||12).padStart(2,'0')}:${String(now%60).padStart(2,'0')}</b><i></i>`:''}${isT&&wx&&wx.temp!=null?`<b>${wx.temp>0?'+':''}${Math.round(wx.temp)}℃</b><i></i>`:''}</div>`;
