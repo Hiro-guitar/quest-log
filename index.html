@@ -527,8 +527,9 @@ body.pdrag{cursor:grabbing}
 .rd-epona svg{display:block;overflow:visible}.rd-epona .ec{fill:#9a5428;stroke:#2b1a0c;stroke-width:.9;stroke-linejoin:round}.rd-epona .ew{fill:#f4efe0;stroke:#2b1a0c;stroke-width:.7;stroke-linejoin:round}
 .rd-epona.awake{filter:drop-shadow(0 0 1px #000) drop-shadow(0 0 5px rgba(247,211,107,.95))}
 .pe-rec.at{z-index:2}.pe-dot{width:7px;height:7px;border-radius:50%;background:#f7d36b;box-shadow:0 0 0 2px rgba(18,22,20,.8);flex:none;margin:0 4px 0 0}.pe-rec.at[style*=row-reverse] .pe-dot{margin:0 0 0 4px}
-.rd-epona i{position:absolute;font-style:normal;font-weight:700;color:#e8f2ff;text-shadow:0 0 3px #000;font-size:10px;left:4px;top:-10px;animation:zz 2.4s ease-in-out infinite;opacity:0}
-.rd-epona i+i{font-size:8px;left:9px;top:-15px;animation-delay:1.2s}
+.rd-zz{position:absolute;width:0;height:0;z-index:4;pointer-events:none}.rd-zz i{margin:-12px 0 0 6px}
+.rd-zz i,.rd-epona i{position:absolute;font-style:normal;font-weight:700;color:#e8f2ff;text-shadow:0 0 3px #000;font-size:10px;left:4px;top:-10px;animation:zz 2.4s ease-in-out infinite;opacity:0}
+.rd-zz i+i,.rd-epona i+i{font-size:8px;left:9px;top:-15px;animation-delay:1.2s}
 @keyframes zz{0%{opacity:0;transform:translate(0,4px)}30%{opacity:1}100%{opacity:0;transform:translate(-5px,-6px)}}
 .rd-link{position:absolute;width:16px;height:18px;margin:-9px 0 0 -8px;z-index:4;pointer-events:none;transform-origin:50% 50%;
   background:#f7d36b;clip-path:polygon(50% 100%,0 0,50% 22%,100% 0);filter:drop-shadow(0 0 4px rgba(247,211,107,.9))}
@@ -3190,8 +3191,8 @@ function pathList(){
     if(sd.b!=null&&sd.b>=PATH_H0&&sd.b<PATH_H1) mtags+=at(sd.b,rec('就寝',sd.b)); }
   let nowM='';
   if(isT&&now>=PATH_H0&&now<PATH_H1){ const y=pm2y(now), x=pRX(y), day=now>=6*60&&now<18*60, ang=Math.atan2(6,pRX(y+3)-pRX(y-3))*180/Math.PI-90;
-    // 寝ている間はエポナの背で眠ったまま道を進む（よく慣れた馬は地図の道をひとりでたどる）
-    nowM+=`<div class="rd-epona ${asleep?'ride':'awake'}" style="top:${y}px;left:${x.toFixed(1)}px" aria-hidden="true">${EPONA}${asleep?'<i>z</i><i>z</i>':''}</div>`; }
+    // 寝ている間もエポナが道をたどって運んでくれる（よく慣れた馬は地図の道をひとりでたどる）。印はいつもの矢印、寝ている間は z z
+    nowM+=`<div class="rd-link" style="top:${y}px;left:${x.toFixed(1)}px;transform:rotate(${ang.toFixed(0)}deg)" aria-hidden="true"></div>${asleep?`<div class="rd-zz" style="top:${y}px;left:${x.toFixed(1)}px" aria-hidden="true"><i>z</i><i>z</i></div>`:''}`; }
   const md=x=>{ const t=new Date(k+'T00:00:00'); t.setDate(t.getDate()+x); return (t.getMonth()+1)+'/'+t.getDate(); };
   const nb=bls.filter(b=>!b.fix), nd=nb.filter(pDone).length; let wx=null; try{ wx=JSON.parse(localStorage.getItem(WX_KEY)||'null'); }catch(e){}
   const hud=`<div class="sl-hud">${nb.length?`<b>${nd}/${nb.length}</b><i></i>`:''}${isT?`<b>${now>=6*60&&now<18*60?'<i class="ck-sun"></i>':'<i class="ck-moon"></i>'}${now<12*60?'AM':'PM'} ${String(Math.floor(now/60)%12||12).padStart(2,'0')}:${String(now%60).padStart(2,'0')}</b><i></i>`:''}${isT&&wx&&wx.temp!=null?`<b>${wx.temp>0?'+':''}${Math.round(wx.temp)}℃</b><i></i>`:''}</div>`;
