@@ -3325,8 +3325,8 @@ function* pRiversGen(H){ const key=PX+'|'+pW+'|'+pOff+'|'+H; if(pRivCache[key]) 
       dx=dx*.87+tx*.13; dv=dv*.87+tv*.13; const dl=Math.hypot(dx,dv)||1; x+=dx/dl*4; v+=dv/dl*4; }
     if(!wet||pts.length<24) continue;
     let P=pts.map(([x,v])=>[x,v2y(v)]); for(let it=0;it<2;it++){ const Q=[P[0]]; for(let i=0;i<P.length-1;i++){ const [a1,b1]=P[i],[a2,b2]=P[i+1]; Q.push([a1*.75+a2*.25,b1*.75+b2*.25],[a1*.25+a2*.75,b1*.25+b2*.75]); } Q.push(P[P.length-1]); P=Q; }
-    const n=P.length, w0=3+r()*2.5, w1=w0+6+r()*8, ph2=r()*50, ws=P.map((_,i)=>{ const t=i/n; return (w0+(w1-w0)*Math.sqrt(t))*(.62+.8*pNoise(i*.018+ph2,7.7)); });
-    out.push({c,P,ws,bl:r()<.7,fl:r()<.15,lp:.35+r()*.3}); yield; }
+    const n=P.length, w0=3+r()*2.5, w1=w0+6+r()*8, ph2=r()*50, ws=P.map((_,i)=>{ const t=i/n; return (w0+(w1-w0)*Math.sqrt(t))*(.62+.8*pNoise(i*.018+ph2,7.7)); }), dp=P.map((_,i)=>{ const t=i/n; return .018+.05*t*(.5+pNoise(i*.011+ph2,3.1)); });
+    out.push({c,P,ws,dp,bl:r()<.7,fl:r()<.15,lp:.35+r()*.3}); yield; }
   const ks=Object.keys(pRivCache); if(ks.length>12) delete pRivCache[ks[0]]; return pRivCache[key]=out; }
 function* pTerGen(H){
   const G=3, Y0=-900, gw=Math.ceil(pW/G)+2, gh=Math.ceil((H+1800)/G)+2, g=new Float32Array(gw*gh);
@@ -3334,13 +3334,13 @@ function* pTerGen(H){
   // 川を水として彫る：真ん中は深く、岸に近いほど浅い（湖と同じ色・同じ岸の描き方になる）
   const rit=pRiversGen(H); let rres; while(!(rres=rit.next()).done) yield; const RV=rres.value;
   for(const R of RV){ const P=R.P; for(let k=0;k<P.length;k++){ const [px,py]=P[k], rr=R.ws[k]/2, i0=Math.max(0,Math.floor((px-rr-6)/G)), i1=Math.min(gw-1,Math.ceil((px+rr+6)/G)), j0=Math.max(0,Math.floor((py-rr-6-Y0)/G)), j1=Math.min(gh-1,Math.ceil((py+rr+6-Y0)/G));
-      for(let j=j0;j<=j1;j++) for(let i=i0;i<=i1;i++){ const d=Math.hypot(i*G-px,Y0+j*G-py); if(d>=rr+6) continue; const t=d/rr, tgt=d<rr?P_SEA-.003-.06*(1-t*t):P_SEA-.003+.01*(d-rr), o=j*gw+i; if(g[o]>tgt) g[o]=tgt; } } yield; }
+      for(let j=j0;j<=j1;j++) for(let i=i0;i<=i1;i++){ const d=Math.hypot(i*G-px,Y0+j*G-py); if(d>=rr+6) continue; const t=d/rr, tgt=d<rr?P_SEA-.003-R.dp[k]*(1-t*t):P_SEA-.003+.01*(d-rr), o=j*gw+i; if(g[o]>tgt) g[o]=tgt; } } yield; }
   const R=Math.min(2,window.devicePixelRatio||1)>1.5?1.5:1, cw=Math.ceil(pW*R), ch=Math.ceil((H+1800)*R), hs=new Float32Array(cw*ch);
   for(let j=0;j<ch;j++){ const gy=j/R/G, j0=Math.min(gh-2,gy|0), fy=gy-j0; for(let i=0;i<cw;i++){ const gx=i/R/G, i0=Math.min(gw-2,gx|0), fx=gx-i0, o=j0*gw+i0, a1=g[o], b1=g[o+1], c1=g[o+gw], d1=g[o+gw+1]; hs[j*cw+i]=a1+(b1-a1)*fx+(c1-a1)*fy+(a1-b1-c1+d1)*fx*fy; } if(j%200===0) yield; }
   const cv=document.createElement('canvas'); cv.width=cw; cv.height=ch; const cx=cv.getContext('2d'), im=cx.createImageData(cw,ch), d=im.data, CL=34, SH=9*1.5/(R*G/2);
   for(let j=0;j<ch;j++){ for(let i=0;i<cw;i++){ const o=j*cw+i, h=hs[o], p=o*4; let c;
     const hr=hs[o+(i<cw-1?1:0)], hd=hs[o+(j<ch-1?cw:0)], hl=hs[o-(i>0?1:0)], hu=hs[o-(j>0?cw:0)];
-    if(h<P_SEA){ const near=(P_SEA-h)<.025; c=near?[111,135,146]:[75,95,104];
+    if(h<P_SEA){ const dq=Math.min(1,(P_SEA-h)/.09), q=dq*dq*(3-2*dq); c=[118-56*q,142-60*q,152-60*q];
       if(hr>=P_SEA||hd>=P_SEA||hl>=P_SEA||hu>=P_SEA) c=[58,52,34]; }
     else { const t=(h-P_SEA)/(1-P_SEA); c=pRamp(t).slice(); const sh=((hl-hr)+(hu-hd))*SH*3; const m=Math.max(.72,Math.min(1.22,1+sh)); c=[c[0]*m,c[1]*m,c[2]*m];
       const b0=Math.floor(t*CL), b1=Math.floor(((hr-P_SEA)/(1-P_SEA))*CL), b2=Math.floor(((hd-P_SEA)/(1-P_SEA))*CL);
