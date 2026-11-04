@@ -1219,7 +1219,7 @@ const CAT_NAMES={today:'今日の冒険',path:'旅程',main:'メインチャレ�
 const CATS=['today','main','challenge','mini','train'];
 let toolSel='sync', bkList=null, memEdit=null;
 function render(){ try{ document.documentElement.style.setProperty('--vh',Math.max(window.innerHeight,document.documentElement.clientHeight,navigator.standalone?screen.height:0)+'px'); }catch(e){} { const pf=window.innerWidth<=820&&tab==='list'&&listCat==='path'&&!pathSel&&!selId; document.documentElement.classList.toggle('pfull-on',pf); document.documentElement.classList.toggle('ios-gap',!!navigator.standalone&&screen.height-window.innerHeight>20); if(pf){ try{ window.scrollTo(0,0); document.body.scrollTop=0; document.documentElement.scrollTop=0; }catch(e){} } document.body.classList.toggle('pfull',pf); } sortAllSteps();renderLv();renderHud();renderTabs();renderList();renderDetail();renderHints();
-  $('split').classList.toggle('has-sel',!!selId||(tab==='tools'&&toolPicked)||(tab==='pouch'&&!!pouchSel)||(tab==='list'&&listCat==='train'&&!!trSel)||(tab==='list'&&listCat==='path'&&!!pathSel));
+  $('split').classList.toggle('has-sel',!!selId||(tab==='tools'&&toolPicked)||(tab==='pouch'&&!!pouchSel)||(tab==='rest'&&!!restSel)||(tab==='list'&&listCat==='train'&&!!trSel)||(tab==='list'&&listCat==='path'&&!!pathSel));
 }
 let toolPicked=false;
 function renderLv(){ setTimeout(syncBadge,0); setTimeout(wxRender,0);
@@ -1306,7 +1306,7 @@ function stepRowToday(q,st,inGroup){
     <span class="r-side">${st.done?'<span class="r-clear">CLEAR</span>':`${st.doTime?`<span class="do">${st.doTime}</span>`:''}${carryHtml(st)}`}</span><span class="r-notch"></span></button>`;
 }
 // 焚き火で休む：今日の分を明日に回す（持ち越し回数は増やさない）
-let pouchSel=null;
+let pouchSel=null, restSel=null;
 function pouchList(){
   const it=[['mats','素材メモ',(()=>{ const n=matsAll().filter(x=>!x.got).length; return n?`集める素材 ${n}`:'買い物のメモ'; })()],['shop','ごほうびの店',`${rupeeSvg} ${rupeeBal()} ルピー`],['records','冒険の記録',(()=>{const L=lvInfo(state.xp); return `Lv.${L.lv} ${TITLES[Math.min(L.lv-1,TITLES.length-1)]}・✿ ${state.seeds||0}`;})()],['chap','章と振り返り',(()=>{const {c,pro,left,until}=chapNow(); return pro?`序章・第${c.n}章まで あと${until}日`:`第${c.n}章${c.theme?'「'+c.theme+'」':''}・残り${left}日`;})()],['memory','思い出',`${state.quests.filter(q=>q.done&&q.type!=='mini').length}件の達成`],['equip','装備',equipNow().name]];
   return `<div class="cat-bar"><div class="cat-name">ポーチ</div><div class="cat-icons"><span class="cat on" style="cursor:default">${ICON.pouch}</span></div></div><div class="rows">`+
@@ -1619,13 +1619,14 @@ function pouchPanel(){
 function restList(){
   const t=ymd(), rested=(state.rested||{})[t], items=dayItems(t).filter(x=>!(x.s?x.s.done:x.q.done));
   let h=`<div class="cat-bar"><div class="cat-name">焚き火</div><div class="cat-icons"><span class="cat on" style="cursor:default">🔥</span></div></div>`;
-  if(rested) return h+`<div class="sec-empty">🔥 今日はもう焚き火で休みました。ゆっくりしよう</div>`;
+  const bodyRow=`<div class="rows" style="margin-top:14px"><button class="row ${restSel==='body'?'sel':''}" data-act="restsel" data-v="body"><span class="r-mark">📖</span><span class="r-main"><span class="r-title">からだの手記</span><span class="r-sub">体重・お腹まわり・起きた時間と寝た時間</span></span><span class="r-notch"></span></button></div>`;
+  if(rested) return h+`<div class="sec-empty">🔥 今日はもう焚き火で休みました。ゆっくりしよう</div>`+bodyRow;
   h+=`<div class="rows" style="margin-bottom:14px"><button class="row morning-row" data-act="pathmorning"><span class="r-mark">${ico('path')}</span><span class="r-main"><span class="r-title">今日の段取りを組む</span><span class="r-sub">${pBlocks(t).length?`道しるべ ${pBlocks(t).length}本`:'まだ何も置いていない'}</span></span><span class="r-notch"></span></button></div>`;
   h+=`<div class="day-h"><span>今日やる予定だった残り</span><span>${items.length}件</span></div><div class="rows">`;
   h+=items.length?items.map(x=>`<div class="row fire-row"><span class="r-mark">${x.s?'<i class="sq"></i>':ico(x.q.type)}</span><span class="r-main"><span class="r-title">${esc(x.s?x.s.text:(x.q.title||'(無題)'))}</span>${x.s?`<span class="r-sub">${esc(x.q.title||'')} の工程</span>`:''}</span><span class="r-notch"></span></div>`).join(''):'<div class="sec-empty">今日の残りはありません</div>';
   h+='</div>';
   if(items.length) h+=`<button class="row fire-btn" data-act="rest"><span class="r-mark">🔥</span><span class="r-main"><span class="r-title">焚き火で休む</span><span class="r-sub">この${items.length}件を明日に回す（持ち越しには数えません）</span></span><span class="r-notch"></span></button>`;
-  return h;
+  return h+bodyRow;
 }
 function restToday(){
   const t=ymd(), tm=ymd(new Date(Date.now()+DAY)); let n=0;
@@ -1750,6 +1751,7 @@ function toolPanel(){
 function renderDetail(){
   const D=$('detail');
   if(tab==='pouch'){ D.innerHTML=pouchSel?`<div class="panel"><button class="back" data-act="back">‹ 一覧へ</button>${pouchPanel()}</div>`:`<div class="panel p-empty"><p>左から選ぶと、ここに表示されます</p></div>`; return; }
+  if(tab==='rest'&&restSel==='body'){ D.innerHTML=bodyPanel(); return; }
   if(tab==='rest'){ D.innerHTML=`<div class="panel p-empty fire-panel"><div class="fire">🔥</div><p>疲れた日や体調が悪い日は、焚き火で休もう。<br>休んだ日の分は明日に回して、持ち越しには数えません。</p></div>`; return; }
   if(tab==='tools'){ D.innerHTML=`<div class="panel"><button class="back" data-act="back">‹ 一覧へ</button>${toolPanel()}</div>`; return; }
   if(tab==='list'&&listCat==='train'){ D.innerHTML=trPanel(); return; }
@@ -1819,7 +1821,7 @@ function applyDateRow(){
 function hint(act,label,key,cls=''){return `<button class="hint-b ${cls}" data-act="${act}"><span>${label}</span>${key?`<i>${key}</i>`:''}</button>`}
 function renderHints(){
   const q=tab==='list'?findQ(selId):null; let h='';
-  if(tab==='rest'){ h=''; }
+  if(tab==='rest'){ h=restSel?hint('restback','閉じる','B'):''; }
   else if(tab==='pouch'){ h=pouchSel?hint('back','閉じる','B'):''; }
   else if(tab==='tools'){ h=toolPicked?hint('back','閉じる','B'):''; }
   else if(!q&&listCat==='memory'){ h=''; }
@@ -1915,6 +1917,8 @@ document.addEventListener('click',e=>{
     case 'trday': selId=null; trSel=b.dataset.v; tab='list'; if(listCat!=='train'){ listCat='train'; } if(/^\d/.test(trSel)) trWeek=trWeekStart(trSel); render(); window.innerWidth<=820&&window.scrollTo({top:0}); break;
     case 'trweek': { const d=new Date((trWeek||trWeekStart(trDefaultDay()))+'T00:00:00'); d.setDate(d.getDate()+7*(+b.dataset.v)); const k=ymd(d); if(k<=trLast()&&ymd(new Date(d.getTime()+6*DAY))>=TR_START) trWeek=k; renderList(); break; }
     case 'trback': trSel=null; render(); break;
+    case 'restsel': restSel=b.dataset.v; selId=null; render(); window.innerWidth<=820&&window.scrollTo({top:0}); break;
+    case 'restback': restSel=null; render(); break;
     case 'trfin': { const k=trSel, H=hm(), on=b.dataset.v==='1', was=!!(H.days[k]||{}).train; if(!k||on===was) break; if(on) trPin(k); const vb=trVessels(); H.days[k]={...(H.days[k]||{}),train:on}; hmTouch('days',k);
       if(on){ gain(30); earnRupee(20); toast('鍛錬クリア  +30 XP ・ +20ルピー'); maybeSeed(); const p=TR_PART[trType(k)]; if(p) setTimeout(()=>toast(`克服の証（${PART_NAME[p]}）を手に入れた`),1300); trVesselBanner(vb); } else gain(-30);
       save(); render(); break; }
@@ -2557,7 +2561,7 @@ function trList(){
       <span class="r-side">${cl?'<span class="r-clear">CLEAR</span>':''}</span><span class="r-notch"></span></button>`;
   }
   h+=`</div><div class="rows" style="margin-top:12px">`;
-  h+=`<button class="row ${trSel==='log'?'sel':''}" data-act="trday" data-v="log"><span class="r-mark">📈</span><span class="r-main"><span class="r-title">記録（体重・種目ごとの伸び）</span></span><span class="r-notch"></span></button>`;
+  h+=`<button class="row ${trSel==='log'?'sel':''}" data-act="trday" data-v="log"><span class="r-mark">📈</span><span class="r-main"><span class="r-title">種目ごとの伸び</span></span><span class="r-notch"></span></button>`;
   h+=`<button class="row ${trSel==='plan'?'sel':''}" data-act="trday" data-v="plan"><span class="r-mark">📜</span><span class="r-main"><span class="r-title">計画（見通し・食事・ルール）</span></span><span class="r-notch"></span></button></div>`;
   return h;
 }
@@ -2606,9 +2610,10 @@ function trSpark(ws){
   const pts=ws.map(([d,v])=>X(new Date(d).getTime()).toFixed(1)+','+Y(+v).toFixed(1)).join(' ');
   return `<svg class="tr-spark" viewBox="0 0 ${W_} ${H_}"><line x1="${P}" x2="${W_-P}" y1="${Y(lo)}" y2="${Y(lo)}" stroke="rgba(242,236,214,.15)"/><line x1="${P}" x2="${W_-P}" y1="${Y(hi)}" y2="${Y(hi)}" stroke="rgba(242,236,214,.15)"/><text x="2" y="${Y(hi)+4}" font-size="11" fill="#8e9894">${hi}</text><text x="2" y="${Y(lo)+4}" font-size="11" fill="#8e9894">${lo}</text><polyline points="${pts}" fill="none" stroke="#5fd4ef" stroke-width="2.5"/>${ws.map(([d,v])=>`<circle cx="${X(new Date(d).getTime()).toFixed(1)}" cy="${Y(+v).toFixed(1)}" r="3.5" fill="#5fd4ef"/>`).join('')}</svg>`;
 }
-function trLogPanel(){
+// からだの手記：体重・お腹まわりと、起きた時間・寝た時間（焚き火のタブ）
+function bodyPanel(){
   const H=hm(), bs=Object.entries(H.body).sort((a,b)=>a[0]<b[0]?-1:1), t=ymd();
-  let h=`<div class="panel tr-panel"><div class="p-wm">${SECBG.train}</div><button class="back" data-act="trback">‹ 一覧へ</button><h2 class="p-title">記録</h2>
+  let h=`<div class="panel tr-panel"><button class="back" data-act="restback">‹ 焚き火へ</button><h2 class="p-title">からだの手記</h2>
   <div class="sec-h"><span>体重とお腹まわり</span></div><p class="hint" style="margin:0 0 8px">週1回、日曜の朝（起きてトイレのあと・食べる前）に。お腹まわりはおへその高さで。最初の記録：65.7kg（10月末）。</p>
   <div class="tr-bin"><input type="date" id="trBd" value="${t<TR_START?TR_START:t}"><input type="number" id="trKg" step="0.1" min="40" max="120" placeholder="体重 kg" inputmode="decimal"><input type="number" id="trCm" step="0.5" min="50" max="130" placeholder="お腹 cm" inputmode="decimal"><button class="btn primary small" data-act="trbody">記録する</button></div>`;
   const ws=[['2026-10-29',65.7],...bs.filter(([,v])=>v&&v.kg).map(([d,v])=>[d,v.kg])];
@@ -2619,7 +2624,12 @@ function trLogPanel(){
     <div class="tr-bin"><input type="date" id="slD" value="${t}"><input type="time" id="slW" aria-label="起きた時間"><input type="time" id="slB" aria-label="寝た時間"><button class="btn primary small" data-act="slsave">記録する</button></div>
     <p class="hint" style="margin:-2px 0 8px">左から：日付・起きた時間・寝た時間</p>`;
     h+=last.length?`<div class="kids">${last.map(d=>{ const v=S[d]||{}, m=slDur(d); return `<div class="kid"><span>${d.slice(5).replace('-','/')}　${v.w!=null?'起床 '+slFmt(v.w):''}　${v.b!=null?'就寝 '+slFmt(v.b):''}${m!=null?`　<span class="hint">${slDurFmt(m)}眠った</span>`:''}</span><button class="btn small ghost" data-act="sldel" data-v="${d}">消す</button></div>`; }).join('')}</div>`:'<p class="hint">まだ記録はありません。</p>'; }
-  h+=`<div class="sec-h"><span>種目ごとの伸び（いちばん良かったセット）</span></div><div class="kids">`;
+  h+='</div>'; return h;
+}
+function trLogPanel(){
+  const H=hm(), bs=Object.entries(H.body).sort((a,b)=>a[0]<b[0]?-1:1), t=ymd();
+  let h=`<div class="panel tr-panel"><div class="p-wm">${SECBG.train}</div><button class="back" data-act="trback">‹ 一覧へ</button><h2 class="p-title">種目ごとの伸び</h2>`;
+  h+=`<div class="sec-h"><span>いちばん良かったセット（はじめ → いま）</span></div><div class="kids">`;
   Object.entries(EX).forEach(([id,e])=>{ const L=H.lift, ds=Object.keys(L).filter(d=>L[d][id]&&L[d][id].some(s=>s&&s[1])).sort();
     const best=d=>{ const s=L[d][id].filter(x=>x&&x[1]).sort((a,b)=>((b[0]||0)-(a[0]||0))||(b[1]-a[1]))[0]; return (e.kg?(s[0]||0)+'kg×':'')+s[1]+'回'; };
     h+=`<div class="kid"><span>${esc(e.n)}</span><span class="hint">${ds.length?best(ds[0]):'—'}　→　<b style="color:var(--blue)">${ds.length>1?best(ds[ds.length-1]):'—'}</b></span></div>`; });
