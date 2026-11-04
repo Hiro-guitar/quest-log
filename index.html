@@ -1825,8 +1825,10 @@ function renderView(D,q){
 function applyDateRow(){
   if(!dateSid) return; const q=findQ(selId), st=q&&q.steps.find(x=>x.id===dateSid); if(!st) return;
   const d=document.querySelector(`[data-sdate="${dateSid}"]`), t=document.querySelector(`[data-stime="${dateSid}"]`); if(!d) return;
-  const nd=d.value||'', nt=(t&&t.value)||'';
+  const nd=d.value||''; let nt=(t&&t.value)||'';
   if(nd===(st.doDate||'')&&nt===(st.doTime||'')) return;
+  // 日付だけ変えたら、前の時刻は持ち越さない（時刻も入れ直したときだけ残す）
+  if(nd!==(st.doDate||'')&&nt===(st.doTime||'')) nt='';
   if(nd!==(st.doDate||'')) st.carry=0;
   st.doDate=nd||(nt?ymd():''); st.doTime=nt; save(); renderList();
 }
@@ -2056,10 +2058,13 @@ document.addEventListener('click',e=>{
 document.addEventListener('input',e=>{
   if(pathInput(e)) return;
   const q=findQ(selId); if(!q) return;
+  // 日付を変えたら時刻欄は空に（入れたいときだけ入れ直す）
+  if(e.target.dataset.sdate){ const st=(q.steps||[]).find(x=>x.id===e.target.dataset.sdate), t=document.querySelector(`[data-stime="${e.target.dataset.sdate}"]`); if(st&&t&&e.target.value!==(st.doDate||'')&&t.value===(st.doTime||'')) t.value=''; return; }
   const f=e.target.dataset.field, sid=e.target.dataset.steptext;
   if(f){
     let v=e.target.value;
     if(f==='parentId') v=v||null;
+    if(f==='doDate'&&v!==(q.doDate||'')&&q.doTime){ q.doTime=''; const ti=document.querySelector('[data-field="doTime"]'); if(ti) ti.value=''; }
     q[f]=v; if(f==='doDate') q.carry=0;
     if(f==='type'){ if(!canLink(q,findQ(q.parentId))) q.parentId=null; kids(q.id).forEach(k=>{if(!canLink(k,q)) k.parentId=null}); save(); renderEdit($('detail'),q); renderList(); renderTabs(); return; }
     save();
