@@ -4063,11 +4063,11 @@ function pMapArt(k,H){
       // 門楼と半円の腕壁
       for(const [gx,gy,gr] of [[-44,92,-20],[36,68,15]]){ g+=`<path d="M${gx-26},${gy} A26,26 0 0 1 ${gx+26},${gy}" transform="rotate(${gr} ${gx} ${gy})" fill="none" stroke="#3c2a0c" stroke-opacity=".4" stroke-width="4" stroke-linecap="round"/><use href="#gh${c}" transform="translate(${gx} ${gy}) rotate(${gr})"/>`; }
       // 船着き場
-      g+=`<rect x="-9" y="-134" width="3" height="10" ${F} ${L} stroke-width=".8"/><rect x="6" y="-134" width="3" height="10" ${F} ${L} stroke-width=".8"/><rect x="-4" y="-126" width="8" height="6" ${F} ${L} stroke-width=".8"/>`;
+      g+=`<rect x="-6" y="-138" width="3" height="14" ${F} ${L} stroke-width=".8"/><rect x="3" y="-138" width="3" height="14" ${F} ${L} stroke-width=".8"/><rect x="-14" y="-128" width="7" height="6" ${F} ${L} stroke-width=".8"/>`;
       // 木：島の外周の台地に群れで、半島にたくさん
       let tr=''; const dot=(x,y)=>{ tr+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="1.3"/>`; };
       for(let q=0;q<13;q++){ const L0=LB[Math.floor(r9()*9)], a=r9()*6.28, d=L0[2]*.68; const bx=L0[0]+Math.cos(a)*d, by=L0[1]+Math.sin(a)*d, nz=5+Math.floor(r9()*4); for(let z=0;z<nz;z++) dot(bx+(r9()-.5)*11,by+(r9()-.5)*11); }
-      for(const [px,py,pr,nt] of [[-150,110,55,35],[150,110,65,60],[-172,-20,40,25],[172,-22,40,20]]) for(let z=0;z<nt;z++){ const a=r9()*6.28, d=Math.sqrt(r9())*pr*.85; dot(px+Math.cos(a)*d,py+Math.sin(a)*d); }
+      for(const [px,py,pr,nt] of [[-150,110,55,35],[150,110,65,60],[-172,-20,40,32],[172,-22,40,28]]) for(let z=0;z<nt;z++){ const a=r9()*6.28, d=Math.sqrt(r9())*pr*.85; dot(px+Math.cos(a)*d,py+Math.sin(a)*d); }
       g+=`<g fill="#3c2a0c" fill-opacity=".85">${tr}</g>`;
       // 南の首・門・橋
       g+=`<rect x="-7" y="112" width="14" height="6" fill="#3c2a0c" fill-opacity=".5" ${L} stroke-width="1"/><rect x="-3.5" y="118" width="7" height="42" fill="#e8dcb0" fill-opacity=".85" ${L} stroke-opacity=".6" stroke-width="1"/>`;
