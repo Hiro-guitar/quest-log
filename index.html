@@ -1960,7 +1960,7 @@ document.addEventListener('click',e=>{
     case 'bksave': bkSave(); break;
     case 'bkrec': bkRecord(); break;
     case 'bkret': { const B=state.books[bkSel]; if(B){ B.ret=B.ret?null:ymd(); B.u=Date.now(); if(B.ret) toast('図書館に返した。おつかれさま'); save(); render(); } break; }
-    case 'bkrenew': { const B=state.books[bkSel]; if(B){ const t=ymd(), nd=bkAdd(t,14); if(nd<=B.due){ toast('今更新しても返す日は延びない'); break; } B.renew=[...(B.renew||[]),t]; B.due=nd; if(!B.fin&&B.goal<bkAdd(nd,-5)) B.goal=bkAdd(nd,-5); B.u=Date.now(); save(); render(); setTimeout(()=>banner('book','貸出を更新した',`${B.title}　返却の刻限 ${bkMD(nd)}`),150); } break; }
+    case 'bkrenew': { const B=state.books[bkSel]; if(B){ const t=ymd(), nd=bkAdd(t,14); if((B.renew||[]).length){ toast('更新は1回しかできない'); break; } if(nd<=B.due){ toast('今更新しても返す日は延びない'); break; } B.renew=[...(B.renew||[]),t]; B.due=nd; if(!B.fin&&B.goal<bkAdd(nd,-5)) B.goal=bkAdd(nd,-5); B.u=Date.now(); save(); render(); setTimeout(()=>banner('book','貸出を更新した',`${B.title}　返却の刻限 ${bkMD(nd)}`),150); } break; }
     case 'bkdue': { const B=state.books[bkSel], v=($('bkDueQ')||{}).value; if(B&&v){ if(v<B.start){ toast('借りた日より前にはできない'); break; } B.due=v; if(B.goal>v) B.goal=v; B.u=Date.now(); save(); render(); toast(`返す日を ${bkMD(v)} にした`); } break; }
     case 'bkdel': { const B=state.books[bkSel]; if(B&&confirm('この書物を消しますか？')){ B.del=1; B.u=Date.now(); bkSel=null; bkEdit=false; save(); render(); } break; }
     case 'bkundo': { const B=state.books[bkSel], d=b.dataset.v; if(B&&B.log&&d in B.log){ delete B.log[d]; B.u=Date.now(); save(); render(); } break; }
@@ -2782,7 +2782,7 @@ function bkPlan(B,d){
 // 計画どおりなら今日までに読んでいるはずのページ（借りた日から目標の日まで一直線）
 function bkIdeal(B,d){ const tot=bkDays(B.start,B.goal)+1, k=Math.min(tot,Math.max(0,bkDays(B.start,d)+1)); return Math.round((B.pages||0)*k/tot); }
 function bkTodayRows(d){
-  const due=bkAll().filter(B=>!B.ret&&B.due<=d&&d===ymd()||(!B.ret&&B.due===d)).map(B=>`<button class="row bk-today" data-act="bksel" data-v="${B.id}"><span class="r-mark">${ico('book')}</span><span class="r-main"><span class="r-title">返却の刻限：${esc(B.title||'(無題)')}</span><span class="r-sub">${B.due<d?`${bkDays(B.due,d)}日過ぎている`:'今日が返す日'}・返すか、予約がなければ更新しよう</span></span><span class="r-notch"></span></button>`).join('');
+  const due=bkAll().filter(B=>!B.ret&&B.due<=d&&d===ymd()||(!B.ret&&B.due===d)).map(B=>`<button class="row bk-today" data-act="bksel" data-v="${B.id}"><span class="r-mark">${ico('book')}</span><span class="r-main"><span class="r-title">返却の刻限：${esc(B.title||'(無題)')}</span><span class="r-sub">${B.due<d?`${bkDays(B.due,d)}日過ぎている`:'今日が返す日'}${(B.renew||[]).length?'・図書館に返そう':'・返すか、予約がなければ更新しよう'}</span></span><span class="r-notch"></span></button>`).join('');
   return due+bkAll().filter(B=>!B.ret&&!B.fin&&B.pages&&B.start<=d).map(B=>{ const P=bkPlan(B,d), rest=Math.max(0,P.to-P.now);
     return `<button class="row bk-today ${P.met?'done':''}" data-act="bksel" data-v="${B.id}"><span class="r-mark">${ico('book')}</span><span class="r-main"><span class="r-title">解読：${esc(B.title||'(無題)')}</span><span class="r-sub">${P.met?`p.${P.now} まで読んだ`:`p.${P.to} まで（あと${rest}ページ）`}・返却 ${bkMD(B.due)}</span></span><span class="r-side">${P.met?'<span class="r-clear">CLEAR</span>':''}</span><span class="r-notch"></span></button>`; }).join('');
 }
@@ -2823,9 +2823,9 @@ function bkPanel(){
     h+=`<div class="sec-h"><span>解読の歩み</span></div><div class="bk-pips">${pips}</div><p class="hint" style="margin:4px 0 10px">◆が読んだ日。金の縁が読み終える目標の日、うすい所は返す日までの猶予。</p>`; }
   const lg=Object.entries(B.log||{}).sort((a,b)=>a[0]<b[0]?1:-1);
   if(lg.length) h+=`<div class="kids">${lg.map(([d,p])=>`<div class="kid"><span>${bkMD(d)}　p.${p} まで</span><button class="btn small ghost" data-act="bkundo" data-v="${d}">消す</button></div>`).join('')}</div>`;
-  if(!B.ret){ const nd=bkAdd(t,14), best=bkAdd(B.due,14), can=nd>B.due;
-    h+=`<div class="sec-h"><span>返却の刻限</span></div><div class="bk-today"><p>いまの返す日は <em>${bkMD(B.due)}</em>${(B.renew||[]).length?`（${B.renew.length}回更新した）`:''}。</p>
-    <p class="hint">予約がなければ更新できる。更新するとその日から2週間。${t<B.due?`今日更新すると${bkMD(nd)}まで、返す日の${bkMD(B.due)}に更新すれば${bkMD(best)}までになる（いちばん長い）。`:t===B.due?'今日が返す日。今日更新するのがいちばん長く借りられる。':'返す日を過ぎている。'}</p>
+  if(!B.ret){ const nd=bkAdd(t,14), best=bkAdd(B.due,14), done1=(B.renew||[]).length>0, can=nd>B.due&&!done1;
+    h+=`<div class="sec-h"><span>返却の刻限</span></div><div class="bk-today"><p>いまの返す日は <em>${bkMD(B.due)}</em>${done1?`（${bkMD(B.renew[0])}に更新済み）`:''}。</p>
+    <p class="hint">${done1?'更新は1回だけなので、この日までに返そう。':`予約がなければ1回だけ更新できる。更新するとその日から2週間。${t<B.due?`今日更新すると${bkMD(nd)}まで、返す日の${bkMD(B.due)}に更新すれば${bkMD(best)}までになる（いちばん長い）。`:t===B.due?'今日が返す日。今日更新するのがいちばん長く借りられる。':'返す日を過ぎている。'}`}</p>
     <div class="bk-rec">${can?`<button class="btn small ${t>=B.due?'primary':''}" data-act="bkrenew">更新する（${bkMD(nd)}まで）</button>`:''}</div>
     <div class="bk-rec" style="margin-top:8px"><span class="hint">休館などで延びたとき：</span><input type="date" id="bkDueQ" value="${B.due}" style="width:150px!important"><button class="btn small ghost" data-act="bkdue">返す日を変える</button></div></div>`; }
   h+=`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px"><button class="btn ${B.fin&&!B.ret?'primary':''}" data-act="bkret">${B.ret?'返したのを取り消す':'図書館に返した'}</button><button class="btn ghost" data-act="bkedit">書き直す</button></div></div>`;
