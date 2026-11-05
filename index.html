@@ -3426,7 +3426,7 @@ function pDesert(c){ const key=c+'|'+(pW|0); if(pDsMemo.has(key)) return pDsMemo
   pDsMemo.set(key,o); return o; }
 // 湿原（ブレワイのラネール湿原から）：浅く平らな湖に、平らな小島がたくさん。水の中にも木が1本ずつ立ち、
 // 島のまわりでは木が密集する。大きな島どうしは細い木の桟橋でつながる
-const P_WET=false, P_WTP=.55, P_WC=3100, pWtMemo=new Map();
+const P_WET=true, P_WTP=.65, P_WC=3100, pWtMemo=new Map();
 function pWet(c){ const key=c+'|'+(pW|0); if(pWtMemo.has(key)) return pWtMemo.get(key); const r=pRng('wt'+c,13); let o=null;
   if(P_WET&&r()<P_WTP){ let v=0, near=true;
     for(let t=0;t<8&&near;t++){ v=c*P_WC+400+r()*(P_WC-800); near=false;
@@ -3876,7 +3876,7 @@ function pTerAsk(k,H,first){
   if(!pTerBusy){ pTerBusy=true; setTimeout(pTerStep,0); }
 }
 // 一度描いた地形の絵は端末に取っておく（次に開いたときは描かずにすぐ出す）。描き方を変えたら版を上げて作り直す
-const P_TER_V="t132|", P_TER_MAX=36;
+const P_TER_V="t133|", P_TER_MAX=36;
 const pIDB=(()=>{ let dbp=null; const open=()=>dbp||(dbp=new Promise((res,rej)=>{ try{ const r=indexedDB.open('ql-ter',1); r.onupgradeneeded=()=>r.result.createObjectStore('img'); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }catch(e){ rej(e); } }));
   const st=m=>open().then(db=>db.transaction('img',m).objectStore('img'));
   const keys=()=>{ try{ return JSON.parse(localStorage.getItem('ql-ter-keys')||'[]'); }catch(e){ return []; } }, setKeys=a=>{ try{ localStorage.setItem('ql-ter-keys',JSON.stringify(a)); }catch(e){} };
