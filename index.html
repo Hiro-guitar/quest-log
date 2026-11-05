@@ -3308,8 +3308,8 @@ const P_SEA=.27;
 // 高さ（0〜1）。x は画面の横位置、y は地図の縦位置（ズームの影響を受けない単位に直して計算）
 function pHgt(x,y){ return pHgtC(x,y,true); }
 // raw=false で道のまわりの盛り土をしない高さ（川の流れを決めるのに使う）
-let pLastCarve=0, pLastEdge=99, pLastRim=0, pLastDark=0;
-function pHgtC(x,y,road){ pLastCarve=0; pLastEdge=99; pLastRim=0; pLastDark=0; const v=y/PX+pOff, u=x*1.05; let f=0,amp=.5,fr=1/170; for(let o=0;o<5;o++){ f+=amp*pNoise(u*fr+o*17,v*fr+o*31); amp*=.5; fr*=2.03; }
+let pLastCarve=0, pLastEdge=99, pLastRim=0, pLastDark=0, pLastWet=0;
+function pHgtC(x,y,road){ pLastCarve=0; pLastEdge=99; pLastRim=0; pLastDark=0; pLastWet=0; const v=y/PX+pOff, u=x*1.05; let f=0,amp=.5,fr=1/170; for(let o=0;o<5;o++){ f+=amp*pNoise(u*fr+o*17,v*fr+o*31); amp*=.5; fr*=2.03; }
   const r=1-Math.abs(2*pNoise(u/240+9,v/240+3)-1); let h=.62*f+.5*r*r*r-.08; { const [bv,bd,bw,bs]=pBiomeW(x,v);
     if(bv>0){ // 火山：全体を高く、細かいこぶの多い岩場にする。まわりの水辺は陸にする（マグマと水がとなり合わないように）
       const bump=.06*(pNoise(u/22+1.7,v/22+6.1)-.5)+.04*(pNoise(u/9+3.1,v/9+2.3)-.5); h=h*(1-bv)+(.5+.12*bv+bump)*bv; if(bv<.6) h=Math.max(h,P_SEA+.05*Math.min(1,bv*4));
@@ -3318,14 +3318,14 @@ function pHgtC(x,y,road){ pLastCarve=0; pLastEdge=99; pLastRim=0; pLastDark=0; c
     if(bs>0){ if(P_BIOMES) h+=.12*bs*Math.max(0,h-.3); else { const so=pSnowAt(v); if(so){ h=h*(1-bs)+pSnowH(x,v,so)*bs; pLastCarve+=pSnowCarve*bs*.5; if(bs>.5) pLastEdge=pSnowEdge; } } }
     if(bd>0){ if(P_BIOMES) h=h*(1-bd)+(P_SEA+.12+(h-.4)*.25)*bd; else { const dso=pDesertAt(v); if(dso){ h=h*(1-bd)+pDesertH(x,v,dso)*bd; if(bd>.5){ pLastEdge=pDsEdge; pLastDark=pDsDark; } } } } // 砂漠は平ら（湖もほとんどない）
     if(!P_BIOMES&&P_DESERT){ const dso=pDesertAt(v); if(dso){ const D=pDesertD(x,v,dso), rim=pSm(.94,1.0,D)*pSm(1.5,1.15,D); pLastEdge=Math.min(pLastEdge,Math.abs(D-.975)*dso.RV*.7); pLastRim=pSm(1.5,1.2,D)*pSm(.9,.97,D); if(rim>0) h=Math.max(h,P_SEA+.07+(.18+.05*(pNoise(u/(.08*dso.RV)+dso.ph,v/(.08*dso.RV))-.5)*2+.03*(pNoise(u/(.03*dso.RV),v/(.03*dso.RV)+dso.ph)-.5)*2)*rim); } } // 砂漠のふちは一段高い岩の高地（崖）
-    if(bw>0){ const hw=P_SEA-.006+(h-.42)*.18+(pNoise(u/16+1.1,v/16+4.4)-.5)*.08; h=h*(1-bw)+hw*bw; } // 湿原：浅い水と小さな島
+    if(bw>0){ if(P_BIOMES){ const hw=P_SEA-.006+(h-.42)*.18+(pNoise(u/16+1.1,v/16+4.4)-.5)*.08; h=h*(1-bw)+hw*bw; } else { const wo=pWetAt(v); if(wo){ const [il,hl]=pWetIsl(x,v,wo), hw=P_SEA-.016+.03*il+.004*il*(pNoise(u/9,v/9+wo.ph)-.5)+.09*hl; h=h*(1-bw)+hw*bw; if(bw>.4) pLastWet=1; } } } // 湿原：浅い水と小さな島
     const ca=pCastleAt(x,v); if(ca){ const dx=x-ca[0], dv=v-ca[1], a=Math.atan2(dv,dx), D=Math.hypot(dx,dv), wm=1+.45*(pNoise(Math.cos(a)*1.4+ca[2]*3.1,Math.sin(a)*1.4+5)-.5), wi=1+.14*Math.cos(4*a+ca[2])+.2*(pNoise(Math.cos(a)*2.2+9,Math.sin(a)*2.2+ca[2])-.5);
       if(D<56*wi){ h=.36+.03*(1-D/56); if(D>16&&D<27&&pNoise(Math.cos(a)*1.8+ca[2],Math.sin(a)*1.8+2)<.48) h=P_SEA-.02; } // 島と内堀
       else if(D<104*wm) h=Math.min(h,P_SEA-.04-.03*Math.min(1,(D-56)/20)); else if(D<118*wm) h=Math.max(h,P_SEA+.03); } }
   { const cv=pTgCarve(x,v); if(cv){ h=Math.max(h,P_SEA+.1*pSm(3.2,2,cv[1])); if(road){ h-=cv[3]; pLastCarve+=cv[3]; } } } // 溶岩の舌の谷（まわりに湖を作らない）
   { const lw=pSnowLow(x,v); if(lw>0&&h>P_SEA+.02) h+=(.36-h)*.45*lw; } // 雪山のまわりの低地（ツンドラ）は平ら
   // 道のまわりは陸地にする（道が水に沈まないように）
-  const dd=road&&!(P_DESERT&&pDsPond&&pBiomeW(x,v)[1]>.5)?Math.abs(x-pRX(y)):1e9; if(dd<80){ const t=1-dd/80, m=P_SEA+.07*t*t*(3-2*t); if(h<m) h=m+(h-m)*.15*(1-t); }
+  const dd=road&&!(P_DESERT&&pDsPond&&pBiomeW(x,v)[1]>.5)&&!pLastWet?Math.abs(x-pRX(y)):1e9; if(dd<80){ const t=1-dd/80, m=P_SEA+.07*t*t*(3-2*t); if(h<m) h=m+(h-m)*.15*(1-t); }
   return Math.max(0,Math.min(1,h)); }
 // 地方ごとの景色（ブレワイのオルディン＝火山とマグマ、ゲルド＝砂漠、ラネール＝湿地）：世界の位置で決まる、ゆるやかに入れ替わる
 const pSm=(a,b,x)=>{ let t=(x-a)/(b-a); t=t<0?0:t>1?1:t; return t*t*(3-2*t); };
@@ -3347,7 +3347,7 @@ function pSnow(c){ const key=c+'|'+(pW|0); if(pSnMemo.has(key)) return pSnMemo.g
       const np=3+Math.floor(r()*3); for(let i=0;i<np;i++){ const a=r()*6.28, d=r()*.45*RV; P.push([x+Math.cos(a)*d,v+Math.sin(a)*d*1.2,.04+.05*r(),(.07+.05*r())*RV]); }
       o={x,v,RV,ph:r()*50,c,P}; o.G=pGlaciers(o,r); } }
   pSnMemo.set(key,o); return o; }
-function pSnowAt(v){ const c=Math.floor(v/P_SC); let b=null,bd=1e9; for(let k=c-1;k<=c+1;k++){ const o=pSnow(k); if(o){ const d=Math.abs(v-o.v); if(d<o.RV*1.5&&d<bd){ bd=d; b=o; } } } return b; }
+function pSnowAt(v){ const c=Math.floor(v/P_SC); let b=null,bd=1e9; for(let k=c-1;k<=c+1;k++){ const o=pSnow(k); if(o){ const d=Math.abs(v-o.v); if(d<o.RV*2.4&&d<bd){ bd=d; b=o; } } } return b; }
 function pSnowD(x,v,o){ const dx=(x-o.x)*.85, dv=v-o.v, a=Math.atan2(dv,dx); return Math.hypot(dx,dv*.8)/(o.RV*(1+.3*(pNoise(Math.cos(a)*2+o.ph,Math.sin(a)*2)-.5)+.2*(pNoise(Math.cos(a)*5+o.ph+3,Math.sin(a)*5)-.5)+.1*(pNoise(Math.cos(a)*10+o.ph+7,Math.sin(a)*10)-.5)))+.12*(pNoise(x/40+o.ph,v/40)-.5); }
 function pSnowW(x,v){ const o=pSnowAt(v); if(!o) return 0; return pSm(1.05,.7,pSnowD(x,v,o)); }
 // 山のかたまりの高さ：全体のドーム＋尾根（リッジノイズ）＋いくつかの頂
@@ -3423,7 +3423,29 @@ function pDesert(c){ const key=c+'|'+(pW|0); if(pDsMemo.has(key)) return pDsMemo
       const clr=(px,pv,m)=>(!pit||Math.hypot(px-pit.x,pv-pit.v)>pit.r+m)&&(!oa||Math.hypot(px-oa.x,pv-oa.v)>oa.w*1.5+m)&&(!oa2||Math.hypot(px-oa2.x,pv-oa2.v)>oa2.r+m);
       o={x,v,RV,ph:r()*50,c,wa,DN:DN.filter(d=>clr(d.x,d.v,d.L*.6+10)),K:K.filter(k=>clr(k.x,k.v,k.r+8)),pit,oa,oa2,clr}; } }
   pDsMemo.set(key,o); return o; }
-function pDesertAt(v){ const c=Math.floor(v/P_DC); let b=null,bd=1e9; for(let k=c-1;k<=c+1;k++){ const o=pDesert(k); if(o){ const d=Math.abs(v-o.v); if(d<o.RV*2&&d<bd){ bd=d; b=o; } } } return b; }
+// 湿原（ブレワイのラネール湿原から）：浅く平らな湖に、平らな小島がたくさん。水の中にも木が1本ずつ立ち、
+// 島のまわりでは木が密集する。大きな島どうしは細い木の桟橋でつながる
+const P_WET=false, P_WTP=.55, P_WC=3100, pWtMemo=new Map();
+function pWet(c){ const key=c+'|'+(pW|0); if(pWtMemo.has(key)) return pWtMemo.get(key); const r=pRng('wt'+c,13); let o=null;
+  if(P_WET&&r()<P_WTP){ let v=0, near=true;
+    for(let t=0;t<8&&near;t++){ v=c*P_WC+400+r()*(P_WC-800); near=false;
+      for(let k=Math.floor(v/P_VC)-1;k<=Math.floor(v/P_VC)+1;k++){ const vo=pVolc(k); if(vo&&Math.abs(vo.v-v)<vo.RV+400) near=true; }
+      for(let k=Math.floor(v/P_SC)-1;k<=Math.floor(v/P_SC)+1;k++){ const so=pSnow(k); if(so&&Math.abs(so.v-v)<so.RV*1.6+400) near=true; }
+      for(let k=Math.floor(v/P_DC)-1;k<=Math.floor(v/P_DC)+1;k++){ const dso=pDesert(k); if(dso&&Math.abs(dso.v-v)<dso.RV*1.7+400) near=true; } }
+    if(!near){ const W=pW||380, x=r()<.5?W*(.15+.15*r()):W*(.7+.15*r()), RV=220+r()*70, I=[], ni=3+Math.floor(r()*3);
+      for(let i=0;i<ni;i++){ const a=r()*6.28, d=(.2+.55*r())*RV; I.push({x:x+Math.cos(a)*d/.9,v:v+Math.sin(a)*d/.7,r:(.09+.1*r())*RV,ph:r()*30,hl:r()<.5}); }
+      const CL=[]; const nc=2+Math.floor(r()*2); for(let i=0;i<nc;i++){ const a=r()*6.28, d=(.2+.5*r())*RV; CL.push({x:x+Math.cos(a)*d/.9,v:v+Math.sin(a)*d/.7,r:(.12+.08*r())*RV}); }
+      o={x,v,RV,ph:r()*50,c,I,CL}; } }
+  pWtMemo.set(key,o); return o; }
+function pWetAt(v){ const c=Math.floor(v/P_WC); let b=null,bd=1e9; for(let k=c-1;k<=c+1;k++){ const o=pWet(k); if(o){ const d=Math.abs(v-o.v); if(d<o.RV*2&&d<bd){ bd=d; b=o; } } } return b; }
+function pWetD(x,v,o){ const dx=(x-o.x)*.9, dv=(v-o.v)*.7, a=Math.atan2(dv,dx); return Math.hypot(dx,dv)/(o.RV*(1+.35*(pNoise(Math.cos(a)*3+o.ph,Math.sin(a)*3)-.5)+.2*(pNoise(Math.cos(a)*7+o.ph+3,Math.sin(a)*7)-.5)))+.06*(pNoise(x/40+o.ph,v/40)-.5); }
+function pWetW(x,v){ if(!P_WET) return 0; const o=pWetAt(v); if(!o) return 0; return pSm(1.05,.88,pWetD(x,v,o)); }
+// 島：小さな平たい島はノイズで散らばり、大きな島は少し丘がある
+function pWetIsl(x,v,o){ const RV=o.RV; let best=0, hill=0;
+  for(const q of o.I){ const a=Math.atan2(v-q.v,x-q.x), d=Math.hypot(x-q.x,v-q.v)/(q.r*(1+.3*(pNoise(Math.cos(a)*2+q.ph,Math.sin(a)*2)-.5)*2+.1*(pNoise(Math.cos(a)*6+q.ph,Math.sin(a)*6)-.5)*2)); if(d<1.15){ best=Math.max(best,pSm(1.12,.88,d)); if(q.hl) hill=Math.max(hill,pSm(1,.2,d)); } }
+  const n=pNoise(x/(.13*RV)+o.ph,v/(.13*RV)+3)*.65+pNoise(x/(.05*RV)+5,v/(.05*RV)+o.ph)*.35; best=Math.max(best,pSm(.62,.76,n));
+  return [best,hill]; }
+function pDesertAt(v){ const c=Math.floor(v/P_DC); let b=null,bd=1e9; for(let k=c-1;k<=c+1;k++){ const o=pDesert(k); if(o){ const d=Math.abs(v-o.v); if(d<o.RV*2.6&&d<bd){ bd=d; b=o; } } } return b; }
 function pDesertD(x,v,o){ const dx=(x-o.x)*.95, dv=(v-o.v)*.62, a=Math.atan2(dv,dx); return Math.hypot(dx,dv)/(o.RV*(1+.35*(pNoise(Math.cos(a)*3+o.ph,Math.sin(a)*3)-.5)+.2*(pNoise(Math.cos(a)*7+o.ph+3,Math.sin(a)*7)-.5)))+.06*(pNoise(x/50+o.ph,v/50)-.5); }
 function pDesertW(x,v){ if(!P_DESERT) return 0; const o=pDesertAt(v); if(!o) return 0; return pSm(1.0,.96,pDesertD(x,v,o)); }
 // 砂漠の高さ：低く平らな面＋風向きに細長い砂丘＋崖で囲まれた岩の台地
@@ -3725,7 +3747,7 @@ function pVolcPix(x,v,o,hg){ pVolcEdge=false; const q=pCaldera(x,v,o);
       if(lat<hw+.8) pVolcEdge=true; } }
   return lava?{lava}:{hv,edge:(q&&q.k==='plate'&&q.e<.9)||pVolcEdge}; }
 let pLavaB=null, pVolcEdge=false;
-function pBiomeW(x,v){ if(!P_BIOMES) return (P_VOLC||P_SNOW||P_DESERT)?[P_VOLC?pVolcW(x,v):0,P_DESERT?pDesertW(x,v):0,0,P_SNOW?pSnowW(x,v):0]:P_BZ; const u=x*1.05, W=pW||380, side=pNoise(v/2600+13.1,1.7)>.5?x/W:1-x/W;
+function pBiomeW(x,v){ if(!P_BIOMES) return (P_VOLC||P_SNOW||P_DESERT||P_WET)?[P_VOLC?pVolcW(x,v):0,P_DESERT?pDesertW(x,v):0,P_WET?pWetW(x,v):0,P_SNOW?pSnowW(x,v):0]:P_BZ; const u=x*1.05, W=pW||380, side=pNoise(v/2600+13.1,1.7)>.5?x/W:1-x/W;
   const vo=pNoise(v/2100+41.3,7.1), wv=pSm(.79,.84,vo)*pSm(.2,.6,side);
   const sn=pNoise(v/2300+5.3,22.9), wsn=pSm(.78,.83,sn)*(1-wv);
   const dr=pNoise(v/2200+3.7,91.9), wd=pSm(.79,.84,dr)*(1-wv)*(1-wsn);
@@ -3816,7 +3838,7 @@ function* pTerGen(H){
         else if(!q||q.k==='rim') orn=dd>4.5&&pNoise(wx/38+3.3,vv/38+1.1)>.5; // 広い流れの中は橙の帯
         c=orn?[168,86,24]:[138,40,38]; }
       else { // 岸ぞいは浅い色、そこから先は底の深さでむらをつける（湖の中の深い所・浅い所）
-        const dq=Math.max(0,Math.min(1,(dd-2)/9)), hq=Math.max(0,Math.min(1,(P_SEA-h)/.09)), q=dq*dq*(3-2*dq)*(.5+.5*hq*hq*(3-2*hq)); c=[118-62*q,142-66*q,152-66*q];
+        const dq=Math.max(0,Math.min(1,(dd-2)/9)), hq=Math.max(0,Math.min(1,(P_SEA-h)/.09)); let q=dq*dq*(3-2*dq)*(.5+.5*hq*hq*(3-2*hq)); if(P_WET&&!P_BIOMES){ const wq=L(bW); if(wq>.01) q=q*(1-wq)+(dd>1.2?.82:.55)*wq; } c=[118-62*q,142-66*q,152-66*q];
         if(shore) c=[58,52,34]; } }
     else { const t=(h-P_SEA)/(1-P_SEA), cz=cs[o], t0=(h+cz-P_SEA)/(1-P_SEA); c=pRamp(t0).slice(); const wd=L(bD), ww=L(bW), wn=L(bN);
       // 火山：灰色がかった岩肌　砂漠：明るい砂色　湿地：くすんだ緑がかった土と小さな水たまり
@@ -3908,11 +3930,24 @@ function pMapArt(k,H){
       const n=8+Math.floor(r2()*18), sp=(.04+.02*r2())*RV; for(let q=0;q<n;q++){ const g1=(r2()+r2()+r2()-1.5)*sp, g2=(r2()+r2()+r2()-1.5)*sp, x=cx+g1, v=cv+g2, y=v2y(v); if(x<0||x>W||!far(x,y,10)||pHgt(x,y)<P_SEA+.01) continue; dot(x,y,1.3+.3*r2()); } }
     for(let k=0;k<40;k++){ const a=r2()*6.28, d=Math.sqrt(r2())*RV*.8, x=so.x+Math.cos(a)*d, v=so.v+Math.sin(a)*d, y=v2y(v); if(x<0||x>W||!far(x,y,10)||pHgt(x,y)<.72) continue; dot(x,y,1.3+.2*r2()); }
     for(let k=0;k<3;k++){ const a=r2()*6.28, d=(.95+.15*r2())*RV, x=so.x+Math.cos(a)*d, v=so.v+Math.sin(a)*d, y=v2y(v); if(x<8||x>W-8||!far(x,y,16)||pHgt(x,y)<P_SEA+.02) continue; const rr=6+3*r2(), n=20+Math.floor(r2()*20); for(let q=0;q<n;q++){ const qa=r2()*6.28, qd=Math.sqrt(r2())*rr; dot(x+Math.cos(qa)*qd*1.3,y+Math.sin(qa)*qd,1.3); } } } // 雪山の中腹の黒い点（針葉樹・岩）
-  for(let c=c0;c<=c1;c++){ const r2=pRng('tw'+c,5); for(let k=0;k<160;k++){ const x=r2()*W, v=c*CW+r2()*CW, y=v2y(v); if(pBiome(x,y)[2]<.5||pHgt(x,y)<P_SEA+.006||!far(x,y,11)||pTongueLava(x,y/PX+pOff)) continue; o+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(1.6+r2()*1.4).toFixed(1)}"/>`; } }
-  for(let c=c0;c<=c1;c++){ const r=pRng('tr'+c,5); for(let v=c*CW+r()*40;v<(c+1)*CW;v+=40+r()*45){ const x=r()*W, y=v2y(v), h=pHgt(x,y), n=6+Math.floor(r()*18), sp=16+r()*30, lb=r(), bi=pBiome(x,y), wet=bi[2]>.5; if((!wet&&h<P_SEA+.04)||h>.7||bi[0]>.3||bi[1]>.4||(bi[3]>(P_SNOW?.15:.5)&&(P_SNOW||lb<.6))||pCastleAt(x,y/PX+pOff)) continue;
+  for(let c=c0;c<=c1;c++){ const r2=pRng('tw'+c,5); for(let k=0;k<160;k++){ const x=r2()*W, v=c*CW+r2()*CW, y=v2y(v); if(!P_BIOMES||pBiome(x,y)[2]<.5||pHgt(x,y)<P_SEA+.006||!far(x,y,11)||pTongueLava(x,y/PX+pOff)) continue; o+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(1.6+r2()*1.4).toFixed(1)}"/>`; } }
+  for(let c=c0;c<=c1;c++){ const r=pRng('tr'+c,5); for(let v=c*CW+r()*40;v<(c+1)*CW;v+=40+r()*45){ const x=r()*W, y=v2y(v), h=pHgt(x,y), n=6+Math.floor(r()*18), sp=16+r()*30, lb=r(), bi=pBiome(x,y), wet=P_BIOMES&&bi[2]>.5; if(!P_BIOMES&&bi[2]>.2) continue; if((!wet&&h<P_SEA+.04)||h>.7||bi[0]>.3||bi[1]>.4||(bi[3]>(P_SNOW?.15:.5)&&(P_SNOW||lb<.6))||pCastleAt(x,y/PX+pOff)) continue;
     for(let j=0;j<n;j++){ const tx=x+(r()-.5)*sp*1.6, ty=y+(r()-.5)*sp, tr=2+r()*1.6; if(!far(tx,ty,11)||(wet?pHgt(tx,ty)<P_SEA+.004:nearWater(tx,ty,3))||pTongueLava(tx,ty/PX+pOff)) continue; o+=`<circle cx="${tx.toFixed(1)}" cy="${ty.toFixed(1)}" r="${tr.toFixed(1)}"/>`; }
     if(n>16&&lb<.5) labs.push([x,y+sp*.6+12,pNm('wd'+c+','+Math.round(v),'wood'),'']); } } o+='</g>';
   o+=bridges;
+  // 湿原の木（水の中に1本ずつ、島のまわりで密集）と桟橋
+  if(P_WET) for(let c=Math.floor(vA/P_WC)-1;c<=Math.floor(vB/P_WC)+1;c++){ const wo=pWet(c); if(!wo) continue; const r6=pRng('wtt'+c,5), RV=wo.RV;
+    const tb=(rr,dr)=>{ let q=`<circle r="${(3.2+dr).toFixed(2)}"/>`; for(let k=0;k<7;k++){ const a=k*.8976+.3; q+=`<circle cx="${(Math.cos(a)*3).toFixed(2)}" cy="${(Math.sin(a)*3).toFixed(2)}" r="${(rr+dr).toFixed(2)}"/>`; } return q; };
+    o+=`<defs><g id="gwt"><g fill="#1e1604" fill-opacity=".8">${tb(2,.7)}</g><g fill="#4a3a18">${tb(2,0)}</g></g></defs>`;
+    const tree=(x,v,s)=>{ const y=v2y(v); if(!inR(y)||x<-6||x>W+6||!far(x,y,8)||pWetW(x,v)<.6) return; o+=`<use href="#gwt" transform="translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${(r6()*50).toFixed(0)}) scale(${s.toFixed(2)})"/>`; };
+    // 桟橋：大きな島どうしを細い木の道でつなぐ
+    const I=wo.I; for(let i=0;i<I.length;i++){ let bj=-1, bd=1e9; for(let j=0;j<I.length;j++){ if(j===i) continue; const d=Math.hypot(I[i].x-I[j].x,I[i].v-I[j].v); if(d<bd){ bd=d; bj=j; } } if(bj<i||bd>RV*.75) continue;
+      const a=I[i], b=I[bj], ax=a.x, ay=v2y(a.v), bx=b.x, by=v2y(b.v); if(!inR(ay)&&!inR(by)) continue; o+=`<path class="mp-bridge-o" d="M${ax.toFixed(1)} ${ay.toFixed(1)}L${bx.toFixed(1)} ${by.toFixed(1)}" style="stroke-width:3.2"/><path class="mp-bridge" d="M${ax.toFixed(1)} ${ay.toFixed(1)}L${bx.toFixed(1)} ${by.toFixed(1)}" style="stroke-width:1.6"/>`; }
+    const n1=Math.floor(RV*RV*.006); for(let k=0;k<n1;k++){ const a=r6()*6.28, d=Math.sqrt(r6())*RV*1.05, x=wo.x+Math.cos(a)*d/.9, v=wo.v+Math.sin(a)*d/.7; if(pNoise(x/(.2*RV)+wo.ph+9,v/(.2*RV))<.42) continue; tree(x,v,.7+.4*r6()); }
+    for(const cl of wo.CL){ const n=50+Math.floor(r6()*40); for(let k=0;k<n;k++){ const g1=(r6()+r6()+r6()-1.5)*cl.r*.9, g2=(r6()+r6()+r6()-1.5)*cl.r*.7; tree(cl.x+g1,cl.v+g2,.8+.5*r6()); } }
+    for(const q of I){ const n=4+Math.floor(r6()*6); for(let k=0;k<n;k++){ const a=r6()*6.28, d=q.r*(.3+.9*r6()); tree(q.x+Math.cos(a)*d,q.v+Math.sin(a)*d,.8+.4*r6()); } } }
+  // 湿原を通る道は桟橋（水の上は橋）
+  if(P_WET){ let y0=null; for(let y=Y0;y<=Y1;y+=1){ const x=pRX(y), on=pWetW(x,y/PX+off)>.3&&pHgt(x,y)<P_SEA+.004; if(on&&y0==null) y0=y; if((!on||y===Y1)&&y0!=null){ if(y-y0>2){ let d=''; for(let yy=y0-3;yy<=y+3.01;yy+=2) d+=(d?'L':'M')+pRX(yy).toFixed(1)+' '+yy.toFixed(1); o+=`<path class="mp-bridge-o" d="${d}"/><path class="mp-bridge" d="${d}"/>`; } y0=null; } } }
   // 砂漠の遺跡（女傑像の輪と倒れた柱）とオアシス（池とヤシ）
   if(P_DESERT) for(let c=Math.floor(vA/P_DC)-1;c<=Math.floor(vB/P_DC)+1;c++){ const ds=pDesert(c); if(!ds) continue; const r5=pRng('dr'+c,5);
     if(ds.pit){ const P=ds.pit, cx=P.x, cy=v2y(P.v); if(inR(cy)){ const RR=P.r*.8, sc=(P.r/40)*.62;
