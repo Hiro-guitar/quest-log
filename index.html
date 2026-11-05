@@ -843,7 +843,7 @@ body{background:#050607}
 .bk-q{font-size:18px;margin:2px 0 6px}.bk-q em{font-style:normal;color:#8ff0ff;font-weight:700;font-size:24px;text-shadow:0 0 10px rgba(111,224,255,.5)}.bk-q small{font-size:12px;color:#8e9894;margin-left:6px}.bk-slate p{margin:0 0 6px}
 .bk-rec{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.bk-rec input{width:76px!important;flex:0 0 auto}
 .bk-pips{display:flex;flex-wrap:wrap;gap:5px 4px}.bk-pip{display:flex;flex-direction:column;align-items:center;width:22px}.bk-pip i{width:14px;height:15px;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);background:rgba(240,166,64,.55);position:relative}.bk-pip i:after{content:'';position:absolute;inset:3px;clip-path:inherit;background:rgba(20,10,0,.75)}
-.bk-pip.on i{background:var(--sk);filter:drop-shadow(0 0 4px rgba(111,224,255,.8))}.bk-pip.on i:after{background:rgba(143,240,255,.55)}.bk-pip.miss i{background:rgba(242,236,214,.2)}.bk-pip.grace{opacity:.5}.bk-pip.goal{outline:1px solid var(--orange);outline-offset:1px}.bk-pip.now small{color:var(--sk);font-weight:700}.bk-pip small{font-size:10px;color:#8e9894;margin-top:3px}
+.bk-pip.on i{background:var(--sk);filter:drop-shadow(0 0 4px rgba(111,224,255,.8))}.bk-pip.on i:after{background:rgba(143,240,255,.55)}.bk-pip.miss i{background:rgba(242,236,214,.2)}.bk-pip.pre i{background:rgba(242,236,214,.12);transform:scale(.6)}.bk-pip.pre i:after{display:none}.bk-pip.grace{opacity:.5}.bk-pip.goal{outline:1px solid var(--orange);outline-offset:1px}.bk-pip.now small{color:var(--sk);font-weight:700}.bk-pip small{font-size:10px;color:#8e9894;margin-top:3px}
 .bk-mini{display:block;height:3px;margin-top:5px;background:rgba(111,224,255,.15);max-width:160px}.bk-mini i{display:block;height:100%;background:#6fe0ff;box-shadow:0 0 5px rgba(111,224,255,.7)}
 .proofs{border:1px solid rgba(242,236,214,.14);background:rgba(0,0,0,.25);border-radius:3px;padding:8px 12px;margin:0 0 10px}
 .pf-h{font-size:11px;letter-spacing:.3em;color:var(--muted);margin-bottom:4px}
@@ -1966,7 +1966,7 @@ document.addEventListener('click',e=>{
     case 'trback': trSel=null; render(); break;
     case 'bksel': selId=null; trSel=null; bkSel=b.dataset.v; bkEdit=false; tab='list'; listCat='book'; render(); window.innerWidth<=820&&window.scrollTo({top:0}); break;
     case 'bkback': { const B=state.books&&state.books[bkSel]; if(B&&!B.title&&!B.pages){ delete state.books[bkSel]; save(); } bkSel=null; bkEdit=false; render(); break; }
-    case 'bknew': { const t=ymd(), id=uid(); state.books=state.books||{}; state.books[id]={title:'',pages:0,start:t,due:bkAdd(t,14),goal:bkAdd(t,9),log:{},u:Date.now()}; selId=null; bkSel=id; bkEdit=true; tab='list'; listCat='book'; save(); render(); setTimeout(()=>{ const e=$('bkTitle'); e&&e.focus(); },50); break; }
+    case 'bknew': { const t=ymd(), id=uid(); state.books=state.books||{}; state.books[id]={title:'',pages:0,start:t,reg:t,p0:0,due:bkAdd(t,14),goal:bkAdd(t,9),log:{},u:Date.now()}; selId=null; bkSel=id; bkEdit=true; tab='list'; listCat='book'; save(); render(); setTimeout(()=>{ const e=$('bkTitle'); e&&e.focus(); },50); break; }
     case 'bkedit': bkEdit=true; renderDetail(); break;
     case 'bksave': bkSave(); break;
     case 'bkrec': bkRecord(); break;
@@ -2784,7 +2784,7 @@ const bkAdd=(k,n)=>{ const d=new Date(k+'T00:00:00'); d.setDate(d.getDate()+n); 
 const bkDays=(a,b)=>Math.round((new Date(b+'T00:00:00')-new Date(a+'T00:00:00'))/DAY);
 const bkMD=k=>`${+k.slice(5,7)}/${+k.slice(8)}`;
 function bkAll(){ return Object.entries(state.books||{}).filter(([,v])=>v&&!v.del).map(([id,v])=>({id,...v})); }
-function bkAt(B,d,strict){ let p=0; for(const k in (B.log||{})) if(strict?k<d:k<=d) p=Math.max(p,+B.log[k]||0); return Math.min(p,B.pages||p); }
+function bkAt(B,d,strict){ let p=B.p0||0; for(const k in (B.log||{})) if(strict?k<d:k<=d) p=Math.max(p,+B.log[k]||0); return Math.min(p,B.pages||p); }
 // その日の目安：前の日までに読んだ所から、目標の日（過ぎたら返す日）までを均等に割る
 function bkPlan(B,d){
   const s0=bkAt(B,d,true), N=B.pages||0, end=d<=B.goal?B.goal:d<=B.due?B.due:d, left=bkDays(d,end)+1;
@@ -2792,7 +2792,8 @@ function bkPlan(B,d){
   return {s0,to,quota,now,left,end,met:N>0&&now>=to,over:end!==B.goal};
 }
 // 計画どおりなら今日までに読んでいるはずのページ（借りた日から目標の日まで一直線）
-function bkIdeal(B,d){ const tot=bkDays(B.start,B.goal)+1, k=Math.min(tot,Math.max(0,bkDays(B.start,d)+1)); return Math.round((B.pages||0)*k/tot); }
+// 登録が借りた日より後なら、登録した日（とその時に読み終えていた所）から目標の日までを一直線に
+function bkIdeal(B,d){ const b0=B.reg&&B.reg>B.start?B.reg:B.start, p0=B.p0||0, tot=Math.max(1,bkDays(b0,B.goal)+1), k=Math.min(tot,Math.max(0,bkDays(b0,d)+1)); return Math.round(p0+((B.pages||0)-p0)*k/tot); }
 function bkTodayRows(d){
   const due=bkAll().filter(B=>!B.ret&&B.due<=d&&d===ymd()||(!B.ret&&B.due===d)).map(B=>`<button class="row bk-today" data-act="bksel" data-v="${B.id}"><span class="r-mark">${ico('book')}</span><span class="r-main"><span class="r-title">返却の刻限：${esc(B.title||'(無題)')}</span><span class="r-sub">${B.due<d?`刻限を${bkDays(B.due,d)}日過ぎている`:'今日が返す日'}${(B.renew||[]).length?'・図書館に返そう':'・返すか、予約がなければ更新しよう'}</span></span><span class="r-notch"></span></button>`).join('');
   return due+bkAll().filter(B=>!B.ret&&!B.fin&&B.pages&&B.start<=d).map(B=>{ const P=bkPlan(B,d), rest=Math.max(0,P.to-P.now);
@@ -2817,12 +2818,13 @@ function bkPanel(){
   if(bkEdit||!B.pages) return `<div class="panel bk-panel"><div class="p-wm">${SECBG.book}</div>${back}<h2 class="p-title">${B.title?'古文書を記し直す':'古文書を手に入れた'}</h2><div class="form">
     <div class="f"><label>書名</label><input type="text" id="bkTitle" value="${esc(B.title||'')}" placeholder="例：ハイラル王家の記録"></div>
     <div class="f"><label>ページ数（読む所の最後のページ）</label><input type="number" id="bkPages" inputmode="numeric" min="1" value="${B.pages||''}" placeholder="例：320"></div>
-    <div class="f"><label>借りた日</label><input type="date" id="bkStart" value="${B.start}"></div>
+    <div class="f"><label>借りた日（借りてしばらく経ってから記すときは、本当に借りた日に）</label><input type="date" id="bkStart" value="${B.start}"></div>
+    <div class="f"><label>もう読んだ所（まだなら空のまま）</label><input type="number" id="bkP0" inputmode="numeric" min="0" value="${B.p0||''}" placeholder="例：45"></div>
     <div class="f"><label>解き明かす日（借りた日から10日目）</label><input type="date" id="bkGoal" value="${B.goal}"></div>
     <div class="f"><label>返却の刻限（借りた日から2週間）</label><input type="date" id="bkDue" value="${B.due}"></div>
     <p class="hint">借りた日を変えると、解き明かす日と返却の刻限もそれに合わせて動きます。休館で延びたときや更新したときは、古文書の画面の「返却の刻限」から変えられます。</p>
     <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" data-act="bksave">これで決める</button>${B.title?'<button class="btn ghost" data-act="bkback">やめる</button>':''}<button class="btn danger" data-act="bkdel">消す</button></div></div></div>`;
-  const N=B.pages, now=bkAt(B,t), P=bkPlan(B,t), id=bkIdeal(B,t), diff=now-id, dl=bkDays(t,B.due);
+  const N=B.pages, now=bkAt(B,t), P=bkPlan(B,t), id=bkIdeal(B,bkAdd(t,-1)), diff=now-id, dl=bkDays(t,B.due);
   let h=`<div class="panel bk-panel"><div class="p-wm">${SECBG.book}</div>${back}<h2 class="p-title">${esc(B.title||'(無題)')}</h2>
   <div class="p-giver"><span><i class="giver-mark">!</i>古文書・全${N}ページ</span><span class="p-place">図書館</span></div>`;
   h+=`<div class="bk-gauge"><div class="bk-gh"><span>解読の進み</span><span><b>p.${now}</b> / ${N}　${Math.round(now/N*100)}%</span></div>${bkSegs(B,now,id)}${t>=B.start&&!B.fin&&!B.ret?`<p class="bk-pace ${diff>=0?'ok':'late'}">${diff>=0?`予定より ${diff}ページ 先を進んでいる`:`予定より ${-diff}ページ 遅れている`}</p>`:''}</div>`;
@@ -2833,9 +2835,9 @@ function bkPanel(){
     h+=`<div class="bk-slate ${P.met?'done':''}"><div class="bk-sh">今日の解読の試練${P.met?'<span class="r-clear">CLEAR</span>':''}</div>${body}<div class="bk-rec"><span>今日は p.</span><input type="number" id="bkPg" inputmode="numeric" min="0" max="${N}" value="" placeholder="${P.now||''}"><span>まで読んだ</span><button class="btn primary small" data-act="bkrec">記す</button></div></div>`;
   }
   // 解読の軌跡：日ごとの端末。読んだ日は青く灯り、まだの日は橙のまま
-  { let pips=''; for(let k=B.start;k<=B.due;k=bkAdd(k,1)){ const ex=bkAt(B,k)-bkAt(B,k,true), lg=B.log&&(k in B.log), cls=[k===t?'now':'',k>B.goal?'grace':'',lg&&ex>0?'on':'',k<t&&!(lg&&ex>0)?'miss':'',k===B.goal?'goal':''].join(' ');
+  { let pips=''; for(let k=B.start;k<=B.due;k=bkAdd(k,1)){ const ex=bkAt(B,k)-bkAt(B,k,true), lg=B.log&&(k in B.log), pre=B.reg&&k<B.reg&&!lg, cls=[k===t?'now':'',k>B.goal?'grace':'',lg&&ex>0?'on':'',pre?'pre':k<t&&!(lg&&ex>0)?'miss':'',k===B.goal?'goal':''].join(' ');
       pips+=`<span class="bk-pip ${cls}" title="${bkMD(k)}${lg?` p.${B.log[k]}`:''}"><i></i><small>${+k.slice(8)}</small></span>`; }
-    h+=`<div class="sec-h"><span>解読の軌跡</span></div><div class="bk-pips">${pips}</div><p class="hint" style="margin:6px 0 10px">読んだ日の端末が青く灯る。金の枠が解き明かす日、その先は返却の刻限までの猶予。</p>`; }
+    h+=`<div class="sec-h"><span>解読の軌跡</span></div><div class="bk-pips">${pips}</div><p class="hint" style="margin:6px 0 10px">読んだ日の端末が青く灯る。金の枠が解き明かす日、その先は返却の刻限までの猶予。${B.reg&&B.reg>B.start?`${bkMD(B.reg)}より前は、記しはじめる前の日。`:''}</p>`; }
   const lg=Object.entries(B.log||{}).sort((a,b)=>a[0]<b[0]?1:-1);
   if(lg.length) h+=`<div class="kids">${lg.map(([d,p])=>`<div class="kid"><span>${bkMD(d)}　p.${p} まで解読</span><button class="btn small ghost" data-act="bkundo" data-v="${d}">消す</button></div>`).join('')}</div>`;
   if(!B.ret){ const nd=bkAdd(t,14), best=bkAdd(B.due,14), done1=(B.renew||[]).length>0, can=nd>B.due&&!done1;
@@ -2853,7 +2855,8 @@ function bkSave(){
   let goal=v('bkGoal')||B.goal, due=v('bkDue')||B.due;
   if(st!==B.start){ if(goal===B.goal) goal=bkAdd(st,9); if(due===B.due) due=bkAdd(st,14); }
   if(goal<st) goal=st; if(due<goal) due=goal;
-  Object.assign(B,{title:title.slice(0,80),pages,start:st,goal,due,u:Date.now()});
+  const p0=Math.min(pages,Math.max(0,parseInt(v('bkP0'),10)||0));
+  Object.assign(B,{title:title.slice(0,80),pages,start:st,goal,due,p0,reg:B.reg||B.start,u:Date.now()});
   if(B.fin&&bkAt(B,ymd())<pages) B.fin=null;
   bkEdit=false; save(); render();
 }
