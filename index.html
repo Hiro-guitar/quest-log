@@ -795,6 +795,16 @@ body{background:#050607}
 @media (max-width:820px){.topbar{grid-template-columns:1fr auto!important;grid-template-areas:'lv xp' 'tabs tabs';row-gap:6px}.tb-left{grid-area:lv}.tb-right{grid-area:xp}.tb-tabs{grid-area:tabs;justify-self:center!important}}
 .rest-link{font-size:11px;color:var(--dim);letter-spacing:0;margin-right:12px;padding:0 2px;opacity:.8}.rest-link:hover{color:#f0c38a}
 /* 赤い月 */
+.wake{position:fixed;inset:0;z-index:61;display:none;align-items:center;justify-content:center;padding:20px;background:radial-gradient(120% 70% at 50% 100%,rgba(242,170,90,.35),rgba(20,24,40,.92) 60%,rgba(6,8,14,.97));-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.wake.show{display:flex;animation:moonIn .7s ease}
+.wk-in{width:100%;max-width:380px;text-align:center}
+.wk-sun{width:120px;height:60px;margin:0 auto 8px;position:relative;overflow:hidden}.wk-sun:before{content:'';position:absolute;left:50%;bottom:-60px;width:120px;height:120px;margin-left:-60px;border-radius:50%;background:radial-gradient(circle,#ffe6a8 0,#f5b25c 45%,rgba(245,150,70,0) 70%);animation:wkRise 2.4s ease-out both}
+@keyframes wkRise{from{transform:translateY(40px);opacity:.2}to{transform:none;opacity:1}}
+.wk-k{font-size:11px;letter-spacing:.5em;color:#f5c27a}.wake h2{font-size:26px;letter-spacing:.3em;margin:4px 0 4px;text-shadow:0 0 18px rgba(245,190,120,.55)}.wk-lead{color:#d9d2c0;font-size:13.5px;margin:0 0 16px}
+.wk-t{font-size:28px!important;text-align:center;width:210px!important;margin:0 auto 10px;display:block;background:rgba(0,0,0,.35)!important;border:1px solid rgba(245,194,122,.5)!important;color:#fff!important;padding:6px 8px!important}
+.wk-q{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:14px}.wk-q button{padding:5px 10px;border:1px solid rgba(242,236,214,.25);border-radius:14px;font-size:12px;color:#e8e2cf}.wk-q button.on{border-color:#f5c27a;color:#f5c27a}
+.wk-b{margin:4px 0 16px;font-size:12px;color:#a9a392}.wk-b input{width:110px!important;margin-left:6px;background:rgba(0,0,0,.3)!important}
+.wk-acts{display:flex;flex-direction:column;gap:8px;align-items:center}.wk-acts .btn{min-width:220px}.wk-acts .wk-s{font-size:12px;color:#8e8a7e;text-decoration:underline;text-underline-offset:3px}
 .moon{position:fixed;inset:0;z-index:60;display:none;overflow:auto;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
   background:radial-gradient(1px 1px at 12% 18%,#fff8,transparent),radial-gradient(1px 1px at 28% 62%,#fff6,transparent),radial-gradient(1.5px 1.5px at 74% 22%,#fff9,transparent),radial-gradient(1px 1px at 86% 70%,#fff5,transparent),radial-gradient(1px 1px at 52% 84%,#fff5,transparent),radial-gradient(1.2px 1.2px at 64% 44%,#fff6,transparent),radial-gradient(1px 1px at 8% 80%,#fff5,transparent),linear-gradient(180deg,rgba(14,18,44,.98),rgba(20,22,52,.98) 45%,rgba(6,7,18,.99));
   padding:calc(24px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom))}
@@ -954,6 +964,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 <div class="toast" id="toast"></div>
 <div class="banner" id="banner"></div>
 <div class="moon" id="moon"></div>
+<div class="wake" id="wake"></div>
 <div class="moon rev" id="rev"></div>
 <div class="shrine" id="shrine"></div>
 <div class="clear" id="clear"><div class="clear-in">
@@ -1260,7 +1271,7 @@ function addSteps(q,text){
 const CAT_NAMES={today:'今日の冒険',path:'旅程',main:'メインチャレンジ',challenge:'チャレンジ',mini:'ミニチャレンジ',train:'鍛錬',book:'古文書の解読',memory:'思い出'};
 const CATS=['today','main','challenge','mini','train','book'];
 let toolSel='sync', bkList=null, memEdit=null;
-function render(){ try{ document.documentElement.style.setProperty('--vh',Math.max(window.innerHeight,document.documentElement.clientHeight,navigator.standalone?screen.height:0)+'px'); }catch(e){} { const pf=window.innerWidth<=820&&tab==='list'&&listCat==='path'&&!pathSel&&!selId; document.documentElement.classList.toggle('pfull-on',pf); document.documentElement.classList.toggle('ios-gap',!!navigator.standalone&&screen.height-window.innerHeight>20); if(pf){ try{ window.scrollTo(0,0); document.body.scrollTop=0; document.documentElement.scrollTop=0; }catch(e){} } document.body.classList.toggle('pfull',pf); } sortAllSteps();renderLv();renderHud();renderTabs();renderList();renderDetail();renderHints();
+function render(){ { const w=$('wake'); if(w&&w.classList.contains('show')&&!wakeEdit&&!wakeDue()) w.classList.remove('show'); } try{ document.documentElement.style.setProperty('--vh',Math.max(window.innerHeight,document.documentElement.clientHeight,navigator.standalone?screen.height:0)+'px'); }catch(e){} { const pf=window.innerWidth<=820&&tab==='list'&&listCat==='path'&&!pathSel&&!selId; document.documentElement.classList.toggle('pfull-on',pf); document.documentElement.classList.toggle('ios-gap',!!navigator.standalone&&screen.height-window.innerHeight>20); if(pf){ try{ window.scrollTo(0,0); document.body.scrollTop=0; document.documentElement.scrollTop=0; }catch(e){} } document.body.classList.toggle('pfull',pf); } sortAllSteps();renderLv();renderHud();renderTabs();renderList();renderDetail();renderHints();
   $('split').classList.toggle('has-sel',!!selId||(tab==='tools'&&toolPicked)||(tab==='pouch'&&!!pouchSel)||(tab==='rest'&&!!restSel)||(tab==='list'&&listCat==='train'&&!!trSel)||(tab==='list'&&listCat==='book'&&!!bkSel)||(tab==='list'&&listCat==='path'&&!!pathSel));
 }
 let toolPicked=false;
@@ -1946,6 +1957,7 @@ document.addEventListener('click',e=>{
   const b=e.target.closest('[data-act]'); if(!b) return;
   const a=b.dataset.act, q=findQ(selId);
   if(a.startsWith('path')&&pathAct(a,b)) return;
+  if(a.startsWith('wk')){ wakeAct(a,b); return; }
   switch(a){
     case 'tab': if(!draftLeave()) break; if(editing){cleanupEmpty();editing=false} goTab(b.dataset.v); break;
     case 'openq': { const t=findQ(b.dataset.id); if(!t) break; tab='list'; listCat=t.type; selId=t.id; pouchSel=null; editing=false; render(); window.scrollTo({top:0}); break; }
@@ -3013,6 +3025,26 @@ async function wxFetch(){
 
 /* ---------- 赤い月：週に一度の見直し（日曜18時〜月曜12時に一度だけ出る。道具からいつでも開ける） ---------- */
 function moonKey(){ const d=new Date(), w=d.getDay(), h=d.getHours(); if(w===0&&h>=18) return ymd(d); if(w===1&&h<12) return ymd(new Date(d.getTime()-DAY)); return null; }
+// 目覚め：まだ起きた時間を記していないままアプリを開いたら、たずねる。起きてすぐ押さなくてもいいよう、時刻は選べる
+let wakeLater=false, wakeEdit=false;
+function wakeDue(){ const H=hm(), t=ymd(), n=pnow(); if(n<PATH_H0) return false; if(((H.sleep||{})[t]||{}).w!=null) return false; try{ if(localStorage.getItem('ql-wakeskip')===t) return false; }catch(e){} return true; }
+function wakeOpen(edit){ wakeEdit=!!edit; const H=hm(), t=ymd(), sd=(H.sleep||{})[t]||{}, yk=ymd(new Date(Date.now()-DAY)), yb=((H.sleep||{})[yk]||{}).b, n=pnow(), cur=edit&&sd.w!=null?sd.w:n;
+  const q=[0,10,20,30,60].map(d=>`<button data-act="wkq" data-v="${d}" class="${d===0&&!edit?'on':''}">${d?d===60?'1時間前':d+'分前':'いま'}</button>`).join('');
+  $('wake').innerHTML=`<div class="wk-in"><div class="wk-sun"></div><div class="wk-k">DAWN</div><h2>目覚め</h2><p class="wk-lead">${edit?'目覚めた時刻を直す':'おはよう。目覚めたのはいつ？'}</p>
+    <input type="time" id="wkT" class="wk-t" value="${pHM(cur)}"><div class="wk-q">${q}</div>
+    ${yb==null?`<div class="wk-b">ゆうべ休んだ時刻（わかれば）<input type="time" id="wkB"></div>`:''}
+    <div class="wk-acts"><button class="btn primary" data-act="wkok">この時刻に目覚めた</button>${edit?`<button class="btn ghost" data-act="wkx">やめる</button><button class="wk-s" data-act="wkdel">記録を消す</button>`:`<button class="btn ghost" data-act="wkx">まだ眠っている</button><button class="wk-s" data-act="wkskip">今日は記さない</button>`}</div></div>`;
+  $('wake').classList.add('show'); }
+function wakeCheck(){ if(wakeLater||!wakeDue()) return; if($('moon').classList.contains('show')) return; wakeOpen(false); }
+function wakeAct(a,b){
+  if(a==='wkq'){ const m=pnow()-(+b.dataset.v); $('wkT').value=pHM(Math.max(0,m)); document.querySelectorAll('.wk-q button').forEach(x=>x.classList.toggle('on',x===b)); return; }
+  if(a==='wkx'){ wakeLater=true; $('wake').classList.remove('show'); return; }
+  if(a==='wkskip'){ try{ localStorage.setItem('ql-wakeskip',ymd()); }catch(e){} $('wake').classList.remove('show'); return; }
+  if(a==='wkdel'){ slSet(ymd(),'w',null); $('wake').classList.remove('show'); render(); return; }
+  if(a==='wkok'){ const m=pTm($('wkT').value); if(m==null){ toast('時刻を入れてください'); return; } if(m>pnow()+5){ toast('まだ来ていない時刻です'); return; }
+    const t=ymd(); slSet(t,'w',m); const bb=$('wkB')&&pTm($('wkB').value); if(bb!=null) slSet(ymd(new Date(Date.now()-DAY)),'b',bb<PATH_H0?bb+1440:bb);
+    $('wake').classList.remove('show'); render(); const d=slDur(t); toast(`おはよう。${pfmt(m)}に目覚めた${d!=null?`（${slDurFmt(d)}眠った）`:''}`); }
+}
 function renderMoon(){
   const M=$('moon'); if(!M) return;
   const wk=Date.now()-7*DAY;
@@ -3392,7 +3424,7 @@ function pathList(){
     let top='', bot='';
     if(isT&&now<PATH_H0&&yd.b==null) top=btn('b','休む');
     else if(sd.w==null&&isT&&now>=PATH_H0) top=btn('w','起きた');
-    else if(sd.w!=null) top=rec('起床',sd.w)+(slDur(k)!=null?`<span class="pe-time sub">${slDurFmt(slDur(k))}眠った</span>`:'');
+    else if(sd.w!=null) top=(isT?`<button class="pe-time" data-act="pathwkedit" title="押すと直せる">起床 ${slFmt(sd.w)}</button>`:rec('起床',sd.w))+(slDur(k)!=null?`<span class="pe-time sub">${slDurFmt(slDur(k))}眠った</span>`:'');
     if(sd.b==null&&isT&&now>=PATH_H0) bot=btn('b','休む'); else if(sd.b!=null) bot=rec('就寝',sd.b);
     const hy=pm2y(!G.woke?G.s:Math.max(G.s,Math.min(PATH_H1,now))), hx=pRX(hy);
     mtags+=(top?chip(y0,x0,3,top):'')+(bot?(openEnd?(G.woke&&now>=18*60?chip(hy,hx,0,bot):''):chip(y1,x1,6,bot)):''); }
@@ -4358,7 +4390,8 @@ function pathAct(a,b){
     case 'pathstep': { const x=pBlocks(k).find(y=>y.id===pathSel), r=x&&pRef(x); if(r&&r.s) toggleStep(r.q.id,r.s.id); render(); return true; }
     case 'pathshift': { const x=pBlocks(k).find(y=>y.id===pathSel); if(x){ pathShift(k,x.s,+b.dataset.v); render(); } return true; }
     case 'pathlate': { const x=pBlocks(k).find(y=>y.id===b.dataset.v); if(x){ const d=Math.ceil((pJNow()-x.s)/SNAP)*SNAP; if(d>0){ pathShift(k,x.s,d); toast(`${pfmt(x.s+d)}から始める。後ろの予定も${d}分ずらした`); } render(); } return true; }
-    case 'pathsleep': { const f=b.dataset.v; slNow(f); toast(f==='w'?'おはよう。手綱をとって進もう':'おやすみ。あとはエポナにまかせよう'); render(); return true; }
+    case 'pathwkedit': wakeOpen(true); return true;
+    case 'pathsleep': { const f=b.dataset.v; if(f==='w'){ wakeOpen(false); return true; } slNow(f); toast(f==='w'?'おはよう。手綱をとって進もう':'おやすみ。あとはエポナにまかせよう'); render(); return true; }
     case 'pathwake': { const x=pBlocks(k).find(y=>y.id===b.dataset.v); if(x&&k===pJDay()&&(hm().sleep[k]||{}).w==null) slSet(k,'w',pnow()); if(x){ const e=Math.max(x.s+SNAP,Math.round(pnow()/SNAP)*SNAP); pSet(k,x.id,{e,done:1,woke:1}); toast('おはよう。ここから今日の冒険'); render(); } return true; }
     case 'pathmorning': { tab='list'; listCat='path'; dayView=ymd(); pathSel=null; pathScrolled=null; const tpl=(plan().tpl[pTpl(dayView)]||{}).b||[]; if(!pBlocks(dayView).length&&tpl.length){ const P=plan(), day={...(P.d[dayView]||{})}, now=Date.now(); tpl.forEach(t=>{ day[uid()]={s:t.s,e:t.e,t:t.t,fix:1,...(t.wake?{wake:1}:{}),u:now}; }); P.d={...P.d,[dayView]:day}; save(); } render(); return true; }
     case 'pathmg': { const x=pBlocks(k).find(y=>y.id===pathSel); if(x){ pSet(k,x.id,{[b.dataset.f]:+b.dataset.v}); render(); } return true; }
@@ -4517,13 +4550,13 @@ async function loadData(){
   }catch(e){}
 }
 setInterval(()=>{ if(ymd()!==carryDay) runCarry(); pCarry(); if(document.visibilityState==='visible') loadData(); },30000);
-document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible'){ if(ymd()!==carryDay) runCarry(); pCarry(); loadData(); } });
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible'){ if(ymd()!==carryDay) runCarry(); pCarry(); loadData(); setTimeout(wakeCheck,400); } else wakeLater=false; });
 
 // #q=ID で開いたら、そのチャレンジを表示
 (function(){ const m=location.hash.match(/^#q=([\w-]+)/); const q=m&&findQ(m[1]); if(q){ selId=q.id; tab='list'; listCat=q.type; } if(m){ try{ history.replaceState(null,'',location.pathname+location.search); }catch(e){} } })();
 
 stamp(); window.__qlReady=true;
-render(); if(moveDoToSteps()){ save(); render(); } if(trImport()){ state.pristine=false; save(); render(); } runCarry(); pCarry(); if(pBackfill()) render();
+render(); if(moveDoToSteps()){ save(); render(); } if(trImport()){ state.pristine=false; save(); render(); } runCarry(); pCarry(); if(pBackfill()) render(); setTimeout(wakeCheck,600);
 // 起動して少ししたら、今日の地図を裏で描いておく（開いたときに待たないように）
 setTimeout(()=>{ try{ const w=+localStorage.getItem('ql-pw'); if(!w) return; const sv=pW; pW=w; pTerAsk(pJDay(),pm2y(PATH_H1)+10,false); pTerPrefetch(pJDay()); pW=sv; }catch(e){} },400);
 if(sync.url){ syncScan(); flush(); loadData().then(pull); }
