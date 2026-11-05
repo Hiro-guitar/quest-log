@@ -3433,9 +3433,9 @@ function pWet(c){ const key=c+'|'+(pW|0); if(pWtMemo.has(key)) return pWtMemo.ge
       for(let k=Math.floor(v/P_VC)-1;k<=Math.floor(v/P_VC)+1;k++){ const vo=pVolc(k); if(vo&&Math.abs(vo.v-v)<vo.RV+400) near=true; }
       for(let k=Math.floor(v/P_SC)-1;k<=Math.floor(v/P_SC)+1;k++){ const so=pSnow(k); if(so&&Math.abs(so.v-v)<so.RV*1.6+400) near=true; }
       for(let k=Math.floor(v/P_DC)-1;k<=Math.floor(v/P_DC)+1;k++){ const dso=pDesert(k); if(dso&&Math.abs(dso.v-v)<dso.RV*1.7+400) near=true; } }
-    if(!near){ const W=pW||380, x=r()<.5?W*(.15+.15*r()):W*(.7+.15*r()), RV=220+r()*70, I=[], S=[], ow=r()*6.28, ni=12+Math.floor(r()*5);
+    if(!near){ const W=pW||380, x=r()<.5?W*(.15+.15*r()):W*(.7+.15*r()), RV=220+r()*70, I=[], S=[], ow=(x<W/2?Math.PI:0)+(r()-.5)*.8, ni=12+Math.floor(r()*5);
       // 島（9〜12個）：開けた水面を1方向に残し、島どうしの間は細い水路
-      for(let t=0;t<200&&I.length<ni;t++){ const a=r()*6.28; let da=a-ow; da=Math.atan2(Math.sin(da),Math.cos(da)); const d=(.1+.65*r())*RV; if(Math.abs(da)<.55&&d>.25*RV) continue;
+      for(let t=0;t<200&&I.length<ni;t++){ const a=r()*6.28; let da=a-ow; da=Math.atan2(Math.sin(da),Math.cos(da)); const d=(.1+.65*r())*RV; if(Math.abs(da)<.42&&d>.25*RV) continue;
         const q={x:x+Math.cos(a)*d/.9,v:v+Math.sin(a)*d/.7,r:(.1+.08*r())*RV,ph:r()*30,hl:r()<.35,tf:.2+.3*r()}; let ok=true, mg=1e9; for(const p of I){ const g=Math.hypot(p.x-q.x,p.v-q.v)-p.r-q.r; if(g<.03*RV) ok=false; mg=Math.min(mg,g); } if(I.length&&mg>.08*RV&&t<160) ok=false; if(ok) I.push(q); }
       const ns=15+Math.floor(r()*11); for(let i=0;i<ns;i++){ const a=r()*6.28, d=Math.sqrt(r())*.95*RV; S.push({x:x+Math.cos(a)*d/.9,v:v+Math.sin(a)*d/.7,A:(.03+.03*r())*RV,t:r()*3.14}); }
       o={x,v,RV,ph:r()*50,c,I,S,ow}; } }
@@ -3854,7 +3854,7 @@ function* pTerGen(H){
       const CLe=CL*(1+.6*wv+(P_BIOMES?.8:1.4)*wn+(P_BIOMES?-.75:.8)*wd)*(1-.4*lwo), b0=Math.floor(t*CLe), b1=Math.floor(((hr-P_SEA)/(1-P_SEA))*CLe), b2=Math.floor(((hd-P_SEA)/(1-P_SEA))*CLe);
       const gg=(Math.abs(g[oo+1]-g[oo])+Math.abs(g[oo+gw]-g[oo])+Math.abs(g[oo+gw+1]-g[oo+1])+Math.abs(g[oo+gw+1]-g[oo+gw]))/(2*G*R)*CLe/(1-P_SEA), kq=gg<.5?1:gg<.9?2:gg<1.3?3:4;
       if(wn>.3&&kq>1){ const cr=(a2,b2)=>a2!==b2&&Math.max(a2,b2)%kq===0; if(cr(b0,b1)||cr(b0,b2)){ const k2=.5; c=[c[0]*k2,c[1]*k2,c[2]*k2]; } } // 雪山の崖：詰まった等高線は段ごとに間引き、残す線は濃く（線がとぎれない） // 雪山の崖：詰まった線は何本かに1本だけ濃く（1本の崖線に）
-      else if((b0!==b1||b0!==b2)&&!((wwo>.3||(P_WET&&L(bRm)>.3))&&h<P_SEA+.06)){ const k2=b0%5===0?.6:.8; c=[c[0]*k2,c[1]*k2,c[2]*k2]; }
+      else if((b0!==b1||b0!==b2)&&!((wwo>.3||(P_WET&&L(bRm)>.3))&&h<P_SEA+.08)){ const k2=b0%5===0?.6:.8; c=[c[0]*k2,c[1]*k2,c[2]*k2]; }
       if((wn>.3||wd>.2)&&es[o]<.85){ c=[c[0]*.55,c[1]*.55,c[2]*.55]; } // 谷の肩・山塊の縁の濃い線
       }
     if(!(vp&&vp.lava)&&h>=P_SEA&&P_VOLC){ const vv=(Y0+j/R)/PX+pOff, o3=pVolcAt(vv); if(o3&&o3.tg&&o3.tg.length){ const te=pTongueE(i/R,vv,o3); if(te>=0&&te<.2){ const k3=.8; c=[c[0]*k3,c[1]*k3,c[2]*k3]; if(vp&&vp.c) vp.c=vp.c.map(q=>q*k3); } } }
