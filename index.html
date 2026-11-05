@@ -3403,7 +3403,7 @@ function pSnowH(x0,v0,o){ const x=x0+20*(pNoise(x0/70+o.ph,v0/70)-.5)*2, v=v0+20
 function pSnowWhite(x,v){ const o=pSnowAt(v); if(!o) return 0; const D=pSnowD(x,v,o); return pSm(.5,.85,.6*pSm(1.05,.15,D)+.4*(1-D)+.25); }
 // 砂漠（ブレワイのゲルド砂漠から）：まわりより低く、とても平らな広い土地。色は暗めの濃い黄土色。
 // 等高線はまばらで、風の向きに細長い砂丘が閉じた輪になって点々とある。ところどころに崖で囲まれた岩の台地。木はなく、湖も川もない
-const P_DESERT=false, P_DSP=.58, P_DC=3300, pDsMemo=new Map();
+const P_DESERT=true, P_DSP=.58, P_DC=3300, pDsMemo=new Map();
 function pDesert(c){ const key=c+'|'+(pW|0); if(pDsMemo.has(key)) return pDsMemo.get(key); const r=pRng('ds'+c,9); let o=null;
   if(P_DESERT&&r()<P_DSP){ let v=0, near=true; // 火山・雪山と重ならない所を探す（何か所か試す）
     for(let t=0;t<8&&near;t++){ v=c*P_DC+400+r()*(P_DC-800); near=false;
@@ -3850,7 +3850,7 @@ function pTerAsk(k,H,first){
   if(!pTerBusy){ pTerBusy=true; setTimeout(pTerStep,0); }
 }
 // 一度描いた地形の絵は端末に取っておく（次に開いたときは描かずにすぐ出す）。描き方を変えたら版を上げて作り直す
-const P_TER_V="t131|", P_TER_MAX=36;
+const P_TER_V="t132|", P_TER_MAX=36;
 const pIDB=(()=>{ let dbp=null; const open=()=>dbp||(dbp=new Promise((res,rej)=>{ try{ const r=indexedDB.open('ql-ter',1); r.onupgradeneeded=()=>r.result.createObjectStore('img'); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }catch(e){ rej(e); } }));
   const st=m=>open().then(db=>db.transaction('img',m).objectStore('img'));
   const keys=()=>{ try{ return JSON.parse(localStorage.getItem('ql-ter-keys')||'[]'); }catch(e){ return []; } }, setKeys=a=>{ try{ localStorage.setItem('ql-ter-keys',JSON.stringify(a)); }catch(e){} };
