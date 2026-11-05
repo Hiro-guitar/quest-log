@@ -387,6 +387,7 @@ select{max-width:100%;text-overflow:ellipsis}
 .path-un{margin:4px 0 12px;padding:10px 12px;background:linear-gradient(90deg,rgba(0,0,0,0),rgba(0,0,0,.28) 10%,rgba(0,0,0,.28) 90%,rgba(0,0,0,0));position:relative}
 .path-un::before,.path-un::after{content:"";position:absolute;left:4%;right:4%;height:1px;background:linear-gradient(90deg,transparent,rgba(242,194,48,.45),transparent)}
 .path-un::before{top:0}.path-un::after{bottom:0}
+.fb-row{display:flex;align-items:center}.fb-row .fb-open{flex:1;text-align:left;background:none;border:0;color:inherit;padding:0;display:flex;flex-direction:column;min-width:0}.fb-ck{display:inline-block;width:12px;height:12px;border:1.4px solid currentColor;border-radius:2px;opacity:.7}.fb-row.done .r-title{opacity:.55}
 .pu-pick{display:block;width:100%;text-align:left;margin-top:6px;padding:7px 4px;font-size:13px;color:var(--blue);border-top:1px dashed rgba(242,236,214,.15)}.pu-pick.on{color:rgba(242,236,214,.6)}
 .pu-pl{max-height:46vh;overflow:auto;margin-top:4px}.pu-d{display:block;margin-top:1px;font-size:11px;color:rgba(242,236,214,.5)}.pu-ic{display:inline-flex;width:16px;opacity:.8}.pu-ic .ico svg{width:14px;height:14px}
 .rd-seg.k-bk{stroke:#6fe0ff;filter:drop-shadow(0 0 4px rgba(111,224,255,.7))}.rd-pin.k-bk .pn-b{fill:#6fe0ff;filter:drop-shadow(0 0 4px rgba(111,224,255,.7))}.rd-lead.k-bk{stroke:rgba(111,224,255,.55)}.rd-knob.k-bk::after{border-color:#6fe0ff}.rd-card.k-bk{border-left-color:#6fe0ff}
@@ -1685,16 +1686,21 @@ function todayList(){
   const items=dayItems(dayView), d=new Date(dayView+'T00:00:00');
   let h=catBar('today')+chapLine()+weekStrip();
   if(dayView===ymd()&&new Date().getHours()>=4&&new Date().getHours()<13&&!pBlocks(dayView).length) h+=`<button class="row morning-row" data-act="pathmorning"><span class="r-mark">🔥</span><span class="r-main"><span class="r-title">焚き火で今日の段取りを組む</span><span class="r-sub">今日の冒険を、時間の道に並べよう</span></span><span class="r-notch"></span></button>`;
-  h+=`<div class="day-h"><span>${dayView===ymd()?'今日':''}　${d.getMonth()+1}/${d.getDate()}（${'日月火水木金土'[d.getDay()]}）${holiday(dayView)?`<b class="hol">${holiday(dayView)}</b>`:''}</span><span>${items.filter(x=>x.s?x.s.done:x.q.done).length} / ${items.length}</span></div><div class="rows">`;
+  h+=`<div class="day-h"><span>${dayView===ymd()?'今日':''}　${d.getMonth()+1}/${d.getDate()}（${'日月火水木金土'[d.getDay()]}）${holiday(dayView)?`<b class="hol">${holiday(dayView)}</b>`:''}</span>${(()=>{ const fb=pBlocks(dayView).filter(x=>!x.q&&!x.tr&&!x.bk&&(x.t||'').trim()); return `<span>${items.filter(x=>x.s?x.s.done:x.q.done).length+fb.filter(x=>x.done).length} / ${items.length+fb.length}</span>`; })()}</div><div class="rows">`;
   if((state.rested||{})[dayView]) h+=`<div class="sec-empty">🔥 この日は焚き火で休みました</div>`;
   { const tt=trType(dayView); if(tt&&tt!=='R'){ const cl=trClear(dayView); h+=`<button class="row tr-today ${cl?'done':''}" data-act="trday" data-v="${dayView}"><span class="r-mark">${ico('train')}</span><span class="r-main"><span class="r-title">鍛錬：${TR_NAME[tt]}</span><span class="r-sub">約${trSets(dayView)===2?15:20}分</span></span><span class="r-side">${cl?'<span class="r-clear">CLEAR</span>':''}</span><span class="r-notch"></span></button>`; } }
   h+=bkTodayRows(dayView);
   // 工程はチャレンジごとにまとめて、その下に並べる
   { const seen=new Map(); const blocks=[];
     items.forEach(x=>{ if(!x.s){ blocks.push(x); return; } let g=seen.get(x.q.id); if(!g){ g={q:x.q,steps:[]}; seen.set(x.q.id,g); blocks.push(g); } g.steps.push(x.s); });
-    h+=blocks.map(b=>{ if(!b.steps) return row(b.q); const q=b.q, dn=b.steps.filter(x=>x.done).length;
+    // 旅程に立てただけの予定（図書館で仕事 など）も、時刻の順に並べる
+    const fr=pBlocks(dayView).filter(x=>!x.q&&!x.tr&&!x.bk&&(x.t||'').trim()).map(x=>({fb:x}));
+    const key=b=>b.fb?[b.fb.done?1:0,b.fb.s<1440?pHM(b.fb.s):'99']:b.steps?[b.steps.every(x=>x.done)?1:0,b.steps.map(x=>x.doTime||'99').sort()[0]]:[b.q.done?1:0,b.q.doTime||'99'];
+    const all=fr.length?[...blocks,...fr].map((b,i)=>({b,i,k:key(b)})).sort((a,b)=>(a.k[0]-b.k[0])||(a.k[1]<b.k[1]?-1:a.k[1]>b.k[1]?1:a.i-b.i)).map(x=>x.b):blocks;
+    h+=all.map(b=>{ if(b.fb){ const x=b.fb; return `<div class="row fb-row ${x.done?'done':''}"><span class="r-mark qcheck" data-act="fbdone" data-v="${x.id}" title="終えた">${x.done?'✓':'<i class="fb-ck"></i>'}</span><button class="r-main fb-open" data-act="fbopen" data-v="${x.id}"><span class="r-title">${esc(x.t)}</span><span class="r-sub">旅程の予定${x.fix?'・毎日のこと':''}</span></button><span class="r-side">${x.done?'<span class="r-clear">CLEAR</span>':`<span class="do">${pfmt(x.s)}〜${pfmt(x.e)}</span>`}</span><span class="r-notch"></span></div>`; }
+      if(!b.steps) return row(b.q); const q=b.q, dn=b.steps.filter(x=>x.done).length;
       return `<div class="tgroup ${dn===b.steps.length?'done':''}"><button class="tg-h ${q.id===selId?'sel':''}" data-act="select" data-id="${q.id}"><span class="tg-i">${ico(q.type)}</span><span class="tg-t">${esc(q.title||'(無題)')}</span><small>${dn} / ${b.steps.length}</small></button>${b.steps.map(st=>stepRowToday(q,st,true)).join('')}</div>`; }).join(''); }
-  if(!items.length) h+=`<div class="sec-empty">この日の予定はまだありません。チャレンジや工程に「やる日」を入れると、ここに並びます</div>`;
+  if(!items.length&&!pBlocks(dayView).some(x=>!x.q&&!x.tr&&!x.bk&&(x.t||'').trim())) h+=`<div class="sec-empty">この日の予定はまだありません。チャレンジや工程に「やる日」を入れると、ここに並びます</div>`;
   h+=`<button class="row add-row" data-act="newcur"><span class="r-mark">＋</span><span class="r-main"><span class="r-title">この日にチャレンジを追加</span></span><span class="r-notch"></span></button></div>`;
   return h;
 }
@@ -1967,6 +1973,8 @@ document.addEventListener('click',e=>{
     case 'trday': selId=null; trSel=b.dataset.v; tab='list'; if(listCat!=='train'){ listCat='train'; } if(/^\d/.test(trSel)) trWeek=trWeekStart(trSel); render(); window.innerWidth<=820&&window.scrollTo({top:0}); break;
     case 'trweek': { const d=new Date((trWeek||trWeekStart(trDefaultDay()))+'T00:00:00'); d.setDate(d.getDate()+7*(+b.dataset.v)); const k=ymd(d); if(k<=trLast()&&ymd(new Date(d.getTime()+6*DAY))>=TR_START) trWeek=k; renderList(); break; }
     case 'trback': trSel=null; render(); break;
+    case 'fbdone': { const x=pBlocks(dayView).find(y=>y.id===b.dataset.v); if(x){ pSet(dayView,x.id,{done:!x.done}); if(!x.done){ gain(5); toast('予定を終えた  +5 XP'); } else gain(-5); render(); } break; }
+    case 'fbopen': { const v=b.dataset.v, x=pBlocks(dayView).find(y=>y.id===v); if(x){ selId=null; tab='list'; listCat='path'; pathSel=v; pathScrolled=null; pathFocus=x.s; render(); window.innerWidth<=820&&window.scrollTo({top:0}); } break; }
     case 'bksel': selId=null; trSel=null; bkSel=b.dataset.v; bkEdit=false; tab='list'; listCat='book'; render(); window.innerWidth<=820&&window.scrollTo({top:0}); break;
     case 'bkback': { const B=state.books&&state.books[bkSel]; if(B&&!B.title&&!B.pages){ delete state.books[bkSel]; save(); } bkSel=null; bkEdit=false; render(); break; }
     case 'bknew': { const t=ymd(), id=uid(); state.books=state.books||{}; state.books[id]={title:'',pages:0,start:t,reg:t,p0:0,due:bkAdd(t,14),goal:bkAdd(t,9),log:{},u:Date.now()}; selId=null; bkSel=id; bkEdit=true; tab='list'; listCat='book'; save(); render(); setTimeout(()=>{ const e=$('bkTitle'); e&&e.focus(); },50); break; }
