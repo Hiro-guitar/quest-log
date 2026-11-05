@@ -3503,7 +3503,8 @@ function pFlowAt(x,v,o){ let best=-1; for(const F of pFlows(o)) for(const [px,pv
 //  ・谷は細い切れこみではなく、等高線が山頂の方へゆるくへこむ幅の広い入りこみ。中腹から下に多い。すそでは細かい波打ちになる
 //  ・浅間山：山頂に小さな火口をもつ中央の円すい（釜山）が、古い大きな火口のふち（前掛山・黒斑山）の内側に立つ。古いふちは馬てい形で一方が切れている
 //  ・山腹に小さな寄生火山（小浅間山：丸い閉じた等高線）／富士山の宝永火口：山腹の大きなくぼみ
-function pVolcH(x,v,o){ const dx=x-o.x, dv=v-o.v, D=Math.hypot(dx,dv), a=Math.atan2(dv,dx), ca=Math.cos(a), sa=Math.sin(a), Rb=o.RV*1.2;
+function pVolcH(x0,v0,o){ const W1=26, W2=8, x=x0+W1*(pNoise(x0/62+o.ph,v0/62+1.7)-.5)*2+W2*(pNoise(x0/19+4.4,v0/19+o.ph)-.5)*2, v=v0+W1*(pNoise(x0/62+9.1,v0/62+o.ph)-.5)*2+W2*(pNoise(x0/19+o.ph,v0/19+7.3)-.5)*2;
+  const dx=x-o.x, dv=v-o.v, D=Math.hypot(dx,dv), a=Math.atan2(dv,dx), ca=Math.cos(a), sa=Math.sin(a), Rb=o.RV*1.2;
   // すそほど不ぞろいな輪郭
   const s0=Math.max(0,Math.min(1,(D-o.R)/(Rb-o.R))), amp=.06+.34*s0, lob=1+amp*((pNoise(ca*1.2+o.ph,sa*1.2+2)-.5)*2+.4*(pNoise(ca*2.6+o.ph+5,sa*2.6)-.5)*2);
   const De=D/lob, s=Math.max(0,Math.min(1,(De-o.R)/(Rb-o.R)));
@@ -3529,7 +3530,7 @@ function pVolcPix(x,v,o,hg){ pVolcEdge=false; const q=pCaldera(x,v,o);
   let lava=null, hv;
   hv=pVolcH(x,v,o);
   if(!P_VLAVA) return {hv,edge:false};
-  if(P_DM){ const L=pDeath(x,v,o); if(L) return {lava:L}; if(pPlateE>=0){ const D=Math.hypot(x-o.x,v-o.v); hv+=.07*Math.max(0,1-D/(o.R*1.1)); return {hv,edge:pPlateE<.9}; } return {hv,edge:false}; }
+  if(P_DM){ const L=pDeath(x,v,o); if(L) return {lava:L}; if(pPlateE>=0){ const xw=x+9*(pNoise(x/22+o.ph,v/22)-.5)*2, vw=v+9*(pNoise(x/22+3,v/22+o.ph)-.5)*2, D=Math.hypot(xw-o.x,vw-o.v); hv+=.07*Math.max(0,1-D/(o.R*1.1)); return {hv,edge:pPlateE<.9}; } return {hv,edge:false}; }
 
   if(q){ if(q.k==='ring') { const n=pNoise(x/26+o.ph,v/26)*.55+pNoise(x/10+3,v/10+o.ph)*.3+pNoise(x/4,v/4)*.15, edge=Math.min(q.t,1-q.t); lava=(n>.36+.18*pSm(.12,0,edge)*(pNoise(x/15+9,v/15)>.5?1:0))?P_LV_O:P_LV_R; } // 輪は紅と橙がまだら（ふち寄りは紅が多い）
     else if(q.k==='crack'||q.k==='pool') lava=(q.k==='crack'&&q.lo>.35&&q.ed>2.2+1.5*pNoise(x/7,v/7+o.ph))||(q.k==='pool'&&pNoise(x/9,v/9+o.ph)>.55)?P_LV_O:P_LV_R;
@@ -3668,7 +3669,7 @@ function pTerAsk(k,H,first){
   if(!pTerBusy){ pTerBusy=true; setTimeout(pTerStep,0); }
 }
 // 一度描いた地形の絵は端末に取っておく（次に開いたときは描かずにすぐ出す）。描き方を変えたら版を上げて作り直す
-const P_TER_V="t88|", P_TER_MAX=36;
+const P_TER_V="t89|", P_TER_MAX=36;
 const pIDB=(()=>{ let dbp=null; const open=()=>dbp||(dbp=new Promise((res,rej)=>{ try{ const r=indexedDB.open('ql-ter',1); r.onupgradeneeded=()=>r.result.createObjectStore('img'); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }catch(e){ rej(e); } }));
   const st=m=>open().then(db=>db.transaction('img',m).objectStore('img'));
   const keys=()=>{ try{ return JSON.parse(localStorage.getItem('ql-ter-keys')||'[]'); }catch(e){ return []; } }, setKeys=a=>{ try{ localStorage.setItem('ql-ter-keys',JSON.stringify(a)); }catch(e){} };
