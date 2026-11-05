@@ -3766,19 +3766,20 @@ const P_CS={
   lake:[[-200,-150],[-120,-178],[-40,-195],[40,-198],[120,-182],[200,-150],[212,-60],[190,15],[150,40],[118,95],[135,150],[200,172],[120,190],[60,178],[32,150],[-26,150],[-60,182],[-120,190],[-150,150],[-128,100],[-165,70],[-220,60],[-228,-20],[-200,-90]],
   pen:[[-150,110,55],[150,110,65],[-172,-20,40],[172,-22,40]],
   lobes:[[-78,-18,36,0],[-66,48,34,0],[-24,82,32,0],[34,80,36,0],[80,40,34,0],[82,-26,32,0],[46,-80,34,0],[-38,-80,34,0],[0,-106,24,0],[-42,-34,38,1],[42,-38,38,1],[-38,34,36,1],[46,30,38,1],[0,-12,40,2]],
-  inlets:[[-110,18,-48,12,14],[100,-52,38,-60,12],[16,120,8,60,16]],
+  inlets:[[-128,22,-48,12,14],[100,-52,38,-60,12],[16,120,8,60,16]],
   pools:[[-34,52,9],[30,60,8],[-52,-4,7]] };
 function pCsShape(o){ if(o.sh) return o.sh; const C=P_CS.lake, n=C.length, P=[];
   for(let i=0;i<n;i++){ const p0=C[(i-1+n)%n], p1=C[i], p2=C[(i+1)%n], p3=C[(i+2)%n]; for(let t=0;t<1;t+=.1){ const t2=t*t, t3=t2*t; P.push([0,1].map(q=>.5*((2*p1[q])+(-p0[q]+p2[q])*t+(2*p0[q]-5*p1[q]+4*p2[q]-p3[q])*t2+(-p0[q]+3*p1[q]-3*p2[q]+p3[q])*t3))); } }
-  return o.sh={P}; }
+  const rj=pRng('csl'+o[2],3), L=P_CS.lobes.map(([cx,cy,r,l])=>l===2?[cx,cy,r,l]:l===1?[cx+(rj()-.5)*12,cy+(rj()-.5)*12,r*(.9+.2*rj()),l]:[cx+(rj()-.5)*20,cy+(rj()-.5)*20,r*(.78+.5*rj()),l]);
+  return o.sh={P,L}; }
 const pSegD=(x,y,ax,ay,bx,by)=>{ const dx=bx-ax, dy=by-ay, l2=dx*dx+dy*dy||1, t=Math.max(0,Math.min(1,((x-ax)*dx+(y-ay)*dy)/l2)); return Math.hypot(x-ax-dx*t,y-ay-dy*t); };
 // その場所の城の地形：[水の重み, 陸の種類, 台地の層(0=島でない,1〜3), 湖の外の距離]
 function pCsQ(x,y,o){ const S=pCsShape(o), P=S.P, n=P.length, ph=o[4];
   let ins=false, md=1e9; for(let i=0,j=n-1;i<n;j=i++){ const [xi,yi]=P[i], [xj,yj]=P[j]; if(((yi>y)!==(yj>y))&&(x<(xj-xi)*(y-yi)/(yj-yi)+xi)) ins=!ins; const d=pSegD(x,y,xi,yi,xj,yj); if(d<md) md=d; }
   md+=4*(pNoise(x/30+ph,y/30)-.5)*2; const sd=ins?-md:md; // 湖の内側は負
-  const lobe=(cx,cy,r,s2)=>{ const a=Math.atan2(y-cy,x-cx); return Math.hypot(x-cx,y-cy)-r*(1+.2*(pNoise(Math.cos(a)*1.5+s2,Math.sin(a)*1.5)-.5)*2+.09*(pNoise(Math.cos(a)*5+s2,Math.sin(a)*5+3)-.5)*2); };
+  const lobe=(cx,cy,r,s2)=>{ const a=Math.atan2(y-cy,x-cx); return Math.hypot(x-cx,y-cy)-r*(1+.14*(pNoise(Math.cos(a)*2.4+s2,Math.sin(a)*2.4)-.5)*2); };
   let pen=0; for(const [cx,cy,r] of P_CS.pen){ const a=Math.atan2(y-cy,x-cx); pen=Math.max(pen,pSm(2,-2,Math.hypot(x-cx,y-cy)-r*(1+.22*(pNoise(Math.cos(a)*1.3+cx*.01+ph,Math.sin(a)*1.3)-.5)*2+.08*(pNoise(Math.cos(a)*4+ph,Math.sin(a)*4+cy*.01)-.5)*2))); }
-  let isl=0, lv=0; for(const [cx,cy,r,l] of P_CS.lobes){ const w=pSm(2,-2,lobe(cx,cy,r,cx*.013+cy*.007+ph)); if(w>isl) isl=w; if(w*(l+1)>lv) lv=w*(l+1); }
+  let isl=0, lv=0; for(const [cx,cy,r,l] of S.L){ const w=pSm(2,-2,lobe(cx,cy,r,cx*.013+cy*.007+ph)); if(w>isl) isl=w; if(w*(l+1)>lv) lv=w*(l+1); }
   isl=Math.max(isl,pSm(15,11,Math.abs(x))*pSm(92,96,y)*pSm(120,116,y));
   for(const [ax,ay,bx,by,w] of P_CS.inlets){ const c=pSm(-2,2,pSegD(x,y,ax,ay,bx,by)-w/2); isl*=c; lv*=c; }
   for(const [cx,cy,r] of P_CS.pools){ const c=pSm(-1.5,1.5,Math.hypot(x-cx,y-cy)-r); isl*=c; lv*=c; }
@@ -3890,7 +3891,7 @@ function* pTerGen(H){
       const gg=(Math.abs(g[oo+1]-g[oo])+Math.abs(g[oo+gw]-g[oo])+Math.abs(g[oo+gw+1]-g[oo+1])+Math.abs(g[oo+gw+1]-g[oo+gw]))/(2*G*R)*CLe/(1-P_SEA), kq=gg<.5?1:gg<.9?2:gg<1.3?3:4;
       if(wn>.3&&kq>1){ const cr=(a2,b2)=>a2!==b2&&Math.max(a2,b2)%kq===0; if(cr(b0,b1)||cr(b0,b2)){ const k2=.5; c=[c[0]*k2,c[1]*k2,c[2]*k2]; } } // 雪山の崖：詰まった等高線は段ごとに間引き、残す線は濃く（線がとぎれない） // 雪山の崖：詰まった線は何本かに1本だけ濃く（1本の崖線に）
       else if((b0!==b1||b0!==b2)&&!((wwo>.3||(P_WET&&L(bRm)>.3))&&h<P_SEA+.08)){ const k2=b0%5===0?.6:.8; c=[c[0]*k2,c[1]*k2,c[2]*k2]; }
-      if(P_CASTLE&&h>=P_SEA){ const q1=Math.round(cls[o]); if(q1>0){ const kt=[0,0,.28,.5][q1], lc=[176,156,102]; c=[c[0]+(lc[0]-c[0])*kt,c[1]+(lc[1]-c[1])*kt,c[2]+(lc[2]-c[2])*kt]; } const q2=Math.round(cls[o+(i<cw-1?1:0)]), q3=Math.round(cls[o+(j<ch-1?cw:0)]); if(q1!==q2||q1!==q3){ c=[c[0]*.62,c[1]*.62,c[2]*.62]; } } // 城の台地：層ごとに明るく、境に1本の線
+      if(P_CASTLE&&h>=P_SEA){ const q1=Math.round(cls[o]); if(q1>0){ const kt=[0,0,.28,.5][q1], lc=[176,156,102]; c=[c[0]+(lc[0]-c[0])*kt,c[1]+(lc[1]-c[1])*kt,c[2]+(lc[2]-c[2])*kt]; } const q2=Math.round(cls[o+(i<cw-1?1:0)]), q3=Math.round(cls[o+(j<ch-1?cw:0)]); if(q1!==q2||q1!==q3){ c=[c[0]*.74,c[1]*.74,c[2]*.74]; } } // 城の台地：層ごとに明るく、境に1本の線
       if((wn>.3||wd>.2)&&es[o]<.85){ c=[c[0]*.55,c[1]*.55,c[2]*.55]; } // 谷の肩・山塊の縁の濃い線
       }
     if(!(vp&&vp.lava)&&h>=P_SEA&&P_VOLC){ const vv=(Y0+j/R)/PX+pOff, o3=pVolcAt(vv); if(o3&&o3.tg&&o3.tg.length){ const te=pTongueE(i/R,vv,o3); if(te>=0&&te<.2){ const k3=.8; c=[c[0]*k3,c[1]*k3,c[2]*k3]; if(vp&&vp.c) vp.c=vp.c.map(q=>q*k3); } } }
@@ -4037,35 +4038,35 @@ function pMapArt(k,H){
     if(n>=2) trails+=`<path class="mp-trail" d="${dd}"/>`; }
   for(let c=Math.floor(vA/P_VC)-1;c<=Math.floor(vB/P_VC)+1;c++){ const o=pVolc(c); if(o){ const y=v2y(o.v); if(inR(y)) labs.push([o.x-26,y-o.R-12,pNm('vc'+c,'volc'),'mt']); } }
   { const ca=[]; for(let c=Math.floor(vA/P_CA)-1;c<=Math.floor(vB/P_CA)+1;c++){ const q=pCastle(c); if(q) ca.push(q); }
-    ca.forEach(([cx,cv,c,k,ph,m])=>{ const cy=v2y(cv); if(cy<Y0-500||cy>Y1+500) return; const r9=pRng('cs'+c,9), rj=a=>a+(r9()-.5)*2;
+    ca.forEach(q0=>{ const [cx,cv,c,k,ph,m]=q0, LB=pCsShape(q0).L, cy=v2y(cv); if(cy<Y0-500||cy>Y1+500) return; const r9=pRng('cs'+c,9), rj=a=>a+(r9()-.5)*2;
       const L='stroke="#2a1c08" stroke-opacity=".8"', F='fill="#3c2a0c" fill-opacity=".45"';
       let g=`<g class="mp-castle2" transform="translate(${cx.toFixed(1)} ${cy.toFixed(1)}) scale(${(k*m).toFixed(2)} ${k})">`;
       g+=`<defs><g id="gh${c}" ${L} stroke-width="1" ${F} stroke-linejoin="round"><polygon points="14,0 9.9,9.9 0,14 -9.9,9.9 -14,0 -9.9,-9.9 0,-14 9.9,-9.9"/><polygon points="7.5,0 5.3,5.3 0,7.5 -5.3,5.3 -7.5,0 -5.3,-5.3 0,-7.5 5.3,-5.3" fill-opacity=".3"/><circle cx="8.5" cy="8.5" r="2.6"/><circle cx="-8.5" cy="8.5" r="2.6"/><circle cx="8.5" cy="-8.5" r="2.6"/><circle cx="-8.5" cy="-8.5" r="2.6"/></g>
-        <rect id="tw${c}" x="-3" y="-3" width="6" height="6" fill="#3c2a0c" fill-opacity=".7" ${L} stroke-width=".8"/><circle id="tr${c}" r="3" fill="#3c2a0c" fill-opacity=".55" ${L} stroke-width=".8"/></defs>`;
+        <rect id="tw${c}" x="-2.5" y="-2.5" width="5" height="5" fill="#3c2a0c" fill-opacity=".7" ${L} stroke-width=".8"/><circle id="tr${c}" r="3" fill="#3c2a0c" fill-opacity=".55" ${L} stroke-width=".8"/></defs>`;
       // スロープ（島から半島へ下る、横縞）
       const ramp=(ax,ay,bx,by,w0,w1,n)=>{ const dx=bx-ax, dy=by-ay, l=Math.hypot(dx,dy), ux=dx/l, uy=dy/l, px=-uy, py=ux; let d=`M${(ax+px*w0/2).toFixed(1)},${(ay+py*w0/2).toFixed(1)}L${(bx+px*w1/2).toFixed(1)},${(by+py*w1/2).toFixed(1)}L${(bx-px*w1/2).toFixed(1)},${(by-py*w1/2).toFixed(1)}L${(ax-px*w0/2).toFixed(1)},${(ay-py*w0/2).toFixed(1)}Z`, st='';
         for(let q=1;q<n;q++){ const t=q/n, x=ax+dx*t, y=ay+dy*t, w=(w0+(w1-w0)*t)/2; st+=`M${(x+px*w).toFixed(1)},${(y+py*w).toFixed(1)}L${(x-px*w).toFixed(1)},${(y-py*w).toFixed(1)}`; }
-        return `<path d="${d}" fill="#d8c48c" fill-opacity=".55" stroke="#2a1c08" stroke-opacity=".5" stroke-width=".8"/><path d="${st}" stroke="#2a1c08" stroke-opacity=".3" stroke-width=".5"/>`; };
-      g+=ramp(-92,80,-138,124,14,24,16)+ramp(92,78,138,124,14,24,16)+ramp(0,-118,0,-140,8,9,6);
+        return `<path d="${d}" fill="#b49c62" fill-opacity=".5" stroke="#2a1c08" stroke-opacity=".5" stroke-width=".7"/><path d="${st}" stroke="#2a1c08" stroke-opacity=".35" stroke-width=".5"/>`; };
+      g+=ramp(-92,80,-138,124,10,14,14)+ramp(92,78,138,124,10,14,14)+ramp(16,-120,16,-136,7,8,5);
       // 島の水路を渡る橋
       g+=`<path d="M-82,8 L-80,22 M74,-62 L72,-50 M4,96 L18,94 M-40,46 L-28,48 M24,54 L36,58" stroke="#dfe8ea" stroke-opacity=".75" stroke-width="2"/>`;
       // 城壁の帯と塔、壁に沿って並ぶ建物
       const walls=[[-54,-10,-34,44,52,0],[54,-16,44,42,52,1],[-88,18,-52,74,86,0],[88,14,54,72,86,1],[-24,-64,24,-62,64,1],[-40,92,40,90,90,0]];
-      g+=`<g fill="none" stroke="#2a1c08" stroke-opacity=".55" stroke-width="2.4" stroke-linecap="round">`+walls.map(([ax,ay,bx,by,r,sw])=>`<path d="M${ax},${ay} A${r},${r} 0 0 ${sw} ${bx},${by}"/>`).join('')+`</g>`;
+      g+=`<g fill="none" stroke="#2a1c08" stroke-opacity=".6" stroke-width="3.5" stroke-linecap="round">`+walls.map(([ax,ay,bx,by,r,sw])=>`<path d="M${ax},${ay} A${r},${r} 0 0 ${sw} ${bx},${by}"/>`).join('')+`</g>`;
       let bl=''; for(const [ax,ay,bx,by,r,sw] of walls){ const l=Math.hypot(bx-ax,by-ay), mx=(ax+bx)/2, my=(ay+by)/2, hh=Math.sqrt(Math.max(0,r*r-l*l/4)), nx=-(by-ay)/l, ny=(bx-ax)/l;
         let C=null, a0=0, da=0; for(const sg of [1,-1]){ const cx2=mx+nx*hh*sg, cy2=my+ny*hh*sg, b0=Math.atan2(ay-cy2,ax-cx2), b1=Math.atan2(by-cy2,bx-cx2); let d2=b1-b0; if(sw){ while(d2<0) d2+=6.2832; } else { while(d2>0) d2-=6.2832; } if(Math.abs(d2)<Math.PI){ C=[cx2,cy2]; a0=b0; da=d2; } } if(!C) continue;
         const al=Math.abs(da)*r, n=Math.max(1,Math.round(al/22)); for(let q=0;q<=n;q++){ const a=a0+da*q/n; g+=`<use href="#${q===0||q===n?'tr':'tw'}${c}" transform="translate(${(C[0]+Math.cos(a)*r).toFixed(1)} ${(C[1]+Math.sin(a)*r).toFixed(1)}) rotate(${(a*180/Math.PI).toFixed(0)})"/>`; }
-        for(const t of [.33,.68]){ const a=a0+da*t, px=C[0]+Math.cos(a)*r, py=C[1]+Math.sin(a)*r, toO=Math.hypot(px,py)||1, bx2=px-px/toO*10, by2=py-py/toO*10, w=12+r9()*4, h2=9+r9()*2; bl+=`<rect x="${(bx2-w/2).toFixed(1)}" y="${(by2-h2/2).toFixed(1)}" width="${w.toFixed(1)}" height="${h2.toFixed(1)}" transform="rotate(${(a*180/Math.PI+90).toFixed(0)} ${bx2.toFixed(1)} ${by2.toFixed(1)})"/>`; } }
+        for(const t of [.33,.68]){ const a=a0+da*t, px=C[0]+Math.cos(a)*r, py=C[1]+Math.sin(a)*r, toO=Math.hypot(px,py)||1, bx2=px-px/toO*10, by2=py-py/toO*10, bt=[[12,9],[16,10],[9,9]][Math.floor(r9()*3)], w=bt[0], h2=bt[1]; bl+=`<rect x="${(bx2-w/2).toFixed(1)}" y="${(by2-h2/2).toFixed(1)}" width="${w.toFixed(1)}" height="${h2.toFixed(1)}" transform="rotate(${(a*180/Math.PI+90).toFixed(0)} ${bx2.toFixed(1)} ${by2.toFixed(1)})"/>`; } }
       g+=`<g ${F} ${L} stroke-width=".8">${bl}</g>`;
       // 本丸（1.5倍）
-      g+=`<g transform="scale(1.5)"><g ${L} stroke-width=".8" ${F} stroke-linejoin="round"><path d="M-8,-22 L8,-22 L6,-50 L-6,-50 Z"/><path d="M-4,-24 L-3,-48 M4,-24 L3,-48 M-7,-30 L7,-30 M-7,-38 L7,-38" fill="none" stroke-opacity=".5"/><path d="M-8,22 L8,22 L6,50 L-6,50 Z"/><rect x="-22" y="-22" width="44" height="44" rx="4" fill-opacity=".5"/><rect x="-15" y="-15" width="30" height="30" rx="2" fill="none" stroke-opacity=".5"/><circle cx="-18" cy="-18" r="3.5"/><circle cx="18" cy="-18" r="3.5"/><circle cx="-18" cy="18" r="3.5"/><circle cx="18" cy="18" r="3.5"/><polygon points="-10.5,-16 -6,-11.5 -6,-5 -10.5,-.5 -15,-5 -15,-11.5" fill-opacity=".35"/><polygon points="10.5,-16 15,-11.5 15,-5 10.5,-.5 6,-5 6,-11.5" fill-opacity=".35"/><polygon points="-10.5,.5 -6,5 -6,11.5 -10.5,16 -15,11.5 -15,5" fill-opacity=".35"/><polygon points="10.5,.5 15,5 15,11.5 10.5,16 6,11.5 6,5" fill-opacity=".35"/><polygon points="7,0 4.9,4.9 0,7 -4.9,4.9 -7,0 -4.9,-4.9 0,-7 4.9,-4.9" fill-opacity=".6"/></g></g>`;
+      g+=`<g transform="scale(1.5)"><g ${L} stroke-width=".8" ${F} stroke-linejoin="round"><path d="M-8,-22 L8,-22 L6,-42 L-6,-42 Z"/><path d="M-4,-24 L-3,-40 M4,-24 L3,-40 M-7,-30 L7,-30 M-7,-36 L7,-36" fill="none" stroke-opacity=".5"/><path d="M-8,22 L8,22 L6,50 L-6,50 Z"/><rect x="-22" y="-22" width="44" height="44" rx="4" fill-opacity=".5"/><rect x="-15" y="-15" width="30" height="30" rx="2" fill="none" stroke-opacity=".5"/><circle cx="-18" cy="-18" r="3.5"/><circle cx="18" cy="-18" r="3.5"/><circle cx="-18" cy="18" r="3.5"/><circle cx="18" cy="18" r="3.5"/><polygon points="-10.5,-16 -6,-11.5 -6,-5 -10.5,-.5 -15,-5 -15,-11.5" fill-opacity=".35"/><polygon points="10.5,-16 15,-11.5 15,-5 10.5,-.5 6,-5 6,-11.5" fill-opacity=".35"/><polygon points="-10.5,.5 -6,5 -6,11.5 -10.5,16 -15,11.5 -15,5" fill-opacity=".35"/><polygon points="10.5,.5 15,5 15,11.5 10.5,16 6,11.5 6,5" fill-opacity=".35"/><polygon points="7,0 4.9,4.9 0,7 -4.9,4.9 -7,0 -4.9,-4.9 0,-7 4.9,-4.9" fill-opacity=".6"/></g></g>`;
       // 門楼と半円の腕壁
       for(const [gx,gy,gr] of [[-44,92,-20],[36,68,15]]){ g+=`<path d="M${gx-26},${gy} A26,26 0 0 1 ${gx+26},${gy}" transform="rotate(${gr} ${gx} ${gy})" fill="none" stroke="#3c2a0c" stroke-opacity=".4" stroke-width="4" stroke-linecap="round"/><use href="#gh${c}" transform="translate(${gx} ${gy}) rotate(${gr})"/>`; }
       // 船着き場
       g+=`<rect x="-9" y="-134" width="3" height="10" ${F} ${L} stroke-width=".8"/><rect x="6" y="-134" width="3" height="10" ${F} ${L} stroke-width=".8"/><rect x="-4" y="-126" width="8" height="6" ${F} ${L} stroke-width=".8"/>`;
       // 木：島の外周の台地に群れで、半島にたくさん
       let tr=''; const dot=(x,y)=>{ tr+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="1.3"/>`; };
-      for(let q=0;q<9;q++){ const L0=P_CS.lobes[Math.floor(r9()*9)], a=r9()*6.28, d=L0[2]*.65; const bx=L0[0]+Math.cos(a)*d, by=L0[1]+Math.sin(a)*d, nz=5+Math.floor(r9()*4); for(let z=0;z<nz;z++) dot(bx+(r9()-.5)*11,by+(r9()-.5)*11); }
+      for(let q=0;q<13;q++){ const L0=LB[Math.floor(r9()*9)], a=r9()*6.28, d=L0[2]*.68; const bx=L0[0]+Math.cos(a)*d, by=L0[1]+Math.sin(a)*d, nz=5+Math.floor(r9()*4); for(let z=0;z<nz;z++) dot(bx+(r9()-.5)*11,by+(r9()-.5)*11); }
       for(const [px,py,pr,nt] of [[-150,110,55,35],[150,110,65,60],[-172,-20,40,25],[172,-22,40,20]]) for(let z=0;z<nt;z++){ const a=r9()*6.28, d=Math.sqrt(r9())*pr*.85; dot(px+Math.cos(a)*d,py+Math.sin(a)*d); }
       g+=`<g fill="#3c2a0c" fill-opacity=".85">${tr}</g>`;
       // 南の首・門・橋
@@ -4077,7 +4078,7 @@ function pMapArt(k,H){
       for(const x of [-45,45]) td+=seg(x,200,x,300); for(const x of [-90,90]) td+=seg(x,215,x,270);
       g+=`<path d="${td}" fill="none" stroke="#e0d2a0" stroke-opacity=".6" stroke-width="2.2" stroke-linecap="round"/>`;
       let hs2=''; for(let q=0;q<16;q++){ const bx=(r9()-.5)*170, by=200+r9()*95; if(Math.abs(bx)<8) continue; hs2+=`<rect x="${(bx-7).toFixed(1)}" y="${(by-5).toFixed(1)}" width="14" height="10" transform="rotate(${((r9()-.5)*12).toFixed(0)} ${bx.toFixed(1)} ${by.toFixed(1)})"/>`; }
-      g+=`<g fill="#3c2a0c" fill-opacity=".4" ${L} stroke-opacity=".6" stroke-width=".8">${hs2}<path d="M80,152 L96,152 L96,170 A8,8 0 0 1 80,170 Z" fill-opacity=".5"/><rect x="69" y="229" width="7" height="7" fill-opacity=".6"/></g>`;
+      g+=`<g fill="#3c2a0c" fill-opacity=".4" ${L} stroke-opacity=".6" stroke-width=".8">${hs2}<path d="M74,196 L90,196 L90,214 A8,8 0 0 1 74,214 Z" fill-opacity=".5"/><rect x="69" y="229" width="7" height="7" fill-opacity=".6"/></g>`;
       g+='</g>'; pois+=g;
       // 城下町の南端から本線へ
       { const ty=cy+300*k, rx=pRX(ty); trails+=`<path d="M${cx.toFixed(1)} ${ty.toFixed(1)}L${rx.toFixed(1)} ${(ty+8).toFixed(1)}" fill="none" stroke="#e8dcb0" stroke-width="3" stroke-linecap="round" opacity=".75"/>`; }
