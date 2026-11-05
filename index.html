@@ -3329,7 +3329,7 @@ function pHgtC(x,y,road){ pLastCarve=0; const v=y/PX+pOff, u=x*1.05; let f=0,amp
 const pSm=(a,b,x)=>{ let t=(x-a)/(b-a); t=t<0?0:t>1?1:t; return t*t*(3-2*t); };
 // 実際のブレワイの地図を見て：火山（デスマウンテン）は地図の一角にまとまってたまに出る。雪山（ヘブラ）は高い山が白い。砂漠（ゲルド）は平らでくすんだ土地。湿原（ラネール）は浅い水に島が散らばる
 // 火山・雪山・砂漠・湿原・城は作り直し中のため止めている（本物の地図と並べて確かめてから1つずつ戻す）
-const P_BIOMES=false, P_VOLC=false, P_BZ=[0,0,0,0];
+const P_BIOMES=false, P_VOLC=true, P_BZ=[0,0,0,0];
 const P_VC=2600, pVcMemo=new Map();
 // 火山：たまに（約2〜3日に1度）、道から離れた側に1つ。c=区画番号
 function pVolc(c){ const key=c+'|'+(pW|0); if(pVcMemo.has(key)) return pVcMemo.get(key); const r=pRng('vc'+c,5); let o=null;
@@ -3743,7 +3743,7 @@ function pTerAsk(k,H,first){
   if(!pTerBusy){ pTerBusy=true; setTimeout(pTerStep,0); }
 }
 // 一度描いた地形の絵は端末に取っておく（次に開いたときは描かずにすぐ出す）。描き方を変えたら版を上げて作り直す
-const P_TER_V="t128|", P_TER_MAX=36;
+const P_TER_V="t129|", P_TER_MAX=36;
 const pIDB=(()=>{ let dbp=null; const open=()=>dbp||(dbp=new Promise((res,rej)=>{ try{ const r=indexedDB.open('ql-ter',1); r.onupgradeneeded=()=>r.result.createObjectStore('img'); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }catch(e){ rej(e); } }));
   const st=m=>open().then(db=>db.transaction('img',m).objectStore('img'));
   const keys=()=>{ try{ return JSON.parse(localStorage.getItem('ql-ter-keys')||'[]'); }catch(e){ return []; } }, setKeys=a=>{ try{ localStorage.setItem('ql-ter-keys',JSON.stringify(a)); }catch(e){} };
