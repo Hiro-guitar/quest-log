@@ -3461,7 +3461,7 @@ function pTongues(o){ if(o.tg) return o.tg; pTgBuild=true; const r=pRng('tg'+o.c
       if(x<-10||x>W+10||Math.hypot(x-o.x,v-o.v)>o.RV*1.3||(pVolcW(x,v)<.3&&pHgt(x,(v-pOff)*PX)<P_SEA+.01)) break;
       const t=i/L, ww=w0*(.72+.56*pNoise(i*.09+o.ph,br+3.3))*(1-.25*t)*(t>.85?1-(t-.85)/.15*.5:1), y=(v-pOff)*PX, E=4;
       const sV=Math.hypot(pVolcH(x+E,v,o)-pVolcH(x-E,v,o),pVolcH(x,v+E,o)-pVolcH(x,v-E,o))/(2*E), sH=Math.hypot(pHgt(x+E,y)-pHgt(x-E,y),pHgt(x,y+E*PX)-pHgt(x,y-E*PX))/(2*E);
-      P.push([x,v,ww,Math.min(.045,Math.max(.03,sV*1.5*ww*1.1)),Math.min(.14,Math.max(.1,sH*1.5*ww*1.1))]);
+      P.push([x,v,ww,Math.min(.045,Math.max(.03,sV*1.5*ww*1.1)),Math.min(.12,Math.max(.1,sH*1.5*ww*1.1))]);
       if(!br&&i>L*.3&&i<L*.6&&r()<.02){ const sd=r()<.5?1:-1; T.push(...run(x,v,dx-dv*sd*.8,dv+dx*sd*.8,Math.floor((L-i)*.5),w0*.7,1)); br=-1; } }
     if(P.length<5) return []; let a0=1e9,a1=-1e9,b0=1e9,b1=-1e9; for(const [px,pv,w] of P){ a0=Math.min(a0,px-w*3.4); a1=Math.max(a1,px+w*3.4); b0=Math.min(b0,pv-w*3.4); b1=Math.max(b1,pv+w*3.4); } return [{P,a0,a1,b0,b1}]; };
   for(let k=0;k<n;k++){ const sg=n===1?(r()<.5?-1:1):(k?1:-1), a=ga+sg*(.4+.5*r()); T.push(...run(o.x+Math.cos(a)*2.3*R,o.v+Math.sin(a)*2.3*R,Math.cos(a),Math.sin(a),Math.floor((4+3*r())*R/3),(.2+.08*r())*R,0)); }
@@ -3469,7 +3469,7 @@ function pTongues(o){ if(o.tg) return o.tg; pTgBuild=true; const r=pRng('tg'+o.c
 function pTongueE(x,v,o){ let best=1e9; for(const T of pTongues(o)){ if(x<T.a0||x>T.a1||v<T.b0||v>T.b1) continue; for(const [px,pv,w] of T.P){ const d=Math.hypot(x-px,v-pv)/w-1; if(d<best) best=d; } }
   if(best>2) return best; const R=o.R; return best+.38*(pNoise(x/(.18*R)+o.ph+4,v/(.18*R))-.5)*2+.15*(pNoise(x/(.07*R)+2,v/(.07*R)+o.ph)-.5)*2; } // ふちは丸いこぶが連なる
 // 舌の色：ほとんど紅。太い所のまん中だけ橙がまだらにのぞく
-function pTgCol(x,v,o,te){ const R=o.R; if(pNoise(x/2.2+o.ph,v/2.2+9)>.94) return P_LV_D; return te<-.55&&pNoise(x/(.1*R)+5,v/(.1*R)+o.ph)>.62?P_LV_O:P_LV_R; }
+function pTgCol(x,v,o,te){ const R=o.R; if(pNoise(x/2.2+o.ph,v/2.2+9)>.94) return P_LV_D; return te<-.55&&pNoise(x/(.06*R)+5,v/(.06*R)+o.ph)>.66?P_LV_O:P_LV_R; }
 // 舌が流れている所は谷：舌のまわりの地面を削る（底は舌の幅で平ら、両岸はなだらかに上がる。全体の幅は舌の約4倍）。
 // 返り値 [彫る量(0〜1), 舌からの近さ dn(=距離/幅)]
 function pTgCarve(x,v){ if(pTgBuild||!P_VOLC||!P_DM) return null; const o=pVolcAt(v); if(!o) return null; const TT=pTongues(o); if(!TT.length) return null;
@@ -3743,7 +3743,7 @@ function pTerAsk(k,H,first){
   if(!pTerBusy){ pTerBusy=true; setTimeout(pTerStep,0); }
 }
 // 一度描いた地形の絵は端末に取っておく（次に開いたときは描かずにすぐ出す）。描き方を変えたら版を上げて作り直す
-const P_TER_V="t126|", P_TER_MAX=36;
+const P_TER_V="t127|", P_TER_MAX=36;
 const pIDB=(()=>{ let dbp=null; const open=()=>dbp||(dbp=new Promise((res,rej)=>{ try{ const r=indexedDB.open('ql-ter',1); r.onupgradeneeded=()=>r.result.createObjectStore('img'); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }catch(e){ rej(e); } }));
   const st=m=>open().then(db=>db.transaction('img',m).objectStore('img'));
   const keys=()=>{ try{ return JSON.parse(localStorage.getItem('ql-ter-keys')||'[]'); }catch(e){ return []; } }, setKeys=a=>{ try{ localStorage.setItem('ql-ter-keys',JSON.stringify(a)); }catch(e){} };
