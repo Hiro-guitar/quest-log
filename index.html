@@ -3308,14 +3308,14 @@ const P_SEA=.27;
 // 高さ（0〜1）。x は画面の横位置、y は地図の縦位置（ズームの影響を受けない単位に直して計算）
 function pHgt(x,y){ return pHgtC(x,y,true); }
 // raw=false で道のまわりの盛り土をしない高さ（川の流れを決めるのに使う）
-let pLastCarve=0;
-function pHgtC(x,y,road){ pLastCarve=0; const v=y/PX+pOff, u=x*1.05; let f=0,amp=.5,fr=1/170; for(let o=0;o<5;o++){ f+=amp*pNoise(u*fr+o*17,v*fr+o*31); amp*=.5; fr*=2.03; }
+let pLastCarve=0, pLastEdge=99;
+function pHgtC(x,y,road){ pLastCarve=0; pLastEdge=99; const v=y/PX+pOff, u=x*1.05; let f=0,amp=.5,fr=1/170; for(let o=0;o<5;o++){ f+=amp*pNoise(u*fr+o*17,v*fr+o*31); amp*=.5; fr*=2.03; }
   const r=1-Math.abs(2*pNoise(u/240+9,v/240+3)-1); let h=.62*f+.5*r*r*r-.08; { const [bv,bd,bw,bs]=pBiomeW(x,v);
     if(bv>0){ // 火山：全体を高く、細かいこぶの多い岩場にする。まわりの水辺は陸にする（マグマと水がとなり合わないように）
       const bump=.06*(pNoise(u/22+1.7,v/22+6.1)-.5)+.04*(pNoise(u/9+3.1,v/9+2.3)-.5); h=h*(1-bv)+(.5+.12*bv+bump)*bv; if(bv<.6) h=Math.max(h,P_SEA+.05*Math.min(1,bv*4));
       const o=pVolcAt(v), up=(e,top)=>P_SEA+.012+(top-P_SEA-.012)*pSm(0,10,e); if(o){ const q=pCaldera(x,v,o); if(q){         if(q.k==='plate') h=P_SEA+.012+(.7+.04*(1-q.r)-P_SEA-.012)*pSm(0,3.5,q.e)+bump*.25*pSm(0,4,q.e); else if(q.k==='rim') h=Math.min(h,up(q.e,h)); else h=Math.min(h,P_SEA-.03); }
       } }
-    if(bs>0){ if(P_BIOMES) h+=.12*bs*Math.max(0,h-.3); else { const so=pSnowAt(v); if(so){ h=h*(1-bs)+pSnowH(x,v,so)*bs; pLastCarve+=pSnowCarve*bs; } } }
+    if(bs>0){ if(P_BIOMES) h+=.12*bs*Math.max(0,h-.3); else { const so=pSnowAt(v); if(so){ h=h*(1-bs)+pSnowH(x,v,so)*bs; pLastCarve+=pSnowCarve*bs; if(bs>.5) pLastEdge=pSnowEdge; } } }
     if(bd>0) h=h*(1-bd)+(P_SEA+.12+(h-.4)*.25)*bd; // 砂漠は平ら（湖もほとんどない）
     if(bw>0){ const hw=P_SEA-.006+(h-.42)*.18+(pNoise(u/16+1.1,v/16+4.4)-.5)*.08; h=h*(1-bw)+hw*bw; } // 湿原：浅い水と小さな島
     const ca=pCastleAt(x,v); if(ca){ const dx=x-ca[0], dv=v-ca[1], a=Math.atan2(dv,dx), D=Math.hypot(dx,dv), wm=1+.45*(pNoise(Math.cos(a)*1.4+ca[2]*3.1,Math.sin(a)*1.4+5)-.5), wi=1+.14*Math.cos(4*a+ca[2])+.2*(pNoise(Math.cos(a)*2.2+9,Math.sin(a)*2.2+ca[2])-.5);
@@ -3376,18 +3376,23 @@ function pGlaciers(o,r){ const RV=o.RV, G=[], ng=2+Math.floor(r()*2), a0=r()*6.2
   for(const g of G) if(g!==best||bd<95) g.L=null;
   return G; }
 let pSnowCarve=0;
+let pSnowEdge=99; // 谷の肩・山塊の縁までの距離（px）。崖の縁線を描くのに使う
 function pSnowH(x0,v0,o){ const x=x0+20*(pNoise(x0/70+o.ph,v0/70)-.5)*2, v=v0+20*(pNoise(x0/70+7,v0/70+o.ph)-.5)*2, D=Math.min(1.3,pSnowD(x,v,o)), RV=o.RV;
+  pSnowCarve=0; pSnowEdge=99;
+  // 氷河谷：先に谷の中かどうかを調べる（谷の中はこぶを弱く）
+  const VS=[]; let bm=1;
+  if(P_SNOWG) for(const g of o.G){ if(x0<g.bb[0]||x0>g.bb[1]||v0<g.bb[2]||v0>g.bb[3]) continue; let best=1e9, bi=0; const Q=g.Q; for(let i=0;i<Q.length;i++){ const d=Math.hypot(x0-Q[i][0],v0-Q[i][1])/Q[i][2]; if(d<best){ best=d; bi=i; } }
+    if(best>1.6) continue; const w=Q[bi][2], t=bi/Q.length, dd=best+.25*(pNoise(x0/(.08*RV)+o.ph,v0/(.08*RV)+bi*.01)-.5)*2, dk=g.trib?pSm(1,.6,t):pSm(0,.15,t)*(1-.5*pSm(.8,1,t));
+    VS.push([g,bi,dd,dk]); if(dk>.3){ bm=Math.min(bm,dd<.5?.1:dd<1.3?.1+.2*pSm(.5,.7,dd)+.7*pSm(1.1,1.3,dd):1); pSnowEdge=Math.min(pSnowEdge,Math.abs(dd-1.3)*w); } }
   let h=pSnowBase(x,v,o,D);
-  // こぶ：場所によって強弱（台地の上は控えめ）
+  // こぶ：場所によって強弱（台地の上は控えめ、谷の中はさらに弱く）
   const km=pSm(.35,.65,pNoise(x/(.35*RV)+o.ph+11,v/(.35*RV))), top=pSm(.55,.85,1-D), bump=.05*(pNoise(x/(.05*RV)+o.ph,v/(.05*RV)+2)-.5)*2+.03*(pNoise(x/(.025*RV)+3,v/(.025*RV)+o.ph)-.5)*2;
-  h+=bump*(.25+.75*km)*(1-.4*top)*pSm(1.05,.6,D);
+  h+=bump*(.25+.75*km)*(1-.4*top)*pSm(1.05,.6,D)*bm;
   // 山塊の縁の段差（崖）：縁の約6割
-  const a=Math.atan2(v-o.v,x-o.x); h+=(.12+.04*pNoise(x/(.2*RV),v/(.2*RV)+o.ph))*pSm(.3,.5,pNoise(Math.cos(a)*3+o.ph,Math.sin(a)*3+9))*pSm(1.0,.965,D)*pSm(.6,.8,D);
-  pSnowCarve=0; if(!P_SNOWG) return Math.min(.99,h); const h0=h;
-  for(const g of o.G){ if(x0<g.bb[0]||x0>g.bb[1]||v0<g.bb[2]||v0>g.bb[3]) continue; let best=1e9, bi=0; const Q=g.Q; for(let i=0;i<Q.length;i++){ const d=Math.hypot(x0-Q[i][0],v0-Q[i][1])/Q[i][2]; if(d<best){ best=d; bi=i; } }
-    if(best>1.6) continue; const w=Q[bi][2], t=bi/Q.length, dd=best+.25*(pNoise(x0/(.08*RV)+o.ph,v0/(.08*RV)+bi*.01)-.5)*2;
-    const pr=Math.max(0,1-Math.pow(Math.max(0,dd)/1.3,2.2)), dk=g.trib?pSm(1,.6,t):pSm(0,.15,t)*(1-.5*pSm(.8,1,t));
-    h-=g.dep*pr*dk;
+  const a=Math.atan2(v-o.v,x-o.x), sw=pSm(.3,.5,pNoise(Math.cos(a)*3+o.ph,Math.sin(a)*3+9)); h+=(.12+.04*pNoise(x/(.2*RV),v/(.2*RV)+o.ph))*sw*pSm(1.0,.965,D)*pSm(.6,.8,D);
+  if(sw>.5) pSnowEdge=Math.min(pSnowEdge,Math.abs(D-.965)*RV);
+  if(!P_SNOWG) return Math.min(.99,h); const h0=h;
+  for(const [g,bi,dd,dk] of VS){ const pr=Math.max(0,1-Math.pow(Math.max(0,dd)/1.3,2.2)); h-=g.dep*pr*dk;
     if(g.L&&g.L[bi]&&dd<.85+.15*(pNoise(x0/9,v0/9+o.ph)-.5)*2) h=Math.min(h,P_SEA-.025); }
   pSnowCarve=Math.max(0,Math.min(.99,h0)-Math.max(h,P_SEA+.01)); return Math.min(.99,h); }
 // 雪の白さ：その場の高さではなく、山のかたまりの中での位置で決める（谷でも白さが続く）
@@ -3727,8 +3732,8 @@ function* pRiversGen(H){ const key=PX+'|'+pW+'|'+pOff+'|'+H; if(pRivCache[key]) 
   const ks=Object.keys(pRivCache); if(ks.length>12) delete pRivCache[ks[0]]; return pRivCache[key]=out; }
 function* pTerGen(H){
   const G=3, Y0=-900, gw=Math.ceil(pW/G)+2, gh=Math.ceil((H+1800)/G)+2, g=new Float32Array(gw*gh);
-  const cg=new Float32Array(gw*gh), bV=new Float32Array(gw*gh), bD=new Float32Array(gw*gh), bW=new Float32Array(gw*gh), bS=new Float32Array(gw*gh), bN=new Float32Array(gw*gh), vt=new Float32Array(gw*gh);
-  for(let j=0;j<gh;j++){ for(let i=0;i<gw;i++){ const o=j*gw+i, x=i*G, y=Y0+j*G; g[o]=pHgt(x,y); cg[o]=pLastCarve; const b=pBiome(x,y); bV[o]=b[0]; bD[o]=b[1]; bW[o]=b[2]; bN[o]=b[3]; vt[o]=0; bS[o]=pNoise(x*1.05/11+5.5,(y/PX+pOff)/11+2.2); } if(j%24===0) yield; }
+  const cg=new Float32Array(gw*gh), eg=new Float32Array(gw*gh), bV=new Float32Array(gw*gh), bD=new Float32Array(gw*gh), bW=new Float32Array(gw*gh), bS=new Float32Array(gw*gh), bN=new Float32Array(gw*gh), vt=new Float32Array(gw*gh);
+  for(let j=0;j<gh;j++){ for(let i=0;i<gw;i++){ const o=j*gw+i, x=i*G, y=Y0+j*G; g[o]=pHgt(x,y); cg[o]=pLastCarve; eg[o]=pLastEdge; const b=pBiome(x,y); bV[o]=b[0]; bD[o]=b[1]; bW[o]=b[2]; bN[o]=b[3]; vt[o]=0; bS[o]=pNoise(x*1.05/11+5.5,(y/PX+pOff)/11+2.2); } if(j%24===0) yield; }
   // 川を水として彫る：真ん中は深く、岸に近いほど浅い（湖と同じ色・同じ岸の描き方になる）
   const rit=pRiversGen(H); let rres; while(!(rres=rit.next()).done) yield; const RV=rres.value;
   pLavaB=new Map(); RV.forEach(R=>{ if(!R.lava) return; R.P.forEach(([x,y],k)=>{ const rr=R.ws[k]/2; for(let a=Math.floor((x-rr-60)/16);a<=Math.floor((x+rr+60)/16);a++) for(let b=Math.floor((y-rr-60)/16);b<=Math.floor((y+rr+60)/16);b++){ const key=a+','+b; let L=pLavaB.get(key); if(!L) pLavaB.set(key,L=[]); L.push([x,y,rr]); } }); });
@@ -3745,8 +3750,8 @@ function* pTerGen(H){
       while(qh<qt){ const o=qu[qh++], i=o%gw; sw+=vt[o]; n++; const nb=[i>0?o-1:-1,i<gw-1?o+1:-1,o-gw,o+gw]; for(const q of nb){ if(q<0||q>=gw*gh||lab[q]||g[q]>=P_SEA) continue; lab[q]=nl; qu[qt++]=q; } }
       lavaOf[nl]=sw/n>.5?1:0; } }
   yield;
-  const R=Math.min(2,window.devicePixelRatio||1)>1.5?1.5:1, cw=Math.ceil(pW*R), ch=Math.ceil((H+1800)*R), hs=new Float32Array(cw*ch), cs=new Float32Array(cw*ch);
-  for(let j=0;j<ch;j++){ const gy=j/R/G, j0=Math.min(gh-2,gy|0), fy=gy-j0; for(let i=0;i<cw;i++){ const gx=i/R/G, i0=Math.min(gw-2,gx|0), fx=gx-i0, o=j0*gw+i0, a1=g[o], b1=g[o+1], c1=g[o+gw], d1=g[o+gw+1]; hs[j*cw+i]=a1+(b1-a1)*fx+(c1-a1)*fy+(a1-b1-c1+d1)*fx*fy; const a2=cg[o], b2=cg[o+1], c2=cg[o+gw], d2=cg[o+gw+1]; cs[j*cw+i]=a2+(b2-a2)*fx+(c2-a2)*fy+(a2-b2-c2+d2)*fx*fy; } if(j%200===0) yield; }
+  const R=Math.min(2,window.devicePixelRatio||1)>1.5?1.5:1, cw=Math.ceil(pW*R), ch=Math.ceil((H+1800)*R), hs=new Float32Array(cw*ch), cs=new Float32Array(cw*ch), es=new Float32Array(cw*ch);
+  for(let j=0;j<ch;j++){ const gy=j/R/G, j0=Math.min(gh-2,gy|0), fy=gy-j0; for(let i=0;i<cw;i++){ const gx=i/R/G, i0=Math.min(gw-2,gx|0), fx=gx-i0, o=j0*gw+i0, a1=g[o], b1=g[o+1], c1=g[o+gw], d1=g[o+gw+1]; hs[j*cw+i]=a1+(b1-a1)*fx+(c1-a1)*fy+(a1-b1-c1+d1)*fx*fy; const a2=cg[o], b2=cg[o+1], c2=cg[o+gw], d2=cg[o+gw+1]; cs[j*cw+i]=a2+(b2-a2)*fx+(c2-a2)*fy+(a2-b2-c2+d2)*fx*fy; const a3=eg[o], b3=eg[o+1], c3=eg[o+gw], d3=eg[o+gw+1]; es[j*cw+i]=a3+(b3-a3)*fx+(c3-a3)*fy+(a3-b3-c3+d3)*fx*fy; } if(j%200===0) yield; }
   const o2i=(ii,jj)=>Math.min(ch-1,jj)*cw+Math.min(cw-1,ii);
   const cv=document.createElement('canvas'); cv.width=cw; cv.height=ch; const cx=cv.getContext('2d'), im=cx.createImageData(cw,ch), d=im.data, CL=34, SH=9*1.5/(R*G/2);
   for(let j=0;j<ch;j++){ const gy=j/R/G, j0=Math.min(gh-2,gy|0), fy=gy-j0; for(let i=0;i<cw;i++){ const o=j*cw+i, h=hs[o], p=o*4; let c;
@@ -3776,11 +3781,12 @@ function* pTerGen(H){
       if(wv>.01){ const vc=[136+50*t0,132+52*t0,104+52*t0], wq=wv*.95; c=[c[0]+(vc[0]-c[0])*wq,c[1]+(vc[1]-c[1])*wq,c[2]+(vc[2]-c[2])*wq]; }
       if(wn>.01){ const k=P_BIOMES?wn:wn*.45*pSnowWhite(i/R,(Y0+j/R)/PX+pOff), tt=Math.pow(Math.max(0,t0),.7), sc=P_BIOMES?[186+60*tt,176+68*tt,146+92*tt]:[230,222,196]; c=[c[0]+(sc[0]-c[0])*k,c[1]+(sc[1]-c[1])*k,c[2]+(sc[2]-c[2])*k]; } // 雪山：高い所だけ白っぽいクリーム色
       if(wd>.01){ const dc=[112,92,50]; c=[c[0]+(dc[0]-c[0])*wd*.8,c[1]+(dc[1]-c[1])*wd*.8,c[2]+(dc[2]-c[2])*wd*.8]; }
-      const sh=((hl+cs[o-(i>0?1:0)]-hr-cs[o+(i<cw-1?1:0)])+(hu+cs[o-(j>0?cw:0)]-hd-cs[o+(j<ch-1?cw:0)]))*SH*3*(1-.75*wn); const m=Math.max(.72+.16*Math.min(1,wn*2),Math.min(1.22,1+sh)); c=[c[0]*m,c[1]*m,c[2]*m];
+      const sh=((hl+cs[o-(i>0?1:0)]-hr-cs[o+(i<cw-1?1:0)])+(hu+cs[o-(j>0?cw:0)]-hd-cs[o+(j<ch-1?cw:0)]))*SH*3*(1-.75*wn); const m=Math.max(.72+.18*Math.min(1,wn*2),Math.min(1.22,1+sh)); c=[c[0]*m,c[1]*m,c[2]*m];
       const CLe=CL*(1+.6*wv+(P_BIOMES?.8:1.4)*wn-.75*wd), b0=Math.floor(t*CLe), b1=Math.floor(((hr-P_SEA)/(1-P_SEA))*CLe), b2=Math.floor(((hd-P_SEA)/(1-P_SEA))*CLe);
       const lpp=(Math.abs(hr-h)+Math.abs(hd-h))*CLe/(1-P_SEA);
-      if(wn>.3&&lpp>.77){ const kq=Math.ceil(lpp*1.3), q0=Math.floor(b0/kq); if(q0!==Math.floor(b1/kq)||q0!==Math.floor(b2/kq)){ const k2=.62; c=[c[0]*k2,c[1]*k2,c[2]*k2]; } } // 雪山の崖：詰まった線は何本かに1本だけ濃く（1本の崖線に）
+      if(wn>.3&&lpp>.5){ const kq=Math.ceil(lpp*2), q0=Math.floor(b0/kq); if(q0!==Math.floor(b1/kq)||q0!==Math.floor(b2/kq)||q0!==Math.floor(Math.floor(((hl-P_SEA)/(1-P_SEA))*CLe)/kq)){ const k2=.55; c=[c[0]*k2,c[1]*k2,c[2]*k2]; } } // 雪山の崖：詰まった線は何本かに1本だけ濃く（1本の崖線に）
       else if(b0!==b1||b0!==b2){ const k2=b0%5===0?.6:.8; c=[c[0]*k2,c[1]*k2,c[2]*k2]; }
+      if(wn>.3&&es[o]<1.1*R/R*(1/R+.6)){ c=[c[0]*.72,c[1]*.72,c[2]*.72]; } // 谷の肩・山塊の縁の濃い線
       }
     if(!(vp&&vp.lava)&&h>=P_SEA&&P_VOLC){ const vv=(Y0+j/R)/PX+pOff, o3=pVolcAt(vv); if(o3&&o3.tg&&o3.tg.length){ const te=pTongueE(i/R,vv,o3); if(te>=0&&te<.2){ const k3=.8; c=[c[0]*k3,c[1]*k3,c[2]*k3]; if(vp&&vp.c) vp.c=vp.c.map(q=>q*k3); } } }
     if(vp&&vp.c&&vp.mix!=null&&vp.mix<.999&&!vp.lava&&h>=P_SEA){ const k=vp.mix; c=[c[0]+(vp.c[0]-c[0])*k,c[1]+(vp.c[1]-c[1])*k,c[2]+(vp.c[2]-c[2])*k]; }
