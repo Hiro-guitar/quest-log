@@ -1336,7 +1336,7 @@ const holiday=key=>key?(jpHolidays(+key.slice(0,4))[key]||''):'';
 function weekStrip(){
   const t=new Date(); t.setHours(0,0,0,0); let h='<div class="week">';
   for(let i=0;i<7;i++){
-    const d=new Date(t.getTime()+i*DAY), k=ymd(d), w=d.getDay(), n=dayItems(k).filter(x=>!(x.s?x.s.done:x.q.done)).length;
+    const d=new Date(t.getTime()+i*DAY), k=ymd(d), w=d.getDay(), tt=trType(k), n=dayItems(k).filter(x=>!(x.s?x.s.done:x.q.done)).length+pBlocks(k).filter(x=>!x.q&&!x.tr&&!x.bk&&(x.t||'').trim()&&!x.done).length+(tt&&tt!=='R'&&!trClear(k)?1:0)+bkAll().filter(B=>!B.ret&&!B.fin&&B.pages&&B.start<=k&&k<=B.due&&!bkPlan(B,k).met).length;
     h+=`<button class="wd ${k===dayView?'on':''} ${w===0||holiday(k)?'sun':w===6?'sat':''}" data-act="day" data-v="${k}"${holiday(k)?` title="${holiday(k)}"`:''}><span>${i===0?'今日':'日月火水木金土'[w]}</span><b>${d.getDate()}</b><i>${n?'●'.repeat(Math.min(n,3))+(n>3?'+':''):''}</i></button>`;
   }
   return h+'</div>';
@@ -1686,9 +1686,9 @@ function todayList(){
   const items=dayItems(dayView), d=new Date(dayView+'T00:00:00');
   let h=catBar('today')+chapLine()+weekStrip();
   if(dayView===ymd()&&new Date().getHours()>=4&&new Date().getHours()<13&&!pBlocks(dayView).length) h+=`<button class="row morning-row" data-act="pathmorning"><span class="r-mark">🔥</span><span class="r-main"><span class="r-title">焚き火で今日の段取りを組む</span><span class="r-sub">今日の冒険を、時間の道に並べよう</span></span><span class="r-notch"></span></button>`;
-  h+=`<div class="day-h"><span>${dayView===ymd()?'今日':''}　${d.getMonth()+1}/${d.getDate()}（${'日月火水木金土'[d.getDay()]}）${holiday(dayView)?`<b class="hol">${holiday(dayView)}</b>`:''}</span>${(()=>{ const fb=pBlocks(dayView).filter(x=>!x.q&&!x.tr&&!x.bk&&(x.t||'').trim()); return `<span>${items.filter(x=>x.s?x.s.done:x.q.done).length+fb.filter(x=>x.done).length} / ${items.length+fb.length}</span>`; })()}</div><div class="rows">`;
+  h+=`<div class="day-h"><span>${dayView===ymd()?'今日':''}　${d.getMonth()+1}/${d.getDate()}（${'日月火水木金土'[d.getDay()]}）${holiday(dayView)?`<b class="hol">${holiday(dayView)}</b>`:''}</span>${(()=>{ const fb=pBlocks(dayView).filter(x=>!x.q&&!x.tr&&!x.bk&&(x.t||'').trim()); const tt=trType(dayView), tr=tt&&tt!=='R'?[trClear(dayView)]:[], bk=bkAll().filter(B=>!B.ret&&B.pages&&B.start<=dayView&&dayView<=B.due&&(!B.fin||B.fin===dayView)).map(B=>B.fin===dayView||bkPlan(B,dayView).met), ex=[...tr,...bk]; return `<span>${items.filter(x=>x.s?x.s.done:x.q.done).length+fb.filter(x=>x.done).length+ex.filter(Boolean).length} / ${items.length+fb.length+ex.length}</span>`; })()}</div><div class="rows">`;
   if((state.rested||{})[dayView]) h+=`<div class="sec-empty">🔥 この日は焚き火で休みました</div>`;
-  { const tt=trType(dayView); if(tt&&tt!=='R'){ const cl=trClear(dayView); h+=`<button class="row tr-today ${cl?'done':''}" data-act="trday" data-v="${dayView}"><span class="r-mark">${ico('train')}</span><span class="r-main"><span class="r-title">鍛錬：${TR_NAME[tt]}</span><span class="r-sub">約${trSets(dayView)===2?15:20}分</span></span><span class="r-side">${cl?'<span class="r-clear">CLEAR</span>':''}</span><span class="r-notch"></span></button>`; } }
+  { const tt=trType(dayView); if(tt&&tt!=='R'){ const cl=trClear(dayView); const pb=pBlocks(dayView).find(x=>x.tr===dayView); h+=`<button class="row tr-today ${cl?'done':''}" data-act="trday" data-v="${dayView}"><span class="r-mark">${ico('train')}</span><span class="r-main"><span class="r-title">鍛錬：${TR_NAME[tt]}</span><span class="r-sub">約${trSets(dayView)===2?15:20}分</span></span><span class="r-side">${cl?'<span class="r-clear">CLEAR</span>':pb?`<span class="do">${pfmt(pb.s)}</span>`:''}</span><span class="r-notch"></span></button>`; } }
   h+=bkTodayRows(dayView);
   // 工程はチャレンジごとにまとめて、その下に並べる
   { const seen=new Map(); const blocks=[];
@@ -2808,7 +2808,7 @@ function bkIdeal(B,d){ const b0=B.reg&&B.reg>B.start?B.reg:B.start, p0=B.p0||0, 
 function bkTodayRows(d){
   const due=bkAll().filter(B=>!B.ret&&B.due<=d&&d===ymd()||(!B.ret&&B.due===d)).map(B=>`<button class="row bk-today" data-act="bksel" data-v="${B.id}"><span class="r-mark">${ico('book')}</span><span class="r-main"><span class="r-title">返却の刻限：${esc(B.title||'(無題)')}</span><span class="r-sub">${B.due<d?`刻限を${bkDays(B.due,d)}日過ぎている`:'今日が返す日'}${(B.renew||[]).length?'・図書館に返そう':'・返すか、予約がなければ更新しよう'}</span></span><span class="r-notch"></span></button>`).join('');
   return due+bkAll().filter(B=>!B.ret&&!B.fin&&B.pages&&B.start<=d).map(B=>{ const P=bkPlan(B,d), rest=Math.max(0,P.to-P.now);
-    return `<button class="row bk-today ${P.met?'done':''}" data-act="bksel" data-v="${B.id}"><span class="r-mark">${ico('book')}</span><span class="r-main"><span class="r-title">解読の試練：${esc(B.title||'(無題)')}</span><span class="r-sub">${P.met?`p.${P.now} まで解き明かした`:`p.${P.to} まで読み進めよ（あと${rest}ページ）`}</span></span><span class="r-side">${P.met?'<span class="r-clear">CLEAR</span>':`<span class="due ${bkDays(d,B.due)<=2?'soon':''}">刻限 ${bkMD(B.due)}</span>`}</span><span class="r-notch"></span></button>`; }).join('');
+    return `<button class="row bk-today ${P.met?'done':''}" data-act="bksel" data-v="${B.id}"><span class="r-mark">${ico('book')}</span><span class="r-main"><span class="r-title">解読の試練：${esc(B.title||'(無題)')}</span><span class="r-sub">${P.met?`p.${P.now} まで解き明かした`:`p.${P.to} まで読み進めよ（あと${rest}ページ）`}</span></span><span class="r-side">${P.met?'<span class="r-clear">CLEAR</span>':`${(()=>{ const pb=pBlocks(d).find(x=>x.bk===B.id); return pb?`<span class="do">${pfmt(pb.s)}</span>`:''; })()}<span class="due ${bkDays(d,B.due)<=2?'soon':''}">刻限 ${bkMD(B.due)}</span>`}</span><span class="r-notch"></span></button>`; }).join('');
 }
 // 解読の目盛り：10の区画が、読み進めたぶんだけ古代の青に灯る
 function bkSegs(B,now,ideal){ const N=B.pages||1; let h=''; for(let i=0;i<10;i++){ const a=N*i/10, b=N*(i+1)/10, f=Math.max(0,Math.min(1,(now-a)/(b-a))); h+=`<span class="bk-sg ${f>=1?'full':''}"><i style="width:${(f*100).toFixed(0)}%"></i></span>`; }
@@ -3268,7 +3268,7 @@ function pBlocks(k){ return Object.entries(pDay(k)).filter(([id,b])=>b&&!b.del).
 function pSet(k,id,patch){ const P=plan(); const day={...(P.d[k]||{})}; day[id]={...(day[id]||{}),...patch,u:Date.now()}; P.d={...P.d,[k]:day}; save(); if('s' in patch||'e' in patch||'sids' in patch||'sid' in patch) pSyncTime(k,id); }
 function pDel(k,id){ pUnsyncTime(k,id); pSet(k,id,{del:1}); }
 // 名前を入れずに離れた予定は残さない
-function pDropEmpty(){ if(!pathSel) return; const b=(plan().d[dayView]||{})[pathSel]; if(b&&!b.del&&!b.q&&!b.tr&&!(b.t||'').trim()) pDel(dayView,pathSel); }
+function pDropEmpty(){ if(!pathSel) return; const b=(plan().d[dayView]||{})[pathSel]; if(b&&!b.del&&!b.q&&!b.tr&&!b.bk&&!(b.t||'').trim()) pDel(dayView,pathSel); }
 const pTm=t=>{ const m=/^(\d{1,2}):(\d{2})/.exec(t||''); return m?+m[1]*60+ +m[2]:null; }, pHM=m=>String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
 // 「やる日」に時刻まで入っている冒険は、はじめから旅程に置いておく（外した物は置き直さない／やる時刻を変えたら道しるべも動く）
 function pAutoPlace(k){
@@ -4303,7 +4303,7 @@ function pathPanel(){
   if(r) h+=`<div class="p-giver"><span>${ico(r.q.type)} ${esc(r.ss?TYPES[r.q.type].label:(r.sub||TYPES[r.q.type].label))}</span><button class="btn small ghost" data-act="openq" data-id="${r.q.id}">冒険を開く</button></div>`;
   if(r&&r.ss) h+=`<div class="sec-h"><span>この道しるべでやること</span><span class="rc-dots big">${r.ss.map(z=>`<i class="${z.done?'on':''}"></i>`).join('')}</span></div><div class="pb-steps">${r.ss.map(z=>`<div class="pb-st ${z.done?'on':''}"><button class="pb-ck" data-act="pathsstep" data-v="${z.id}">${z.done?'✓':''}</button><span>${esc(z.text)}</span><button class="pb-x" data-act="pathsout" data-v="${z.id}" aria-label="まとめから外す">×</button></div>`).join('')}</div><div class="p-acts"><button class="btn ${dn?'':'primary'}" data-act="pathsall">${dn?'印を外す':'まとめて終えた'}</button></div>`;
   if(b.tr) h+=`<div class="p-giver"><span>${ico('train')} 鍛錬</span><button class="btn small ghost" data-act="trday" data-v="${b.tr}">鍛錬を開く</button></div>`+(dn?'':`<div class="p-acts"><button class="btn primary" data-act="pathtrfin">鍛錬を終えた</button></div><p class="hint">重さと回数は「鍛錬を開く」で記録できる。</p>`);
-  if(b.bk){ const B=(state.books||{})[b.bk]; if(B){ const P=bkPlan(B,k); h+=`<div class="p-giver"><span>${ico('book')} 古文書の解読</span><button class="btn small ghost" data-act="bksel" data-v="${b.bk}">古文書を開く</button></div><p class="hint" style="margin-top:8px">${dn?`この日の試練は果たした（p.${P.now}まで）。`:`この日は p.${P.to} まで読み進めよ（${P.quota}ページ）。読んだら古文書の画面で記す。`}</p>`; } }
+  if(b.bk){ const B=(state.books||{})[b.bk]; if(B){ const P=bkPlan(B,k); h+=`<div class="p-giver"><span>${ico('book')} 古文書の解読</span><button class="btn small ghost" data-act="bksel" data-v="${b.bk}">古文書を開く</button></div><p class="hint" style="margin-top:8px">${dn?`この日の試練は果たした（p.${P.now}まで）。`:`この日は p.${P.to} まで読み進めよ（${P.quota}ページ）。`}</p>${k===ymd()&&!B.fin?`<div class="bk-rec" style="margin-top:6px"><span>今日は p.</span><input type="number" id="bkPg" inputmode="numeric" min="0" max="${B.pages}" placeholder="${P.now||''}"><span>まで読んだ</span><button class="btn primary small" data-act="pathbkrec" data-v="${b.bk}">記す</button></div>`:''}`; } }
   h+=`<div class="form" style="margin-top:12px">`;
   if(kd==='free'||kd==='fix') h+=`<div class="f"><label>予定</label><input type="text" id="pbTitle" value="${esc(b.t||'')}" placeholder="例：図書館で仕事、子どもと散歩"></div>`;
   h+=`<div class="f2"><div class="f"><label>はじまり</label><select id="pbS">${opts(b.s,PATH_H0,PATH_H1-SNAP)}</select></div><div class="f"><label>おわり</label><select id="pbE">${opts(b.e,PATH_H0+SNAP,PATH_H1)}</select></div></div>`;
@@ -4314,7 +4314,8 @@ function pathPanel(){
   h+=`</div>`;
   if(!r&&!b.tr&&!b.bk) h+=`<div class="p-acts"><button class="btn ${dn?'':'primary'}" data-act="pathdone">${dn?'終えた印を外す':'この予定を終えた'}</button>${(b.t||'').trim()&&!b.fix?'<button class="btn ghost" data-act="pathmini">ミニチャレンジにする</button>':''}</div>`;
   else if(r&&!r.s&&!r.ss) h+=`<div class="p-acts"><button class="btn ${dn?'ghost':'primary'}" data-act="pathclear">${dn?'達成を取り消す':r.q.type==='mini'?'クリアした':'達成を報告する'}</button></div>`;
-  else if(r&&r.s) h+=`<div class="p-acts"><button class="btn ${dn?'':'primary'}" data-act="pathstep">${dn?'終えた印を外す':'これを終えた'}</button></div>`;
+  else if(r&&r.s) h+=`<div class="p-acts"><button class="btn ${dn?'':'primary'}" data-act="pathstep">${dn?'終えた印を外す':'これを終えた'}</button>${dn?'':`<button class="btn ghost" data-act="shrine" data-q="${r.q.id}" data-s="${r.s.id}">祠に挑む（25分）</button>`}</div>`;
+  if(r&&r.ss&&!dn){ const z=r.ss.find(y=>!y.done); if(z) h+=`<div class="p-acts"><button class="btn ghost" data-act="shrine" data-q="${r.q.id}" data-s="${z.id}">「${esc(z.text)}」で祠に挑む（25分）</button></div>`; }
   if(r&&(r.s||r.ss)){ const ad=pUnplaced(k).filter(x=>x.q===r.q.id&&x.sid); if(ad.length) h+=`<div class="sec-h"><span>同じチャレンジから足す</span></div><div class="pb-steps">${ad.map(x=>`<button class="pb-add" data-act="pathsadd" data-v="${x.sid}">＋ ${esc(x.t)}</button>`).join('')}</div>`; }
   if(!b.tr&&!b.fix&&!dn){ const tm=ymd(new Date(new Date(k+'T12:00:00').getTime()+DAY)); h+=`<div class="sec-h"><span>別の日に回す</span></div><div class="p-acts"><input type="date" id="pbMove" value="${tm}" min="${ymd()}" style="width:150px"><button class="btn small" data-act="pathmove">この日に回す</button></div><p class="hint">${r?'冒険手帳のやる日もその日になる（時刻はそのまま）。':'同じ時刻で、その日の道に立て直す。'}</p>`; }
   h+=`<div class="sec-h"><span>遅れたとき</span></div><p class="hint">この予定から後ろを、まとめてずらす（毎日のことは動かさない）</p>
@@ -4342,7 +4343,7 @@ function pathAct(a,b){
       pSet(k,id,{s,e:Math.min(PATH_H1,s+len),...(x.tr?{tr:x.tr}:x.bk?{bk:x.bk,d0:k}:{q:x.q,sid:x.sid})}); pathSel=id; pathScrolled=null; render(); return true; }
     case 'pathtpl': { const tpl=(plan().tpl[pTpl(k)]||{}).b||[]; const P=plan(), day={...(P.d[k]||{})}, now=Date.now(); tpl.forEach(t=>{ day[uid()]={s:t.s,e:t.e,t:t.t,fix:1,...(t.wake?{wake:1}:{}),u:now}; }); P.d={...P.d,[k]:day}; save(); pathScrolled=null; render(); toast('いつもの旅程を敷いた'); return true; }
     case 'pathsave': { const bl=pBlocks(k).filter(x=>!x.q&&!x.tr&&x.fix).map(x=>({s:x.s,e:x.e,t:x.t||'',...(x.wake?{wake:1}:{})})); plan().tpl={...plan().tpl,[b.dataset.v]:{b:bl,u:Date.now()}}; save(); renderDetail(); toast(`${b.dataset.v==='we'?'休日':'平日'}の型にした（${bl.length}件）`); return true; }
-    case 'pathdone': { const x=pBlocks(k).find(y=>y.id===pathSel); if(x){ pSet(k,x.id,{done:!x.done}); if(!x.done) gain(5); render(); } return true; }
+    case 'pathdone': { const x=pBlocks(k).find(y=>y.id===pathSel); if(x){ pSet(k,x.id,{done:!x.done}); gain(x.done?-5:5); render(); } return true; }
     case 'pathstep': { const x=pBlocks(k).find(y=>y.id===pathSel), r=x&&pRef(x); if(r&&r.s) toggleStep(r.q.id,r.s.id); render(); return true; }
     case 'pathshift': { const x=pBlocks(k).find(y=>y.id===pathSel); if(x){ pathShift(k,x.s,+b.dataset.v); render(); } return true; }
     case 'pathlate': { const x=pBlocks(k).find(y=>y.id===b.dataset.v); if(x){ const d=Math.ceil((pJNow()-x.s)/SNAP)*SNAP; if(d>0){ pathShift(k,x.s,d); toast(`${pfmt(x.s+d)}から始める。後ろの予定も${d}分ずらした`); } render(); } return true; }
@@ -4359,6 +4360,7 @@ function pathAct(a,b){
       state.quests.push(q); pSet(k,x.id,{q:q.id,sid:'',t:'',fix:0}); render(); toast('ミニチャレンジにした（冒険手帳にも並ぶ）'); return true; }
     case 'pathclear': { const x=pBlocks(k).find(y=>y.id===pathSel), r=x&&pRef(x); if(r&&!r.s&&!r.ss){ if(r.q.done){ reopen(r.q); } else completeQuest(r.q); } render(); return true; }
     case 'pathtrfin': { const x=pBlocks(k).find(y=>y.id===pathSel); if(x&&x.tr){ const H=hm(), was=!!(H.days[x.tr]||{}).train; if(!was){ trPin(x.tr); const vb=trVessels(); H.days[x.tr]={...(H.days[x.tr]||{}),train:true}; hmTouch('days',x.tr); gain(30); earnRupee(20); toast('鍛錬クリア  +30 XP ・ +20ルピー'); maybeSeed(); const pp=TR_PART[trType(x.tr)]; if(pp) setTimeout(()=>toast(`克服の証（${PART_NAME[pp]}）を手に入れた`),1300); trVesselBanner(vb); save(); } } render(); return true; }
+    case 'pathbkrec': { const keep=bkSel; bkSel=b.dataset.v; bkRecord(); bkSel=keep; return true; }
     case 'pathmove': { const x=pBlocks(k).find(y=>y.id===pathSel), to=($('pbMove')||{}).value; if(!x||!to||to===k) return true; const r=pRef(x), {id:_i,...rest}=x;
       pDel(k,x.id); const nid=uid(); if(r) (r.ss?r.ss:[r.s||r.q]).forEach(o=>{ o.doDate=to; o.carry=0; }); if(r) r.q.u=Date.now();
       pSet(to,nid,{...rest,del:0,done:x.q||x.tr||x.bk?undefined:0,...(x.bk?{d0:to}:{})}); pathSel=null; render(); toast(`${+to.slice(5,7)}/${+to.slice(8)} に回した`); return true; }
