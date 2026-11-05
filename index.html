@@ -3053,10 +3053,9 @@ function wakeSky(){ const t=new Date(), el=sunElev(t), S=sunDay(t), n=pnow(), w=
   const lo=Math.max(0,Math.min(1,(el+2)/22)); w.style.setProperty('--wk-c1',rgb(mix([255,170,110],[255,248,214],lo))); w.style.setProperty('--wk-c2',rgb(mix([226,92,50],[250,206,120],lo))); w.style.setProperty('--wk-glow',`rgba(${mix([235,110,70],[250,220,150],lo)},${(.25+.25*(1-Math.abs(el)/30)).toFixed(2)})`);
   const d=n-S.rise; return `<div class="wk-sr"><span>日の出 <b>${pfmt(S.rise)}</b></span><span>${d<0?`日の出まであと${-d}分`:d<180?`日の出から${d>=60?Math.floor(d/60)+'時間':''}${d%60?d%60+'分':''}`:`太陽の高さ ${Math.round(el)}°`}</span><span>日の入り ${pfmt(S.set)}</span></div>`; }
 function wakeOpen(edit){ wakeEdit=!!edit; const H=hm(), t=ymd(), sd=(H.sleep||{})[t]||{}, yk=ymd(new Date(Date.now()-DAY)), yb=((H.sleep||{})[yk]||{}).b, n=pnow(), cur=edit&&sd.w!=null?sd.w:n;
-  const q=[0,10,20,30,60].map(d=>`<button data-act="wkq" data-v="${d}" class="${d===0&&!edit?'on':''}">${d?d===60?'1時間前':d+'分前':'いま'}</button>`).join('');
   const sr=wakeSky();
   $('wake').innerHTML=`<div class="wk-stars"></div><div class="wk-ground"></div><div class="wk-pool"></div><div class="wk-in">${edit?'':'<p class="wk-voice">……目覚めの刻……</p>'}<div class="wk-sky"><div class="wk-orb"></div></div>${sr}<div class="wk-k">${(()=>{ const r=sunDay(new Date()).rise; return n<r?'夜明け前':n<r+90?'夜明け':n<11*60?'朝':n<14*60?'真昼':'午後'; })()}</div><h2>目覚め</h2><p class="wk-lead">${edit?'目覚めた刻を記し直す':'長い眠りから目覚めた。それは、いつだった？'}</p>
-    <input type="time" id="wkT" class="wk-t" value="${pHM(cur)}"><div class="wk-q">${q}</div>
+    <input type="time" id="wkT" class="wk-t" value="${pHM(cur)}" style="margin-bottom:16px">
     ${yb==null?`<div class="wk-b">ゆうべ焚き火で休んだ刻（わかれば）<input type="time" id="wkB"></div>`:''}
     <div class="wk-acts"><button class="btn primary" data-act="wkok">この刻に目覚めた</button>${edit?`<button class="btn ghost" data-act="wkx">やめる</button><button class="wk-s" data-act="wkdel">記録を消す</button>`:`<button class="btn ghost" data-act="wkx">まだ眠りの中</button><button class="wk-s" data-act="wkskip">今日は記さない</button>`}</div></div>`;
   $('wake').classList.add('show'); }
