@@ -3340,9 +3340,9 @@ function pVolc(c){ const key=c+'|'+(pW|0); if(pVcMemo.has(key)) return pVcMemo.g
   pVcMemo.set(key,o); return o; }
 // 雪山（ブレワイのヘブラ山地から）：いくつもの頂をもつ大きな山のかたまり。高い所ほど白っぽいクリーム色、
 // 等高線がびっしり、尾根と深い谷が入り組む。中腹には黒っぽい点（針葉樹・岩）が散る。たまに（約3日に1度）、道の片側に
-const P_SNOW=true, P_SNOWG=true, pSnowLow=(x,v)=>{ if(!P_SNOW) return 0; const o=pSnowAt(v); if(!o) return 0; const D=pSnowD(x,v,o); return pSm(.95,1.08,D)*pSm(1.75,1.3,D); }, P_SC=2900, pSnMemo=new Map();
+const P_SNOW=true, P_SNP=.5, P_SNOWG=true, pSnowLow=(x,v)=>{ if(!P_SNOW) return 0; const o=pSnowAt(v); if(!o) return 0; const D=pSnowD(x,v,o); return pSm(.95,1.08,D)*pSm(1.75,1.3,D); }, P_SC=2900, pSnMemo=new Map();
 function pSnow(c){ const key=c+'|'+(pW|0); if(pSnMemo.has(key)) return pSnMemo.get(key); const r=pRng('sn'+c,7); let o=null;
-  if(P_SNOW&&r()<.42){ const v=c*P_SC+600+r()*(P_SC-1200); let near=false; for(let k=Math.floor(v/P_VC)-1;k<=Math.floor(v/P_VC)+1;k++){ const vo=pVolc(k); if(vo&&Math.abs(vo.v-v)<1300) near=true; }
+  if(P_SNOW&&r()<P_SNP){ let v=0, near=true; for(let t=0;t<8&&near;t++){ v=c*P_SC+500+r()*(P_SC-1000); near=false; for(let k=Math.floor(v/P_VC)-1;k<=Math.floor(v/P_VC)+1;k++){ const vo=pVolc(k); if(vo&&Math.abs(vo.v-v)<vo.RV+700) near=true; } }
     if(!near){ const W=pW||380, q=v, rx=Math.max(30,Math.min(W-30,W/2+(W/2-34)*(.62*Math.sin(q/(150*1.05)+4.1)+.28*Math.sin(q/61+1.3)+.1*Math.sin(q/27+2.2)))), x=(rx<W/2?W*.66:W*.34)+(r()-.5)*30, RV=150+r()*50, P=[];
       const np=3+Math.floor(r()*3); for(let i=0;i<np;i++){ const a=r()*6.28, d=r()*.45*RV; P.push([x+Math.cos(a)*d,v+Math.sin(a)*d*1.2,.04+.05*r(),(.07+.05*r())*RV]); }
       o={x,v,RV,ph:r()*50,c,P}; o.G=pGlaciers(o,r); } }
@@ -3403,11 +3403,12 @@ function pSnowH(x0,v0,o){ const x=x0+20*(pNoise(x0/70+o.ph,v0/70)-.5)*2, v=v0+20
 function pSnowWhite(x,v){ const o=pSnowAt(v); if(!o) return 0; const D=pSnowD(x,v,o); return pSm(.5,.85,.6*pSm(1.05,.15,D)+.4*(1-D)+.25); }
 // 砂漠（ブレワイのゲルド砂漠から）：まわりより低く、とても平らな広い土地。色は暗めの濃い黄土色。
 // 等高線はまばらで、風の向きに細長い砂丘が閉じた輪になって点々とある。ところどころに崖で囲まれた岩の台地。木はなく、湖も川もない
-const P_DESERT=false, P_DC=3300, pDsMemo=new Map();
+const P_DESERT=false, P_DSP=.58, P_DC=3300, pDsMemo=new Map();
 function pDesert(c){ const key=c+'|'+(pW|0); if(pDsMemo.has(key)) return pDsMemo.get(key); const r=pRng('ds'+c,9); let o=null;
-  if(P_DESERT&&r()<.4){ const v=c*P_DC+700+r()*(P_DC-1400); let near=false;
-    for(let k=Math.floor(v/P_VC)-1;k<=Math.floor(v/P_VC)+1;k++){ const vo=pVolc(k); if(vo&&Math.abs(vo.v-v)<1400) near=true; }
-    for(let k=Math.floor(v/P_SC)-1;k<=Math.floor(v/P_SC)+1;k++){ const so=pSnow(k); if(so&&Math.abs(so.v-v)<1400) near=true; }
+  if(P_DESERT&&r()<P_DSP){ let v=0, near=true; // 火山・雪山と重ならない所を探す（何か所か試す）
+    for(let t=0;t<8&&near;t++){ v=c*P_DC+400+r()*(P_DC-800); near=false;
+      for(let k=Math.floor(v/P_VC)-1;k<=Math.floor(v/P_VC)+1;k++){ const vo=pVolc(k); if(vo&&Math.abs(vo.v-v)<vo.RV+450) near=true; }
+      for(let k=Math.floor(v/P_SC)-1;k<=Math.floor(v/P_SC)+1;k++){ const so=pSnow(k); if(so&&Math.abs(so.v-v)<so.RV*1.6+450) near=true; } }
     if(!near){ const W=pW||380, x=r()<.5?W*(.05+.15*r()):W*(.8+.15*r()), RV=280+r()*70, wa=.6+r()*.5+(r()<.5?0:1.57), DN=[], K=[], nd=45+Math.floor(r()*16);
       // 砂丘：風向きにそろった細長い楕円の丘（入れ子の等高線の輪になる）
       for(let i=0;i<nd;i++){ const a=r()*6.28, d=Math.sqrt(r())*.95*RV; DN.push({x:x+Math.cos(a)*d/.95,v:v+Math.sin(a)*d/.62,L:(.1+.14*r())*RV,B:(.05+.05*r())*RV,t:wa+(r()-.5)*.35,h:.03+.02*r()}); }
@@ -3839,7 +3840,7 @@ function pTerAsk(k,H,first){
   if(!pTerBusy){ pTerBusy=true; setTimeout(pTerStep,0); }
 }
 // 一度描いた地形の絵は端末に取っておく（次に開いたときは描かずにすぐ出す）。描き方を変えたら版を上げて作り直す
-const P_TER_V="t130|", P_TER_MAX=36;
+const P_TER_V="t131|", P_TER_MAX=36;
 const pIDB=(()=>{ let dbp=null; const open=()=>dbp||(dbp=new Promise((res,rej)=>{ try{ const r=indexedDB.open('ql-ter',1); r.onupgradeneeded=()=>r.result.createObjectStore('img'); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }catch(e){ rej(e); } }));
   const st=m=>open().then(db=>db.transaction('img',m).objectStore('img'));
   const keys=()=>{ try{ return JSON.parse(localStorage.getItem('ql-ter-keys')||'[]'); }catch(e){ return []; } }, setKeys=a=>{ try{ localStorage.setItem('ql-ter-keys',JSON.stringify(a)); }catch(e){} };
