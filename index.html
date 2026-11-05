@@ -3435,12 +3435,7 @@ function pTongA(o){ if(o.ta) return o.ta; const r=pRng('lt'+o.c,3), N=15, ofs=.5
 function pDeath(x,v,o){ pPlateE=-1; const dx=x-o.x, dv=v-o.v, D=Math.hypot(dx,dv), a=Math.atan2(dv,dx), ca=Math.cos(a), sa=Math.sin(a);
   const Rc=pCraterR(o,a), d=D/Rc, rd=Math.abs(x-pRX((v-pOff)*PX));
   const n1=pNoise(x/22+o.ph,v/22), n2=pNoise(x/9+3,v/9+o.ph), n3=pNoise(x/4,v/4);
-  if(d<1){ // 火口の中
-    if(d<.16+.05*(n2-.5)) return P_LV_R;
-    const inner=d<.55+.05*(n1-.5), r0=inner?.16:.55, r1=inner?.55:1, N=inner?9:15, ofs=inner?0:.5+o.ph, aw=a+.18*(pNoise(d*2.5+o.ph,ca+sa)-.5), q=aw/6.2832*N+ofs, f=((q%1)+1)%1;
-    const da=Math.min(f,1-f)*6.2832/N*D, dr=Math.min(d-r0,r1-d)*Rc, kk=3, ec=-kk*Math.log(Math.exp(-da/kk)+Math.exp(-dr/kk))+kk*.69+2.2*(n2-.5)+1*(n3-.5), w=1.5+2*Math.pow(1-d,1.2);
-    let wk=w; if(!inner){ let m=9; for(const t of pTongA(o)){ let q2=a-t; q2=Math.abs(Math.atan2(Math.sin(q2),Math.cos(q2))); if(q2<m) m=q2; } wk+=4.5*pSm(.6,1,d)*pSm(.35,.1,m); }
-    pPlateE=ec-wk; return ec<wk?(d>.8&&wk>w+1&&pNoise(x/7+o.ph,v/7)>.5?P_LV_O:P_LV_R):null; }
+  if(d<1&&d<.16+.05*(n2-.5)) return P_LV_R;
   const rw=.42+.22*(n1-.5)*2+.08*(pNoise(ca*5+o.ph,sa*5)-.5)*2; // 輪の太さ（でこぼこ）
   const g=pGapA(o); let gd=a-g; gd=Math.atan2(Math.sin(gd),Math.cos(gd));
   if(false){ const t=(d-1)/rw; if(rd<12) return null; const ed=Math.min(t,1-t), mot=pNoise(x/15+o.ph*2,v/15+1.3)*.65+n2*.25+n3*.1; return mot>.6-.35*pSm(.28,0,ed)?P_LV_R:P_LV_O; }
@@ -3473,15 +3468,20 @@ function pLavaSim(o){ const key=(pW|0)+"|"+pOff; o.sims=o.sims||{}; if(o.sims[ke
   const grad=(x,v)=>{ const e=C*2; return [(G(x+e,v)-G(x-e,v))/(2*e),(G(x,v+e)-G(x,v-e))/(2*e)]; };
   const stamp=(x,v,w,t)=>{ const i0=Math.floor((x-w-x0)/C), i1=Math.ceil((x+w-x0)/C), j0=Math.floor((v-w-v0)/C), j1=Math.ceil((v+w-v0)/C);
     for(let j=Math.max(0,j0);j<=Math.min(nv-1,j1);j++) for(let i=Math.max(0,i0);i<=Math.min(nx-1,i1);i++){ const k=j*nx+i; const d=Math.hypot(x0+i*C-x,v0+j*C-v); if(d>w) continue; const c=Math.max(t,d/w)*.95; if(c<cost[k]) cost[k]=c; } };
-  const tongue=(x,v,dx,dv,len,w0,depth)=>{ for(let st=0;st<len;st++){ const [gx,gv]=grad(x,v), gl=Math.hypot(gx,gv)||1e-9;
-      dx=dx*.7-gx/gl*.3; dv=dv*.7-gv/gl*.3; const dl=Math.hypot(dx,dv)||1; dx/=dl; dv/=dl;
-      const steep=pSm(.2*sref,1.2*sref,gl), w=w0*(1+.8*(1-steep))*(depth?1:(1-.55*Math.min(1,st/35)))*(1-.3*st/len)*(.7+.6*pNoise(st*.08+o.ph,depth*3.1+len));
-      x+=dx*2.5+(pNoise(st*.05,o.ph+depth)-.5)*1.2; v+=dv*2.5;
-      if(x<-5||x>W+5||pVolcW(x,v)<.04||Math.abs(x-pRX((v-pOff)*PX))<14) break;
-      stamp(x,v,w,Math.min(.6,st/len));
-      if(depth<3&&st>6&&r()<.045){ const sd=r()<.5?1:-1, sp=.45+.35*r(); tongue(x,v,dx-dv*sd*sp,dv+dx*sd*sp,Math.floor((len-st)*(.5+.4*r())),w0*.68,depth+1); w0*=.8; } } };
-  const TA=pTongA(o);
-  for(let f=0;f<TA.length;f++){ const a=TA[f], R0=pCraterR(o,a)*.92; tongue(o.x+Math.cos(a)*R0,o.v+Math.sin(a)*R0,Math.cos(a),Math.sin(a),40+Math.floor(r()*80),8+r()*5,0); }
+  // 溶岩の樹形：火口の中心から太い幹が数本出て、外へ行くほど二股に分かれて細くなる（枝の間に残る土地が花びらの岩になる）
+  const seg0=o.RV*.7/(9*2.5);
+  const tree=(x,v,dx,dv,w,depth,seg)=>{ for(let st=0;;st++){ const D=Math.hypot(x-o.x,v-o.v);
+      if(D>o.R*1.5){ const [gx,gv]=grad(x,v), gl=Math.hypot(gx,gv)||1e-9; dx=dx*.95-gx/gl*.05; dv=dv*.95-gv/gl*.05; }
+      dx+=(pNoise(x/30+o.ph,v/30+depth)-.5)*.12; const dl=Math.hypot(dx,dv)||1; dx/=dl; dv/=dl;
+      x+=dx*2.5; v+=dv*2.5;
+      if(x<-5||x>W+5||pVolcW(x,v)<.04||Math.abs(x-pRX((v-pOff)*PX))<14) return;
+      const last=depth>=4, tw=last?Math.max(0,1-st/(seg*1.3)):1; if(last&&tw<=.05) return;
+      stamp(x,v,Math.max(2.2,w*tw*(.85+.3*pNoise(st*.1+o.ph,depth*2.3))),Math.min(.6,D/o.RV*.6));
+      if(!last&&st>=seg){ const sp=.38+.3*r(), ns=seg*(1.15+.2*r());
+        if(r()<.3){ tree(x,v,dx,dv,w*.85,depth+1,ns); return; }
+        const c=Math.cos(sp), s2=Math.sin(sp); tree(x,v,dx*c-dv*s2,dv*c+dx*s2,w*.76,depth+1,ns); tree(x,v,dx*c+dv*s2,dv*c-dx*s2,w*.76,depth+1,ns*(.85+.3*r())); return; } } };
+  const nT=5+Math.floor(r()*2), a0=r()*6.28;
+  for(let f=0;f<nT;f++){ const a=a0+(f+(r()-.5)*.4)/nT*6.2832; tree(o.x,o.v,Math.cos(a),Math.sin(a),12+r()*3,0,seg0*(.8+.4*r())); }
   for(let k=0;k<N;k++) if(blk[k]===2&&cost[k]<1e8&&cost[k]>.25) cost[k]=1e9; // 岩の島（流れのふちの方に残る）
   const ks=Object.keys(o.sims); if(ks.length>6) delete o.sims[ks[0]]; return o.sims[key]={key,x0,v0,nx,nv,C,cost,cmax}; }
 function pLavaAt(x,v,o){ const S=pLavaSim(o), fi=(x-S.x0)/S.C, fj=(v-S.v0)/S.C, i=Math.floor(fi), j=Math.floor(fj); if(i<0||j<0||i>=S.nx-1||j>=S.nv-1) return null;
@@ -3677,7 +3677,7 @@ function pTerAsk(k,H,first){
   if(!pTerBusy){ pTerBusy=true; setTimeout(pTerStep,0); }
 }
 // 一度描いた地形の絵は端末に取っておく（次に開いたときは描かずにすぐ出す）。描き方を変えたら版を上げて作り直す
-const P_TER_V="t98|", P_TER_MAX=36;
+const P_TER_V="t99|", P_TER_MAX=36;
 const pIDB=(()=>{ let dbp=null; const open=()=>dbp||(dbp=new Promise((res,rej)=>{ try{ const r=indexedDB.open('ql-ter',1); r.onupgradeneeded=()=>r.result.createObjectStore('img'); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }catch(e){ rej(e); } }));
   const st=m=>open().then(db=>db.transaction('img',m).objectStore('img'));
   const keys=()=>{ try{ return JSON.parse(localStorage.getItem('ql-ter-keys')||'[]'); }catch(e){ return []; } }, setKeys=a=>{ try{ localStorage.setItem('ql-ter-keys',JSON.stringify(a)); }catch(e){} };
