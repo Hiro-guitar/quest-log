@@ -3786,7 +3786,7 @@ function* pTerGen(H){
       const gg=(Math.abs(g[oo+1]-g[oo])+Math.abs(g[oo+gw]-g[oo])+Math.abs(g[oo+gw+1]-g[oo+1])+Math.abs(g[oo+gw+1]-g[oo+gw]))/(2*G*R)*CLe/(1-P_SEA), kq=gg<.5?1:gg<.9?2:gg<1.3?3:4;
       if(wn>.3&&kq>1){ const cr=(a2,b2)=>a2!==b2&&Math.max(a2,b2)%kq===0; if(cr(b0,b1)||cr(b0,b2)){ const k2=.5; c=[c[0]*k2,c[1]*k2,c[2]*k2]; } } // 雪山の崖：詰まった等高線は段ごとに間引き、残す線は濃く（線がとぎれない） // 雪山の崖：詰まった線は何本かに1本だけ濃く（1本の崖線に）
       else if(b0!==b1||b0!==b2){ const k2=b0%5===0?.6:.8; c=[c[0]*k2,c[1]*k2,c[2]*k2]; }
-      if(wn>.3&&es[o]<.85){ c=[c[0]*.65,c[1]*.65,c[2]*.65]; } // 谷の肩・山塊の縁の濃い線
+      if(wn>.3&&es[o]<.85){ c=[c[0]*.55,c[1]*.55,c[2]*.55]; } // 谷の肩・山塊の縁の濃い線
       }
     if(!(vp&&vp.lava)&&h>=P_SEA&&P_VOLC){ const vv=(Y0+j/R)/PX+pOff, o3=pVolcAt(vv); if(o3&&o3.tg&&o3.tg.length){ const te=pTongueE(i/R,vv,o3); if(te>=0&&te<.2){ const k3=.8; c=[c[0]*k3,c[1]*k3,c[2]*k3]; if(vp&&vp.c) vp.c=vp.c.map(q=>q*k3); } } }
     if(vp&&vp.c&&vp.mix!=null&&vp.mix<.999&&!vp.lava&&h>=P_SEA){ const k=vp.mix; c=[c[0]+(vp.c[0]-c[0])*k,c[1]+(vp.c[1]-c[1])*k,c[2]+(vp.c[2]-c[2])*k]; }
@@ -3865,7 +3865,7 @@ function pMapArt(k,H){
     for(let k=0;k<40;k++){ const a=r2()*6.28, d=Math.sqrt(r2())*RV*.8, x=so.x+Math.cos(a)*d, v=so.v+Math.sin(a)*d, y=v2y(v); if(x<0||x>W||!far(x,y,10)||pHgt(x,y)<.72) continue; dot(x,y,1.3+.2*r2()); }
     for(let k=0;k<3;k++){ const a=r2()*6.28, d=(.95+.15*r2())*RV, x=so.x+Math.cos(a)*d, v=so.v+Math.sin(a)*d, y=v2y(v); if(x<8||x>W-8||!far(x,y,16)||pHgt(x,y)<P_SEA+.02) continue; const rr=6+3*r2(), n=20+Math.floor(r2()*20); for(let q=0;q<n;q++){ const qa=r2()*6.28, qd=Math.sqrt(r2())*rr; dot(x+Math.cos(qa)*qd*1.3,y+Math.sin(qa)*qd,1.3); } } } // 雪山の中腹の黒い点（針葉樹・岩）
   for(let c=c0;c<=c1;c++){ const r2=pRng('tw'+c,5); for(let k=0;k<160;k++){ const x=r2()*W, v=c*CW+r2()*CW, y=v2y(v); if(pBiome(x,y)[2]<.5||pHgt(x,y)<P_SEA+.006||!far(x,y,11)||pTongueLava(x,y/PX+pOff)) continue; o+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(1.6+r2()*1.4).toFixed(1)}"/>`; } }
-  for(let c=c0;c<=c1;c++){ const r=pRng('tr'+c,5); for(let v=c*CW+r()*40;v<(c+1)*CW;v+=40+r()*45){ const x=r()*W, y=v2y(v), h=pHgt(x,y), n=6+Math.floor(r()*18), sp=16+r()*30, lb=r(), bi=pBiome(x,y), wet=bi[2]>.5; if((!wet&&h<P_SEA+.04)||h>.7||bi[0]>.3||bi[1]>.4||(bi[3]>.5&&lb<.6)||pCastleAt(x,y/PX+pOff)) continue;
+  for(let c=c0;c<=c1;c++){ const r=pRng('tr'+c,5); for(let v=c*CW+r()*40;v<(c+1)*CW;v+=40+r()*45){ const x=r()*W, y=v2y(v), h=pHgt(x,y), n=6+Math.floor(r()*18), sp=16+r()*30, lb=r(), bi=pBiome(x,y), wet=bi[2]>.5; if((!wet&&h<P_SEA+.04)||h>.7||bi[0]>.3||bi[1]>.4||(bi[3]>(P_SNOW?.15:.5)&&(P_SNOW||lb<.6))||pCastleAt(x,y/PX+pOff)) continue;
     for(let j=0;j<n;j++){ const tx=x+(r()-.5)*sp*1.6, ty=y+(r()-.5)*sp, tr=2+r()*1.6; if(!far(tx,ty,11)||(wet?pHgt(tx,ty)<P_SEA+.004:nearWater(tx,ty,3))||pTongueLava(tx,ty/PX+pOff)) continue; o+=`<circle cx="${tx.toFixed(1)}" cy="${ty.toFixed(1)}" r="${tr.toFixed(1)}"/>`; }
     if(n>16&&lb<.5) labs.push([x,y+sp*.6+12,pNm('wd'+c+','+Math.round(v),'wood'),'']); } } o+='</g>';
   o+=bridges;
