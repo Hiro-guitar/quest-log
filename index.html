@@ -387,6 +387,9 @@ select{max-width:100%;text-overflow:ellipsis}
 .path-un{margin:4px 0 12px;padding:10px 12px;background:linear-gradient(90deg,rgba(0,0,0,0),rgba(0,0,0,.28) 10%,rgba(0,0,0,.28) 90%,rgba(0,0,0,0));position:relative}
 .path-un::before,.path-un::after{content:"";position:absolute;left:4%;right:4%;height:1px;background:linear-gradient(90deg,transparent,rgba(242,194,48,.45),transparent)}
 .path-un::before{top:0}.path-un::after{bottom:0}
+.pu-pick{display:block;width:100%;text-align:left;margin-top:6px;padding:7px 4px;font-size:13px;color:var(--blue);border-top:1px dashed rgba(242,236,214,.15)}.pu-pick.on{color:rgba(242,236,214,.6)}
+.pu-pl{max-height:46vh;overflow:auto;margin-top:4px}.pu-d{display:block;margin-top:1px;font-size:11px;color:rgba(242,236,214,.5)}.pu-ic{display:inline-flex;width:16px;opacity:.8}.pu-ic .ico svg{width:14px;height:14px}
+.rd-seg.k-bk{stroke:#6fe0ff;filter:drop-shadow(0 0 4px rgba(111,224,255,.7))}.rd-pin.k-bk .pn-b{fill:#6fe0ff;filter:drop-shadow(0 0 4px rgba(111,224,255,.7))}.rd-lead.k-bk{stroke:rgba(111,224,255,.55)}.rd-knob.k-bk::after{border-color:#6fe0ff}.rd-card.k-bk{border-left-color:#6fe0ff}
 .pu-h{font-size:11px;letter-spacing:.18em;color:rgba(242,236,214,.6);margin-bottom:6px;display:flex;justify-content:space-between;gap:8px}
 .pu-h small{letter-spacing:.04em;color:var(--dim)}
 .pu-i{display:flex;align-items:baseline;gap:8px;width:100%;text-align:left;padding:6px 4px;font-size:13px;color:var(--text);border-radius:3px}
@@ -3242,7 +3245,7 @@ let pW=380;
 const pSpan=y=>{ let a=1e9,b=-1e9; for(let yy=y-20;yy<=y+110;yy+=10){ const x=pRX(yy); if(x<a) a=x; if(x>b) b=x; } return [a,b]; };
 const pSide=y=>{ const [a,b]=pSpan(y); return (pW-b)>=a?'r':'l'; };
 const pRX=y=>{ const q=y/PX+pOff, R=[4.1,1.3,2.2,1.05], c=pW/2, A=pW/2-34; return Math.max(30,Math.min(pW-30,c+A*(.62*Math.sin(q/(150*R[3])+R[0])+.28*Math.sin(q/61+R[1])+.1*Math.sin(q/27+R[2])))); };
-let pathSheet=false;
+let pathSheet=false, pathPick=false;
 let puSel=null; // まとめて置く工程を選んでいる途中 {q, ids:Set}
 let pathSel=null, pathScrolled=null, pathDrag=null, pathFocus=null;
 const pm2y=m=>(m-PATH_H0)*PX;
@@ -3254,7 +3257,7 @@ const pnow=()=>{ const d=new Date(); return d.getHours()*60+d.getMinutes(); };
 function plan(){ state.plan=state.plan||{}; if(!state.plan.d||typeof state.plan.d!=='object') state.plan.d={}; if(!state.plan.tpl||typeof state.plan.tpl!=='object') state.plan.tpl={}; return state.plan; }
 function pDay(k){ const P=plan(); return P.d[k]||{}; }
 function pBlocks(k){ return Object.entries(pDay(k)).filter(([id,b])=>b&&!b.del).map(([id,b])=>({id,...b})).sort((a,b)=>a.s-b.s||a.e-b.e); }
-function pSet(k,id,patch){ const P=plan(); const day={...(P.d[k]||{})}; day[id]={...(day[id]||{}),...patch,u:Date.now()}; P.d={...P.d,[k]:day}; save(); if('s' in patch) pSyncTime(k,id); }
+function pSet(k,id,patch){ const P=plan(); const day={...(P.d[k]||{})}; day[id]={...(day[id]||{}),...patch,u:Date.now()}; P.d={...P.d,[k]:day}; save(); if('s' in patch||'e' in patch||'sids' in patch||'sid' in patch) pSyncTime(k,id); }
 function pDel(k,id){ pUnsyncTime(k,id); pSet(k,id,{del:1}); }
 // 名前を入れずに離れた予定は残さない
 function pDropEmpty(){ if(!pathSel) return; const b=(plan().d[dayView]||{})[pathSel]; if(b&&!b.del&&!b.q&&!b.tr&&!(b.t||'').trim()) pDel(dayView,pathSel); }
@@ -3264,16 +3267,21 @@ function pAutoPlace(k){
   const P=plan(), day={...(P.d[k]||{})}, now=Date.now(); let ch=false;
   dayItems(k).forEach(x=>{ const m=pTm(x.time); if(m==null||m<PATH_H0||m>=PATH_H1) return; const sid=x.s?x.s.id:'';
     const ex=Object.entries(day).find(([id,b])=>b&&pHasStep(b,x.q.id,sid));
-    if(!ex){ if(x.s?x.s.done:x.q.done) return; day[uid()]={s:m,e:Math.min(PATH_H1,m+60),q:x.q.id,sid,at:x.time,u:now}; ch=true; return; }
+    if(!ex){ if(x.s?x.s.done:x.q.done) return; day[uid()]={s:m,e:Math.min(PATH_H1,m+((x.s||x.q).doDur||60)),q:x.q.id,sid,at:x.time,u:now}; ch=true; return; }
     const [id,b]=ex; if(b.sids) return; if(!b.del&&b.at!==x.time&&(!b.at||b.s===pTm(b.at))){ const len=b.e-b.s; day[id]={...b,s:m,e:Math.min(PATH_H1,m+len),at:x.time,u:now}; ch=true; } });
   if(ch){ P.d={...P.d,[k]:day}; save(); } }
 // 道しるべを動かしたら、冒険の「やる時刻」もそろえる（時刻が入っていた物だけ）
 function pSyncTime(k,id){ const b=(plan().d[k]||{})[id]; if(!b||b.del||!b.q||b.s>=1440) return; const r=pRef(b); if(!r) return; const t=pHM(b.s), now=Date.now();
   // 旅程に置いた冒険は、冒険手帳の「やる日・やる時刻」もその道しるべに合わせる（工程があるチャレンジは工程に入れる）
-  const os=r.ss?r.ss:[r.s||r.q]; let ch=0; os.forEach(x=>{ if(x.doDate!==k||x.doTime!==t){ if(x.doDate!==k) x.carry=0; x.doDate=k; x.doTime=t; ch=1; } }); if(ch){ r.q.u=now; if(!r.ss) b.at=t; save(); } }
+  const os=r.ss?r.ss:[r.s||r.q], du=b.e-b.s; let ch=0; os.forEach(x=>{ if(x.doDate!==k||x.doTime!==t){ if(x.doDate!==k) x.carry=0; x.doDate=k; x.doTime=t; ch=1; } if(!r.ss&&x.doDur!==du){ x.doDur=du; ch=1; } }); if(ch){ r.q.u=now; if(!r.ss) b.at=t; save(); } }
 // 冒険手帳でやる日を別の日に変えた冒険（工程）は、その日の旅程から外す（今日から先の日だけ。過去の旅程は記録として残す）
 function pPrune(k){ if(k<ymd()) return; const P=plan(), day={...(P.d[k]||{})}, now=Date.now(); let ch=false;
-  Object.entries(day).forEach(([id,b])=>{ if(!b||b.del||!b.q) return; const q=findQ(b.q); if(!q) return; const on=x=>x&&x.doDate===k;
+  Object.entries(day).forEach(([id,b])=>{ if(!b||b.del) return;
+    if(b.tr){ const tt=trType(b.tr); if((!tt||tt==='R')&&!(hm().days[b.tr]||{}).train){ day[id]={...b,del:1,u:now}; ch=true; } return; }
+    if(b.bk){ const B=(state.books||{})[b.bk]; if(!B||B.del||((B.ret||B.fin)&&!pDone(b))){ day[id]={...b,del:1,u:now}; ch=true; } return; }
+    if(!b.q) return; const q=findQ(b.q); if(!q){ day[id]={...b,del:1,u:now}; ch=true; return; } const on=x=>x&&x.doDate===k;
+    // 冒険手帳で時刻を消した物は、道しるべも外す（やる日は残したまま、道しるべのない冒険にもどる）
+    if(b.s<1440){ const r=pRef(b); if(r&&!r.done&&(r.ss?r.ss:[r.s||r.q]).every(x=>x.doDate===k&&!x.doTime)){ day[id]={...b,del:1,u:now}; ch=true; return; } }
     if(b.sids&&b.sids.length){ const keep=b.sids.filter(sid=>on((q.steps||[]).find(x=>x.id===sid))); if(keep.length===b.sids.length) return; day[id]=keep.length?{...b,sids:keep,u:now}:{...b,del:1,u:now}; ch=true; return; }
     const o=b.sid?(q.steps||[]).find(x=>x.id===b.sid):(q.steps&&q.steps.length?null:q); if(b.sid&&!o){ day[id]={...b,del:1,u:now}; ch=true; return; } if(o&&!on(o)){ day[id]={...b,del:1,u:now}; ch=true; } });
   if(ch){ P.d={...P.d,[k]:day}; save(); } }
@@ -3290,14 +3298,15 @@ function pRef(b){ if(b.q){ const q=findQ(b.q); if(!q) return null;
       return {q,ss,done:ss.every(x=>x.done),title:q.title||'(無題)',sub:ss.map(x=>x.text).join('・')}; }
     const s=b.sid?(q.steps||[]).find(x=>x.id===b.sid):null; return {q,s,done:s?!!s.done:!!q.done,title:s?s.text:q.title,sub:s?q.title:''}; } return null; }
 const pHasStep=(b,q,sid)=>b.q===q&&((b.sid||'')===(sid||'')||(!!sid&&(b.sids||[]).includes(sid)));
-function pTitle(b){ if(b.tr) return '鍛錬：'+(TR_LAB[trType(b.tr)]||'鍛錬'); const r=pRef(b); return r?r.title:(b.t||''); }
-function pKind(b){ return b.tr?'tr':b.q?'q':b.fix?'fix':'free'; }
-function pDone(b){ if(b.tr) return !!(hm().days[b.tr]||{}).train; const r=pRef(b); return r?r.done:!!b.done; }
+function pTitle(b){ if(b.tr) return '鍛錬：'+(TR_LAB[trType(b.tr)]||'鍛錬'); if(b.bk){ const B=(state.books||{})[b.bk]; return '解読：'+(B?B.title||'(無題)':''); } const r=pRef(b); return r?r.title:(b.t||''); }
+function pKind(b){ return b.tr?'tr':b.bk?'bk':b.q?'q':b.fix?'fix':'free'; }
+function pDone(b){ if(b.tr) return !!(hm().days[b.tr]||{}).train; if(b.bk){ const B=(state.books||{})[b.bk]; return !!B&&(!!B.fin&&B.fin<=b.d0||bkPlan(B,b.d0||ymd()).met); } const r=pRef(b); return r?r.done:!!b.done; }
 // まだ道に置いていない、その日の冒険
 function pUnplaced(k){
   const bl=pBlocks(k), has=(q,s)=>bl.some(b=>pHasStep(b,q,s));
   const out=dayItems(k).filter(x=>!(x.s?x.s.done:x.q.done)&&!has(x.q.id,x.s?x.s.id:'')).map(x=>({q:x.q.id,sid:x.s?x.s.id:'',t:x.s?x.s.text:x.q.title,sub:x.s?x.q.title:''}));
   const tt=trType(k); if(tt&&tt!=='R'&&!bl.some(b=>b.tr===k)&&!(hm().days[k]||{}).train) out.unshift({tr:k,t:'鍛錬：'+TR_LAB[tt]});
+  bkAll().filter(B=>!B.ret&&!B.fin&&B.pages&&B.start<=k&&k<=B.due&&!bl.some(b=>b.bk===B.id)&&!bkPlan(B,k).met).forEach(B=>out.push({bk:B.id,t:`解読：${B.title||'(無題)'}（p.${bkPlan(B,k).to}まで）`}));
   return out;
 }
 // 空いている時間を探す（今より後、なければ朝から）
@@ -3305,6 +3314,12 @@ function pFree(k,len){ const bl=pBlocks(k).map(b=>({...b,s:b.s-(b.pre||0),e:b.e+
   for(let s=start;s+len<=PATH_H1;s+=SNAP){ if(!bl.some(b=>b.s<s+len&&b.e>s)) return s; }
   for(let s=6*60;s+len<=PATH_H1;s+=SNAP){ if(!bl.some(b=>b.s<s+len&&b.e>s)) return s; }
   return start; }
+// 冒険手帳から選ぶ：まだ終えていない冒険（その日にやる物は上に出ているので除く）。やる日が別の日の物は、その日に回すことになる
+function pPickList(k){ const md=d=>d?`${+d.slice(5,7)}/${+d.slice(8)}`:'', rows=[];
+  ['main','challenge','mini'].forEach(tp=>state.quests.filter(q=>q.type===tp&&!q.done).sort(byDo).forEach(q=>{
+    if(q.steps&&q.steps.length){ const ss=q.steps.filter(x=>!x.done&&!x.qref&&x.doDate!==k); if(ss.length) rows.push(`<div class="pu-g"><div class="pu-gh">${ico(q.type)}<span>${esc(q.title||'(無題)')}</span></div>${ss.map(x=>`<button class="pu-i st" data-act="pathpickput" data-q="${q.id}" data-s="${x.id}"><i class="pu-pin" aria-hidden="true"></i><span>${esc(x.text||'(無題)')}${x.doDate?`<small class="pu-d">いまのやる日 ${md(x.doDate)}</small>`:''}</span></button>`).join('')}</div>`); }
+    else if(q.doDate!==k) rows.push(`<button class="pu-i" data-act="pathpickput" data-q="${q.id}" data-s=""><span class="pu-ic">${ico(q.type)}</span><span style="flex:1">${esc(q.title||'(無題)')}${q.doDate?`<small class="pu-d">いまのやる日 ${md(q.doDate)}</small>`:''}</span></button>`); }));
+  return `<div class="pu-pl">${rows.length?rows.join(''):'<p class="hint">選べる冒険はありません</p>'}</div>`; }
 function pTpl(k){ const wd=new Date(k+'T00:00:00').getDay(); return (wd===0||wd===6||holiday(k))?'we':'wk'; }
 
 function pathList(){
@@ -3312,12 +3327,13 @@ function pathList(){
   const k=dayView, d=new Date(k+'T00:00:00'), isT=k===pJDay(), bl=pBlocks(k), P=plan(), tk=pTpl(k), tpl=(P.tpl[tk]||{}).b||[];
   let h=`<div class="cat-bar"><div class="cat-name">旅程</div></div>`;
   const un=pUnplaced(k), unAt=h.length;
-  if(un.length){ const grp=[]; un.forEach((x,i)=>{ const key=x.sid?x.q:'_'+i; let g=grp.find(z=>z.key===key); if(!g){ g={key,x,items:[]}; grp.push(g); } g.items.push([x,i]); });
+  const pk=pathPick?pPickList(k):'';
+  if(un.length||true){ const grp=[]; un.forEach((x,i)=>{ const key=x.sid?x.q:'_'+i; let g=grp.find(z=>z.key===key); if(!g){ g={key,x,items:[]}; grp.push(g); } g.items.push([x,i]); });
     h+=`<div class="path-un"><div class="pu-h">道しるべのない冒険<small>押すと空いている時間に道しるべを立てる</small></div>${grp.map(g=>{ const q=g.x.q&&findQ(g.x.q);
       if(!g.x.sid) return `<button class="pu-i ${g.x.tr?'tr':''}" data-act="pathput" data-i="${g.items[0][1]}"><i class="pu-pin" aria-hidden="true"></i><span>${esc(g.x.t||'(無題)')}</span></button>`;
       return `<div class="pu-g"><div class="pu-gh">${q?ico(q.type):''}<span>${esc(g.x.sub||'')}</span>${g.items.length>1&&!(puSel&&puSel.q===g.x.q)?`<button class="pu-all" data-act="pathpusel" data-q="${g.x.q}">まとめて立てる</button>`:''}</div>${puSel&&puSel.q===g.x.q
         ?g.items.map(([x,i])=>`<button class="pu-i st pick ${puSel.ids.has(x.sid)?'on':''}" data-act="pathpupick" data-v="${x.sid}"><i class="pu-ck" aria-hidden="true">${puSel.ids.has(x.sid)?'✓':''}</i><span>${esc(x.t||'(無題)')}</span></button>`).join('')+`<div class="pu-selbar"><span class="hint">一緒にやるものを選んで</span><button class="btn small" data-act="pathpusel" data-q="">やめる</button><button class="btn small primary" data-act="pathputg" data-q="${g.x.q}" ${puSel.ids.size?'':'disabled'}>選んだ${puSel.ids.size}つをまとめて立てる</button></div>`
-        :g.items.map(([x,i])=>`<button class="pu-i st" data-act="pathput" data-i="${i}"><i class="pu-pin" aria-hidden="true"></i><span>${esc(x.t||'(無題)')}</span></button>`).join('')}</div>`; }).join('')}</div>`; }
+        :g.items.map(([x,i])=>`<button class="pu-i st" data-act="pathput" data-i="${i}"><i class="pu-pin" aria-hidden="true"></i><span>${esc(x.t||'(無題)')}</span></button>`).join('')}</div>`; }).join('')}${un.length?'':'<p class="hint" style="margin:2px 0 6px">この日の冒険は、みんな道しるべが立っている</p>'}<button class="pu-pick ${pathPick?'on':''}" data-act="pathpick">${pathPick?'閉じる':'＋ 冒険手帳から選んで立てる'}</button>${pk}</div>`; }
   if(!bl.length) h+=`<div class="path-empty">${tpl.length?`<button class="btn" data-act="pathtpl">いつもの旅程（${tk==='we'?'休日':'平日'}）を敷く</button>`:''}<p class="hint">地図を動かして照準を合わせ、A で道しるべを立てられます</p></div>`;
   const unH=h.slice(unAt);
   // 時間の道：1日を地図の上の一本の道にして、予定は道しるべ（ピン）として立てる
@@ -3372,7 +3388,7 @@ function pathList(){
   h+=`<div class="slate z${pZoom} ${pathBoot?'boot':''}">${SL_DEFS}<i class="sl-cn c1">${slCorner(0,0)}</i><i class="sl-cn c2">${slCorner(1,0)}</i><i class="sl-cn c3">${slCorner(0,1)}</i><i class="sl-cn c4">${slCorner(1,1)}</i>
     ${slBand('t')}<div class="sl-top"><button class="sl-tab" data-act="pathday" data-v="-1">${md(-1)} <i>L</i></button><div class="sl-title"><b>${isT?'今日の旅程':'旅程'}</b><small>${d.getMonth()+1}/${d.getDate()}（${'日月火水木金土'[d.getDay()]}）${holiday(k)?' '+holiday(k):''}</small></div><button class="sl-tab" data-act="pathday" data-v="1"><i>R</i> ${md(1)}</button></div>
     <div class="sl-body"><div class="sl-view" id="slView"><div class="tl road" id="tl" style="height:${H}px"><svg class="rd-svg" width="100%" height="${H}" aria-hidden="true">${svg}</svg>${regs}${hrs}${mtags}${cards}${nowM}</div></div><div class="sl-fx" aria-hidden="true"></div>${hud}${pathSheet&&unH?`<div class="sl-sheet">${unH}</div>`:''}<div class="sl-ret" id="slRet" aria-hidden="true"><i class="rt-c"></i><span class="rt-l" id="slRetL"></span></div></div>
-    <div class="sl-bot"><button class="sl-p sl-close" data-act="pathclose"><i>B</i>とじる</button>${un.length?`<button class="sl-p sl-list ${pathSheet?'on':''}" data-act="pathsheet"><i>X</i>道しるべのない冒険<b class="sl-n">${un.length}</b></button>`:''}<span class="sl-zoom"><button data-act="pathzoom" data-v="-1" aria-label="ひろく見る" ${pZoom===0?'disabled':''}>−</button>ズーム<button data-act="pathzoom" data-v="1" aria-label="くわしく見る" ${pZoom===2?'disabled':''}>＋</button></span>${isT?'<button class="sl-p" data-act="pathhere">現在地<i>Y</i></button>':''}<button class="sl-p sl-a" data-act="pathA" id="slA"><span id="slAt">立てる</span><i>A</i></button></div>${slBand('b')}</div>`;
+    <div class="sl-bot"><button class="sl-p sl-close" data-act="pathclose"><i>B</i>とじる</button><button class="sl-p sl-list ${pathSheet?'on':''}" data-act="pathsheet"><i>X</i>${un.length?`道しるべのない冒険<b class="sl-n">${un.length}</b>`:'冒険を選ぶ'}</button><span class="sl-zoom"><button data-act="pathzoom" data-v="-1" aria-label="ひろく見る" ${pZoom===0?'disabled':''}>−</button>ズーム<button data-act="pathzoom" data-v="1" aria-label="くわしく見る" ${pZoom===2?'disabled':''}>＋</button></span>${isT?'<button class="sl-p" data-act="pathhere">現在地<i>Y</i></button>':''}<button class="sl-p sl-a" data-act="pathA" id="slA"><span id="slAt">立てる</span><i>A</i></button></div>${slBand('b')}</div>`;
   pathBoot=false;
   return h;
 }
@@ -4278,7 +4294,8 @@ function pathPanel(){
   <h2 class="p-title">${esc(pTitle(b)||'（名前なし）')}</h2>`;
   if(r) h+=`<div class="p-giver"><span>${ico(r.q.type)} ${esc(r.ss?TYPES[r.q.type].label:(r.sub||TYPES[r.q.type].label))}</span><button class="btn small ghost" data-act="openq" data-id="${r.q.id}">冒険を開く</button></div>`;
   if(r&&r.ss) h+=`<div class="sec-h"><span>この道しるべでやること</span><span class="rc-dots big">${r.ss.map(z=>`<i class="${z.done?'on':''}"></i>`).join('')}</span></div><div class="pb-steps">${r.ss.map(z=>`<div class="pb-st ${z.done?'on':''}"><button class="pb-ck" data-act="pathsstep" data-v="${z.id}">${z.done?'✓':''}</button><span>${esc(z.text)}</span><button class="pb-x" data-act="pathsout" data-v="${z.id}" aria-label="まとめから外す">×</button></div>`).join('')}</div><div class="p-acts"><button class="btn ${dn?'':'primary'}" data-act="pathsall">${dn?'印を外す':'まとめて終えた'}</button></div>`;
-  if(b.tr) h+=`<div class="p-giver"><span>${ico('train')} 鍛錬</span><button class="btn small ghost" data-act="trday" data-v="${b.tr}">鍛錬を開く</button></div>`;
+  if(b.tr) h+=`<div class="p-giver"><span>${ico('train')} 鍛錬</span><button class="btn small ghost" data-act="trday" data-v="${b.tr}">鍛錬を開く</button></div>`+(dn?'':`<div class="p-acts"><button class="btn primary" data-act="pathtrfin">鍛錬を終えた</button></div><p class="hint">重さと回数は「鍛錬を開く」で記録できる。</p>`);
+  if(b.bk){ const B=(state.books||{})[b.bk]; if(B){ const P=bkPlan(B,k); h+=`<div class="p-giver"><span>${ico('book')} 古文書の解読</span><button class="btn small ghost" data-act="bksel" data-v="${b.bk}">古文書を開く</button></div><p class="hint" style="margin-top:8px">${dn?`この日の試練は果たした（p.${P.now}まで）。`:`この日は p.${P.to} まで読み進めよ（${P.quota}ページ）。読んだら古文書の画面で記す。`}</p>`; } }
   h+=`<div class="form" style="margin-top:12px">`;
   if(kd==='free'||kd==='fix') h+=`<div class="f"><label>予定</label><input type="text" id="pbTitle" value="${esc(b.t||'')}" placeholder="例：図書館で仕事、子どもと散歩"></div>`;
   h+=`<div class="f2"><div class="f"><label>はじまり</label><select id="pbS">${opts(b.s,PATH_H0,PATH_H1-SNAP)}</select></div><div class="f"><label>おわり</label><select id="pbE">${opts(b.e,PATH_H0+SNAP,PATH_H1)}</select></div></div>`;
@@ -4287,10 +4304,11 @@ function pathPanel(){
   h+=`<div class="f"><label>支度（前に取っておく時間）</label>${mg('pre',b.pre,[0,10,15,30,60])}</div><div class="f"><label>ゆとり（のびそうな時のために後ろを空けておく）</label>${mg('post',b.post,[0,15,30,60])}</div>`;
   if(b.pre||b.post) h+=`<p class="hint">${b.pre?`支度は ${pfmt(b.s-b.pre)} から。`:''}${b.post?`ゆとりを入れて ${pfmt(b.e+b.post)} まで空けておく。`:''}</p>`;
   h+=`</div>`;
-  if(!r&&!b.tr) h+=`<div class="p-acts"><button class="btn ${dn?'':'primary'}" data-act="pathdone">${dn?'終えた印を外す':'この予定を終えた'}</button></div>`;
-  else if(r&&!r.s&&!r.ss) h+=`<p class="hint">終えたら、冒険の画面で達成を報告しよう。</p>`;
+  if(!r&&!b.tr&&!b.bk) h+=`<div class="p-acts"><button class="btn ${dn?'':'primary'}" data-act="pathdone">${dn?'終えた印を外す':'この予定を終えた'}</button>${(b.t||'').trim()&&!b.fix?'<button class="btn ghost" data-act="pathmini">ミニチャレンジにする</button>':''}</div>`;
+  else if(r&&!r.s&&!r.ss) h+=`<div class="p-acts"><button class="btn ${dn?'ghost':'primary'}" data-act="pathclear">${dn?'達成を取り消す':r.q.type==='mini'?'クリアした':'達成を報告する'}</button></div>`;
   else if(r&&r.s) h+=`<div class="p-acts"><button class="btn ${dn?'':'primary'}" data-act="pathstep">${dn?'終えた印を外す':'これを終えた'}</button></div>`;
   if(r&&(r.s||r.ss)){ const ad=pUnplaced(k).filter(x=>x.q===r.q.id&&x.sid); if(ad.length) h+=`<div class="sec-h"><span>同じチャレンジから足す</span></div><div class="pb-steps">${ad.map(x=>`<button class="pb-add" data-act="pathsadd" data-v="${x.sid}">＋ ${esc(x.t)}</button>`).join('')}</div>`; }
+  if(!b.tr&&!b.fix&&!dn){ const tm=ymd(new Date(new Date(k+'T12:00:00').getTime()+DAY)); h+=`<div class="sec-h"><span>別の日に回す</span></div><div class="p-acts"><input type="date" id="pbMove" value="${tm}" min="${ymd()}" style="width:150px"><button class="btn small" data-act="pathmove">この日に回す</button></div><p class="hint">${r?'冒険手帳のやる日もその日になる（時刻はそのまま）。':'同じ時刻で、その日の道に立て直す。'}</p>`; }
   h+=`<div class="sec-h"><span>遅れたとき</span></div><p class="hint">この予定から後ろを、まとめてずらす（毎日のことは動かさない）</p>
   <div class="p-acts">${[15,30,60].map(n=>`<button class="btn small" data-act="pathshift" data-v="${n}">＋${n<60?n+'分':'1時間'}</button>`).join('')}${[-15].map(n=>`<button class="btn small ghost" data-act="pathshift" data-v="${n}">−15分</button>`).join('')}</div>
   <div class="p-acts" style="margin-top:22px"><button class="btn small ghost danger" data-act="pathdel">この予定を道から外す</button></div></div>`;
@@ -4312,8 +4330,8 @@ function pathAct(a,b){
     case 'pathsall': { const x=pBlocks(k).find(y=>y.id===pathSel), r=x&&pRef(x); if(r&&r.ss){ const all=r.ss.every(z=>z.done); r.ss.filter(z=>all||!z.done).forEach(z=>toggleStep(r.q.id,z.id)); } render(); return true; }
     case 'pathsout': { const x=pBlocks(k).find(y=>y.id===pathSel); if(x&&x.sids){ const n=x.sids.filter(v=>v!==b.dataset.v); pSet(k,x.id,n.length===1?{sids:null,sid:n[0]}:{sids:n}); } render(); return true; }
     case 'pathsadd': { const x=pBlocks(k).find(y=>y.id===pathSel); if(x){ const cur=x.sids||(x.sid?[x.sid]:[]); pSet(k,x.id,{sids:[...cur,b.dataset.v],sid:''}); } render(); return true; }
-    case 'pathput': { pathSheet=false; const x=pUnplaced(k)[+b.dataset.i]; if(!x) return true; const len=x.tr?30:60, s=pFree(k,len), id=uid();
-      pSet(k,id,{s,e:Math.min(PATH_H1,s+len),...(x.tr?{tr:x.tr}:{q:x.q,sid:x.sid})}); pathSel=id; pathScrolled=null; render(); return true; }
+    case 'pathput': { pathSheet=false; const x=pUnplaced(k)[+b.dataset.i]; if(!x) return true; const xo=x.q&&findQ(x.q), xs=xo&&x.sid?(xo.steps||[]).find(z=>z.id===x.sid):xo, len=x.tr?30:x.bk?45:((xs&&xs.doDur)||60), s=pFree(k,len), id=uid();
+      pSet(k,id,{s,e:Math.min(PATH_H1,s+len),...(x.tr?{tr:x.tr}:x.bk?{bk:x.bk,d0:k}:{q:x.q,sid:x.sid})}); pathSel=id; pathScrolled=null; render(); return true; }
     case 'pathtpl': { const tpl=(plan().tpl[pTpl(k)]||{}).b||[]; const P=plan(), day={...(P.d[k]||{})}, now=Date.now(); tpl.forEach(t=>{ day[uid()]={s:t.s,e:t.e,t:t.t,fix:1,...(t.wake?{wake:1}:{}),u:now}; }); P.d={...P.d,[k]:day}; save(); pathScrolled=null; render(); toast('いつもの旅程を敷いた'); return true; }
     case 'pathsave': { const bl=pBlocks(k).filter(x=>!x.q&&!x.tr&&x.fix).map(x=>({s:x.s,e:x.e,t:x.t||'',...(x.wake?{wake:1}:{})})); plan().tpl={...plan().tpl,[b.dataset.v]:{b:bl,u:Date.now()}}; save(); renderDetail(); toast(`${b.dataset.v==='we'?'休日':'平日'}の型にした（${bl.length}件）`); return true; }
     case 'pathdone': { const x=pBlocks(k).find(y=>y.id===pathSel); if(x){ pSet(k,x.id,{done:!x.done}); if(!x.done) gain(5); render(); } return true; }
@@ -4325,6 +4343,17 @@ function pathAct(a,b){
     case 'pathmorning': { tab='list'; listCat='path'; dayView=ymd(); pathSel=null; pathScrolled=null; const tpl=(plan().tpl[pTpl(dayView)]||{}).b||[]; if(!pBlocks(dayView).length&&tpl.length){ const P=plan(), day={...(P.d[dayView]||{})}, now=Date.now(); tpl.forEach(t=>{ day[uid()]={s:t.s,e:t.e,t:t.t,fix:1,...(t.wake?{wake:1}:{}),u:now}; }); P.d={...P.d,[dayView]:day}; save(); } render(); return true; }
     case 'pathmg': { const x=pBlocks(k).find(y=>y.id===pathSel); if(x){ pSet(k,x.id,{[b.dataset.f]:+b.dataset.v}); render(); } return true; }
     case 'pathsheet': pathSheet=!pathSheet; renderList(); return true;
+    case 'pathpick': pathPick=!pathPick; if(pathPick) pathSheet=true; renderList(); return true;
+    case 'pathpickput': { const q=findQ(b.dataset.q); if(!q) return true; const o=b.dataset.s?(q.steps||[]).find(z=>z.id===b.dataset.s):q; if(!o) return true;
+      const len=o.doDur||60, s=pFree(k,len), id=uid(); if(o.doDate!==k) o.carry=0; o.doDate=k; q.u=Date.now();
+      pathPick=false; pathSheet=false; pSet(k,id,{s,e:Math.min(PATH_H1,s+len),q:q.id,sid:b.dataset.s||''}); pathSel=id; pathScrolled=null; pathFocus=s; render(); toast(`${pfmt(s)}に道しるべを立てた`); return true; }
+    case 'pathmini': { const x=pBlocks(k).find(y=>y.id===pathSel); if(!x||!(x.t||'').trim()) return true; const q={id:uid(),title:x.t.trim(),type:'mini',parentId:null,rank:0,deadline:'',reward:'',memo:'',steps:[],accepted:false,done:!!x.done,doneAt:x.done?Date.now():null,created:Date.now(),doDate:k,doTime:x.s<1440?pHM(x.s):'',doDur:x.e-x.s};
+      state.quests.push(q); pSet(k,x.id,{q:q.id,sid:'',t:'',fix:0}); render(); toast('ミニチャレンジにした（冒険手帳にも並ぶ）'); return true; }
+    case 'pathclear': { const x=pBlocks(k).find(y=>y.id===pathSel), r=x&&pRef(x); if(r&&!r.s&&!r.ss){ if(r.q.done){ reopen(r.q); } else completeQuest(r.q); } render(); return true; }
+    case 'pathtrfin': { const x=pBlocks(k).find(y=>y.id===pathSel); if(x&&x.tr){ const H=hm(), was=!!(H.days[x.tr]||{}).train; if(!was){ trPin(x.tr); const vb=trVessels(); H.days[x.tr]={...(H.days[x.tr]||{}),train:true}; hmTouch('days',x.tr); gain(30); earnRupee(20); toast('鍛錬クリア  +30 XP ・ +20ルピー'); maybeSeed(); const pp=TR_PART[trType(x.tr)]; if(pp) setTimeout(()=>toast(`克服の証（${PART_NAME[pp]}）を手に入れた`),1300); trVesselBanner(vb); save(); } } render(); return true; }
+    case 'pathmove': { const x=pBlocks(k).find(y=>y.id===pathSel), to=($('pbMove')||{}).value; if(!x||!to||to===k) return true; const r=pRef(x), {id:_i,...rest}=x;
+      pDel(k,x.id); const nid=uid(); if(r) (r.ss?r.ss:[r.s||r.q]).forEach(o=>{ o.doDate=to; o.carry=0; }); if(r) r.q.u=Date.now();
+      pSet(to,nid,{...rest,del:0,done:x.q||x.tr||x.bk?undefined:0,...(x.bk?{d0:to}:{})}); pathSel=null; render(); toast(`${+to.slice(5,7)}/${+to.slice(8)} に回した`); return true; }
     case 'pathclose': pDropEmpty(); pathSel=null; pathSheet=false; listCat='today'; dayView=ymd(); render(); return true;
     case 'pathzoom': pZoomBy(+b.dataset.v); return true;
     case 'pathhere': { const sv=$('slView'); if(sv) sv.scrollTo({top:pm2y(pJNow()),behavior:'smooth'}); return true; }
@@ -4390,7 +4419,7 @@ function pathInput(e){
 let qSigs=null, qFS={};
 // 項目ごとの変更時刻：チャレンジの名前・完了・やる日…と、工程の1つ1つの項目ごとに「いつ変えたか」を覚えておく。
 // 2台で同じチャレンジの別の所をさわっても、新しい方で丸ごと上書きせずに、さわった項目だけを合わせる
-const qGrp=k=>k==='done'||k==='doneAt'?'d':(k==='doDate'||k==='doTime'||k==='carry')?'t':k==='text'||k==='title'?'x':'o';
+const qGrp=k=>k==='done'||k==='doneAt'?'d':(k==='doDate'||k==='doTime'||k==='carry'||k==='doDur')?'t':k==='text'||k==='title'?'x':'o';
 function qFields(q){ const m={}, add=(key,v)=>{ m[key]=(m[key]||'')+JSON.stringify(v)+'|'; };
   Object.keys(q).sort().forEach(k=>{ if(k==='u'||k==='_f'||k==='steps') return; add(qGrp(k),[k,q[k]]); });
   (q.steps||[]).forEach(st=>{ m['s:'+st.id]='1'; Object.keys(st).sort().forEach(fk=>{ if(fk!=='id') add('s:'+st.id+':'+qGrp(fk),[fk,st[fk]]); }); }); m.so=(q.steps||[]).map(x=>x.id).join(','); return m; }
