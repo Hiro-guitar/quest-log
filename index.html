@@ -3469,7 +3469,7 @@ function pTongues(o){ if(o.tg) return o.tg; pTgBuild=true; const r=pRng('tg'+o.c
 function pTongueE(x,v,o){ let best=1e9; for(const T of pTongues(o)){ if(x<T.a0||x>T.a1||v<T.b0||v>T.b1) continue; for(const [px,pv,w] of T.P){ const d=Math.hypot(x-px,v-pv)/w-1; if(d<best) best=d; } }
   if(best>2) return best; const R=o.R; return best+.38*(pNoise(x/(.18*R)+o.ph+4,v/(.18*R))-.5)*2+.15*(pNoise(x/(.07*R)+2,v/(.07*R)+o.ph)-.5)*2; } // ふちは丸いこぶが連なる
 // 舌の色：ほとんど紅。太い所のまん中だけ橙がまだらにのぞく
-function pTgCol(x,v,o,te){ const R=o.R; if(pNoise(x/2.2+o.ph,v/2.2+9)>.94) return P_LV_D; return te<-.55&&pNoise(x/(.06*R)+5,v/(.06*R)+o.ph)>.66?P_LV_O:P_LV_R; }
+function pTgCol(x,v,o,te){ const R=o.R; if(pNoise(x/2.2+o.ph,v/2.2+9)>.94) return P_LV_D; return te<-.6&&pNoise(x/(.1*R)+5,v/(.1*R)+o.ph)>.68?P_LV_O:P_LV_R; }
 // 舌が流れている所は谷：舌のまわりの地面を削る（底は舌の幅で平ら、両岸はなだらかに上がる。全体の幅は舌の約4倍）。
 // 返り値 [彫る量(0〜1), 舌からの近さ dn(=距離/幅)]
 function pTgCarve(x,v){ if(pTgBuild||!P_VOLC||!P_DM) return null; const o=pVolcAt(v); if(!o) return null; const TT=pTongues(o); if(!TT.length) return null;
@@ -3743,7 +3743,7 @@ function pTerAsk(k,H,first){
   if(!pTerBusy){ pTerBusy=true; setTimeout(pTerStep,0); }
 }
 // 一度描いた地形の絵は端末に取っておく（次に開いたときは描かずにすぐ出す）。描き方を変えたら版を上げて作り直す
-const P_TER_V="t127|", P_TER_MAX=36;
+const P_TER_V="t128|", P_TER_MAX=36;
 const pIDB=(()=>{ let dbp=null; const open=()=>dbp||(dbp=new Promise((res,rej)=>{ try{ const r=indexedDB.open('ql-ter',1); r.onupgradeneeded=()=>r.result.createObjectStore('img'); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }catch(e){ rej(e); } }));
   const st=m=>open().then(db=>db.transaction('img',m).objectStore('img'));
   const keys=()=>{ try{ return JSON.parse(localStorage.getItem('ql-ter-keys')||'[]'); }catch(e){ return []; } }, setKeys=a=>{ try{ localStorage.setItem('ql-ter-keys',JSON.stringify(a)); }catch(e){} };
