@@ -3519,7 +3519,11 @@ function pVolcH(x0,v0,o){ const W1=26, W2=8, x=x0+W1*(pNoise(x0/62+o.ph,v0/62+1.
   h+=(.001+.003*s)*(pNoise(x/26+o.ph,v/26)-.5)*2;
   // 寄生火山（丸い小山）
   if(false) for(const [px,pv,pr] of pParas(o)){ const dd=Math.hypot(x-px,v-pv); if(dd<pr*2){ const k=Math.max(0,1-dd/(pr*2)); h+=.035*k*k*(3-2*k); } }
-  if(P_DM) return h;
+  // 火口のまわりの溶岩の輪は、くぼんだ堀の中にたまっている：真ん中の岩の頂と、外側の盛り上がったふちの間を低くする
+  if(P_DM){ const ex=x0-o.x, ev=v0-o.v, ea=Math.atan2(ev,ex), dc=Math.hypot(ex,ev)/pCraterR(o,ea), rw=pRingW(o,x0,v0,ea);
+    const mid=1+rw*.5, hw=rw*.5+.12, t=Math.abs(dc-mid)/hw; if(t<1) h-=.07*(1-t*t)*(1-t*t);
+    const rc=1+rw+.18, t2=Math.abs(dc-rc)/.22; if(t2<1) h+=.03*(1-t2*t2)*(1-t2*t2);
+    return h; }
   // 山頂：古い大きな火口のふち（馬てい形で一方が切れる）、その内側の平らな底、中央の円すいと小さな火口
   const d=D/(o.R*(1+.06*(pNoise(ca*2+o.ph,sa*2)-.5)*2));
   let gap=a-pGapA(o); gap=Math.atan2(Math.sin(gap),Math.cos(gap)); const open=pSm(.5,.9,Math.abs(gap)); // 1=ふちがある 0=切れ目
@@ -3673,7 +3677,7 @@ function pTerAsk(k,H,first){
   if(!pTerBusy){ pTerBusy=true; setTimeout(pTerStep,0); }
 }
 // 一度描いた地形の絵は端末に取っておく（次に開いたときは描かずにすぐ出す）。描き方を変えたら版を上げて作り直す
-const P_TER_V="t93|", P_TER_MAX=36;
+const P_TER_V="t94|", P_TER_MAX=36;
 const pIDB=(()=>{ let dbp=null; const open=()=>dbp||(dbp=new Promise((res,rej)=>{ try{ const r=indexedDB.open('ql-ter',1); r.onupgradeneeded=()=>r.result.createObjectStore('img'); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }catch(e){ rej(e); } }));
   const st=m=>open().then(db=>db.transaction('img',m).objectStore('img'));
   const keys=()=>{ try{ return JSON.parse(localStorage.getItem('ql-ter-keys')||'[]'); }catch(e){ return []; } }, setKeys=a=>{ try{ localStorage.setItem('ql-ter-keys',JSON.stringify(a)); }catch(e){} };
