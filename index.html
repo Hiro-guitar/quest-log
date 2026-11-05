@@ -3322,6 +3322,7 @@ function pHgtC(x,y,road){ pLastCarve=0; pLastEdge=99; const v=y/PX+pOff, u=x*1.0
       if(D<56*wi){ h=.36+.03*(1-D/56); if(D>16&&D<27&&pNoise(Math.cos(a)*1.8+ca[2],Math.sin(a)*1.8+2)<.48) h=P_SEA-.02; } // 島と内堀
       else if(D<104*wm) h=Math.min(h,P_SEA-.04-.03*Math.min(1,(D-56)/20)); else if(D<118*wm) h=Math.max(h,P_SEA+.03); } }
   { const cv=pTgCarve(x,v); if(cv){ h=Math.max(h,P_SEA+.1*pSm(3.2,2,cv[1])); if(road){ h-=cv[3]; pLastCarve+=cv[3]; } } } // 溶岩の舌の谷（まわりに湖を作らない）
+  { const lw=pSnowLow(x,v); if(lw>0&&h>P_SEA+.02) h+=(.36-h)*.45*lw; } // 雪山のまわりの低地（ツンドラ）は平ら
   // 道のまわりは陸地にする（道が水に沈まないように）
   const dd=road?Math.abs(x-pRX(y)):1e9; if(dd<80){ const t=1-dd/80, m=P_SEA+.07*t*t*(3-2*t); if(h<m) h=m+(h-m)*.15*(1-t); }
   return Math.max(0,Math.min(1,h)); }
@@ -3338,7 +3339,7 @@ function pVolc(c){ const key=c+'|'+(pW|0); if(pVcMemo.has(key)) return pVcMemo.g
   pVcMemo.set(key,o); return o; }
 // 雪山（ブレワイのヘブラ山地から）：いくつもの頂をもつ大きな山のかたまり。高い所ほど白っぽいクリーム色、
 // 等高線がびっしり、尾根と深い谷が入り組む。中腹には黒っぽい点（針葉樹・岩）が散る。たまに（約3日に1度）、道の片側に
-const P_SNOW=false, P_SNOWG=true, P_SC=2900, pSnMemo=new Map();
+const P_SNOW=false, P_SNOWG=true, pSnowLow=(x,v)=>{ if(!P_SNOW) return 0; const o=pSnowAt(v); if(!o) return 0; const D=pSnowD(x,v,o); return pSm(.95,1.08,D)*pSm(1.75,1.3,D); }, P_SC=2900, pSnMemo=new Map();
 function pSnow(c){ const key=c+'|'+(pW|0); if(pSnMemo.has(key)) return pSnMemo.get(key); const r=pRng('sn'+c,7); let o=null;
   if(P_SNOW&&r()<.42){ const v=c*P_SC+600+r()*(P_SC-1200); let near=false; for(let k=Math.floor(v/P_VC)-1;k<=Math.floor(v/P_VC)+1;k++){ const vo=pVolc(k); if(vo&&Math.abs(vo.v-v)<1300) near=true; }
     if(!near){ const W=pW||380, q=v, rx=Math.max(30,Math.min(W-30,W/2+(W/2-34)*(.62*Math.sin(q/(150*1.05)+4.1)+.28*Math.sin(q/61+1.3)+.1*Math.sin(q/27+2.2)))), x=(rx<W/2?W*.66:W*.34)+(r()-.5)*30, RV=150+r()*50, P=[];
@@ -3356,23 +3357,25 @@ function pSnowBase(x,v,o,D){ const RV=o.RV, n=pNoise(x/(.5*RV)+o.ph,v/(.5*RV)+4)
   return h; }
 // 氷河谷（ブレワイのヘブラの谷）：頭は丸い窪地、幅は膨らんだり狭まったり、断面はU字、支谷がY字に合流、麓で開いて1本は湖に
 function pGlaciers(o,r){ const RV=o.RV, G=[], ng=2+Math.floor(r()*2), a0=r()*6.28;
-  const path=(x,v,th,len,wk,dk,trib,ph)=>{ const Q=[], th0=th; for(let i=0;i<len;i++){ const D=pSnowD(x,v,o); if(D>1.12) break;
+  const path=(x,v,th,len,wk,dk,trib,ph,mxD)=>{ const Q=[], th0=th; for(let i=0;i<len;i++){ const D=pSnowD(x,v,o); if(D>(mxD||1.12)) break;
       const e=.02*RV, gx=pSnowBase(x+e,v,o,pSnowD(x+e,v,o))-pSnowBase(x-e,v,o,pSnowD(x-e,v,o)), gv=pSnowBase(x,v+e,o,pSnowD(x,v+e,o))-pSnowBase(x,v-e,o,pSnowD(x,v-e,o)), gl=Math.hypot(gx,gv)||1e-9;
       let t2=th+.08*(pNoise(i/10+ph,ph)-.5)*2; t2=Math.max(th0-.5,Math.min(th0+.5,t2)); th=t2;
       let dx=Math.cos(th)*.6, dv=Math.sin(th)*.6; if(!trib){ dx-=gx/gl*.4; dv-=gv/gl*.4; } const dl=Math.hypot(dx,dv)||1; x+=dx/dl*.025*RV; v+=dv/dl*.025*RV;
       const t=i/len; let w=.12*RV*wk*(.7+.6*pNoise(i/8+ph+3,ph)); if(!trib){ if(t<.15) w*=1+.4*(1-t/.15); if(t>.8) w*=1+.5*(t-.8)/.2; }
       Q.push([x,v,w,i]); }
     return Q; };
-  for(let k=0;k<ng;k++){ const a=a0+k/ng*6.2832+(r()-.5)*.5, sD=(.3+.2*r())*RV, ph=r()*30; const Q=path(o.x+Math.cos(a)*sD,o.v+Math.sin(a)*sD,a,46,1,1,false,ph); if(Q.length<10) continue;
-    const dep=.16+.06*r(); G.push({Q,dep,trib:false,lake:true});
+  const sgn=o.x>(pW||380)/2?1:-1, aOut=(r()<.5?-1:1)*Math.PI/2+sgn*(r()<.5?-1:1)*0+(sgn>0?-1:1)*0+(r()-.5)*.6; // 入り江は上か下へ（画面の中に収まるように）
+  for(let k=0;k<ng;k++){ const inl=k===0, a=inl?aOut+Math.PI:aOut+Math.PI+k/ng*6.2832+(r()-.5)*.5, sD=(.3+.2*r())*RV, ph=r()*30, a2=inl?aOut:a, Q=path(o.x-Math.cos(aOut)*(inl?.1*RV:0)+(inl?0:Math.cos(a)*sD),o.v-Math.sin(aOut)*(inl?.1*RV:0)+(inl?0:Math.sin(a)*sD),a2,inl?60:46,inl?1.25:1,1,false,ph,inl?1.3:1.12); if(Q.length<10) continue;
+    const dep=.16+.06*r(); G.push({Q,dep,trib:false,lake:true,inl});
     const nt=1+Math.floor(r()*2); for(let q=0;q<nt;q++){ const ji=Math.floor(Q.length*(.3+.2*r())), [jx,jv]=Q[ji], [px2,pv2]=Q[Math.max(0,ji-1)], dth=Math.atan2(jv-pv2,jx-px2), sg=r()<.5?-1:1, ang=dth+Math.PI+sg*(.6+.45*r());
       const T=path(jx,jv,ang,Math.floor(Q.length*.3),.6,.7,true,r()*30); if(T.length>3) G.push({Q:T,dep:dep*.7,trib:true,lake:false}); } }
   for(const g of G){ let a0b=1e9,a1b=-1e9,b0b=1e9,b1b=-1e9; for(const [qx,qv,w] of g.Q){ a0b=Math.min(a0b,qx-w*1.6); a1b=Math.max(a1b,qx+w*1.6); b0b=Math.min(b0b,qv-w*1.6); b1b=Math.max(b1b,qv+w*1.6); } g.bb=[a0b,a1b,b0b,b1b];
-    if(g.lake){ // 湖：谷底が低い下流の部分
+    if(g.inl){ const W2=pW||380; g.L=g.Q.map(([qx,qv])=>{ const D=pSnowD(qx,qv,o); return D>.72&&D<1.05&&qx>12&&qx<W2-12; }); if(g.L.filter(Boolean).length<4) g.L=null; } // 入り江の口の湖
+    else if(g.lake){ // 湖：谷底が低い下流の部分
       const F=g.Q.map(([qx,qv],i)=>{ const t=i/g.Q.length; return pSnowBase(qx,qv,o,pSnowD(qx,qv,o))-g.dep*pSm(0,.15,t)*(1-.5*pSm(.8,1,t)); }); let mi=1e9; F.forEach((f,i)=>{ if(i>g.Q.length*.35&&f<mi) mi=f; });
       let th=mi+.045; for(let it=0;it<10;it++){ const n=F.filter((f,i)=>i>g.Q.length*.35&&f<th).length; if(n>=g.Q.length*.3) break; th+=.01; } const W2=pW||380; g.L=F.map((f,i)=>i>g.Q.length*.35&&f<th&&g.Q[i][0]>25&&g.Q[i][0]<W2-25); if(g.L.filter(Boolean).length<4) g.L=null; } }
   // 湖は1本だけ：道からいちばん離れた谷に（道のそばは陸にされるため）
-  let best=null, bd=-1; for(const g of G) if(g.L){ let sd=0,n=0; g.Q.forEach(([qx,qv],i)=>{ if(g.L[i]){ sd+=Math.abs(qx-pRX((qv-pOff)*PX)); n++; } }); const m=n?sd/n:0; if(m>bd){ bd=m; best=g; } }
+  let best=null, bd=-1; for(const g of G) if(g.L){ if(g.inl){ let sd=0,n=0; g.Q.forEach(([qx,qv],i)=>{ if(g.L[i]){ sd+=Math.abs(qx-pRX((qv-pOff)*PX)); n++; } }); if(n&&sd/n>95){ best=g; bd=sd/n; break; } } let sd=0,n=0; g.Q.forEach(([qx,qv],i)=>{ if(g.L[i]){ sd+=Math.abs(qx-pRX((qv-pOff)*PX)); n++; } }); const m=n?sd/n:0; if(m>bd){ bd=m; best=g; } }
   for(const g of G) if(g!==best||bd<95) g.L=null;
   return G; }
 let pSnowCarve=0;
@@ -3382,7 +3385,7 @@ function pSnowH(x0,v0,o){ const x=x0+20*(pNoise(x0/70+o.ph,v0/70)-.5)*2, v=v0+20
   // 氷河谷：先に谷の中かどうかを調べる（谷の中はこぶを弱く）
   const VS=[]; let bm=1;
   if(P_SNOWG) for(const g of o.G){ if(x0<g.bb[0]||x0>g.bb[1]||v0<g.bb[2]||v0>g.bb[3]) continue; let best=1e9, bi=0; const Q=g.Q; for(let i=0;i<Q.length;i++){ const d=Math.hypot(x0-Q[i][0],v0-Q[i][1])/Q[i][2]; if(d<best){ best=d; bi=i; } }
-    if(best>1.6) continue; const w=Q[bi][2], t=bi/Q.length, dd=best+.25*(pNoise(x0/(.08*RV)+o.ph,v0/(.08*RV)+bi*.01)-.5)*2, dk=g.trib?pSm(1,.6,t):pSm(0,.15,t)*(1-.5*pSm(.8,1,t));
+    if(best>1.6) continue; const w=Q[bi][2], t=bi/Q.length, dd=best+.25*(pNoise(x0/(.08*RV)+o.ph,v0/(.08*RV)+bi*.01)-.5)*2, dk=g.trib?pSm(1,.6,t):pSm(0,.15,t)*(g.inl?1:1-.5*pSm(.8,1,t));
     VS.push([g,bi,dd,dk]); if(dk>.3) bm=Math.min(bm,dd<.5?.1:dd<1.3?.15+.75*pSm(1.1,1.3,dd):1); if(dk>.35) pSnowEdge=Math.min(pSnowEdge,Math.abs(best-1.15)*w); }
   let h=pSnowBase(x,v,o,D);
   // こぶ：場所によって強弱（台地の上は控えめ、谷の中はさらに弱く）
@@ -3732,8 +3735,8 @@ function* pRiversGen(H){ const key=PX+'|'+pW+'|'+pOff+'|'+H; if(pRivCache[key]) 
   const ks=Object.keys(pRivCache); if(ks.length>12) delete pRivCache[ks[0]]; return pRivCache[key]=out; }
 function* pTerGen(H){
   const G=3, Y0=-900, gw=Math.ceil(pW/G)+2, gh=Math.ceil((H+1800)/G)+2, g=new Float32Array(gw*gh);
-  const cg=new Float32Array(gw*gh), eg=new Float32Array(gw*gh), bV=new Float32Array(gw*gh), bD=new Float32Array(gw*gh), bW=new Float32Array(gw*gh), bS=new Float32Array(gw*gh), bN=new Float32Array(gw*gh), vt=new Float32Array(gw*gh);
-  for(let j=0;j<gh;j++){ for(let i=0;i<gw;i++){ const o=j*gw+i, x=i*G, y=Y0+j*G; g[o]=pHgt(x,y); cg[o]=pLastCarve; eg[o]=pLastEdge; const b=pBiome(x,y); bV[o]=b[0]; bD[o]=b[1]; bW[o]=b[2]; bN[o]=b[3]; vt[o]=0; bS[o]=pNoise(x*1.05/11+5.5,(y/PX+pOff)/11+2.2); } if(j%24===0) yield; }
+  const bLo=new Float32Array(gw*gh), cg=new Float32Array(gw*gh), eg=new Float32Array(gw*gh), bV=new Float32Array(gw*gh), bD=new Float32Array(gw*gh), bW=new Float32Array(gw*gh), bS=new Float32Array(gw*gh), bN=new Float32Array(gw*gh), vt=new Float32Array(gw*gh);
+  for(let j=0;j<gh;j++){ for(let i=0;i<gw;i++){ const o=j*gw+i, x=i*G, y=Y0+j*G; g[o]=pHgt(x,y); cg[o]=pLastCarve; eg[o]=pLastEdge; bLo[o]=pSnowLow(x,y/PX+pOff); const b=pBiome(x,y); bV[o]=b[0]; bD[o]=b[1]; bW[o]=b[2]; bN[o]=b[3]; vt[o]=0; bS[o]=pNoise(x*1.05/11+5.5,(y/PX+pOff)/11+2.2); } if(j%24===0) yield; }
   // 川を水として彫る：真ん中は深く、岸に近いほど浅い（湖と同じ色・同じ岸の描き方になる）
   const rit=pRiversGen(H); let rres; while(!(rres=rit.next()).done) yield; const RV=rres.value;
   pLavaB=new Map(); RV.forEach(R=>{ if(!R.lava) return; R.P.forEach(([x,y],k)=>{ const rr=R.ws[k]/2; for(let a=Math.floor((x-rr-60)/16);a<=Math.floor((x+rr+60)/16);a++) for(let b=Math.floor((y-rr-60)/16);b<=Math.floor((y+rr+60)/16);b++){ const key=a+','+b; let L=pLavaB.get(key); if(!L) pLavaB.set(key,L=[]); L.push([x,y,rr]); } }); });
@@ -3782,7 +3785,8 @@ function* pTerGen(H){
       if(wn>.01){ const k=P_BIOMES?wn:wn*.45*pSnowWhite(i/R,(Y0+j/R)/PX+pOff), tt=Math.pow(Math.max(0,t0),.7), sc=P_BIOMES?[186+60*tt,176+68*tt,146+92*tt]:[230,222,196]; c=[c[0]+(sc[0]-c[0])*k,c[1]+(sc[1]-c[1])*k,c[2]+(sc[2]-c[2])*k]; } // 雪山：高い所だけ白っぽいクリーム色
       if(wd>.01){ const dc=[112,92,50]; c=[c[0]+(dc[0]-c[0])*wd*.8,c[1]+(dc[1]-c[1])*wd*.8,c[2]+(dc[2]-c[2])*wd*.8]; }
       const sh=((hl+cs[o-(i>0?1:0)]-hr-cs[o+(i<cw-1?1:0)])+(hu+cs[o-(j>0?cw:0)]-hd-cs[o+(j<ch-1?cw:0)]))*SH*3*(1-.75*wn); const m=Math.max(.72+.18*Math.min(1,wn*2),Math.min(1.22,1+sh)); c=[c[0]*m,c[1]*m,c[2]*m];
-      const CLe=CL*(1+.6*wv+(P_BIOMES?.8:1.4)*wn-.75*wd), b0=Math.floor(t*CLe), b1=Math.floor(((hr-P_SEA)/(1-P_SEA))*CLe), b2=Math.floor(((hd-P_SEA)/(1-P_SEA))*CLe);
+      const lwo=P_SNOW?L(bLo):0; if(lwo>.01){ const k6=1-.15*lwo; c=[c[0]*k6,c[1]*k6,c[2]*k6]; }
+      const CLe=CL*(1+.6*wv+(P_BIOMES?.8:1.4)*wn-.75*wd)*(1-.4*lwo), b0=Math.floor(t*CLe), b1=Math.floor(((hr-P_SEA)/(1-P_SEA))*CLe), b2=Math.floor(((hd-P_SEA)/(1-P_SEA))*CLe);
       const gg=(Math.abs(g[oo+1]-g[oo])+Math.abs(g[oo+gw]-g[oo])+Math.abs(g[oo+gw+1]-g[oo+1])+Math.abs(g[oo+gw+1]-g[oo+gw]))/(2*G*R)*CLe/(1-P_SEA), kq=gg<.5?1:gg<.9?2:gg<1.3?3:4;
       if(wn>.3&&kq>1){ const cr=(a2,b2)=>a2!==b2&&Math.max(a2,b2)%kq===0; if(cr(b0,b1)||cr(b0,b2)){ const k2=.5; c=[c[0]*k2,c[1]*k2,c[2]*k2]; } } // 雪山の崖：詰まった等高線は段ごとに間引き、残す線は濃く（線がとぎれない） // 雪山の崖：詰まった線は何本かに1本だけ濃く（1本の崖線に）
       else if(b0!==b1||b0!==b2){ const k2=b0%5===0?.6:.8; c=[c[0]*k2,c[1]*k2,c[2]*k2]; }
