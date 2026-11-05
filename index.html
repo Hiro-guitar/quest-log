@@ -3461,15 +3461,17 @@ function pLavaSim(o){ const key=(pW|0)+"|"+pOff; o.sims=o.sims||{}; if(o.sims[ke
     else if(D>o.R*2.1){ const isl=pNoise(x/17+o.ph,v/17+7.7)*.75+pNoise(x/7+3,v/7+o.ph)*.25; if(isl>.66) blk[k]=2; } }
   // 細かいでこぼこではなく、大きな地形（尾根と谷）にそって流れるよう、高さをならしておく
   for(let it=0;it<3;it++){ const t=new Float32Array(g); for(let j=1;j<nv-1;j++) for(let i=1;i<nx-1;i++){ const k=j*nx+i; let a=0; for(let dj=-1;dj<=1;dj++) for(let di=-1;di<=1;di++) a+=t[k+dj*nx+di]; g[k]=a/9; } }
+  // 坂の急さ（その場所の最大の下り勾配）：急な所ほど溶岩は横へ広がれず、まっすぐ下る
+  const sl=new Float32Array(N); let sref=0; for(let j=1;j<nv-1;j++) for(let i=1;i<nx-1;i++){ const k=j*nx+i, gx=(g[k+1]-g[k-1])/2, gv=(g[k+nx]-g[k-nx])/2; sl[k]=Math.hypot(gx,gv); sref+=sl[k]; } sref/=N;
   // 小さい順に取り出すヒープ
   const hk=[], hc=[]; const push=(k,c)=>{ hk.push(k); hc.push(c); let i=hk.length-1; while(i>0){ const p=(i-1)>>1; if(hc[p]<=hc[i]) break; [hk[p],hk[i]]=[hk[i],hk[p]]; [hc[p],hc[i]]=[hc[i],hc[p]]; i=p; } };
   const pop=()=>{ const k=hk[0], c=hc[0], lk=hk.pop(), lc=hc.pop(); if(hk.length){ hk[0]=lk; hc[0]=lc; let i=0; for(;;){ const l=2*i+1, r=l+1; let m=i; if(l<hk.length&&hc[l]<hc[m]) m=l; if(r<hk.length&&hc[r]<hc[m]) m=r; if(m===i) break; [hk[m],hk[i]]=[hk[i],hk[m]]; [hc[m],hc[i]]=[hc[i],hc[m]]; i=m; } } return [k,c]; };
   src.forEach(k=>{ cost[k]=0; push(k,0); });
-  const r=pRng('ls'+o.c,5), budget=Math.round((o.RV*o.RV/(C*C))*(.28+.2*r())), done=new Uint8Array(N); let n=0, cmax=0;
+  const r=pRng('ls'+o.c,5), budget=Math.round((o.RV*o.RV/(C*C))*(.16+.12*r())), done=new Uint8Array(N); let n=0, cmax=0;
   const nb=[[1,0,1],[-1,0,1],[0,1,1],[0,-1,1],[1,1,1.414],[1,-1,1.414],[-1,1,1.414],[-1,-1,1.414]];
   while(hk.length&&n<budget){ const [k,c]=pop(); if(done[k]||c>cost[k]) continue; done[k]=1; if(!blk[k]){ n++; cmax=c; } const i=k%nx, j=(k/nx)|0;
     for(const [di,dj,dl] of nb){ const ii=i+di, jj=j+dj; if(ii<0||jj<0||ii>=nx||jj>=nv) continue; const q=jj*nx+ii; if(done[q]||(blk[q]&&!src.includes(q))) continue;
-      const dh=g[q]-g[k], st=dl*Math.max(.15,1+90*dh/dl)*(.55+.9*pNoise(i*.07+o.ph,j*.07+3)); if(c+st<cost[q]){ cost[q]=c+st; push(q,c+st); } } }
+      const dh=g[q]-g[k], S=Math.max(sl[k],1e-6), fr=Math.max(-1,Math.min(1,-dh/(dl*S))), steep=pSm(.3*sref,1.6*sref,S), st=dl*((dh>0?1+400*dh/dl:.25)+steep*3.2*(1-fr))*(.7+.6*pNoise(i*.09+o.ph,j*.09+3)); if(c+st<cost[q]){ cost[q]=c+st; push(q,c+st); } } }
   for(let k=0;k<N;k++) if(!done[k]||blk[k]) cost[k]=1e9;
   // 溶岩原のふちから、紅の細い流れが坂を下る（ブレワイのデスマウンテンのすそ）
   { const fr=[]; for(let k=0;k<N;k++){ if(cost[k]>1e8) continue; const i=k%nx, j=(k/nx)|0; if(i<2||j<2||i>nx-3||j>nv-3) continue; if(cost[k-1]>1e8||cost[k+1]>1e8||cost[k-nx]>1e8||cost[k+nx]>1e8){ const D=Math.hypot(x0+i*C-o.x,v0+j*C-o.v), xx=x0+i*C; if(D<o.RV*.95&&xx>10&&xx<W-10) fr.push([D+40*r(),k]); } }
@@ -3669,7 +3671,7 @@ function pTerAsk(k,H,first){
   if(!pTerBusy){ pTerBusy=true; setTimeout(pTerStep,0); }
 }
 // 一度描いた地形の絵は端末に取っておく（次に開いたときは描かずにすぐ出す）。描き方を変えたら版を上げて作り直す
-const P_TER_V="t90|", P_TER_MAX=36;
+const P_TER_V="t91|", P_TER_MAX=36;
 const pIDB=(()=>{ let dbp=null; const open=()=>dbp||(dbp=new Promise((res,rej)=>{ try{ const r=indexedDB.open('ql-ter',1); r.onupgradeneeded=()=>r.result.createObjectStore('img'); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }catch(e){ rej(e); } }));
   const st=m=>open().then(db=>db.transaction('img',m).objectStore('img'));
   const keys=()=>{ try{ return JSON.parse(localStorage.getItem('ql-ter-keys')||'[]'); }catch(e){ return []; } }, setKeys=a=>{ try{ localStorage.setItem('ql-ter-keys',JSON.stringify(a)); }catch(e){} };
