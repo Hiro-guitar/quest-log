@@ -3289,7 +3289,7 @@ function pCliff(k,H,m0,m1,open,openT){
 }
 // 地名：ブレワイの地図のような「〜地方」「〜村」「〜馬宿」…を日ごとに組み合わせる（すべてこの旅のための架空の地名）
 const PN_A=['ミズナラ','カゼノネ','シラユキ','アカツチ','ホタル','ツユクサ','コケムス','ヒバリ','タソガレ','イワツツジ','ハヤテ','サザナミ','ヒカゲ','ユウナギ','アオバ','カタクリ','ナギサ','オボロ','ツララ','キリフ','ヒイラギ','クモマ','ススキ','ヤマセ','ワタリ','コダマ','ハルカ','トキワ','アサギ','ムラサメ','カゲロウ','ヨモギ','シノノメ','ユキワリ','マツカゼ','イナホ','フブキ','ホムラ','サギリ','アマツ','イソラ','ウツギ','エニシ','オモダカ','カスミ','キササゲ','クヌギ','ケヤキ','コノハ','サクヤ','シオン','スズラン','セキレイ','タチバナ','チドリ','ツバキ','トウゲ','ナツメ','ニレ','ヌマタ','ネムノキ','ノギク','ハクロ','フジナミ','ホオズキ','マソホ','ミサゴ','ムクゲ','モズ','ヤマブキ','ユズリハ','ヨシキリ','リンドウ','ワカバ','アケボノ','イサリビ','ウスズミ','エボシ','オキナ','カガリ','カワセミ','クサナギ','コガネ','サンゴ','シジマ','スミレ','セセラギ','タマユラ','ツクバネ','トバリ','ナナカマド','ハシバミ','ヒスイ','ホシクズ','マホロ','ミナモ','ヤマナミ','ユウヅツ','ワダツミ'];
-const PN={region:'地方',village:'村',stable:'馬宿',lake:'湖',mount:'山',river:'川',tower:'の塔',ruin:'の遺跡',oasis:'のオアシス',island:'島',shrine:'の祠',volc:'火山',volcR:'火山帯',desert:'砂漠',lava:'溶岩湖',peak:'峰',snowR:'雪原',castle:'城',wood:'の森',bridge:'大橋',plain:'平原',hill:'丘陵',vale:'渓谷',high:'高原',pass:'峠',marsh:'湿原',falls:'の滝'};
+const PN={region:'地方',village:'村',stable:'馬宿',lake:'湖',mount:'山',river:'川',tower:'の塔',ruin:'の遺跡',oasis:'のオアシス',island:'島',shrine:'の祠',volc:'火山',volcR:'火山帯',desert:'砂漠',lava:'溶岩湖',peak:'峰',snowR:'雪原',castle:'城',town:'城下町',wood:'の森',bridge:'大橋',plain:'平原',hill:'丘陵',vale:'渓谷',high:'高原',pass:'峠',marsh:'湿原',falls:'の滝'};
 // 似た名前（rv12とrv13など）でも最初の値がばらけるよう、混ぜてから使う
 function pRng(k,salt){ let h=salt; for(const c of k) h=(h*131+c.charCodeAt(0))>>>0; h=Math.imul(h^(h>>>16),2246822507)>>>0; h=Math.imul(h^(h>>>13),3266489909)>>>0; h=(h^(h>>>16))>>>0; return ()=>{ h=(h*1664525+1013904223)>>>0; return h/4294967296; }; }
 function pNamer(k){ const r=pRng(k,991), used=new Set(); return t=>{ let n; for(let i=0;i<20;i++){ n=PN_A[Math.floor(r()*PN_A.length)]; if(!used.has(n)) break; } used.add(n); return n+PN[t]; }; }
@@ -3308,8 +3308,8 @@ const P_SEA=.27;
 // 高さ（0〜1）。x は画面の横位置、y は地図の縦位置（ズームの影響を受けない単位に直して計算）
 function pHgt(x,y){ return pHgtC(x,y,true); }
 // raw=false で道のまわりの盛り土をしない高さ（川の流れを決めるのに使う）
-let pLastCarve=0, pLastEdge=99, pLastRim=0, pLastDark=0, pLastWet=0;
-function pHgtC(x,y,road){ pLastCarve=0; pLastEdge=99; pLastRim=0; pLastDark=0; pLastWet=0; const v=y/PX+pOff, u=x*1.05; let f=0,amp=.5,fr=1/170; for(let o=0;o<5;o++){ f+=amp*pNoise(u*fr+o*17,v*fr+o*31); amp*=.5; fr*=2.03; }
+let pLastCarve=0, pLastEdge=99, pLastRim=0, pLastDark=0, pLastWet=0, pLastCastle=0;
+function pHgtC(x,y,road){ pLastCarve=0; pLastEdge=99; pLastRim=0; pLastDark=0; pLastWet=0; pLastCastle=0; const v=y/PX+pOff, u=x*1.05; let f=0,amp=.5,fr=1/170; for(let o=0;o<5;o++){ f+=amp*pNoise(u*fr+o*17,v*fr+o*31); amp*=.5; fr*=2.03; }
   const r=1-Math.abs(2*pNoise(u/240+9,v/240+3)-1); let h=.62*f+.5*r*r*r-.08; { const [bv,bd,bw,bs]=pBiomeW(x,v);
     if(bv>0){ // 火山：全体を高く、細かいこぶの多い岩場にする。まわりの水辺は陸にする（マグマと水がとなり合わないように）
       const bump=.06*(pNoise(u/22+1.7,v/22+6.1)-.5)+.04*(pNoise(u/9+3.1,v/9+2.3)-.5); h=h*(1-bv)+(.5+.12*bv+bump)*bv; if(bv<.6) h=Math.max(h,P_SEA+.05*Math.min(1,bv*4));
@@ -3320,13 +3320,20 @@ function pHgtC(x,y,road){ pLastCarve=0; pLastEdge=99; pLastRim=0; pLastDark=0; p
     if(!P_BIOMES&&P_DESERT){ const dso=pDesertAt(v); if(dso){ const D=pDesertD(x,v,dso), rim=pSm(.94,1.0,D)*pSm(1.5,1.15,D); pLastEdge=Math.min(pLastEdge,Math.abs(D-.975)*dso.RV*.7); pLastRim=pSm(1.5,1.2,D)*pSm(.9,.97,D); if(rim>0) h=Math.max(h,P_SEA+.07+(.18+.05*(pNoise(u/(.08*dso.RV)+dso.ph,v/(.08*dso.RV))-.5)*2+.03*(pNoise(u/(.03*dso.RV),v/(.03*dso.RV)+dso.ph)-.5)*2)*rim); } } // 砂漠のふちは一段高い岩の高地（崖）
     if(!P_BIOMES&&P_WET){ const wo=pWetAt(v); if(wo){ const Dw=pWetD(x,v,wo), lw=pSm(.92,1.0,Dw)*pSm(1.8,1.3,Dw); if(lw>0){ const tg=P_SEA+.03+.07*pSm(1.0,1.45,Dw); h=h+(Math.min(h,tg)-h)*lw; pLastRim=Math.max(pLastRim,lw); } } } // 湿原のまわりは低くなだらかな陸（崖にしない）
     if(bw>0){ if(P_BIOMES){ const hw=P_SEA-.006+(h-.42)*.18+(pNoise(u/16+1.1,v/16+4.4)-.5)*.08; h=h*(1-bw)+hw*bw; } else { const wo=pWetAt(v); if(wo){ const [il,hl]=pWetIsl(x,v,wo), hw=P_SEA-.016+.03*il+.004*il*(pNoise(u/9,v/9+wo.ph)-.5)+.09*hl; h=h*(1-bw)+hw*bw; if(bw>.4) pLastWet=1; } } } // 湿原：浅い水と小さな島
-    const ca=pCastleAt(x,v); if(ca){ const dx=x-ca[0], dv=v-ca[1], a=Math.atan2(dv,dx), D=Math.hypot(dx,dv), wm=1+.45*(pNoise(Math.cos(a)*1.4+ca[2]*3.1,Math.sin(a)*1.4+5)-.5), wi=1+.14*Math.cos(4*a+ca[2])+.2*(pNoise(Math.cos(a)*2.2+9,Math.sin(a)*2.2+ca[2])-.5);
-      if(D<56*wi){ h=.36+.03*(1-D/56); if(D>16&&D<27&&pNoise(Math.cos(a)*1.8+ca[2],Math.sin(a)*1.8+2)<.48) h=P_SEA-.02; } // 島と内堀
-      else if(D<104*wm) h=Math.min(h,P_SEA-.04-.03*Math.min(1,(D-56)/20)); else if(D<118*wm) h=Math.max(h,P_SEA+.03); } }
+    const ca=pCastleAt(x,v); if(ca){ const k=ca[3], ph=ca[4], dx=x-ca[0], dv=v-ca[1], a=Math.atan2(dv,dx), D=Math.hypot(dx,dv)/k, ri=95*(1+.14*Math.cos(5*a+ph)+.08*Math.cos(3*a)+.05*(pNoise(Math.cos(a)*2+ph,Math.sin(a)*2)-.5)*2),
+        ro=150+25*Math.cos(a-3.927)+10*(pNoise(Math.cos(a)*1.5+ph+3,Math.sin(a)*1.5)-.5)*2, ad=a*180/Math.PI;
+      const tongue=[125,55,180,0].some((g,i)=>{ const gr=g*Math.PI/180, u=Math.cos(gr)*dx/k+Math.sin(gr)*dv/k, w=-Math.sin(gr)*dx/k+Math.cos(gr)*dv/k; return u>(i<2?115:112)&&Math.abs(w)<(i<2?27:22)*(1+.15*(pNoise(u/20+ph,i)-.5)*2); });
+      const neck=Math.abs(dx/k)<16&&dv/k>80&&dv/k<118;
+      pLastCastle=0;
+      if(D<ri||neck){ h=P_SEA+.06; pLastCastle=1; }
+      else if(D<ro&&!tongue){ h=P_SEA-.04-.02*pSm(ri,ri+25,D)*pSm(ro,ro-25,D); pLastCastle=2; }
+      else if(D<ro){ h=P_SEA+.05; pLastCastle=2; }
+      else if(dv<0){ const t=pSm(ro,ro+32,D), b=pSm(ro+90,ro+32,D); h=Math.max(h*(1-b)+(P_SEA+.05+.25*t)*b,P_SEA+.05); } // 北は崖
+      else { const b=pSm(ro+150,ro+110,D); h=h*(1-b)+(P_SEA+.05)*b; } } } // 南は平地（城下町）
   { const cv=pTgCarve(x,v); if(cv){ h=Math.max(h,P_SEA+.1*pSm(3.2,2,cv[1])); if(road){ h-=cv[3]; pLastCarve+=cv[3]; } } } // 溶岩の舌の谷（まわりに湖を作らない）
   { const lw=pSnowLow(x,v); if(lw>0&&h>P_SEA+.02) h+=(.36-h)*.45*lw; } // 雪山のまわりの低地（ツンドラ）は平ら
   // 道のまわりは陸地にする（道が水に沈まないように）
-  const dd=road&&!(P_DESERT&&pDsPond&&pBiomeW(x,v)[1]>.5)&&!pLastWet?Math.abs(x-pRX(y)):1e9; if(dd<80){ const t=1-dd/80, m=P_SEA+.07*t*t*(3-2*t); if(h<m) h=m+(h-m)*.15*(1-t); }
+  const dd=road&&!(P_DESERT&&pDsPond&&pBiomeW(x,v)[1]>.5)&&!pLastWet&&!pLastCastle?Math.abs(x-pRX(y)):1e9; if(dd<80){ const t=1-dd/80, m=P_SEA+.07*t*t*(3-2*t); if(h<m) h=m+(h-m)*.15*(1-t); }
   return Math.max(0,Math.min(1,h)); }
 // 地方ごとの景色（ブレワイのオルディン＝火山とマグマ、ゲルド＝砂漠、ラネール＝湿地）：世界の位置で決まる、ゆるやかに入れ替わる
 const pSm=(a,b,x)=>{ let t=(x-a)/(b-a); t=t<0?0:t>1?1:t; return t*t*(3-2*t); };
@@ -3440,7 +3447,7 @@ function pWet(c){ const key=c+'|'+(pW|0); if(pWtMemo.has(key)) return pWtMemo.ge
       const ns=15+Math.floor(r()*11); for(let i=0;i<ns;i++){ const a=r()*6.28, d=Math.sqrt(r())*.95*RV; S.push({x:x+Math.cos(a)*d/.9,v:v+Math.sin(a)*d/.7,A:(.03+.03*r())*RV,t:r()*3.14}); }
       o={x,v,RV,ph:r()*50,c,I,S,ow}; } }
   pWtMemo.set(key,o); return o; }
-function pWetAt(v){ const c=Math.floor(v/P_WC); let b=null,bd=1e9; for(let k=c-1;k<=c+1;k++){ const o=pWet(k); if(o){ const d=Math.abs(v-o.v); if(d<o.RV*2&&d<bd){ bd=d; b=o; } } } return b; }
+function pWetAt(v){ const c=Math.floor(v/P_WC); let b=null,bd=1e9; for(let k=c-1;k<=c+1;k++){ const o=pWet(k); if(o){ const d=Math.abs(v-o.v); if(d<o.RV*2.8&&d<bd){ bd=d; b=o; } } } return b; }
 function pWetD(x,v,o){ const dx=(x-o.x)*.9, dv=(v-o.v)*.7, a=Math.atan2(dv,dx); return Math.hypot(dx,dv)/(o.RV*(1+.35*(pNoise(Math.cos(a)*3+o.ph,Math.sin(a)*3)-.5)+.2*(pNoise(Math.cos(a)*7+o.ph+3,Math.sin(a)*7)-.5)))+.06*(pNoise(x/40+o.ph,v/40)-.5); }
 function pWetW(x,v){ if(!P_WET) return 0; const o=pWetAt(v); if(!o) return 0; return pSm(1.05,.88,pWetD(x,v,o)); }
 // 島：小さな平たい島はノイズで散らばり、大きな島は少し丘がある
@@ -3758,13 +3765,21 @@ function pBiomeW(x,v){ if(!P_BIOMES) return (P_VOLC||P_SNOW||P_DESERT||P_WET)?[P
   return [wv,wd,ww,wsn]; }
 const pBiome=(x,y)=>pBiomeW(x,y/PX+pOff);
 // ハイラル城のような大きな城：たまに（約3日に1度）、道のそばの堀の中の島に建つ
-const P_CA=3000, pCaMemo=new Map();
-function pCastle(c){ if(!P_BIOMES) return null; const key=c+'|'+(pW|0); if(pCaMemo.has(key)) return pCaMemo.get(key); const r=pRng('ca'+c,5); let o=null;
-  if(r()<.7){ const v=c*P_CA+400+r()*(P_CA-800), q=v, R=pRoadOf0(), W=pW||380, cxr=W/2+(W/2-34)*(.62*Math.sin(q/(150*1.05)+4.1)+.28*Math.sin(q/61+1.3)+.1*Math.sin(q/27+2.2)), rx=Math.max(30,Math.min(W-30,cxr)), x=rx<W/2?Math.min(W-30,rx+175):Math.max(30,rx-175);
-    const b=pBiomeW(x,v); if(b[0]<.2&&b[1]<.3&&b[2]<.3&&b[3]<.3) o=[x,v,c]; }
+const P_CASTLE=false, P_CA=7000, P_CAK=.82, pCaMemo=new Map();
+function pCastle(c){ if(!P_BIOMES&&!P_CASTLE) return null; const key=c+'|'+(pW|0); if(pCaMemo.has(key)) return pCaMemo.get(key); const r=pRng('ca'+c,5); let o=null;
+  if(r()<.85){ const W=pW||380, k=P_CAK;
+    for(let t=0;t<40&&!o;t++){ const v=c*P_CA+600+r()*(P_CA-1200); let near=false;
+      for(let q=Math.floor(v/P_VC)-1;q<=Math.floor(v/P_VC)+1;q++){ const z=pVolc(q); if(z&&Math.abs(z.v-v)<z.RV*1.4+250) near=true; }
+      for(let q=Math.floor(v/P_SC)-1;q<=Math.floor(v/P_SC)+1;q++){ const z=pSnow(q); if(z&&Math.abs(z.v-v)<z.RV*2.2+250) near=true; }
+      for(let q=Math.floor(v/P_DC)-1;q<=Math.floor(v/P_DC)+1;q++){ const z=pDesert(q); if(z&&Math.abs(z.v-v)<z.RV*2.4+250) near=true; }
+      for(let q=Math.floor(v/P_WC)-1;q<=Math.floor(v/P_WC)+1;q++){ const z=pWet(q); if(z&&Math.abs(z.v-v)<z.RV*1.8+250) near=true; }
+      if(near) continue;
+      // 道が城の島（半径 95k）にかからない横位置を探す
+      let best=null, bd=-1; for(let xx=W*.3;xx<=W*.7;xx+=6){ let md=1e9; for(let dv=-120*k;dv<=120*k;dv+=8){ md=Math.min(md,Math.abs(pRX((v+dv-pOff)*PX)-xx)); } if(md>bd){ bd=md; best=xx; } }
+      if(bd>96*k) o=[best,v,c,k,r()*6.28]; } }
   pCaMemo.set(key,o); return o; }
 const pRoadOf0=()=>0;
-function pCastleAt(x,v){ const c=Math.floor(v/P_CA); for(let k=c-1;k<=c+1;k++){ const o=pCastle(k); if(o&&Math.abs(v-o[1])<140) return o; } return null; }
+function pCastleAt(x,v){ const c=Math.floor(v/P_CA); for(let q=c-1;q<=c+1;q++){ const o=pCastle(q); if(o&&v>o[1]-340*o[3]&&v<o[1]+340*o[3]) return o; } return null; }
 const P_RAMP=[[0,[64,52,27]],[.12,[82,68,36]],[.24,[103,86,46]],[.36,[124,106,58]],[.48,[146,128,76]],[.6,[170,154,104]],[.72,[195,184,140]],[.84,[219,211,180]],[.93,[236,232,214]],[1,[246,244,236]]];
 const pRamp=t=>{ for(let i=1;i<P_RAMP.length;i++){ if(t<=P_RAMP[i][0]){ const [t0,c0]=P_RAMP[i-1], [t1,c1]=P_RAMP[i], k=(t-t0)/(t1-t0); return [c0[0]+(c1[0]-c0[0])*k,c0[1]+(c1[1]-c0[1])*k,c0[2]+(c1[2]-c0[2])*k]; } } return P_RAMP[P_RAMP.length-1][1]; };
 // 地形の絵は重いので、少しずつ（画面を止めずに）描く。今日と前後の日は先に描いておく
@@ -4001,26 +4016,35 @@ function pMapArt(k,H){
     if(n>=2) trails+=`<path class="mp-trail" d="${dd}"/>`; }
   for(let c=Math.floor(vA/P_VC)-1;c<=Math.floor(vB/P_VC)+1;c++){ const o=pVolc(c); if(o){ const y=v2y(o.v); if(inR(y)) labs.push([o.x-26,y-o.R-12,pNm('vc'+c,'volc'),'mt']); } }
   { const ca=[]; for(let c=Math.floor(vA/P_CA)-1;c<=Math.floor(vB/P_CA)+1;c++){ const q=pCastle(c); if(q) ca.push(q); }
-    ca.forEach(([cx,cv,c])=>{ const cy=v2y(cv); if(cy<Y0||cy>Y1) return; const r=pRng('cs'+c,9);
-      let g=`<g class="mp-castle" transform="translate(${cx.toFixed(1)} ${cy.toFixed(1)})">`;
-      const ring=(R0,ph,n)=>{ let d=''; for(let k=0;k<=n;k++){ const a=k/n*6.283, rr=R0*(1+.12*Math.cos(4*a+c)+.14*(pNoise(Math.cos(a)*1.5+ph,Math.sin(a)*1.5+ph)-.5)); d+=(k?'L':'M')+(Math.cos(a)*rr).toFixed(1)+' '+(Math.sin(a)*rr).toFixed(1); } return d; };
-      // 斜めに堀をまたぐ大きなスロープ（縞もよう）
-      [[-2.35,1],[ -.8,1],[.8,1],[2.35,0]].forEach(([a,on])=>{ if(!on&&r()<.5) return; const ca2=Math.cos(a), sa=Math.sin(a), px=-sa, py=ca2, r0=48, r1=r0+34+r()*10, w0=5, w1=9; let d=`M${(ca2*r0+px*w0).toFixed(1)} ${(sa*r0+py*w0).toFixed(1)}L${(ca2*r1+px*w1).toFixed(1)} ${(sa*r1+py*w1).toFixed(1)}L${(ca2*r1-px*w1).toFixed(1)} ${(sa*r1-py*w1).toFixed(1)}L${(ca2*r0-px*w0).toFixed(1)} ${(sa*r0-py*w0).toFixed(1)}Z`, st='';
-        for(let k=1;k<8;k++){ const t=k/8, rr=r0+(r1-r0)*t, ww=w0+(w1-w0)*t; st+=`M${(ca2*rr+px*ww).toFixed(1)} ${(sa*rr+py*ww).toFixed(1)}L${(ca2*rr-px*ww).toFixed(1)} ${(sa*rr-py*ww).toFixed(1)}`; }
-        g+=`<path class="cs-rp" d="${d}"/><path class="cs-rs" d="${st}"/>`; });
-      g+=`<path class="cs-wl" d="${ring(44,c*1.3,40)}"/><path class="cs-wl" d="${ring(31,c*2.1+3,32)}"/><path class="cs-wl" d="${ring(13,c*3.7+6,20)}"/>`;
-      // 北の本丸（暗い十字形の建物）と丸い塔
-      g+=`<path class="cs-sc" d="M-5-34H5V-27H12V-19H5V-12H-5V-19H-12V-27H-5Z"/><path class="cs-sc2" d="M-2-31H2V-15H-2Z"/>`;
-      for(const [tx,ty,tr] of [[-20,14,3.4],[16,8,3.8],[-30,-8,2.6],[28,-12,2.6],[0,24,2.8]]) g+=`<circle class="cs-tw" cx="${tx}" cy="${ty}" r="${tr}"/><circle class="cs-tw2" cx="${tx}" cy="${ty}" r="${(tr*.45).toFixed(1)}"/>`;
-      for(let i=0;i<55;i++){ const a=r()*6.283, d=6+r()*40; g+=`<circle class="cs-dt" cx="${(Math.cos(a)*d).toFixed(1)}" cy="${(Math.sin(a)*d).toFixed(1)}" r="${(.5+r()*.9).toFixed(1)}"/>`; }
-      // 南の門と、堀を渡るまっすぐな橋、金色の城の札
-      g+=`<path class="cs-br" d="M0 48V108"/><g transform="translate(0 66)"><rect class="cs-bg" x="-8" y="-8" width="16" height="16" rx="3.2"/><path class="cs-bi" d="M-5 5V-1H-3.4V-4H-1.8V-1H-.8V-6L0-7.6.8-6V-1H1.8V-4H3.4V-1H5V5Z"/></g></g>`;
-      // 城下町：堀の南（または北）に、弧と、くし形の通り
-      const dn=cy+190<Y1?1:-1, ty=cy+dn*134; let tw='';
-      for(let k=0;k<3;k++){ const rr=30+k*14; tw+=`M${(cx-rr).toFixed(1)} ${(ty-dn*8).toFixed(1)}Q${cx.toFixed(1)} ${(ty+dn*(rr*.9)).toFixed(1)} ${(cx+rr).toFixed(1)} ${(ty-dn*8).toFixed(1)}`; }
-      for(let k=-3;k<=3;k++){ const xx=cx+k*12; tw+=`M${xx.toFixed(1)} ${(ty-dn*10).toFixed(1)}V${(ty+dn*(34-Math.abs(k)*4)).toFixed(1)}`; }
-      tw+=`M${cx.toFixed(1)} ${(cy+dn*108).toFixed(1)}V${(ty+dn*70).toFixed(1)}M${(cx-14).toFixed(1)} ${(ty+dn*84).toFixed(1)}a14 14 0 1 0 28 0a14 14 0 1 0-28 0`;
-      trails+=`<path class="mp-town" d="${tw}"/>`; pois+=g; labs.push([cx+14,cy+70,pNm('ca'+c,'castle'),'poi',null]); }); }
+    ca.forEach(([cx,cv,c,k,ph])=>{ const cy=v2y(cv); if(cy<Y0-400||cy>Y1+400) return; const r9=pRng('cs'+c,9);
+      const L='stroke="#2a1c08" stroke-opacity=".8"', F='fill="#3c2a0c" fill-opacity=".45"';
+      const blob=(R0,f)=>{ let d=''; for(let i=0;i<=48;i++){ const a=i/48*6.2832, rr=R0*f(a); d+=(i?'L':'M')+(Math.cos(a)*rr).toFixed(1)+' '+(Math.sin(a)*rr).toFixed(1); } return d+'Z'; };
+      let g=`<g class="mp-castle2" transform="translate(${cx.toFixed(1)} ${cy.toFixed(1)}) scale(${k})">`;
+      g+=`<defs><g id="gh${c}" ${L} stroke-width="1" ${F} stroke-linejoin="round"><polygon points="9,0 6.4,6.4 0,9 -6.4,6.4 -9,0 -6.4,-6.4 0,-9 6.4,-6.4"/><polygon points="5,0 3.5,3.5 0,5 -3.5,3.5 -5,0 -3.5,-3.5 0,-5 3.5,-3.5" fill-opacity=".3"/><circle cx="5.5" cy="5.5" r="1.8"/><circle cx="-5.5" cy="5.5" r="1.8"/><circle cx="5.5" cy="-5.5" r="1.8"/><circle cx="-5.5" cy="-5.5" r="1.8"/><rect x="9" y="-2.5" width="5" height="5"/></g>
+        <rect id="tw${c}" x="-2.5" y="-2.5" width="5" height="5" fill="#3c2a0c" fill-opacity=".55" ${L} stroke-width=".8"/><circle id="tr${c}" r="3" fill="#3c2a0c" fill-opacity=".55" ${L} stroke-width=".8"/>
+        <g id="rp${c}" ${L} stroke-width="1" fill="#fff0c8" fill-opacity=".14"><path d="M0,-5 L60,-8 L60,8 L0,5 Z"/><path d="M6,-5.3 L6,5.3 M12,-5.6 L12,5.6 M18,-5.9 L18,5.9 M24,-6.2 L24,6.2 M30,-6.5 L30,6.5 M36,-6.8 L36,6.8 M42,-7.1 L42,7.1 M48,-7.4 L48,7.4 M54,-7.7 L54,7.7" stroke-width=".6" stroke-opacity=".55"/></g></defs>`;
+      // 台地の段（明るく、ふちは1本の線）
+      g+=`<path d="${blob(62,a=>1+.15*Math.cos(4*a+ph))}" fill="#fff0c8" fill-opacity=".16" ${L} stroke-opacity=".5" stroke-width=".9"/><path d="${blob(30,a=>1+.1*Math.cos(3*a+ph))}" fill="#fff0c8" fill-opacity=".14" ${L} stroke-opacity=".5" stroke-width=".9"/>`;
+      g+=`<g fill="#5a6e7c" fill-opacity=".9"><path d="M-46,14 C-40,8 -30,10 -28,18 C-30,26 -40,28 -46,22 Z"/><path d="M26,24 C34,20 42,24 42,30 C40,36 30,38 26,32 Z"/><path d="M4,38 C10,44 8,54 2,60 C-2,54 -2,44 4,38 Z"/></g><path d="M-40,12 L-34,26 M30,22 L38,36 M-2,48 L10,46" stroke="#dfe8ea" stroke-opacity=".7" stroke-width="2"/>`;
+      g+=`<g fill="none" stroke="#3c2a0c" stroke-opacity=".35" stroke-width="4" stroke-linecap="round"><path d="M-54,-6 A54,54 0 0 0 -30,46"/><path d="M54,-14 A54,54 0 0 1 44,40"/><path d="M-86,20 A88,88 0 0 0 -46,76"/><path d="M86,16 A88,88 0 0 1 50,74"/><path d="M-20,-62 A64,64 0 0 1 22,-60"/></g>`;
+      for(const [tx,ty] of [[-54,-6],[-30,46],[54,-14],[44,40],[-86,20],[86,16]]) g+=`<use href="#tw${c}" transform="translate(${tx} ${ty})"/>`;
+      for(const [tx,ty] of [[-46,76],[50,74],[-20,-62],[22,-60]]) g+=`<use href="#tr${c}" transform="translate(${tx} ${ty})"/>`;
+      // 本丸
+      g+=`<g ${L} stroke-width="1" ${F} stroke-linejoin="round"><path d="M-12,-22 L12,-22 L8,-50 L-8,-50 Z"/><path d="M-11,22 L11,22 L7,66 L-7,66 Z"/><path d="M-13,-20 L-19,-50 M13,-20 L19,-50 M-13,20 L-19,48 M13,20 L19,48" stroke-width="2"/><circle cx="-19" cy="-50" r="2.5"/><circle cx="19" cy="-50" r="2.5"/><circle cx="-19" cy="48" r="2.5"/><circle cx="19" cy="48" r="2.5"/><rect x="-22" y="-22" width="44" height="44" rx="4" fill-opacity=".5"/><rect x="-15" y="-15" width="30" height="30" rx="2" fill="none" stroke-opacity=".5"/><circle cx="-18" cy="-18" r="3.5"/><circle cx="18" cy="-18" r="3.5"/><circle cx="-18" cy="18" r="3.5"/><circle cx="18" cy="18" r="3.5"/><polygon points="-10.5,-16 -6,-11.5 -6,-5 -10.5,-.5 -15,-5 -15,-11.5" fill-opacity=".35"/><polygon points="10.5,-16 15,-11.5 15,-5 10.5,-.5 6,-5 6,-11.5" fill-opacity=".35"/><polygon points="-10.5,.5 -6,5 -6,11.5 -10.5,16 -15,11.5 -15,5" fill-opacity=".35"/><polygon points="10.5,.5 15,5 15,11.5 10.5,16 6,11.5 6,5" fill-opacity=".35"/><polygon points="7,0 4.9,4.9 0,7 -4.9,4.9 -7,0 -4.9,-4.9 0,-7 4.9,-4.9" fill-opacity=".6"/></g>`;
+      g+=`<use href="#gh${c}" transform="translate(-30 78) rotate(-35)"/><use href="#gh${c}" transform="translate(24 58) rotate(20) scale(1.15)"/><rect x="-4" y="-92" width="8" height="12" ${F} ${L} stroke-width="1"/>`;
+      g+=`<use href="#rp${c}" transform="translate(-66 60) rotate(125)"/><use href="#rp${c}" transform="translate(66 58) rotate(55)"/><use href="#rp${c}" transform="translate(0 -96) rotate(-90) scale(.9 .8)"/>`;
+      // 南の首・門・橋と城下町
+      g+=`<rect x="-7" y="108" width="14" height="6" fill="#3c2a0c" fill-opacity=".5" ${L} stroke-width="1"/><rect x="-4" y="114" width="8" height="48" fill="#e8dcb0" fill-opacity=".9" ${L} stroke-opacity=".6" stroke-width="1"/>`;
+      g+=`<g fill="none" stroke="#e8dcb0" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M0,162 L0,250"/><path d="M-56,178 Q-64,178 -64,186 L-64,238 M56,178 Q64,178 64,186 L64,238"/><path d="M-64,204 L64,204 M-64,232 L64,232"/><path d="M-32,186 L-32,250 M32,186 L32,250"/><path d="M-56,178 L-22,178 M22,178 L56,178"/></g><circle cx="0" cy="204" r="7" fill="#e8dcb0" fill-opacity=".8"/>`;
+      g+=`<g ${F} ${L} stroke-opacity=".7" stroke-width=".8"><rect x="-52" y="190" width="8" height="6"/><rect x="-18" y="210" width="7" height="6"/><rect x="12" y="192" width="8" height="5"/><rect x="42" y="212" width="9" height="6"/><rect x="-48" y="238" width="7" height="6"/><rect x="20" y="238" width="8" height="6"/><rect x="-10" y="186" width="6" height="7"/><rect x="48" y="190" width="6" height="7"/><path d="M50,160 L66,160 L66,174 A8,8 0 0 1 50,174 Z" fill-opacity=".5"/><rect x="58" y="204" width="6" height="6" fill-opacity=".6"/></g>`;
+      // 島の中の木
+      for(let i=0;i<12;i++){ const [bx,by]=i<6?[30,-36]:[-40,-14]; g+=`<circle cx="${(bx+(r9()-.5)*16).toFixed(1)}" cy="${(by+(r9()-.5)*14).toFixed(1)}" r="1.6" fill="#3c2a0c" fill-opacity=".8"/>`; }
+      g+='</g>'; pois+=g;
+      // 城下町の広場から本線の道へ支線
+      { const ty=cy+232*k, tx=cx+(pRX(ty)>cx?64:-64)*k, rx=pRX(ty); trails+=`<path d="M${tx.toFixed(1)} ${ty.toFixed(1)}L${rx.toFixed(1)} ${ty.toFixed(1)}" fill="none" stroke="#e8dcb0" stroke-width="${(4*k).toFixed(1)}" stroke-linecap="round" opacity=".9"/>`; }
+      labs.push([cx-18,cy+128*k,pNm('ca'+c,'castle'),'poi',null]); labs.push([cx-22,cy+266*k,pNm('ct'+c,'town'),'']); });
+    // 道が堀を渡る所は橋
+    for(const [cx,cv,c,k] of ca){ let y0=null; for(let y=Y0;y<=Y1;y+=1){ const x=pRX(y), v=y/PX+off, on=Math.abs(v-cv)<200*k&&pHgt(x,y)<P_SEA+.004; if(on&&y0==null) y0=y; if((!on||y===Y1)&&y0!=null){ if(y-y0>2){ let d=''; for(let yy=y0-3;yy<=y+3.01;yy+=2) d+=(d?'L':'M')+pRX(yy).toFixed(1)+' '+yy.toFixed(1); pois+=`<path class="mp-bridge-o" d="${d}"/><path class="mp-bridge" d="${d}"/>`; } y0=null; } } } }
   o+=trails+pois;
   // 地名どうし・道・地方名と重ならないように置く（だめなら道の反対側へ、それでもだめなら出さない）
   const G=pGeo(k), placed=[pSleptBefore(k)?pm2y(G.s):null,G.slept?pm2y(G.e):null].filter(y=>y!=null).map(y=>[pRX(y)-16,y-16,pRX(y)+96,y+16]); labs.sort((a,b)=>(b[3]==='poi')-(a[3]==='poi')||a[1]-b[1]);
