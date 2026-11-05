@@ -3308,8 +3308,8 @@ const P_SEA=.27;
 // 高さ（0〜1）。x は画面の横位置、y は地図の縦位置（ズームの影響を受けない単位に直して計算）
 function pHgt(x,y){ return pHgtC(x,y,true); }
 // raw=false で道のまわりの盛り土をしない高さ（川の流れを決めるのに使う）
-let pLastCarve=0, pLastEdge=99, pLastRim=0, pLastDark=0, pLastWet=0, pLastCastle=0;
-function pHgtC(x,y,road){ pLastCarve=0; pLastEdge=99; pLastRim=0; pLastDark=0; pLastWet=0; pLastCastle=0; const v=y/PX+pOff, u=x*1.05; let f=0,amp=.5,fr=1/170; for(let o=0;o<5;o++){ f+=amp*pNoise(u*fr+o*17,v*fr+o*31); amp*=.5; fr*=2.03; }
+let pLastCarve=0, pLastEdge=99, pLastRim=0, pLastDark=0, pLastWet=0, pLastCastle=0, pLastCL=0;
+function pHgtC(x,y,road){ pLastCarve=0; pLastEdge=99; pLastRim=0; pLastDark=0; pLastWet=0; pLastCastle=0; pLastCL=0; const v=y/PX+pOff, u=x*1.05; let f=0,amp=.5,fr=1/170; for(let o=0;o<5;o++){ f+=amp*pNoise(u*fr+o*17,v*fr+o*31); amp*=.5; fr*=2.03; }
   const r=1-Math.abs(2*pNoise(u/240+9,v/240+3)-1); let h=.62*f+.5*r*r*r-.08; { const [bv,bd,bw,bs]=pBiomeW(x,v);
     if(bv>0){ // 火山：全体を高く、細かいこぶの多い岩場にする。まわりの水辺は陸にする（マグマと水がとなり合わないように）
       const bump=.06*(pNoise(u/22+1.7,v/22+6.1)-.5)+.04*(pNoise(u/9+3.1,v/9+2.3)-.5); h=h*(1-bv)+(.5+.12*bv+bump)*bv; if(bv<.6) h=Math.max(h,P_SEA+.05*Math.min(1,bv*4));
@@ -3320,15 +3320,10 @@ function pHgtC(x,y,road){ pLastCarve=0; pLastEdge=99; pLastRim=0; pLastDark=0; p
     if(!P_BIOMES&&P_DESERT){ const dso=pDesertAt(v); if(dso){ const D=pDesertD(x,v,dso), rim=pSm(.94,1.0,D)*pSm(1.5,1.15,D); pLastEdge=Math.min(pLastEdge,Math.abs(D-.975)*dso.RV*.7); pLastRim=pSm(1.5,1.2,D)*pSm(.9,.97,D); if(rim>0) h=Math.max(h,P_SEA+.07+(.18+.05*(pNoise(u/(.08*dso.RV)+dso.ph,v/(.08*dso.RV))-.5)*2+.03*(pNoise(u/(.03*dso.RV),v/(.03*dso.RV)+dso.ph)-.5)*2)*rim); } } // 砂漠のふちは一段高い岩の高地（崖）
     if(!P_BIOMES&&P_WET){ const wo=pWetAt(v); if(wo){ const Dw=pWetD(x,v,wo), lw=pSm(.92,1.0,Dw)*pSm(1.8,1.3,Dw); if(lw>0){ const tg=P_SEA+.03+.07*pSm(1.0,1.45,Dw); h=h+(Math.min(h,tg)-h)*lw; pLastRim=Math.max(pLastRim,lw); } } } // 湿原のまわりは低くなだらかな陸（崖にしない）
     if(bw>0){ if(P_BIOMES){ const hw=P_SEA-.006+(h-.42)*.18+(pNoise(u/16+1.1,v/16+4.4)-.5)*.08; h=h*(1-bw)+hw*bw; } else { const wo=pWetAt(v); if(wo){ const [il,hl]=pWetIsl(x,v,wo), hw=P_SEA-.016+.03*il+.004*il*(pNoise(u/9,v/9+wo.ph)-.5)+.09*hl; h=h*(1-bw)+hw*bw; if(bw>.4) pLastWet=1; } } } // 湿原：浅い水と小さな島
-    const ca=pCastleAt(x,v); if(ca){ const k=ca[3], ph=ca[4], dx=x-ca[0], dv=v-ca[1], a=Math.atan2(dv,dx), D=Math.hypot(dx,dv)/k, ri=95*(1+.14*Math.cos(5*a+ph)+.08*Math.cos(3*a)+.05*(pNoise(Math.cos(a)*2+ph,Math.sin(a)*2)-.5)*2),
-        ro=95*(1.45+.25*Math.cos(a-3.927))+8*(pNoise(Math.cos(a)*1.5+ph+3,Math.sin(a)*1.5)-.5)*2;
-      let tg=0; for(const g of [125,55]){ const gr=g*Math.PI/180, u=Math.cos(gr)*dx/k+Math.sin(gr)*dv/k, w=-Math.sin(gr)*dx/k+Math.cos(gr)*dv/k, hw=(12.5+22.5*pSm(112,ro,u))*(1+.08*(pNoise(u/15+ph,g)-.5)*2); if(u>106) tg=Math.max(tg,pSm(hw+3,hw-3,Math.abs(w))*pSm(108,114,u)); }
-      const neck=pSm(19,13,Math.abs(dx/k))*pSm(78,84,dv/k)*pSm(122,114,dv/k);
-      const isl=Math.max(pSm(ri+3,ri-3,D),neck), wat=pSm(ri-1,ri+5,D)*pSm(ro+2,ro-4,D)*(1-tg)*(1-neck);
-      const base=P_SEA+.14, hIsl=P_SEA+.16, hWat=P_SEA-.04;
-      pLastCastle=D<ro+4?1:0;
-      if(D<ro+4){ h=hWat*wat+(isl>0?hIsl*isl:0)+(1-wat-isl>0?(base-.01)*(1-wat-isl):0); h=Math.max(h,hWat); }
-      else { const sN=pSm(.3,-.3,dv/(D*k)), t=pSm(ro,ro+30,D), bN=pSm(ro+110,ro+40,D), hN=Math.max(h*(1-bN)+(base+.28*t)*bN,base), bS=pSm(ro+170,ro+120,D), hS=h*(1-bS)+base*bS; h=hN*sN+hS*(1-sN); } } } // 北は崖（堀からすぐ立ち上がる）、南は平地// 南は平地（城下町）
+    const ca=pCastleAt(x,v); if(ca){ const k=ca[3], ph=ca[4], lx=(x-ca[0])/k*ca[5], ly=(v-ca[1])/k, [wat,isl,lv,sd,pen]=pCsQ(lx,ly,ca), base=P_SEA+.14;
+      pLastCL=lv; pLastCastle=sd<8?1:0;
+      if(sd<6){ const hl=base+.02*isl; h=(P_SEA-.04)*wat+hl*(1-wat); } // 湖・島・半島
+      else { const sN=pSm(-30,-110,ly), s2=sd+10*(pNoise(lx/60+ph,ly/60)-.5)*2, hc=base+.08*pSm(0,3,s2)+.08*pSm(20,23,s2), bN=pSm(90,40,sd), hN=h*(1-bN)+Math.max(hc,h*.3+hc*.7)*bN, bS=pSm(230,150,sd), hS=h*(1-bS)+base*bS; h=hN*sN+hS*(1-sN); } } } // 北は段々の崖、南は平地（城下町）// 南は平地（城下町）
   { const cv=pTgCarve(x,v); if(cv){ h=Math.max(h,P_SEA+.1*pSm(3.2,2,cv[1])); if(road){ h-=cv[3]; pLastCarve+=cv[3]; } } } // 溶岩の舌の谷（まわりに湖を作らない）
   { const lw=pSnowLow(x,v); if(lw>0&&h>P_SEA+.02) h+=(.36-h)*.45*lw; } // 雪山のまわりの低地（ツンドラ）は平ら
   // 道のまわりは陸地にする（道が水に沈まないように）
@@ -3764,7 +3759,31 @@ function pBiomeW(x,v){ if(!P_BIOMES) return (P_VOLC||P_SNOW||P_DESERT||P_WET)?[P
   return [wv,wd,ww,wsn]; }
 const pBiome=(x,y)=>pBiomeW(x,y/PX+pOff);
 // ハイラル城のような大きな城：たまに（約3日に1度）、道のそばの堀の中の島に建つ
-const P_CASTLE=false, P_CA=7000, P_CAK=.82, pCaMemo=new Map();
+const P_CASTLE=false, P_CA=7000, P_CAK=1, pCaMemo=new Map();
+// ハイラル城（ブレワイの地図から）：大きく不規則な湖に、段々に重なった台地の島が浮かぶ。島は入り江と池で刻まれ、
+// 南西（牢獄）と南東（森の公園）から大きな半島が湖に突き出す。北は段々の崖、南に崩れた格子の城下町
+const P_CS={
+  lake:[[-200,-150],[-120,-178],[-40,-195],[40,-198],[120,-182],[200,-150],[212,-60],[190,15],[150,40],[118,95],[135,150],[200,172],[120,190],[60,178],[32,150],[-26,150],[-60,182],[-120,190],[-150,150],[-128,100],[-165,70],[-220,60],[-228,-20],[-200,-90]],
+  pen:[[-150,110,55],[150,110,65],[-172,-20,28],[172,-22,28]],
+  lobes:[[-78,-18,36,0],[-66,48,34,0],[-24,82,32,0],[34,80,36,0],[80,40,34,0],[82,-26,32,0],[46,-80,34,0],[-38,-80,34,0],[0,-106,24,0],[-42,-34,38,1],[42,-38,38,1],[-38,34,36,1],[46,30,38,1],[0,-12,40,2]],
+  inlets:[[-110,18,-48,12,14],[100,-52,38,-60,12],[16,120,8,60,16]],
+  pools:[[-34,52,9],[30,60,8],[-52,-4,7]] };
+function pCsShape(o){ if(o.sh) return o.sh; const C=P_CS.lake, n=C.length, P=[];
+  for(let i=0;i<n;i++){ const p0=C[(i-1+n)%n], p1=C[i], p2=C[(i+1)%n], p3=C[(i+2)%n]; for(let t=0;t<1;t+=.1){ const t2=t*t, t3=t2*t; P.push([0,1].map(q=>.5*((2*p1[q])+(-p0[q]+p2[q])*t+(2*p0[q]-5*p1[q]+4*p2[q]-p3[q])*t2+(-p0[q]+3*p1[q]-3*p2[q]+p3[q])*t3))); } }
+  return o.sh={P}; }
+const pSegD=(x,y,ax,ay,bx,by)=>{ const dx=bx-ax, dy=by-ay, l2=dx*dx+dy*dy||1, t=Math.max(0,Math.min(1,((x-ax)*dx+(y-ay)*dy)/l2)); return Math.hypot(x-ax-dx*t,y-ay-dy*t); };
+// その場所の城の地形：[水の重み, 陸の種類, 台地の層(0=島でない,1〜3), 湖の外の距離]
+function pCsQ(x,y,o){ const S=pCsShape(o), P=S.P, n=P.length, ph=o[4];
+  let ins=false, md=1e9; for(let i=0,j=n-1;i<n;j=i++){ const [xi,yi]=P[i], [xj,yj]=P[j]; if(((yi>y)!==(yj>y))&&(x<(xj-xi)*(y-yi)/(yj-yi)+xi)) ins=!ins; const d=pSegD(x,y,xi,yi,xj,yj); if(d<md) md=d; }
+  md+=4*(pNoise(x/30+ph,y/30)-.5)*2; const sd=ins?-md:md; // 湖の内側は負
+  const lobe=(cx,cy,r,s2)=>{ const a=Math.atan2(y-cy,x-cx); return Math.hypot(x-cx,y-cy)-r*(1+.1*(pNoise(Math.cos(a)*1.5+s2,Math.sin(a)*1.5)-.5)*2); };
+  let pen=0; for(const [cx,cy,r] of P_CS.pen){ const a=Math.atan2(y-cy,x-cx); pen=Math.max(pen,pSm(2,-2,Math.hypot(x-cx,y-cy)-r*(1+.22*(pNoise(Math.cos(a)*1.3+cx*.01+ph,Math.sin(a)*1.3)-.5)*2+.08*(pNoise(Math.cos(a)*4+ph,Math.sin(a)*4+cy*.01)-.5)*2))); }
+  let isl=0, lv=0; for(const [cx,cy,r,l] of P_CS.lobes){ const w=pSm(2,-2,lobe(cx,cy,r,cx*.013+cy*.007+ph)); if(w>isl) isl=w; if(w*(l+1)>lv) lv=w*(l+1); }
+  isl=Math.max(isl,pSm(15,11,Math.abs(x))*pSm(92,96,y)*pSm(120,116,y));
+  for(const [ax,ay,bx,by,w] of P_CS.inlets){ const c=pSm(-2,2,pSegD(x,y,ax,ay,bx,by)-w/2); isl*=c; lv*=c; }
+  for(const [cx,cy,r] of P_CS.pools){ const c=pSm(-1.5,1.5,Math.hypot(x-cx,y-cy)-r); isl*=c; lv*=c; }
+  const land=Math.max(pSm(-2,2,sd),pen,isl); return [1-land,isl,lv,sd,pen]; }
+
 function pCastle(c){ if(!P_BIOMES&&!P_CASTLE) return null; const key=c+'|'+(pW|0); if(pCaMemo.has(key)) return pCaMemo.get(key); const r=pRng('ca'+c,5); let o=null;
   if(r()<.85){ const W=pW||380, k=P_CAK;
     for(let t=0;t<40&&!o;t++){ const v=c*P_CA+600+r()*(P_CA-1200); let near=false;
@@ -3774,11 +3793,11 @@ function pCastle(c){ if(!P_BIOMES&&!P_CASTLE) return null; const key=c+'|'+(pW|0
       for(let q=Math.floor(v/P_WC)-1;q<=Math.floor(v/P_WC)+1;q++){ const z=pWet(q); if(z&&Math.abs(z.v-v)<z.RV*1.8+250) near=true; }
       if(near) continue;
       // 道が城の島（半径 95k）にかからない横位置を探す
-      let best=null, bd=-1; for(let xx=W*.3;xx<=W*.7;xx+=6){ let md=1e9; for(let dv=-120*k;dv<=120*k;dv+=8){ md=Math.min(md,Math.abs(pRX((v+dv-pOff)*PX)-xx)); } if(md>bd){ bd=md; best=xx; } }
-      if(bd>96*k) o=[best,v,c,k,r()*6.28]; } }
+      let best=null, bd=-1; for(let xx=W*.25;xx<=W*.75;xx+=6){ let md=1e9; for(let dv=-140*k;dv<=130*k;dv+=8){ md=Math.min(md,Math.abs(pRX((v+dv-pOff)*PX)-xx)); } if(md>bd){ bd=md; best=xx; } }
+      if(bd>125*k) o=[best,v,c,k,r()*6.28,r()<.5?-1:1]; } }
   pCaMemo.set(key,o); return o; }
 const pRoadOf0=()=>0;
-function pCastleAt(x,v){ const c=Math.floor(v/P_CA); for(let q=c-1;q<=c+1;q++){ const o=pCastle(q); if(o&&v>o[1]-340*o[3]&&v<o[1]+340*o[3]) return o; } return null; }
+function pCastleAt(x,v){ const c=Math.floor(v/P_CA); for(let q=c-1;q<=c+1;q++){ const o=pCastle(q); if(o&&v>o[1]-380*o[3]&&v<o[1]+430*o[3]) return o; } return null; }
 const P_RAMP=[[0,[64,52,27]],[.12,[82,68,36]],[.24,[103,86,46]],[.36,[124,106,58]],[.48,[146,128,76]],[.6,[170,154,104]],[.72,[195,184,140]],[.84,[219,211,180]],[.93,[236,232,214]],[1,[246,244,236]]];
 const pRamp=t=>{ for(let i=1;i<P_RAMP.length;i++){ if(t<=P_RAMP[i][0]){ const [t0,c0]=P_RAMP[i-1], [t1,c1]=P_RAMP[i], k=(t-t0)/(t1-t0); return [c0[0]+(c1[0]-c0[0])*k,c0[1]+(c1[1]-c0[1])*k,c0[2]+(c1[2]-c0[2])*k]; } } return P_RAMP[P_RAMP.length-1][1]; };
 // 地形の絵は重いので、少しずつ（画面を止めずに）描く。今日と前後の日は先に描いておく
@@ -3813,8 +3832,8 @@ function* pRiversGen(H){ const key=PX+'|'+pW+'|'+pOff+'|'+H; if(pRivCache[key]) 
   const ks=Object.keys(pRivCache); if(ks.length>12) delete pRivCache[ks[0]]; return pRivCache[key]=out; }
 function* pTerGen(H){
   const G=3, Y0=-900, gw=Math.ceil(pW/G)+2, gh=Math.ceil((H+1800)/G)+2, g=new Float32Array(gw*gh);
-  const bCs=new Float32Array(gw*gh), bDk=new Float32Array(gw*gh), bRm=new Float32Array(gw*gh), bLo=new Float32Array(gw*gh), cg=new Float32Array(gw*gh), eg=new Float32Array(gw*gh), bV=new Float32Array(gw*gh), bD=new Float32Array(gw*gh), bW=new Float32Array(gw*gh), bS=new Float32Array(gw*gh), bN=new Float32Array(gw*gh), vt=new Float32Array(gw*gh);
-  for(let j=0;j<gh;j++){ for(let i=0;i<gw;i++){ const o=j*gw+i, x=i*G, y=Y0+j*G; g[o]=pHgt(x,y); cg[o]=pLastCarve; eg[o]=pLastEdge; bLo[o]=pSnowLow(x,y/PX+pOff); bRm[o]=pLastRim; bDk[o]=pLastDark; bCs[o]=pLastCastle; const b=pBiome(x,y); bV[o]=b[0]; bD[o]=b[1]; bW[o]=b[2]; bN[o]=b[3]; vt[o]=0; bS[o]=pNoise(x*1.05/11+5.5,(y/PX+pOff)/11+2.2); } if(j%24===0) yield; }
+  const bCL=new Float32Array(gw*gh), bCs=new Float32Array(gw*gh), bDk=new Float32Array(gw*gh), bRm=new Float32Array(gw*gh), bLo=new Float32Array(gw*gh), cg=new Float32Array(gw*gh), eg=new Float32Array(gw*gh), bV=new Float32Array(gw*gh), bD=new Float32Array(gw*gh), bW=new Float32Array(gw*gh), bS=new Float32Array(gw*gh), bN=new Float32Array(gw*gh), vt=new Float32Array(gw*gh);
+  for(let j=0;j<gh;j++){ for(let i=0;i<gw;i++){ const o=j*gw+i, x=i*G, y=Y0+j*G; g[o]=pHgt(x,y); cg[o]=pLastCarve; eg[o]=pLastEdge; bLo[o]=pSnowLow(x,y/PX+pOff); bRm[o]=pLastRim; bDk[o]=pLastDark; bCs[o]=pLastCastle; bCL[o]=pLastCL; const b=pBiome(x,y); bV[o]=b[0]; bD[o]=b[1]; bW[o]=b[2]; bN[o]=b[3]; vt[o]=0; bS[o]=pNoise(x*1.05/11+5.5,(y/PX+pOff)/11+2.2); } if(j%24===0) yield; }
   // 川を水として彫る：真ん中は深く、岸に近いほど浅い（湖と同じ色・同じ岸の描き方になる）
   const rit=pRiversGen(H); let rres; while(!(rres=rit.next()).done) yield; const RV=rres.value;
   pLavaB=new Map(); RV.forEach(R=>{ if(!R.lava) return; R.P.forEach(([x,y],k)=>{ const rr=R.ws[k]/2; for(let a=Math.floor((x-rr-60)/16);a<=Math.floor((x+rr+60)/16);a++) for(let b=Math.floor((y-rr-60)/16);b<=Math.floor((y+rr+60)/16);b++){ const key=a+','+b; let L=pLavaB.get(key); if(!L) pLavaB.set(key,L=[]); L.push([x,y,rr]); } }); });
@@ -3831,8 +3850,8 @@ function* pTerGen(H){
       while(qh<qt){ const o=qu[qh++], i=o%gw; sw+=vt[o]; n++; const nb=[i>0?o-1:-1,i<gw-1?o+1:-1,o-gw,o+gw]; for(const q of nb){ if(q<0||q>=gw*gh||lab[q]||g[q]>=P_SEA) continue; lab[q]=nl; qu[qt++]=q; } }
       lavaOf[nl]=sw/n>.5?1:0; } }
   yield;
-  const R=Math.min(2,window.devicePixelRatio||1)>1.5?1.5:1, cw=Math.ceil(pW*R), ch=Math.ceil((H+1800)*R), hs=new Float32Array(cw*ch), cs=new Float32Array(cw*ch), es=new Float32Array(cw*ch);
-  for(let j=0;j<ch;j++){ const gy=j/R/G, j0=Math.min(gh-2,gy|0), fy=gy-j0; for(let i=0;i<cw;i++){ const gx=i/R/G, i0=Math.min(gw-2,gx|0), fx=gx-i0, o=j0*gw+i0, a1=g[o], b1=g[o+1], c1=g[o+gw], d1=g[o+gw+1]; hs[j*cw+i]=a1+(b1-a1)*fx+(c1-a1)*fy+(a1-b1-c1+d1)*fx*fy; const a2=cg[o], b2=cg[o+1], c2=cg[o+gw], d2=cg[o+gw+1]; cs[j*cw+i]=a2+(b2-a2)*fx+(c2-a2)*fy+(a2-b2-c2+d2)*fx*fy; const a3=eg[o], b3=eg[o+1], c3=eg[o+gw], d3=eg[o+gw+1]; es[j*cw+i]=a3+(b3-a3)*fx+(c3-a3)*fy+(a3-b3-c3+d3)*fx*fy; } if(j%200===0) yield; }
+  const R=Math.min(2,window.devicePixelRatio||1)>1.5?1.5:1, cw=Math.ceil(pW*R), ch=Math.ceil((H+1800)*R), hs=new Float32Array(cw*ch), cs=new Float32Array(cw*ch), es=new Float32Array(cw*ch), cls=new Float32Array(cw*ch);
+  for(let j=0;j<ch;j++){ const gy=j/R/G, j0=Math.min(gh-2,gy|0), fy=gy-j0; for(let i=0;i<cw;i++){ const gx=i/R/G, i0=Math.min(gw-2,gx|0), fx=gx-i0, o=j0*gw+i0, a1=g[o], b1=g[o+1], c1=g[o+gw], d1=g[o+gw+1]; hs[j*cw+i]=a1+(b1-a1)*fx+(c1-a1)*fy+(a1-b1-c1+d1)*fx*fy; const a2=cg[o], b2=cg[o+1], c2=cg[o+gw], d2=cg[o+gw+1]; cs[j*cw+i]=a2+(b2-a2)*fx+(c2-a2)*fy+(a2-b2-c2+d2)*fx*fy; const a3=eg[o], b3=eg[o+1], c3=eg[o+gw], d3=eg[o+gw+1]; es[j*cw+i]=a3+(b3-a3)*fx+(c3-a3)*fy+(a3-b3-c3+d3)*fx*fy; if(P_CASTLE){ const a4=bCL[o], b4=bCL[o+1], c4=bCL[o+gw], d4=bCL[o+gw+1]; cls[j*cw+i]=a4+(b4-a4)*fx+(c4-a4)*fy+(a4-b4-c4+d4)*fx*fy; } } if(j%200===0) yield; }
   const o2i=(ii,jj)=>Math.min(ch-1,jj)*cw+Math.min(cw-1,ii);
   const cv=document.createElement('canvas'); cv.width=cw; cv.height=ch; const cx=cv.getContext('2d'), im=cx.createImageData(cw,ch), d=im.data, CL=34, SH=9*1.5/(R*G/2);
   for(let j=0;j<ch;j++){ const gy=j/R/G, j0=Math.min(gh-2,gy|0), fy=gy-j0; for(let i=0;i<cw;i++){ const o=j*cw+i, h=hs[o], p=o*4; let c;
@@ -3870,6 +3889,7 @@ function* pTerGen(H){
       const gg=(Math.abs(g[oo+1]-g[oo])+Math.abs(g[oo+gw]-g[oo])+Math.abs(g[oo+gw+1]-g[oo+1])+Math.abs(g[oo+gw+1]-g[oo+gw]))/(2*G*R)*CLe/(1-P_SEA), kq=gg<.5?1:gg<.9?2:gg<1.3?3:4;
       if(wn>.3&&kq>1){ const cr=(a2,b2)=>a2!==b2&&Math.max(a2,b2)%kq===0; if(cr(b0,b1)||cr(b0,b2)){ const k2=.5; c=[c[0]*k2,c[1]*k2,c[2]*k2]; } } // 雪山の崖：詰まった等高線は段ごとに間引き、残す線は濃く（線がとぎれない） // 雪山の崖：詰まった線は何本かに1本だけ濃く（1本の崖線に）
       else if((b0!==b1||b0!==b2)&&!((wwo>.3||(P_WET&&L(bRm)>.3))&&h<P_SEA+.08)){ const k2=b0%5===0?.6:.8; c=[c[0]*k2,c[1]*k2,c[2]*k2]; }
+      if(P_CASTLE&&h>=P_SEA){ const q1=Math.round(cls[o]); if(q1>0){ const kb=[1,1.06,1.14,1.22][q1]; c=[c[0]*kb,c[1]*kb,c[2]*kb]; } const q2=Math.round(cls[o+(i<cw-1?1:0)]), q3=Math.round(cls[o+(j<ch-1?cw:0)]); if(q1!==q2||q1!==q3){ c=[c[0]*.62,c[1]*.62,c[2]*.62]; } } // 城の台地：層ごとに明るく、境に1本の線
       if((wn>.3||wd>.2)&&es[o]<.85){ c=[c[0]*.55,c[1]*.55,c[2]*.55]; } // 谷の肩・山塊の縁の濃い線
       }
     if(!(vp&&vp.lava)&&h>=P_SEA&&P_VOLC){ const vv=(Y0+j/R)/PX+pOff, o3=pVolcAt(vv); if(o3&&o3.tg&&o3.tg.length){ const te=pTongueE(i/R,vv,o3); if(te>=0&&te<.2){ const k3=.8; c=[c[0]*k3,c[1]*k3,c[2]*k3]; if(vp&&vp.c) vp.c=vp.c.map(q=>q*k3); } } }
@@ -4016,35 +4036,52 @@ function pMapArt(k,H){
     if(n>=2) trails+=`<path class="mp-trail" d="${dd}"/>`; }
   for(let c=Math.floor(vA/P_VC)-1;c<=Math.floor(vB/P_VC)+1;c++){ const o=pVolc(c); if(o){ const y=v2y(o.v); if(inR(y)) labs.push([o.x-26,y-o.R-12,pNm('vc'+c,'volc'),'mt']); } }
   { const ca=[]; for(let c=Math.floor(vA/P_CA)-1;c<=Math.floor(vB/P_CA)+1;c++){ const q=pCastle(c); if(q) ca.push(q); }
-    ca.forEach(([cx,cv,c,k,ph])=>{ const cy=v2y(cv); if(cy<Y0-400||cy>Y1+400) return; const r9=pRng('cs'+c,9);
+    ca.forEach(([cx,cv,c,k,ph,m])=>{ const cy=v2y(cv); if(cy<Y0-500||cy>Y1+500) return; const r9=pRng('cs'+c,9), rj=a=>a+(r9()-.5)*2;
       const L='stroke="#2a1c08" stroke-opacity=".8"', F='fill="#3c2a0c" fill-opacity=".45"';
-      const blob=(R0,f)=>{ let d=''; for(let i=0;i<=48;i++){ const a=i/48*6.2832, rr=R0*f(a); d+=(i?'L':'M')+(Math.cos(a)*rr).toFixed(1)+' '+(Math.sin(a)*rr).toFixed(1); } return d+'Z'; };
-      let g=`<g class="mp-castle2" transform="translate(${cx.toFixed(1)} ${cy.toFixed(1)}) scale(${k})">`;
-      g+=`<defs><g id="gh${c}" ${L} stroke-width="1" ${F} stroke-linejoin="round"><polygon points="9,0 6.4,6.4 0,9 -6.4,6.4 -9,0 -6.4,-6.4 0,-9 6.4,-6.4"/><polygon points="5,0 3.5,3.5 0,5 -3.5,3.5 -5,0 -3.5,-3.5 0,-5 3.5,-3.5" fill-opacity=".3"/><circle cx="5.5" cy="5.5" r="1.8"/><circle cx="-5.5" cy="5.5" r="1.8"/><circle cx="5.5" cy="-5.5" r="1.8"/><circle cx="-5.5" cy="-5.5" r="1.8"/><rect x="9" y="-2.5" width="5" height="5"/></g>
-        <rect id="tw${c}" x="-2.5" y="-2.5" width="5" height="5" fill="#3c2a0c" fill-opacity=".55" ${L} stroke-width=".8"/><circle id="tr${c}" r="3" fill="#3c2a0c" fill-opacity=".55" ${L} stroke-width=".8"/>
-        <g id="rp${c}" ${L} stroke-width="1" fill="#fff0c8" fill-opacity=".14"><path d="M0,-5 L60,-8 L60,8 L0,5 Z"/><path d="M6,-5.3 L6,5.3 M12,-5.6 L12,5.6 M18,-5.9 L18,5.9 M24,-6.2 L24,6.2 M30,-6.5 L30,6.5 M36,-6.8 L36,6.8 M42,-7.1 L42,7.1 M48,-7.4 L48,7.4 M54,-7.7 L54,7.7" stroke-width=".6" stroke-opacity=".55"/></g></defs>`;
-      // 台地の段（明るく、ふちは1本の線）
-      g+=`<path d="${blob(62,a=>1+.15*Math.cos(4*a+ph))}" fill="#fff0c8" fill-opacity=".28" ${L} stroke-opacity=".5" stroke-width=".9"/><path d="${blob(30,a=>1+.1*Math.cos(3*a+ph))}" fill="#fff0c8" fill-opacity=".22" ${L} stroke-opacity=".5" stroke-width=".9"/>`;
-      g+=`<g fill="#5a6e7c" fill-opacity=".9"><path d="M-46,14 C-40,8 -30,10 -28,18 C-30,26 -40,28 -46,22 Z"/><path d="M26,24 C34,20 42,24 42,30 C40,36 30,38 26,32 Z"/><path d="M4,38 C10,44 8,54 2,60 C-2,54 -2,44 4,38 Z"/></g><path d="M-40,12 L-34,26 M30,22 L38,36 M-2,48 L10,46" stroke="#dfe8ea" stroke-opacity=".7" stroke-width="2"/>`;
-      g+=`<g fill="none" stroke="#3c2a0c" stroke-opacity=".35" stroke-width="4" stroke-linecap="round"><path d="M-54,-6 A54,54 0 0 0 -30,46"/><path d="M54,-14 A54,54 0 0 1 44,40"/><path d="M-86,20 A88,88 0 0 0 -46,76"/><path d="M86,16 A88,88 0 0 1 50,74"/><path d="M-20,-62 A64,64 0 0 1 22,-60"/></g>`;
-      for(const [tx,ty] of [[-54,-6],[-30,46],[54,-14],[44,40],[-86,20],[86,16]]) g+=`<use href="#tw${c}" transform="translate(${tx} ${ty})"/>`;
-      for(const [tx,ty] of [[-46,76],[50,74],[-20,-62],[22,-60]]) g+=`<use href="#tr${c}" transform="translate(${tx} ${ty})"/>`;
-      // 本丸
-      g+=`<g ${L} stroke-width="1" ${F} stroke-linejoin="round"><path d="M-12,-22 L12,-22 L8,-50 L-8,-50 Z"/><path d="M-11,22 L11,22 L7,66 L-7,66 Z"/><path d="M-13,-20 L-19,-50 M13,-20 L19,-50 M-13,20 L-19,48 M13,20 L19,48" stroke-width="2"/><circle cx="-19" cy="-50" r="2.5"/><circle cx="19" cy="-50" r="2.5"/><circle cx="-19" cy="48" r="2.5"/><circle cx="19" cy="48" r="2.5"/><rect x="-22" y="-22" width="44" height="44" rx="4" fill-opacity=".5"/><rect x="-15" y="-15" width="30" height="30" rx="2" fill="none" stroke-opacity=".5"/><circle cx="-18" cy="-18" r="3.5"/><circle cx="18" cy="-18" r="3.5"/><circle cx="-18" cy="18" r="3.5"/><circle cx="18" cy="18" r="3.5"/><polygon points="-10.5,-16 -6,-11.5 -6,-5 -10.5,-.5 -15,-5 -15,-11.5" fill-opacity=".35"/><polygon points="10.5,-16 15,-11.5 15,-5 10.5,-.5 6,-5 6,-11.5" fill-opacity=".35"/><polygon points="-10.5,.5 -6,5 -6,11.5 -10.5,16 -15,11.5 -15,5" fill-opacity=".35"/><polygon points="10.5,.5 15,5 15,11.5 10.5,16 6,11.5 6,5" fill-opacity=".35"/><polygon points="7,0 4.9,4.9 0,7 -4.9,4.9 -7,0 -4.9,-4.9 0,-7 4.9,-4.9" fill-opacity=".6"/></g>`;
-      g+=`<use href="#gh${c}" transform="translate(-30 78) rotate(-35)"/><use href="#gh${c}" transform="translate(24 58) rotate(20) scale(1.15)"/><rect x="-4" y="-92" width="8" height="12" ${F} ${L} stroke-width="1"/>`;
-      g+=`<use href="#rp${c}" transform="translate(-47 67) rotate(125) scale(.6 1)"/><use href="#rp${c}" transform="translate(47 67) rotate(55) scale(.6 1)"/><use href="#rp${c}" transform="translate(0 -84) rotate(-90) scale(.35 .6)"/>`;
-      // 南の首・門・橋と城下町
-      g+=`<rect x="-7" y="108" width="14" height="6" fill="#3c2a0c" fill-opacity=".5" ${L} stroke-width="1"/><rect x="-4" y="114" width="8" height="48" fill="#e8dcb0" fill-opacity=".9" ${L} stroke-opacity=".6" stroke-width="1"/>`;
-      g+=`<g fill="none" stroke="#e8dcb0" stroke-opacity=".8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M0,162 L0,250"/><path d="M-56,178 Q-64,178 -64,186 L-64,238 M56,178 Q64,178 64,186 L64,238"/><path d="M-64,204 L64,204 M-64,232 L64,232"/><path d="M-32,186 L-32,250 M32,186 L32,250"/><path d="M-56,178 L-22,178 M22,178 L56,178"/></g><circle cx="0" cy="204" r="7" fill="#e8dcb0" fill-opacity=".8"/>`;
-      g+=`<g ${F} ${L} stroke-opacity=".7" stroke-width=".8"><rect x="-54" y="188" width="10" height="7"/><rect x="-20" y="210" width="10" height="7"/><rect x="10" y="190" width="10" height="7"/><rect x="40" y="211" width="10" height="7"/><rect x="-50" y="237" width="10" height="7"/><rect x="18" y="237" width="10" height="7"/><rect x="-14" y="185" width="8" height="8"/><rect x="44" y="186" width="8" height="8"/><path d="M50,160 L66,160 L66,174 A8,8 0 0 1 50,174 Z" fill-opacity=".5"/><rect x="58" y="204" width="6" height="6" fill-opacity=".6"/></g>`;
-      // 島の中の木
-      for(let i=0;i<12;i++){ const [bx,by]=i<6?[30,-36]:[-40,-14]; g+=`<circle cx="${(bx+(r9()-.5)*16).toFixed(1)}" cy="${(by+(r9()-.5)*14).toFixed(1)}" r="1.6" fill="#3c2a0c" fill-opacity=".8"/>`; }
+      let g=`<g class="mp-castle2" transform="translate(${cx.toFixed(1)} ${cy.toFixed(1)}) scale(${(k*m).toFixed(2)} ${k})">`;
+      g+=`<defs><g id="gh${c}" ${L} stroke-width="1" ${F} stroke-linejoin="round"><polygon points="14,0 9.9,9.9 0,14 -9.9,9.9 -14,0 -9.9,-9.9 0,-14 9.9,-9.9"/><polygon points="7.5,0 5.3,5.3 0,7.5 -5.3,5.3 -7.5,0 -5.3,-5.3 0,-7.5 5.3,-5.3" fill-opacity=".3"/><circle cx="8.5" cy="8.5" r="2.6"/><circle cx="-8.5" cy="8.5" r="2.6"/><circle cx="8.5" cy="-8.5" r="2.6"/><circle cx="-8.5" cy="-8.5" r="2.6"/></g>
+        <rect id="tw${c}" x="-3" y="-3" width="6" height="6" fill="#3c2a0c" fill-opacity=".55" ${L} stroke-width=".8"/><circle id="tr${c}" r="3" fill="#3c2a0c" fill-opacity=".55" ${L} stroke-width=".8"/></defs>`;
+      // スロープ（島から半島へ下る、横縞）
+      const ramp=(ax,ay,bx,by,w0,w1,n)=>{ const dx=bx-ax, dy=by-ay, l=Math.hypot(dx,dy), ux=dx/l, uy=dy/l, px=-uy, py=ux; let d=`M${(ax+px*w0/2).toFixed(1)},${(ay+py*w0/2).toFixed(1)}L${(bx+px*w1/2).toFixed(1)},${(by+py*w1/2).toFixed(1)}L${(bx-px*w1/2).toFixed(1)},${(by-py*w1/2).toFixed(1)}L${(ax-px*w0/2).toFixed(1)},${(ay-py*w0/2).toFixed(1)}Z`, st='';
+        for(let q=1;q<n;q++){ const t=q/n, x=ax+dx*t, y=ay+dy*t, w=(w0+(w1-w0)*t)/2; st+=`M${(x+px*w).toFixed(1)},${(y+py*w).toFixed(1)}L${(x-px*w).toFixed(1)},${(y-py*w).toFixed(1)}`; }
+        return `<path d="${d}" fill="#fff0c8" fill-opacity=".16" ${L} stroke-width="1"/><path d="${st}" ${L} stroke-opacity=".5" stroke-width=".6"/>`; };
+      g+=ramp(-90,78,-150,134,12,20,12)+ramp(90,76,150,134,12,20,12)+ramp(0,-118,0,-140,8,9,4);
+      // 島の水路を渡る橋
+      g+=`<path d="M-82,8 L-80,22 M74,-62 L72,-50 M4,96 L18,94 M-40,46 L-28,48 M24,54 L36,58" stroke="#dfe8ea" stroke-opacity=".75" stroke-width="2"/>`;
+      // 城壁の帯と塔
+      const walls=[[-54,-10,-34,44,52,0],[54,-16,44,42,52,1],[-88,18,-52,74,86,0],[88,14,54,72,86,1],[-24,-64,24,-62,64,1],[-40,92,40,90,90,0]];
+      g+=`<g fill="none" stroke="#3c2a0c" stroke-opacity=".4" stroke-width="5" stroke-linecap="round">`+walls.map(([ax,ay,bx,by,r,sw])=>`<path d="M${ax},${ay} A${r},${r} 0 0 ${sw} ${bx},${by}"/>`).join('')+`</g>`;
+      for(const [ax,ay,bx,by,r,sw] of walls){ const l=Math.hypot(bx-ax,by-ay), n=Math.max(1,Math.round(l/22)); for(let q=0;q<=n;q++){ const t=q/n, mx=ax+(bx-ax)*t, my=ay+(by-ay)*t, bo=Math.sqrt(Math.max(0,r*r-l*l/4))-Math.sqrt(Math.max(0,r*r-(t-.5)*(t-.5)*l*l)), nx=-(by-ay)/l*(sw?1:-1), ny=(bx-ax)/l*(sw?1:-1), tx=mx-nx*(Math.sqrt(Math.max(0,r*r-(t-.5)*(t-.5)*l*l))-Math.sqrt(Math.max(0,r*r-l*l/4))), ty=my-ny*(Math.sqrt(Math.max(0,r*r-(t-.5)*(t-.5)*l*l))-Math.sqrt(Math.max(0,r*r-l*l/4)));
+          g+=`<use href="#${q===0||q===n?'tr':'tw'}${c}" transform="translate(${tx.toFixed(1)} ${ty.toFixed(1)})"/>`; } }
+      // 建物
+      g+=`<g ${F} ${L} stroke-width=".8">`+[[-80,-30],[-70,40],[-30,90],[40,88],[82,30],[78,-40],[50,-85],[-40,-86],[20,-100],[-10,70],[60,-5],[-60,-60]].map(([x,y])=>{ const w=8+r9()*4, h2=6+r9()*3; return `<rect x="${(x-w/2).toFixed(1)}" y="${(y-h2/2).toFixed(1)}" width="${w.toFixed(1)}" height="${h2.toFixed(1)}" transform="rotate(${((r9()-.5)*30).toFixed(0)} ${x} ${y})"/>`; }).join('')+`</g>`;
+      // 本丸（1.5倍）
+      g+=`<g transform="scale(1.5)"><g ${L} stroke-width=".8" ${F} stroke-linejoin="round"><path d="M-12,-22 L12,-22 L8,-63 L-8,-63 Z"/><path d="M-11,22 L11,22 L7,57 L-7,57 Z"/><path d="M-13,-20 L-19,-50 M13,-20 L19,-50 M-13,20 L-19,48 M13,20 L19,48" stroke-width="1.6"/><circle cx="-19" cy="-50" r="2.5"/><circle cx="19" cy="-50" r="2.5"/><circle cx="-19" cy="48" r="2.5"/><circle cx="19" cy="48" r="2.5"/><rect x="-22" y="-22" width="44" height="44" rx="4" fill-opacity=".5"/><rect x="-15" y="-15" width="30" height="30" rx="2" fill="none" stroke-opacity=".5"/><circle cx="-18" cy="-18" r="3.5"/><circle cx="18" cy="-18" r="3.5"/><circle cx="-18" cy="18" r="3.5"/><circle cx="18" cy="18" r="3.5"/><polygon points="-10.5,-16 -6,-11.5 -6,-5 -10.5,-.5 -15,-5 -15,-11.5" fill-opacity=".35"/><polygon points="10.5,-16 15,-11.5 15,-5 10.5,-.5 6,-5 6,-11.5" fill-opacity=".35"/><polygon points="-10.5,.5 -6,5 -6,11.5 -10.5,16 -15,11.5 -15,5" fill-opacity=".35"/><polygon points="10.5,.5 15,5 15,11.5 10.5,16 6,11.5 6,5" fill-opacity=".35"/><polygon points="7,0 4.9,4.9 0,7 -4.9,4.9 -7,0 -4.9,-4.9 0,-7 4.9,-4.9" fill-opacity=".6"/></g></g>`;
+      // 門楼と半円の腕壁
+      for(const [gx,gy,gr] of [[-44,92,-20],[36,68,15]]){ g+=`<path d="M${gx-26},${gy} A26,26 0 0 1 ${gx+26},${gy}" transform="rotate(${gr} ${gx} ${gy})" fill="none" stroke="#3c2a0c" stroke-opacity=".4" stroke-width="4" stroke-linecap="round"/><use href="#gh${c}" transform="translate(${gx} ${gy}) rotate(${gr})"/>`; }
+      // 船着き場
+      g+=`<rect x="-8" y="-130" width="4" height="12" ${F} ${L} stroke-width=".8"/><rect x="4" y="-130" width="4" height="12" ${F} ${L} stroke-width=".8"/>`;
+      // 木：島の外周の台地に群れで、半島にたくさん
+      let tr=''; const dot=(x,y)=>{ tr+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="1.25"/>`; };
+      for(let q=0;q<7;q++){ const L0=P_CS.lobes[Math.floor(r9()*9)], a=r9()*6.28, d=L0[2]*.65; const bx=L0[0]+Math.cos(a)*d, by=L0[1]+Math.sin(a)*d; for(let z=0;z<6;z++) dot(bx+(r9()-.5)*10,by+(r9()-.5)*10); }
+      for(const [px,py,pr,nt] of [[-150,110,55,35],[150,110,65,60]]) for(let z=0;z<nt;z++){ const a=r9()*6.28, d=Math.sqrt(r9())*pr*.85; dot(px+Math.cos(a)*d,py+Math.sin(a)*d); }
+      g+=`<g fill="#3c2a0c" fill-opacity=".8">${tr}</g>`;
+      // 南の首・門・橋
+      g+=`<rect x="-7" y="112" width="14" height="6" fill="#3c2a0c" fill-opacity=".5" ${L} stroke-width="1"/><rect x="-3.5" y="118" width="7" height="42" fill="#e8dcb0" fill-opacity=".85" ${L} stroke-opacity=".6" stroke-width="1"/>`;
+      // 城下町：崩れた格子と北の弧
+      const seg=(ax,ay,bx,by)=>{ const l=Math.hypot(bx-ax,by-ay), s0=(4+6*r9())/l, s1=1-(4+6*r9())/l; return `M${(ax+(bx-ax)*s0).toFixed(1)},${(ay+(by-ay)*s0).toFixed(1)}L${(ax+(bx-ax)*s1).toFixed(1)},${(ay+(by-ay)*s1).toFixed(1)}`; };
+      let td=`M0,160 L0,300 M-60,228 A70,70 0 0 1 60,228`;
+      for(const y of [215,250,285]) for(const [x0,x1] of [[-95,-38],[-32,32],[38,95]]) if(r9()<.85) td+=seg(x0,y,x1,y);
+      for(const x of [-45,45]) td+=seg(x,200,x,300); for(const x of [-90,90]) td+=seg(x,215,x,270);
+      g+=`<path d="${td}" fill="none" stroke="#e8dcb0" stroke-opacity=".75" stroke-width="3" stroke-linecap="round"/><circle cx="0" cy="235" r="9" fill="#e8dcb0" fill-opacity=".75"/>`;
+      let hs2=''; for(let q=0;q<16;q++){ const bx=(r9()-.5)*170, by=200+r9()*95; if(Math.abs(bx)<8) continue; hs2+=`<rect x="${(bx-7).toFixed(1)}" y="${(by-5).toFixed(1)}" width="14" height="10" transform="rotate(${((r9()-.5)*12).toFixed(0)} ${bx.toFixed(1)} ${by.toFixed(1)})"/>`; }
+      g+=`<g fill="#3c2a0c" fill-opacity=".22" ${L} stroke-opacity=".6" stroke-width=".8">${hs2}<path d="M80,152 L96,152 L96,170 A8,8 0 0 1 80,170 Z" fill-opacity=".5"/><rect x="69" y="229" width="7" height="7" fill-opacity=".6"/></g>`;
       g+='</g>'; pois+=g;
-      // 城下町の広場から本線の道へ支線
-      { const ty=cy+232*k, tx=cx+(pRX(ty)>cx?64:-64)*k, rx=pRX(ty); trails+=`<path d="M${tx.toFixed(1)} ${ty.toFixed(1)}L${rx.toFixed(1)} ${ty.toFixed(1)}" fill="none" stroke="#e8dcb0" stroke-width="${(3*k).toFixed(1)}" stroke-linecap="round" opacity=".8"/>`; }
-      labs.push([cx-18,cy+128*k,pNm('ca'+c,'castle'),'poi',null]); labs.push([cx-22,cy+266*k,pNm('ct'+c,'town'),'']); });
-    // 道が堀を渡る所は橋
-    for(const [cx,cv,c,k] of ca){ let y0=null; for(let y=Y0;y<=Y1;y+=1){ const x=pRX(y), v=y/PX+off, on=Math.abs(v-cv)<200*k&&pHgt(x,y)<P_SEA+.004; if(on&&y0==null) y0=y; if((!on||y===Y1)&&y0!=null){ if(y-y0>2){ let d=''; for(let yy=y0-3;yy<=y+3.01;yy+=2) d+=(d?'L':'M')+pRX(yy).toFixed(1)+' '+yy.toFixed(1); pois+=`<path class="mp-bridge-o" d="${d}"/><path class="mp-bridge" d="${d}"/>`; } y0=null; } } } }
+      // 城下町の南端から本線へ
+      { const ty=cy+300*k, rx=pRX(ty); trails+=`<path d="M${cx.toFixed(1)} ${ty.toFixed(1)}L${rx.toFixed(1)} ${(ty+8).toFixed(1)}" fill="none" stroke="#e8dcb0" stroke-width="3" stroke-linecap="round" opacity=".75"/>`; }
+      labs.push([cx-18,cy+140*k,pNm('ca'+c,'castle'),'poi',null]); labs.push([cx-22,cy+318*k,pNm('ct'+c,'town'),'']); });
+    // 道が湖を渡る所は橋
+    for(const [cx,cv,c,k] of ca){ let y0=null; for(let y=Y0;y<=Y1;y+=1){ const x=pRX(y), v=y/PX+off, on=v>cv-260*k&&v<cv+260*k&&pHgt(x,y)<P_SEA+.004; if(on&&y0==null) y0=y; if((!on||y===Y1)&&y0!=null){ if(y-y0>2){ let d=''; for(let yy=y0-3;yy<=y+3.01;yy+=2) d+=(d?'L':'M')+pRX(yy).toFixed(1)+' '+yy.toFixed(1); pois+=`<path class="mp-bridge-o" d="${d}"/><path class="mp-bridge" d="${d}"/>`; } y0=null; } } } }
   o+=trails+pois;
   // 地名どうし・道・地方名と重ならないように置く（だめなら道の反対側へ、それでもだめなら出さない）
   const G=pGeo(k), placed=[pSleptBefore(k)?pm2y(G.s):null,G.slept?pm2y(G.e):null].filter(y=>y!=null).map(y=>[pRX(y)-16,y-16,pRX(y)+96,y+16]); labs.sort((a,b)=>(b[3]==='poi')-(a[3]==='poi')||a[1]-b[1]);
