@@ -830,12 +830,17 @@ body{background:#050607}
 .tr-today .r-mark .ico{color:var(--orange)}
 .vit{display:flex;align-items:center;gap:2px;margin-top:2px;flex-wrap:wrap;max-width:240px}.vit .hrt{width:15px;height:13px;filter:drop-shadow(0 0 3px rgba(232,112,95,.5))}.stms{display:inline-flex;gap:2px;margin-left:6px}.stm{width:16px;height:16px}
 @media (max-width:820px){.vit{max-width:200px}.vit .hrt{width:13px;height:11px}.stm{width:14px;height:14px}}
+.bk-gauge{margin:12px 0 6px}.bk-bar{position:relative;height:10px;border:1px solid rgba(111,224,255,.45);background:rgba(0,0,0,.35);border-radius:2px}.bk-bar i{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,#3fb6d6,#8ff0ff);box-shadow:0 0 8px rgba(111,224,255,.5)}.bk-bar b{position:absolute;top:-4px;bottom:-4px;width:2px;margin-left:-1px;background:var(--orange)}
+.bk-nums{display:flex;justify-content:space-between;font-size:12px;color:#8e9894;margin-top:4px}
+.bk-today{border:1px solid rgba(242,236,214,.14);background:rgba(0,0,0,.25);border-radius:3px;padding:10px 12px;margin:10px 0}.bk-today p{margin:0 0 6px}.bk-today em{font-style:normal;color:#8ff0ff;font-weight:700}.bk-today.done{border-color:rgba(111,224,255,.35)}
+.bk-rec{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.bk-rec input{width:76px!important;flex:0 0 auto}
+.bk-pips{display:flex;flex-wrap:wrap;gap:4px}.bk-pip{display:flex;flex-direction:column;align-items:center;width:22px}.bk-pip i{width:12px;height:12px;transform:rotate(45deg);border:1px solid rgba(111,224,255,.5);background:rgba(0,0,0,.3)}.bk-pip.on i{background:#6fe0ff;box-shadow:0 0 6px rgba(111,224,255,.6)}.bk-pip.miss i{border-color:rgba(242,236,214,.18)}.bk-pip.grace{opacity:.55}.bk-pip.goal i{outline:1px solid var(--orange);outline-offset:2px}.bk-pip.now small{color:#8ff0ff;font-weight:700}.bk-pip small{font-size:10px;color:#8e9894;margin-top:3px}
 .proofs{border:1px solid rgba(242,236,214,.14);background:rgba(0,0,0,.25);border-radius:3px;padding:8px 12px;margin:0 0 10px}
 .pf-h{font-size:11px;letter-spacing:.3em;color:var(--muted);margin-bottom:4px}
 .pf{display:grid;grid-template-columns:minmax(0,1fr) auto 3.5em;align-items:center;gap:8px;font-size:12.5px;padding:2px 0}.pf small{color:var(--muted);text-align:right}
 .pf-d{display:flex;gap:5px}.pf-d i{width:8px;height:8px;border:1.3px solid #d9d3be;transform:rotate(45deg);opacity:.7}.pf-d i.on{background:#f2ecd6;opacity:1;box-shadow:0 0 6px rgba(242,236,214,.5)}
 .pf-note{font-size:10.5px;color:var(--dim);margin-top:4px}
-.banner.shrine .bn-k{color:#6fe0ff}.banner.pr .bn-k,.banner.reward .bn-k{color:var(--orange)}
+.banner.shrine .bn-k{color:#6fe0ff}.banner.book .bn-k{color:#6fe0ff}.banner.pr .bn-k,.banner.reward .bn-k{color:var(--orange)}
 .banner.heart .bn-k::before{content:'♥';color:#e8705f;font-size:20px;letter-spacing:0}.banner.stamina .bn-k::before{content:'◔';color:#9fd98a;font-size:20px;letter-spacing:0}
 .rupee{display:inline-flex;align-items:center;gap:3px;margin-right:12px;font-size:14px}.rupee b{font-weight:900}.rp{width:9px;height:14px;filter:drop-shadow(0 0 3px rgba(240,166,64,.6));vertical-align:-2px}
 .sensor{display:inline-flex;align-items:center;gap:4px;margin-right:14px;font-size:12px;color:#e9e4cf;text-shadow:0 1px 3px rgba(0,0,0,.7)}.sensor b{font-weight:700}.sn-t{color:var(--muted);font-variant-numeric:tabular-nums}
@@ -955,6 +960,7 @@ const TYPES={
   mini:{label:'ミニチャレンジ',hint:'ちょっとした用事・雑用。左の○で即クリア',mark:'○',child:'mini'}
 };
 const ICON={
+  book:'<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3.5C6.4 2.4 4.2 2 1.5 2.3v10.2c2.7-.3 4.9.1 6.5 1.2 1.6-1.1 3.8-1.5 6.5-1.2V2.3C11.8 2 9.6 2.4 8 3.5Z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M8 3.5v10.2" stroke="currentColor" stroke-width="1.1"/><path d="M3.3 5.2c1.2-.1 2.3.1 3.2.5M3.3 7.6c1.2-.1 2.3.1 3.2.5M9.5 5.7c.9-.4 2-.6 3.2-.5M9.5 8.1c.9-.4 2-.6 3.2-.5" stroke="currentColor" stroke-width=".8" opacity=".7"/></svg>',
   path:'<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 15c0-3 6-3.5 6-7S7 4.5 7 1" fill="none" stroke="currentColor" stroke-width="1.4" stroke-dasharray="2 1.6"/><path d="M11.5 1.2a2.3 2.3 0 0 1 2.3 2.3c0 1.7-2.3 4-2.3 4S9.2 5.2 9.2 3.5a2.3 2.3 0 0 1 2.3-2.3Z" fill="currentColor"/></svg>',
   today:'<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="3" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 .8v2.4M8 12.8v2.4M.8 8h2.4M12.8 8h2.4M2.9 2.9l1.7 1.7M11.4 11.4l1.7 1.7M2.9 13.1l1.7-1.7M11.4 4.6l1.7-1.7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>',
   main:'<svg viewBox="0 0 24 16" aria-hidden="true"><path d="M12 14C9.5 10 5.5 8.6 1 9.4 4 7.2 7.4 6.6 10.2 7.5 7.6 5.6 4.8 3.4 3 1c3.8 1.1 7 3.3 9 7 2-3.7 5.2-5.9 9-7-1.8 2.4-4.6 4.6-7.2 6.5 2.8-.9 6.2-.3 9.2 1.9-4.5-.8-8.5.6-11 4.6Z" fill="currentColor"/></svg>',
@@ -1119,7 +1125,7 @@ function allStepsDone(q){return !q.done && (q.steps.length||kids(q.id).length) &
 // ゼルダ風の帯（受注・実の発見など）
 function banner(kind,big,sub){
   const b=$('banner'); if(!b) return;
-  b.className='banner '+kind; b.innerHTML=`<div class="bn-in"><div class="bn-k">${{accept:'CHALLENGE',seed:'✿',rest:'REST',pr:'NEW RECORD',train:'TRAINING',reward:'REWARD',shrine:'SHRINE'}[kind]||''}</div><div class="bn-big">${esc(big)}</div>${sub?`<div class="bn-sub">${esc(sub)}</div>`:''}</div>`;
+  b.className='banner '+kind; b.innerHTML=`<div class="bn-in"><div class="bn-k">${{book:'ANCIENT TEXT',accept:'CHALLENGE',seed:'✿',rest:'REST',pr:'NEW RECORD',train:'TRAINING',reward:'REWARD',shrine:'SHRINE'}[kind]||''}</div><div class="bn-big">${esc(big)}</div>${sub?`<div class="bn-sub">${esc(sub)}</div>`:''}</div>`;
   void b.offsetWidth; b.classList.add('show'); banner._until=Date.now()+2300;
 }
 function toast(msg){ const w=(banner._until||0)-Date.now(); if(w>0){ setTimeout(()=>toast(msg),w+150); return; } const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('show'),2200)}
@@ -1236,11 +1242,11 @@ function addSteps(q,text){
 }
 
 /* ---------- render ---------- */
-const CAT_NAMES={today:'今日の冒険',path:'旅程',main:'メインチャレンジ',challenge:'チャレンジ',mini:'ミニチャレンジ',train:'鍛錬',memory:'思い出'};
-const CATS=['today','main','challenge','mini','train'];
+const CAT_NAMES={today:'今日の冒険',path:'旅程',main:'メインチャレンジ',challenge:'チャレンジ',mini:'ミニチャレンジ',train:'鍛錬',book:'書物の解読',memory:'思い出'};
+const CATS=['today','main','challenge','mini','train','book'];
 let toolSel='sync', bkList=null, memEdit=null;
 function render(){ try{ document.documentElement.style.setProperty('--vh',Math.max(window.innerHeight,document.documentElement.clientHeight,navigator.standalone?screen.height:0)+'px'); }catch(e){} { const pf=window.innerWidth<=820&&tab==='list'&&listCat==='path'&&!pathSel&&!selId; document.documentElement.classList.toggle('pfull-on',pf); document.documentElement.classList.toggle('ios-gap',!!navigator.standalone&&screen.height-window.innerHeight>20); if(pf){ try{ window.scrollTo(0,0); document.body.scrollTop=0; document.documentElement.scrollTop=0; }catch(e){} } document.body.classList.toggle('pfull',pf); } sortAllSteps();renderLv();renderHud();renderTabs();renderList();renderDetail();renderHints();
-  $('split').classList.toggle('has-sel',!!selId||(tab==='tools'&&toolPicked)||(tab==='pouch'&&!!pouchSel)||(tab==='rest'&&!!restSel)||(tab==='list'&&listCat==='train'&&!!trSel)||(tab==='list'&&listCat==='path'&&!!pathSel));
+  $('split').classList.toggle('has-sel',!!selId||(tab==='tools'&&toolPicked)||(tab==='pouch'&&!!pouchSel)||(tab==='rest'&&!!restSel)||(tab==='list'&&listCat==='train'&&!!trSel)||(tab==='list'&&listCat==='book'&&!!bkSel)||(tab==='list'&&listCat==='path'&&!!pathSel));
 }
 let toolPicked=false;
 function renderLv(){ setTimeout(syncBadge,0); setTimeout(wxRender,0);
@@ -1668,6 +1674,7 @@ function todayList(){
   h+=`<div class="day-h"><span>${dayView===ymd()?'今日':''}　${d.getMonth()+1}/${d.getDate()}（${'日月火水木金土'[d.getDay()]}）${holiday(dayView)?`<b class="hol">${holiday(dayView)}</b>`:''}</span><span>${items.filter(x=>x.s?x.s.done:x.q.done).length} / ${items.length}</span></div><div class="rows">`;
   if((state.rested||{})[dayView]) h+=`<div class="sec-empty">🔥 この日は焚き火で休みました</div>`;
   { const tt=trType(dayView); if(tt&&tt!=='R'){ const cl=trClear(dayView); h+=`<button class="row tr-today ${cl?'done':''}" data-act="trday" data-v="${dayView}"><span class="r-mark">${ico('train')}</span><span class="r-main"><span class="r-title">鍛錬：${TR_NAME[tt]}</span><span class="r-sub">約${trSets(dayView)===2?15:20}分</span></span><span class="r-side">${cl?'<span class="r-clear">CLEAR</span>':''}</span><span class="r-notch"></span></button>`; } }
+  h+=bkTodayRows(dayView);
   // 工程はチャレンジごとにまとめて、その下に並べる
   { const seen=new Map(); const blocks=[];
     items.forEach(x=>{ if(!x.s){ blocks.push(x); return; } let g=seen.get(x.q.id); if(!g){ g={q:x.q,steps:[]}; seen.set(x.q.id,g); blocks.push(g); } g.steps.push(x.s); });
@@ -1701,6 +1708,7 @@ function renderList(){
   if(tab==='pouch'){ L.innerHTML=pouchList(); fitTitles(); return; }
   if(tab!=='tools'&&listCat==='today'){ L.innerHTML=connectBanner()+todayList(); fitTitles(); return; }
   if(tab!=='tools'&&listCat==='train'){ L.innerHTML=connectBanner()+trList(); fitTitles(); return; }
+  if(tab!=='tools'&&listCat==='book'){ L.innerHTML=connectBanner()+bookList(); fitTitles(); return; }
   if(tab!=='tools'&&listCat==='path'){ const sv=$('slView'), st=oldSt!=null?oldSt:(sv?sv.scrollTop:null); L.innerHTML=connectBanner()+pathList(); if(document.body.classList.contains('pfull')){ const sl=L.querySelector('.slate'); if(sl){ sl.id='slFull'; document.body.appendChild(sl); } } pLayout(); pPad(); if(st!=null&&$('slView')) $('slView').scrollTop=st; setTimeout(pathAfter,0); return; }
   if(tab!=='tools'&&listCat==='memory'){
     const ms=state.quests.filter(q=>q.done&&q.type!=='mini').sort((a,b)=>(b.doneAt||0)-(a.doneAt||0));
@@ -1779,6 +1787,7 @@ function renderDetail(){
   if(tab==='rest'){ D.innerHTML=`<div class="panel p-empty fire-panel"><div class="fire">🔥</div><p>疲れた日や体調が悪い日は、焚き火で休もう。<br>休んだ日の分は明日に回して、持ち越しには数えません。</p></div>`; return; }
   if(tab==='tools'){ D.innerHTML=`<div class="panel"><button class="back" data-act="back">‹ 一覧へ</button>${toolPanel()}</div>`; return; }
   if(tab==='list'&&listCat==='train'){ D.innerHTML=trPanel(); return; }
+  if(tab==='list'&&listCat==='book'){ D.innerHTML=bkPanel(); return; }
   if(tab==='list'&&listCat==='path'){ D.innerHTML=pathPanel(); return; }
   const q=findQ(selId);
   if(!q){ D.innerHTML=`<div class="panel p-empty"><div class="p-wm">${SECBG[listCat]}</div><p>左のリストから選ぶと、ここに説明が表示されます</p></div>`; return; }
@@ -1852,6 +1861,7 @@ function renderHints(){
   else if(tab==='tools'){ h=toolPicked?hint('back','閉じる','B'):''; }
   else if(!q&&listCat==='memory'){ h=''; }
   else if(!q&&listCat==='train'){ h=trSel?hint('trback','閉じる','B'):''; }
+  else if(!q&&listCat==='book'){ h=bkSel?hint('bkback','閉じる','B'):hint('bknew','新しい書物を借りる','X'); }
   else if(!q&&listCat==='path'){ h=pathSel?hint('pathback','道へもどる','B'):''; }
   else if(!q){ h=hint('newcur',listCat==='today'?'この日にチャレンジを追加':`新しい${CAT_NAMES[listCat]}`,'X'); }
   else if(editing){ h=(q===draft?hint('delete','やめる','B'):hint('delete','削除','','danger'))+hint('doneedit',q===draft?'登録する':'完了','A','gold'); }
@@ -1943,6 +1953,15 @@ document.addEventListener('click',e=>{
     case 'trday': selId=null; trSel=b.dataset.v; tab='list'; if(listCat!=='train'){ listCat='train'; } if(/^\d/.test(trSel)) trWeek=trWeekStart(trSel); render(); window.innerWidth<=820&&window.scrollTo({top:0}); break;
     case 'trweek': { const d=new Date((trWeek||trWeekStart(trDefaultDay()))+'T00:00:00'); d.setDate(d.getDate()+7*(+b.dataset.v)); const k=ymd(d); if(k<=trLast()&&ymd(new Date(d.getTime()+6*DAY))>=TR_START) trWeek=k; renderList(); break; }
     case 'trback': trSel=null; render(); break;
+    case 'bksel': selId=null; trSel=null; bkSel=b.dataset.v; bkEdit=false; tab='list'; listCat='book'; render(); window.innerWidth<=820&&window.scrollTo({top:0}); break;
+    case 'bkback': { const B=state.books&&state.books[bkSel]; if(B&&!B.title&&!B.pages){ delete state.books[bkSel]; save(); } bkSel=null; bkEdit=false; render(); break; }
+    case 'bknew': { const t=ymd(), id=uid(); state.books=state.books||{}; state.books[id]={title:'',pages:0,start:t,due:bkAdd(t,14),goal:bkAdd(t,9),log:{},u:Date.now()}; selId=null; bkSel=id; bkEdit=true; tab='list'; listCat='book'; save(); render(); setTimeout(()=>{ const e=$('bkTitle'); e&&e.focus(); },50); break; }
+    case 'bkedit': bkEdit=true; renderDetail(); break;
+    case 'bksave': bkSave(); break;
+    case 'bkrec': bkRecord(); break;
+    case 'bkret': { const B=state.books[bkSel]; if(B){ B.ret=B.ret?null:ymd(); B.u=Date.now(); if(B.ret) toast('図書館に返した。おつかれさま'); save(); render(); } break; }
+    case 'bkdel': { const B=state.books[bkSel]; if(B&&confirm('この書物を消しますか？')){ B.del=1; B.u=Date.now(); bkSel=null; bkEdit=false; save(); render(); } break; }
+    case 'bkundo': { const B=state.books[bkSel], d=b.dataset.v; if(B&&B.log&&d in B.log){ delete B.log[d]; B.u=Date.now(); save(); render(); } break; }
     case 'restsel': restSel=b.dataset.v; selId=null; render(); window.innerWidth<=820&&window.scrollTo({top:0}); break;
     case 'restback': restSel=null; render(); break;
     case 'trfin': { const k=trSel, H=hm(), on=b.dataset.v==='1', was=!!(H.days[k]||{}).train; if(!k||on===was) break; if(on) trPin(k); const vb=trVessels(); H.days[k]={...(H.days[k]||{}),train:on}; hmTouch('days',k);
@@ -2742,6 +2761,87 @@ function trOnChange(e){
     save(); renderList(); renderLv(); return true; }
   if(el.id==='trMemo'){ H.days[k]={...(H.days[k]||{}),memo:el.value.slice(0,500)}; hmTouch('days',k); save(); return true; }
   return false;
+}
+
+/* ---------- 書物の解読（図書館の本を、返す日より前に読み終える） ---------- */
+// 借りた日から10日で読み終える目標。毎日「残りのページ ÷ 残りの日数」を、その日の解読の目安にする
+let bkSel=null, bkEdit=false;
+const bkAdd=(k,n)=>{ const d=new Date(k+'T00:00:00'); d.setDate(d.getDate()+n); return ymd(d); };
+const bkDays=(a,b)=>Math.round((new Date(b+'T00:00:00')-new Date(a+'T00:00:00'))/DAY);
+const bkMD=k=>`${+k.slice(5,7)}/${+k.slice(8)}`;
+function bkAll(){ return Object.entries(state.books||{}).filter(([,v])=>v&&!v.del).map(([id,v])=>({id,...v})); }
+function bkAt(B,d,strict){ let p=0; for(const k in (B.log||{})) if(strict?k<d:k<=d) p=Math.max(p,+B.log[k]||0); return Math.min(p,B.pages||p); }
+// その日の目安：前の日までに読んだ所から、目標の日（過ぎたら返す日）までを均等に割る
+function bkPlan(B,d){
+  const s0=bkAt(B,d,true), N=B.pages||0, end=d<=B.goal?B.goal:d<=B.due?B.due:d, left=bkDays(d,end)+1;
+  const quota=Math.max(0,Math.ceil((N-s0)/left)), to=Math.min(N,s0+quota), now=bkAt(B,d,false);
+  return {s0,to,quota,now,left,end,met:N>0&&now>=to,over:end!==B.goal};
+}
+// 計画どおりなら今日までに読んでいるはずのページ（借りた日から目標の日まで一直線）
+function bkIdeal(B,d){ const tot=bkDays(B.start,B.goal)+1, k=Math.min(tot,Math.max(0,bkDays(B.start,d)+1)); return Math.round((B.pages||0)*k/tot); }
+function bkTodayRows(d){
+  return bkAll().filter(B=>!B.ret&&!B.fin&&B.pages&&B.start<=d).map(B=>{ const P=bkPlan(B,d), rest=Math.max(0,P.to-P.now);
+    return `<button class="row bk-today ${P.met?'done':''}" data-act="bksel" data-v="${B.id}"><span class="r-mark">${ico('book')}</span><span class="r-main"><span class="r-title">解読：${esc(B.title||'(無題)')}</span><span class="r-sub">${P.met?`p.${P.now} まで読んだ`:`p.${P.to} まで（あと${rest}ページ）`}・返却 ${bkMD(B.due)}</span></span><span class="r-side">${P.met?'<span class="r-clear">CLEAR</span>':''}</span><span class="r-notch"></span></button>`; }).join('');
+}
+function bookList(){
+  const t=ymd(), all=bkAll(), act=all.filter(B=>!B.ret).sort((a,b)=>a.due<b.due?-1:1), old=all.filter(B=>B.ret).sort((a,b)=>a.ret<b.ret?1:-1);
+  let h=catBar('book')+`<div class="rows"><button class="row add-row" data-act="bknew"><span class="r-mark">＋</span><span class="r-main"><span class="r-title">新しい書物を借りる</span></span><span class="r-notch"></span></button>`;
+  h+=act.map(B=>{ const pct=B.pages?Math.round(bkAt(B,t)/B.pages*100):0, P=B.pages?bkPlan(B,t):null, dl=bkDays(t,B.due);
+    const sub=B.fin?`読み解いた（${bkMD(B.fin)}）・図書館に返そう`:!B.pages?'ページ数を入れよう':P.met?`今日の解読は済んだ・p.${P.now}`:`今日は p.${P.to} まで`;
+    return `<button class="row ${bkSel===B.id?'sel':''} ${B.fin?'done':''}" data-act="bksel" data-v="${B.id}"><span class="r-mark">${ico('book')}</span><span class="r-main"><span class="r-title">${esc(B.title||'(無題)')}</span><span class="r-sub">${sub}</span></span><span class="r-side">${B.fin?'<span class="r-clear">COMPLETE</span>':`<span class="do">${pct}%</span><span class="due ${dl<=2?'soon':''}">返却 ${bkMD(B.due)}</span>`}</span><span class="r-notch"></span></button>`; }).join('');
+  if(!all.length) h+=`<div class="sec-empty">図書館で借りた本を登録すると、10日で読み終えるように毎日の解読ページを割り出します</div>`;
+  if(old.length) h+=`<div class="day-h"><span>返した書物</span><span>${old.length}冊</span></div>`+old.map(B=>`<button class="row done ${bkSel===B.id?'sel':''}" data-act="bksel" data-v="${B.id}"><span class="r-mark">${ico('book')}</span><span class="r-main"><span class="r-title">${esc(B.title||'(無題)')}</span><span class="r-sub">${B.pages}ページ・${bkMD(B.start)}〜${bkMD(B.ret)}</span></span><span class="r-side">${B.fin?'<span class="r-clear">COMPLETE</span>':''}</span><span class="r-notch"></span></button>`).join('');
+  return h+'</div>';
+}
+function bkPanel(){
+  const B=bkSel&&state.books&&state.books[bkSel]; if(!B||B.del) return `<div class="panel p-empty"><div class="p-wm">${ICON.book}</div><p>書物を選ぶと、今日の解読の目安と進み具合が表示されます</p></div>`;
+  const t=ymd(), back=`<button class="back" data-act="bkback">‹ 一覧へ</button>`;
+  if(bkEdit||!B.pages) return `<div class="panel bk-panel">${back}<h2 class="p-title">${B.title?'書物を書き直す':'新しい書物'}</h2><div class="form">
+    <div class="f"><label>書名</label><input type="text" id="bkTitle" value="${esc(B.title||'')}" placeholder="例：ハイラル王家の記録"></div>
+    <div class="f"><label>ページ数（読む所の最後のページ）</label><input type="number" id="bkPages" inputmode="numeric" min="1" value="${B.pages||''}" placeholder="例：320"></div>
+    <div class="f"><label>借りた日</label><input type="date" id="bkStart" value="${B.start}"></div>
+    <div class="f"><label>読み終える目標の日（借りた日から10日目）</label><input type="date" id="bkGoal" value="${B.goal}"></div>
+    <div class="f"><label>返す日（借りた日から2週間）</label><input type="date" id="bkDue" value="${B.due}"></div>
+    <p class="hint">借りた日を変えると、目標の日と返す日もそれに合わせて動きます。</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" data-act="bksave">これで決める</button>${B.title?'<button class="btn ghost" data-act="bkback">やめる</button>':''}<button class="btn danger" data-act="bkdel">消す</button></div></div></div>`;
+  const N=B.pages, now=bkAt(B,t), P=bkPlan(B,t), id=bkIdeal(B,t), diff=now-id, dl=bkDays(t,B.due), gl=bkDays(t,B.goal);
+  let h=`<div class="panel bk-panel"><div class="p-wm">${ICON.book}</div>${back}<h2 class="p-title">${esc(B.title||'(無題)')}</h2>
+  <div class="p-giver"><span><i class="giver-mark">!</i>全${N}ページ</span><span class="p-place">${B.ret?`${bkMD(B.ret)} に返した`:`返却の刻限 ${bkMD(B.due)}（${dl>0?`あと${dl}日`:dl===0?'今日':`${-dl}日過ぎた`}）`}</span></div>`;
+  // 解読のゲージ：今いる所と、計画どおりならいるはずの所
+  h+=`<div class="bk-gauge"><div class="bk-bar"><i style="width:${(now/N*100).toFixed(1)}%"></i><b style="left:${(Math.min(id,N)/N*100).toFixed(1)}%" title="計画どおりならここ"></b></div><div class="bk-nums"><span>p.${now} / ${N}</span><span>${Math.round(now/N*100)}%</span></div></div>`;
+  if(B.fin) h+=`<div class="bk-today done"><span class="r-clear">COMPLETE</span><p>${bkMD(B.fin)}に読み解いた。${B.ret?'':'忘れずに図書館へ返そう。'}</p></div>`;
+  else if(!B.ret){
+    const st=t<B.start?`<p>${bkMD(B.start)}から読みはじめる。</p>`:`<p>${P.met?`今日の解読は済んだ。p.${P.to}までが今日の目安だった。`:`今日は <em>p.${P.to}</em> まで読もう（${P.quota}ページ）。`}</p><p class="hint">${P.over?(t<=B.due?`目標の日（${bkMD(B.goal)}）を過ぎたので、返す日までの${P.left}日で割っている。`:'返す日を過ぎている。残りを今日で。'):`目標の${bkMD(B.goal)}まであと${P.left}日。残り${N-P.s0}ページ ÷ ${P.left}日。`}${t>=B.start&&!P.over?(diff>=0?`　計画より${diff}ページ先にいる。`:`　計画より${-diff}ページ遅れている。`):''}</p>`;
+    h+=`<div class="bk-today ${P.met?'done':''}">${st}<div class="bk-rec"><span>今日は p.</span><input type="number" id="bkPg" inputmode="numeric" min="0" max="${N}" value="" placeholder="${P.now||''}"><span>まで読んだ</span><button class="btn primary small" data-act="bkrec">記す</button></div></div>`;
+  }
+  // 日ごとの印（借りた日〜目標の日、その先は返す日まで）
+  { let pips=''; for(let k=B.start;k<=B.due;k=bkAdd(k,1)){ const ex=bkAt(B,k)-bkAt(B,k,true), lg=B.log&&(k in B.log), cls=[k===t?'now':'',k>B.goal?'grace':'',lg&&ex>0?'on':'',k<t&&!(lg&&ex>0)?'miss':'',k===B.goal?'goal':''].join(' ');
+      pips+=`<span class="bk-pip ${cls}" title="${bkMD(k)}${lg?` p.${B.log[k]}`:''}"><i></i><small>${+k.slice(8)}</small></span>`; }
+    h+=`<div class="sec-h"><span>解読の歩み</span></div><div class="bk-pips">${pips}</div><p class="hint" style="margin:4px 0 10px">◆が読んだ日。金の縁が読み終える目標の日、うすい所は返す日までの猶予。</p>`; }
+  const lg=Object.entries(B.log||{}).sort((a,b)=>a[0]<b[0]?1:-1);
+  if(lg.length) h+=`<div class="kids">${lg.map(([d,p])=>`<div class="kid"><span>${bkMD(d)}　p.${p} まで</span><button class="btn small ghost" data-act="bkundo" data-v="${d}">消す</button></div>`).join('')}</div>`;
+  h+=`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px"><button class="btn ${B.fin&&!B.ret?'primary':''}" data-act="bkret">${B.ret?'返したのを取り消す':'図書館に返した'}</button><button class="btn ghost" data-act="bkedit">書き直す</button></div></div>`;
+  return h;
+}
+function bkSave(){
+  const B=state.books[bkSel]; if(!B) return; const v=id=>($(id)||{}).value||'';
+  const title=v('bkTitle').trim(), pages=parseInt(v('bkPages'),10), st=v('bkStart')||B.start;
+  if(!title){ toast('書名を入れよう'); return; } if(!(pages>0)){ toast('ページ数を入れよう'); return; }
+  let goal=v('bkGoal')||B.goal, due=v('bkDue')||B.due;
+  if(st!==B.start){ if(goal===B.goal) goal=bkAdd(st,9); if(due===B.due) due=bkAdd(st,14); }
+  if(goal<st) goal=st; if(due<goal) due=goal;
+  Object.assign(B,{title:title.slice(0,80),pages,start:st,goal,due,u:Date.now()});
+  if(B.fin&&bkAt(B,ymd())<pages) B.fin=null;
+  bkEdit=false; save(); render();
+}
+function bkRecord(){
+  const B=state.books[bkSel]; if(!B) return; const t=ymd(), el=$('bkPg'), pg=Math.min(B.pages,Math.max(0,parseInt(el&&el.value,10)));
+  if(!(pg>=0)||el.value===''){ toast('読んだページを入れよう'); return; }
+  const before=bkPlan(B,t); B.log={...(B.log||{}),[t]:pg}; B.u=Date.now(); const P=bkPlan(B,t);
+  if(pg>=B.pages&&!B.fin){ B.fin=t; gain(40); earnRupee(30); setTimeout(()=>banner('book','書物を読み解いた',`${B.title}　${B.pages}ページ　+40 XP ・ +30ルピー`),200); }
+  else if(P.met&&!before.met){ gain(10); earnRupee(5); toast(`今日の解読を終えた  +10 XP ・ +5ルピー`); }
+  else toast(`p.${pg} まで記した`);
+  save(); renderLv(); render();
 }
 
 /* ---------- ルピー（ためて、ごほうびの店で使う） ---------- */
@@ -4296,7 +4396,7 @@ function mergeStates(a,b){
   const map={};
   [...(a.quests||[]),...(b.quests||[])].forEach(q=>{ const e=map[q.id]; map[q.id]=e?mergeQ(e,q):q; });
   const quests=Object.values(map).filter(q=>!(del[q.id]&&del[q.id]>=(q.u||0)));
-  return {xp:Math.max(a.xp||0,b.xp||0),seeds:Math.max(a.seeds||0,b.seeds||0),rested:{...(a.rested||{}),...(b.rested||{})},hm:mergeHm(a.hm,b.hm),rupeeEarned:Math.max(a.rupeeEarned||0,b.rupeeEarned||0),shrines:Math.max(a.shrines||0,b.shrines||0),purchases:{...(a.purchases||{}),...(b.purchases||{})},shop:(()=>{const o={...(a.shop||{})}; Object.entries(b.shop||{}).forEach(([k,v])=>{ if(!o[k]||(v.u||0)>(o[k].u||0)) o[k]=v; }); return o;})(),moonDone:[a.moonDone||'',b.moonDone||''].sort().pop(),mats:(()=>{const o={...(a.mats||{})}; Object.entries(b.mats||{}).forEach(([k,v])=>{ if(!o[k]||(v.u||0)>(o[k].u||0)) o[k]=v; }); return o;})(),matHist:(()=>{const o={...(a.matHist||{})}; Object.entries(b.matHist||{}).forEach(([k,v])=>{ o[k]=Math.max(o[k]||0,v); }); return o;})(),chap:((b.chap&&(b.chap.u||0)>((a.chap||{}).u||0))?b.chap:(a.chap||b.chap)),plan:mergePlan(a.plan,b.plan),rev:(()=>{const A=a.rev||{},B=b.rev||{},n={...(A.notes||{})}; Object.entries(B.notes||{}).forEach(([k,v])=>{ if(!n[k]||(v.u||0)>(n[k].u||0)) n[k]=v; }); return {day:[A.day||'',B.day||''].sort().pop(),month:[A.month||'',B.month||''].sort().pop(),notes:n,u:Math.max(A.u||0,B.u||0)};})(),quests,deleted:del,pristine:false};
+  return {xp:Math.max(a.xp||0,b.xp||0),seeds:Math.max(a.seeds||0,b.seeds||0),rested:{...(a.rested||{}),...(b.rested||{})},hm:mergeHm(a.hm,b.hm),rupeeEarned:Math.max(a.rupeeEarned||0,b.rupeeEarned||0),shrines:Math.max(a.shrines||0,b.shrines||0),purchases:{...(a.purchases||{}),...(b.purchases||{})},books:(()=>{const o={...(a.books||{})}; Object.entries(b.books||{}).forEach(([k,v])=>{ if(!o[k]||(v.u||0)>(o[k].u||0)) o[k]=v; }); return o;})(),shop:(()=>{const o={...(a.shop||{})}; Object.entries(b.shop||{}).forEach(([k,v])=>{ if(!o[k]||(v.u||0)>(o[k].u||0)) o[k]=v; }); return o;})(),moonDone:[a.moonDone||'',b.moonDone||''].sort().pop(),mats:(()=>{const o={...(a.mats||{})}; Object.entries(b.mats||{}).forEach(([k,v])=>{ if(!o[k]||(v.u||0)>(o[k].u||0)) o[k]=v; }); return o;})(),matHist:(()=>{const o={...(a.matHist||{})}; Object.entries(b.matHist||{}).forEach(([k,v])=>{ o[k]=Math.max(o[k]||0,v); }); return o;})(),chap:((b.chap&&(b.chap.u||0)>((a.chap||{}).u||0))?b.chap:(a.chap||b.chap)),plan:mergePlan(a.plan,b.plan),rev:(()=>{const A=a.rev||{},B=b.rev||{},n={...(A.notes||{})}; Object.entries(B.notes||{}).forEach(([k,v])=>{ if(!n[k]||(v.u||0)>(n[k].u||0)) n[k]=v; }); return {day:[A.day||'',B.day||''].sort().pop(),month:[A.month||'',B.month||''].sort().pop(),notes:n,u:Math.max(A.u||0,B.u||0)};})(),quests,deleted:del,pristine:false};
 }
 function mergePlan(A,B){ A=A||{}; B=B||{}; const d={...(A.d||{})}; Object.entries(B.d||{}).forEach(([k,day])=>{ const o={...(d[k]||{})}; Object.entries(day||{}).forEach(([id,b])=>{ if(!o[id]||(b.u||0)>(o[id].u||0)) o[id]=b; }); d[k]=o; }); const tpl={...(A.tpl||{})}; Object.entries(B.tpl||{}).forEach(([k,v])=>{ if(!tpl[k]||(v.u||0)>(tpl[k].u||0)) tpl[k]=v; }); return {d,tpl}; }
 const planU=st=>{ let m=0; const P=st.plan||{}; Object.values(P.d||{}).forEach(day=>Object.values(day||{}).forEach(b=>{ if((b.u||0)>m) m=b.u; })); Object.values(P.tpl||{}).forEach(v=>{ if((v.u||0)>m) m=v.u; }); return m; };
