@@ -1697,7 +1697,7 @@ function todayList(){
     const fr=pBlocks(dayView).filter(x=>!x.q&&!x.tr&&!x.bk&&(x.t||'').trim()).map(x=>({fb:x}));
     const key=b=>b.fb?[b.fb.done?1:0,b.fb.s<1440?pHM(b.fb.s):'99']:b.steps?[b.steps.every(x=>x.done)?1:0,b.steps.map(x=>x.doTime||'99').sort()[0]]:[b.q.done?1:0,b.q.doTime||'99'];
     const all=fr.length?[...blocks,...fr].map((b,i)=>({b,i,k:key(b)})).sort((a,b)=>(a.k[0]-b.k[0])||(a.k[1]<b.k[1]?-1:a.k[1]>b.k[1]?1:a.i-b.i)).map(x=>x.b):blocks;
-    h+=all.map(b=>{ if(b.fb){ const x=b.fb; return `<div class="row fb-row ${x.done?'done':''}"><span class="r-mark qcheck" data-act="fbdone" data-v="${x.id}" title="終えた">${x.done?'✓':'<i class="fb-ck"></i>'}</span><button class="r-main fb-open" data-act="fbopen" data-v="${x.id}"><span class="r-title">${esc(x.t)}</span><span class="r-sub">旅程の予定${x.fix?'・毎日のこと':''}</span></button><span class="r-side">${x.done?'<span class="r-clear">CLEAR</span>':`<span class="do">${pfmt(x.s)}〜${pfmt(x.e)}</span>`}</span><span class="r-notch"></span></div>`; }
+    h+=all.map(b=>{ if(b.fb){ const x=b.fb; return `<div class="row fb-row ${x.done?'done':''}"><span class="r-mark qcheck" data-act="fbdone" data-v="${x.id}" title="終えた">${x.done?'✓':'<i class="fb-ck"></i>'}</span><button class="r-main fb-open" data-act="fbopen" data-v="${x.id}"><span class="r-title">${esc(x.t)}</span><span class="r-sub">旅程の予定${x.fix?'・毎日のこと':''}${x.carry&&!x.done?` <span class="carry" title="${x.carry}回持ち越し">↻${x.carry}</span>`:''}</span></button><span class="r-side">${x.done?'<span class="r-clear">CLEAR</span>':`<span class="do">${pfmt(x.s)}〜${pfmt(x.e)}</span>`}</span><span class="r-notch"></span></div>`; }
       if(!b.steps) return row(b.q); const q=b.q, dn=b.steps.filter(x=>x.done).length;
       return `<div class="tgroup ${dn===b.steps.length?'done':''}"><button class="tg-h ${q.id===selId?'sel':''}" data-act="select" data-id="${q.id}"><span class="tg-i">${ico(q.type)}</span><span class="tg-t">${esc(q.title||'(無題)')}</span><small>${dn} / ${b.steps.length}</small></button>${b.steps.map(st=>stepRowToday(q,st,true)).join('')}</div>`; }).join(''); }
   if(!items.length&&!pBlocks(dayView).some(x=>!x.q&&!x.tr&&!x.bk&&(x.t||'').trim())) h+=`<div class="sec-empty">この日の予定はまだありません。チャレンジや工程に「やる日」を入れると、ここに並びます</div>`;
@@ -3282,6 +3282,17 @@ function pAutoPlace(k){
 function pSyncTime(k,id){ const b=(plan().d[k]||{})[id]; if(!b||b.del||!b.q||b.s>=1440) return; const r=pRef(b); if(!r) return; const t=pHM(b.s), now=Date.now();
   // 旅程に置いた冒険は、冒険手帳の「やる日・やる時刻」もその道しるべに合わせる（工程があるチャレンジは工程に入れる）
   const os=r.ss?r.ss:[r.s||r.q], du=b.e-b.s; let ch=0; os.forEach(x=>{ if(x.doDate!==k||x.doTime!==t){ if(x.doDate!==k) x.carry=0; x.doDate=k; x.doTime=t; ch=1; } if(!r.ss&&x.doDur!==du){ x.doDur=du; ch=1; } }); if(ch){ r.q.u=now; if(!r.ss) b.at=t; save(); } }
+// 旅程に立てただけの予定で終わらなかった物は、冒険と同じように今日へ持ち越す（同じ時刻で。毎日のことは持ち越さない）
+// 0時を過ぎても4時までは前の日の旅の続きなので、旅の日が変わってから動かす。2台で動いても同じ予定になるよう、新しい札の名前は元の札から決める
+let pCarryDay=null;
+function pCarry(){ const t=pJDay(); if(pCarryDay===t) return 0; pCarryDay=t; const P=plan(), from=ymd(new Date(Date.now()-21*DAY)), now=Date.now(); let n=0;
+  Object.keys(P.d).filter(k=>k<t&&k>=from).sort().forEach(k=>{ const day={...(P.d[k]||{})}; let ch=false;
+    Object.entries(day).forEach(([id,b])=>{ if(!b||b.del||b.q||b.tr||b.bk||b.fix||b.wake||b.done||!(b.t||'').trim()) return;
+      const nid=id.replace(/c\d*$/,'')+'c'+((b.carry||0)+1), td={...(P.d[t]||{})};
+      if(!td[nid]) td[nid]={s:b.s,e:b.e,t:b.t,...(b.pre?{pre:b.pre}:{}),...(b.post?{post:b.post}:{}),carry:(b.carry||0)+1,from:k,u:now};
+      P.d={...P.d,[t]:td}; day[id]={...b,del:1,moved:t,u:now}; ch=true; n++; });
+    if(ch) P.d={...P.d,[k]:day}; });
+  if(n){ save(); if(listCat==='path'||listCat==='today') render(); toast(`旅程の予定 ${n}件を今日に持ち越しました`); } return n; }
 // 冒険手帳でやる日を別の日に変えた冒険（工程）は、その日の旅程から外す（今日から先の日だけ。過去の旅程は記録として残す）
 function pPrune(k){ if(k<ymd()) return; const P=plan(), day={...(P.d[k]||{})}, now=Date.now(); let ch=false;
   Object.entries(day).forEach(([id,b])=>{ if(!b||b.del) return;
@@ -3372,7 +3383,7 @@ function pathList(){
       :`<g class="rd-pin k-${kd} ${dn?'done':''} ${cur?'cur':''} ${pathSel===b.id?'sel':''}" transform="translate(${x.toFixed(1)} ${y})"><rect class="pn-g" x="-9" y="-9" width="18" height="18" rx="3" transform="rotate(45)"/><rect class="pn-b" x="-6.5" y="-6.5" width="13" height="13" rx="2" transform="rotate(45)"/>${b.tr?'<path class="pn-c" d="M-3.5 0h7M-3.5-2v4M3.5-2v4"/>':'<path class="pn-c" d="M0-3.2 3.2 0 0 3.2-3.2 0Z"/>'}</g>`;
     return `<i class="rd-knob k-${kd}" data-pgrip="${b.id}" style="top:${y2}px;left:${pRX(y2).toFixed(1)}px" aria-hidden="true"></i>
       <div class="rd-card k-${kd} ${dn?'done':''} ${past&&!dn?'past':''} ${cur?'cur':''} ${pathSel===b.id?'sel':''} ${pathDrag&&pathDrag.id===b.id?'drag':''}" data-pb="${b.id}" data-x="${x.toFixed(1)}" data-y="${y}" data-sd="${pSide(y)}" style="top:${cy}px;${pSide(y)==='r'?`left:${(pSpan(y)[1]+30).toFixed(0)}px;max-width:${(pW-pSpan(y)[1]-36).toFixed(0)}px`:`left:auto;right:${(pW-pSpan(y)[0]+30).toFixed(0)}px;max-width:${(pSpan(y)[0]-36).toFixed(0)}px`}">
-        <span class="rc-head"><span class="rc-time">${pfmt(b.s)}${b.wake&&!b.woke?'<small>〜起きるまで</small>':''}</span>${r&&r.ss?`<span class="rc-dots">${r.ss.map(z=>`<i class="${z.done?'on':''}"></i>`).join('')}</span>`:''}${dn?'<em class="tb-clear">CLEAR</em>':''}</span><b class="rc-name">${esc(ttl||'（名前なし）')}</b>
+        <span class="rc-head"><span class="rc-time">${pfmt(b.s)}${b.wake&&!b.woke?'<small>〜起きるまで</small>':''}${b.carry&&!dn?`<small class="carry">↻${b.carry}</small>`:''}</span>${r&&r.ss?`<span class="rc-dots">${r.ss.map(z=>`<i class="${z.done?'on':''}"></i>`).join('')}</span>`:''}${dn?'<em class="tb-clear">CLEAR</em>':''}</span><b class="rc-name">${esc(ttl||'（名前なし）')}</b>
         ${late?`<button class="rc-act" data-act="pathlate" data-v="${b.id}"><i>⟳</i>遅れた　今から始める</button>`:''}${wake?`<button class="rc-act" data-act="pathwake" data-v="${b.id}"><i>☀</i>起きた</button>`:''}</div>`; }).join('');
   svg+=foot+pCliff(k,H,G.s,gE,openEnd,openTop);
   // 目覚めと焚き火のそばに「起きた」「休む」。今日の4時より前は、上の焚き火（昨夜の野営地）で「休む」を押すと昨日の夜として記録
@@ -4505,14 +4516,14 @@ async function loadData(){
     if(needPush) schedulePush(200);
   }catch(e){}
 }
-setInterval(()=>{ if(ymd()!==carryDay) runCarry(); if(document.visibilityState==='visible') loadData(); },30000);
-document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible'){ if(ymd()!==carryDay) runCarry(); loadData(); } });
+setInterval(()=>{ if(ymd()!==carryDay) runCarry(); pCarry(); if(document.visibilityState==='visible') loadData(); },30000);
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible'){ if(ymd()!==carryDay) runCarry(); pCarry(); loadData(); } });
 
 // #q=ID で開いたら、そのチャレンジを表示
 (function(){ const m=location.hash.match(/^#q=([\w-]+)/); const q=m&&findQ(m[1]); if(q){ selId=q.id; tab='list'; listCat=q.type; } if(m){ try{ history.replaceState(null,'',location.pathname+location.search); }catch(e){} } })();
 
 stamp(); window.__qlReady=true;
-render(); if(moveDoToSteps()){ save(); render(); } if(trImport()){ state.pristine=false; save(); render(); } runCarry(); if(pBackfill()) render();
+render(); if(moveDoToSteps()){ save(); render(); } if(trImport()){ state.pristine=false; save(); render(); } runCarry(); pCarry(); if(pBackfill()) render();
 // 起動して少ししたら、今日の地図を裏で描いておく（開いたときに待たないように）
 setTimeout(()=>{ try{ const w=+localStorage.getItem('ql-pw'); if(!w) return; const sv=pW; pW=w; pTerAsk(pJDay(),pm2y(PATH_H1)+10,false); pTerPrefetch(pJDay()); pW=sv; }catch(e){} },400);
 if(sync.url){ syncScan(); flush(); loadData().then(pull); }
