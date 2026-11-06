@@ -4060,7 +4060,7 @@ function pBiomeW(x,v){ if(!P_BIOMES) return (P_VOLC||P_SNOW||P_DESERT||P_WET)?[P
   return [wv,wd,ww,wsn]; }
 const pBiome=(x,y)=>pBiomeW(x,y/PX+pOff);
 // ハイラル城のような大きな城：たまに（約3日に1度）、道のそばの堀の中の島に建つ
-const P_25D=true, P_RISE=70; // 高さを立ち上げる量（高さ1あたりの画素） // 動く地図（陰影を強く・雲の影・水のきらめき・時刻の光・足あと）
+const P_25D=false, P_RISE=70; // 高さを立ち上げる量（高さ1あたりの画素） // 動く地図（陰影を強く・雲の影・水のきらめき・時刻の光・足あと）
 const P_CASTLE=true, P_CA=7000, P_CAK=.86, pCaMemo=new Map();
 // ハイラル城（ブレワイの地図から）：大きく不規則な湖に、段々に重なった台地の島が浮かぶ。島は入り江と池で刻まれ、
 // 南西（牢獄）と南東（森の公園）から大きな半島が湖に突き出す。北は段々の崖、南に崩れた格子の城下町
@@ -4230,7 +4230,7 @@ function pTerAsk(k,H,first){
   if(!pTerBusy){ pTerBusy=true; setTimeout(pTerStep,0); }
 }
 // 一度描いた地形の絵は端末に取っておく（次に開いたときは描かずにすぐ出す）。描き方を変えたら版を上げて作り直す
-const P_TER_V="t138|", P_TER_MAX=36;
+const P_TER_V="t139|", P_TER_MAX=36;
 const pIDB=(()=>{ let dbp=null; const open=()=>dbp||(dbp=new Promise((res,rej)=>{ try{ const r=indexedDB.open('ql-ter',1); r.onupgradeneeded=()=>r.result.createObjectStore('img'); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }catch(e){ rej(e); } }));
   const st=m=>open().then(db=>db.transaction('img',m).objectStore('img'));
   const keys=()=>{ try{ return JSON.parse(localStorage.getItem('ql-ter-keys')||'[]'); }catch(e){ return []; } }, setKeys=a=>{ try{ localStorage.setItem('ql-ter-keys',JSON.stringify(a)); }catch(e){} };
