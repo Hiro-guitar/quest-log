@@ -1361,7 +1361,7 @@ const holiday=key=>key?(jpHolidays(+key.slice(0,4))[key]||''):'';
 function weekStrip(){
   const t=new Date(); t.setHours(0,0,0,0); let h='<div class="week">';
   for(let i=0;i<7;i++){
-    const d=new Date(t.getTime()+i*DAY), k=ymd(d), w=d.getDay(), tt=trType(k), n=dayItems(k).filter(x=>!(x.s?x.s.done:x.q.done)).length+pBlocks(k).filter(x=>!x.q&&!x.tr&&!x.bk&&(x.t||'').trim()&&!x.done).length+(tt&&tt!=='R'&&!trClear(k)?1:0)+bkAll().filter(B=>!B.ret&&!B.fin&&B.pages&&B.start<=k&&k<=B.due&&!bkPlan(B,k).met).length;
+    const d=new Date(t.getTime()+i*DAY), k=ymd(d), w=d.getDay(), tt=trType(k), n=dayItems(k).filter(x=>!(x.s?x.s.done:x.q.done)).length+pBlocks(k).filter(x=>!x.q&&!x.tr&&!x.bk&&(x.t||'').trim()&&!x.done).length+(tt&&tt!=='R'&&!trClear(k)?1:0)+bkAll().filter(B=>!B.ret&&!B.fin&&!B.drop&&B.pages&&B.start<=k&&k<=B.due&&!bkPlan(B,k).met).length;
     h+=`<button class="wd ${k===dayView?'on':''} ${w===0||holiday(k)?'sun':w===6?'sat':''}" data-act="day" data-v="${k}"${holiday(k)?` title="${holiday(k)}"`:''}><span>${i===0?'今日':'日月火水木金土'[w]}</span><b>${d.getDate()}</b><i>${n?'●'.repeat(Math.min(n,3))+(n>3?'+':''):''}</i></button>`;
   }
   return h+'</div>';
@@ -1710,7 +1710,7 @@ function todayList(){
   const items=dayItems(dayView), d=new Date(dayView+'T00:00:00');
   let h=catBar('today')+chapLine()+weekStrip();
   if(dayView===ymd()&&new Date().getHours()>=4&&new Date().getHours()<13&&!pBlocks(dayView).length) h+=`<button class="row morning-row" data-act="pathmorning"><span class="r-mark">🔥</span><span class="r-main"><span class="r-title">焚き火で今日の段取りを組む</span><span class="r-sub">今日の冒険を、時間の道に並べよう</span></span><span class="r-notch"></span></button>`;
-  h+=`<div class="day-h"><span>${dayView===ymd()?'今日':''}　${d.getMonth()+1}/${d.getDate()}（${'日月火水木金土'[d.getDay()]}）${holiday(dayView)?`<b class="hol">${holiday(dayView)}</b>`:''}</span>${(()=>{ const fb=pBlocks(dayView).filter(x=>!x.q&&!x.tr&&!x.bk&&(x.t||'').trim()); const tt=trType(dayView), tr=tt&&tt!=='R'?[trClear(dayView)]:[], bk=bkAll().filter(B=>!B.ret&&B.pages&&B.start<=dayView&&dayView<=B.due&&(!B.fin||B.fin===dayView)).map(B=>B.fin===dayView||bkPlan(B,dayView).met), ex=[...tr,...bk]; return `<span>${items.filter(x=>x.s?x.s.done:x.q.done).length+fb.filter(x=>x.done).length+ex.filter(Boolean).length} / ${items.length+fb.length+ex.length}</span>`; })()}</div><div class="rows">`;
+  h+=`<div class="day-h"><span>${dayView===ymd()?'今日':''}　${d.getMonth()+1}/${d.getDate()}（${'日月火水木金土'[d.getDay()]}）${holiday(dayView)?`<b class="hol">${holiday(dayView)}</b>`:''}</span>${(()=>{ const fb=pBlocks(dayView).filter(x=>!x.q&&!x.tr&&!x.bk&&(x.t||'').trim()); const tt=trType(dayView), tr=tt&&tt!=='R'?[trClear(dayView)]:[], bk=bkAll().filter(B=>!B.ret&&!B.drop&&B.pages&&B.start<=dayView&&dayView<=B.due&&(!B.fin||B.fin===dayView)).map(B=>B.fin===dayView||bkPlan(B,dayView).met), ex=[...tr,...bk]; return `<span>${items.filter(x=>x.s?x.s.done:x.q.done).length+fb.filter(x=>x.done).length+ex.filter(Boolean).length} / ${items.length+fb.length+ex.length}</span>`; })()}</div><div class="rows">`;
   if((state.rested||{})[dayView]) h+=`<div class="sec-empty">🔥 この日は焚き火で休みました</div>`;
   { const tt=trType(dayView); if(tt&&tt!=='R'){ const cl=trClear(dayView); const pb=pBlocks(dayView).find(x=>x.tr===dayView); h+=`<button class="row tr-today ${cl?'done':''}" data-act="trday" data-v="${dayView}"><span class="r-mark">${ico('train')}</span><span class="r-main"><span class="r-title">鍛錬：${TR_NAME[tt]}</span><span class="r-sub">約${trSets(dayView)===2?15:20}分</span></span><span class="r-side">${cl?'<span class="r-clear">CLEAR</span>':pb?`<span class="do">${pfmt(pb.s)}</span>`:''}</span><span class="r-notch"></span></button>`; } }
   h+=bkTodayRows(dayView);
@@ -2010,6 +2010,7 @@ document.addEventListener('click',e=>{
     case 'bkret': { const B=state.books[bkSel]; if(B){ const q=state.quests.find(x=>x.bk===bkSel); if(!B.ret){ B.ret=ymd(); B.u=Date.now(); if(q&&!q.done) completeQuest(q); else { save(); render(); toast('古文書を図書館へ返した'); } } else { B.ret=null; B.u=Date.now(); if(q&&q.done) reopen(q); else { save(); render(); } } } break; }
     case 'bkrenew': { const B=state.books[bkSel]; if(B){ const t=ymd(), nd=bkAdd(t,14); if((B.renew||[]).length){ toast('更新は1回しかできない'); break; } if(nd<=B.due){ toast('今更新しても返す日は延びない'); break; } B.renew=[...(B.renew||[]),t]; B.due=nd; if(!B.fin&&B.goal<bkAdd(nd,-5)) B.goal=bkAdd(nd,-5); B.u=Date.now(); bkSyncQ(bkSel); save(); render(); setTimeout(()=>banner('book','返却の刻限が延びた',`${B.title}　${bkMD(nd)} まで`),150); } break; }
     case 'bkdue': { const B=state.books[bkSel], v=($('bkDueQ')||{}).value; if(B&&v){ if(v<B.start){ toast('借りた日より前にはできない'); break; } B.due=v; if(B.goal>v) B.goal=v; B.u=Date.now(); bkSyncQ(bkSel); save(); render(); toast(`返す日を ${bkMD(v)} にした`); } break; }
+    case 'bkdrop': { const B=state.books[bkSel]; if(B){ B.drop=B.drop?null:ymd(); B.u=Date.now(); save(); render(); toast(B.drop?'解読はやめた。返却のミニチャレンジは残る':'また解読をはじめる'); } break; }
     case 'bkdel': { const B=state.books[bkSel]; if(B&&confirm('この古文書を消しますか？')){ B.del=1; B.u=Date.now(); bkSyncQ(bkSel); bkSel=null; bkEdit=false; save(); render(); } break; }
     case 'bkundo': { const B=state.books[bkSel], d=b.dataset.v; if(B&&B.log&&d in B.log){ delete B.log[d]; B.u=Date.now(); save(); render(); } break; }
     case 'restsel': restSel=b.dataset.v; selId=null; render(); window.innerWidth<=820&&window.scrollTo({top:0}); break;
@@ -2848,7 +2849,7 @@ function bkPlan(B,d){
 function bkIdeal(B,d){ const b0=B.reg&&B.reg>B.start?B.reg:B.start, p0=B.p0||0, tot=Math.max(1,bkDays(b0,B.goal)+1), k=Math.min(tot,Math.max(0,bkDays(b0,d)+1)); return Math.round(p0+((B.pages||0)-p0)*k/tot); }
 function bkTodayRows(d){
   const due=bkAll().filter(B=>!B.ret&&B.due<=d&&d===ymd()||(!B.ret&&B.due===d)).map(B=>`<button class="row bk-today" data-act="bksel" data-v="${B.id}"><span class="r-mark">${ico('book')}</span><span class="r-main"><span class="r-title">返却の刻限：${esc(B.title||'(無題)')}</span><span class="r-sub">${B.due<d?`刻限を${bkDays(B.due,d)}日過ぎている`:'今日が返す日'}${(B.renew||[]).length?'・図書館に返そう':'・返すか、予約がなければ更新しよう'}</span></span><span class="r-notch"></span></button>`).join('');
-  return due+bkAll().filter(B=>!B.ret&&!B.fin&&B.pages&&B.start<=d).map(B=>{ const P=bkPlan(B,d), rest=Math.max(0,P.to-P.now);
+  return due+bkAll().filter(B=>!B.ret&&!B.fin&&!B.drop&&B.pages&&B.start<=d).map(B=>{ const P=bkPlan(B,d), rest=Math.max(0,P.to-P.now);
     return `<button class="row bk-today ${P.met?'done':''}" data-act="bksel" data-v="${B.id}"><span class="r-mark">${ico('book')}</span><span class="r-main"><span class="r-title">解読の試練：${esc(B.title||'(無題)')}</span><span class="r-sub">${P.met?`p.${P.now} まで解き明かした`:`p.${P.to} まで読み進めよ（あと${rest}ページ）`}</span></span><span class="r-side">${P.met?'<span class="r-clear">CLEAR</span>':`${(()=>{ const pb=pBlocks(d).find(x=>x.bk===B.id); return pb?`<span class="do">${pfmt(pb.s)}</span>`:''; })()}<span class="due ${bkDays(d,B.due)<=2?'soon':''}">刻限 ${bkMD(B.due)}</span>`}</span><span class="r-notch"></span></button>`; }).join('');
 }
 // 解読の目盛り：10の区画が、読み進めたぶんだけ古代の青に灯る
@@ -2858,8 +2859,8 @@ function bookList(){
   const t=ymd(), all=bkAll(), act=all.filter(B=>!B.ret).sort((a,b)=>a.due<b.due?-1:1), old=all.filter(B=>B.ret).sort((a,b)=>a.ret<b.ret?1:-1);
   let h=catBar('book')+`<div class="rows"><button class="row add-row" data-act="bknew"><span class="r-mark">＋</span><span class="r-main"><span class="r-title">古文書を手に入れる</span><span class="r-sub">図書館で借りた本を登録する</span></span><span class="r-notch"></span></button>`;
   h+=act.map(B=>{ const pct=B.pages?Math.round(bkAt(B,t)/B.pages*100):0, P=B.pages?bkPlan(B,t):null, dl=bkDays(t,B.due);
-    const sub=B.fin?`${bkMD(B.fin)}に解き明かした・図書館へ返そう`:!B.pages?'ページ数を記そう':t<B.start?`${bkMD(B.start)}から解読をはじめる`:P.met?`今日の試練は済んだ・p.${P.now}`:`今日の試練：p.${P.to} まで`;
-    return `<button class="row bk-row ${bkSel===B.id?'sel':''} ${B.fin?'done':''}" data-act="bksel" data-v="${B.id}"><span class="r-mark">${ico('book')}</span><span class="r-main"><span class="r-title">${esc(B.title||'(無題)')}</span><span class="r-sub">${sub}</span>${B.pages&&!B.fin?`<span class="bk-mini"><i style="width:${pct}%"></i></span>`:''}</span><span class="r-side">${B.fin?'<span class="r-clear">COMPLETE</span>':`<span class="do">${pct}%</span><span class="due ${dl<=2?'soon':''}">刻限 ${bkMD(B.due)}</span>`}</span><span class="r-notch"></span></button>`; }).join('');
+    const sub=B.fin?`${bkMD(B.fin)}に解き明かした・図書館へ返そう`:B.drop?'解読はやめた・図書館へ返すだけ':!B.pages?'ページ数を記そう':t<B.start?`${bkMD(B.start)}から解読をはじめる`:P.met?`今日の試練は済んだ・p.${P.now}`:`今日の試練：p.${P.to} まで`;
+    return `<button class="row bk-row ${bkSel===B.id?'sel':''} ${B.fin?'done':''}" data-act="bksel" data-v="${B.id}"><span class="r-mark">${ico('book')}</span><span class="r-main"><span class="r-title">${esc(B.title||'(無題)')}</span><span class="r-sub">${sub}</span>${B.pages&&!B.fin&&!B.drop?`<span class="bk-mini"><i style="width:${pct}%"></i></span>`:''}</span><span class="r-side">${B.fin?'<span class="r-clear">COMPLETE</span>':`${B.drop?'':`<span class="do">${pct}%</span>`}<span class="due ${dl<=2?'soon':''}">刻限 ${bkMD(B.due)}</span>`}</span><span class="r-notch"></span></button>`; }).join('');
   if(!all.length) h+=`<div class="sec-empty">図書館で借りた本を「古文書」として登録すると、10日で解き明かせるよう、毎日の解読の試練を割り出します</div>`;
   if(old.length) h+=`<div class="day-h"><span>図書館へ返した古文書</span><span>${old.length}冊</span></div>`+old.map(B=>`<button class="row done ${bkSel===B.id?'sel':''}" data-act="bksel" data-v="${B.id}"><span class="r-mark">${ico('book')}</span><span class="r-main"><span class="r-title">${esc(B.title||'(無題)')}</span><span class="r-sub">${B.memo?esc(B.memo.split('\n')[0]):`${B.pages}ページ・${bkMD(B.start)}〜${bkMD(B.ret)}`}</span></span><span class="r-side">${B.fin?'<span class="r-clear">COMPLETE</span>':''}</span><span class="r-notch"></span></button>`).join('');
   return h+'</div>';
@@ -2879,15 +2880,16 @@ function bkPanel(){
   const N=B.pages, now=bkAt(B,t), P=bkPlan(B,t), id=bkIdeal(B,bkAdd(t,-1)), idT=bkIdeal(B,t), diff=now>idT?now-idT:now<id?now-id:0, dl=bkDays(t,B.due);
   let h=`<div class="panel bk-panel"><div class="p-wm">${SECBG.book}</div>${back}<h2 class="p-title">${esc(B.title||'(無題)')}</h2>
   <div class="p-giver"><span><i class="giver-mark">!</i>古文書・全${N}ページ</span><span class="p-place">図書館</span></div>`;
-  h+=`<div class="bk-gauge"><div class="bk-gh"><span>解読の進み</span><span><b>p.${now}</b> / ${N}　${Math.round(now/N*100)}%</span></div>${bkSegs(B,now,id)}${t>=B.start&&!B.fin&&!B.ret?`<p class="bk-pace ${diff>=0?'ok':'late'}">${diff>0?`予定より ${diff}ページ 先を進んでいる`:diff<0?`予定より ${-diff}ページ 遅れている`:now>=idT?'予定どおり進んでいる':`予定どおり（今日の分はあと${idT-now}ページ）`}</p>`:''}</div>`;
+  h+=`<div class="bk-gauge"><div class="bk-gh"><span>解読の進み</span><span><b>p.${now}</b> / ${N}　${Math.round(now/N*100)}%</span></div>${bkSegs(B,now,id)}${t>=B.start&&!B.fin&&!B.ret&&!B.drop?`<p class="bk-pace ${diff>=0?'ok':'late'}">${diff>0?`予定より ${diff}ページ 先を進んでいる`:diff<0?`予定より ${-diff}ページ 遅れている`:now>=idT?'予定どおり進んでいる':`予定どおり（今日の分はあと${idT-now}ページ）`}</p>`:''}</div>`;
   if(B.fin) h+=`<div class="bk-slate done"><div class="bk-sh">解き明かした</div><p>${bkMD(B.fin)}、この古文書のすべてを読み解いた。${B.ret?'':'忘れずに図書館へ返そう。'}</p>
     <div class="f" style="margin-top:8px"><label class="hint">思い出（ひとこと）</label><textarea id="bkMemo" class="tr-memo" placeholder="心に残ったことを一行で">${esc(B.memo||'')}</textarea></div></div>`;
+  else if(B.drop&&!B.ret) h+=`<div class="bk-slate"><div class="bk-sh">解読をやめた</div><p>${bkMD(B.drop)}に、この古文書を読むのをやめた。返却の刻限までに図書館へ返そう。</p><div class="bk-rec"><button class="btn small ghost" data-act="bkdrop">また読む</button></div></div>`;
   else if(!B.ret){
     const body=t<B.start?`<p>${bkMD(B.start)}から解読をはじめる。</p>`:`<p class="bk-q">${P.met?`今日の試練は果たした。<br><small>目安の p.${P.to} まで読み進めた</small>`:`p.<em>${P.to}</em> まで読み進めよ<small>（${P.quota}ページ）</small>`}</p><p class="hint">${P.over?(t<=B.due?`解き明かす日（${bkMD(B.goal)}）を過ぎた。返却の刻限までの${P.left}日で割っている。`:'返却の刻限を過ぎた。残りを今日のうちに。'):`解き明かす日 ${bkMD(B.goal)} まであと${P.left}日。残り${N-P.s0}ページ ÷ ${P.left}日。`}</p>`;
-    h+=`<div class="bk-slate ${P.met?'done':''}"><div class="bk-sh">今日の解読の試練${P.met?'<span class="r-clear">CLEAR</span>':''}</div>${body}<div class="bk-rec"><span>今日は p.</span><input type="number" id="bkPg" inputmode="numeric" min="0" max="${N}" value="${B.log&&t in B.log?B.log[t]:''}" placeholder="${P.now||''}"><span>まで読んだ</span><button class="btn primary small" data-act="bkrec">${B.log&&t in B.log?'記し直す':'記す'}</button></div>${B.log&&t in B.log?'<p class="hint" style="margin:4px 0 0">続きを読んだら、読み終えたページに直して記し直す。</p>':''}</div>`;
+    h+=`<div class="bk-slate ${P.met?'done':''}"><div class="bk-sh">今日の解読の試練${P.met?'<span class="r-clear">CLEAR</span>':''}</div>${body}<div class="bk-rec"><span>今日は p.</span><input type="number" id="bkPg" inputmode="numeric" min="0" max="${N}" value="${B.log&&t in B.log?B.log[t]:''}" placeholder="${P.now||''}"><span>まで読んだ</span><button class="btn primary small" data-act="bkrec">${B.log&&t in B.log?'記し直す':'記す'}</button></div><div class="bk-rec" style="margin-top:10px"><button class="btn small ghost" data-act="bkdrop">解読をやめる（返すだけにする）</button></div>${B.log&&t in B.log?'<p class="hint" style="margin:4px 0 0">続きを読んだら、読み終えたページに直して記し直す。</p>':''}</div>`;
   }
   // 解読の軌跡：日ごとの端末。読んだ日は青く灯り、まだの日は橙のまま
-  { let pips=''; for(let k=B.start;k<=B.due;k=bkAdd(k,1)){ const ex=bkAt(B,k)-bkAt(B,k,true), lg=B.log&&(k in B.log), pre=B.reg&&k<B.reg&&!lg, cls=[k===t?'now':'',k>B.goal?'grace':'',lg&&ex>0?'on':'',pre?'pre':k<t&&!(lg&&ex>0)?'miss':'',k===B.goal?'goal':''].join(' ');
+  if(!B.drop){ let pips=''; for(let k=B.start;k<=B.due;k=bkAdd(k,1)){ const ex=bkAt(B,k)-bkAt(B,k,true), lg=B.log&&(k in B.log), pre=B.reg&&k<B.reg&&!lg, cls=[k===t?'now':'',k>B.goal?'grace':'',lg&&ex>0?'on':'',pre?'pre':k<t&&!(lg&&ex>0)?'miss':'',k===B.goal?'goal':''].join(' ');
       pips+=`<span class="bk-pip ${cls}" title="${bkMD(k)}${lg?` p.${B.log[k]}`:''}"><i></i><small>${+k.slice(8)}</small></span>`; }
     h+=`<div class="sec-h"><span>解読の軌跡</span></div><div class="bk-pips">${pips}</div><p class="hint" style="margin:6px 0 10px">読んだ日の端末が青く灯る。金の枠が解き明かす日、その先は返却の刻限までの猶予。${B.reg&&B.reg>B.start?`${bkMD(B.reg)}より前は、記しはじめる前の日。`:''}</p>`; }
   const lg=Object.entries(B.log||{}).sort((a,b)=>a[0]<b[0]?1:-1);
@@ -3390,7 +3392,7 @@ function pCarry(){ const t=pJDay(); if(pCarryDay===t) return 0; pCarryDay=t; con
 function pPrune(k){ if(k<ymd()) return; const P=plan(), day={...(P.d[k]||{})}, now=Date.now(); let ch=false;
   Object.entries(day).forEach(([id,b])=>{ if(!b||b.del) return;
     if(b.tr){ const tt=trType(b.tr); if((!tt||tt==='R')&&!(hm().days[b.tr]||{}).train){ day[id]={...b,del:1,u:now}; ch=true; } return; }
-    if(b.bk){ const B=(state.books||{})[b.bk]; if(!B||B.del||((B.ret||B.fin)&&!pDone(b))){ day[id]={...b,del:1,u:now}; ch=true; } return; }
+    if(b.bk){ const B=(state.books||{})[b.bk]; if(!B||B.del||((B.ret||B.fin||B.drop)&&!pDone(b))){ day[id]={...b,del:1,u:now}; ch=true; } return; }
     if(!b.q) return; const q=findQ(b.q); if(!q){ day[id]={...b,del:1,u:now}; ch=true; return; } const on=x=>x&&x.doDate===k;
     // 冒険手帳で時刻を消した物は、道しるべも外す（やる日は残したまま、道しるべのない冒険にもどる）
     if(b.s<1440){ const r=pRef(b); if(r&&!r.done&&(r.ss?r.ss:[r.s||r.q]).every(x=>x.doDate===k&&!x.doTime)){ day[id]={...b,del:1,u:now}; ch=true; return; } }
@@ -3418,7 +3420,7 @@ function pUnplaced(k){
   const bl=pBlocks(k), has=(q,s)=>bl.some(b=>pHasStep(b,q,s));
   const out=dayItems(k).filter(x=>!(x.s?x.s.done:x.q.done)&&!has(x.q.id,x.s?x.s.id:'')).map(x=>({q:x.q.id,sid:x.s?x.s.id:'',t:x.s?x.s.text:x.q.title,sub:x.s?x.q.title:''}));
   const tt=trType(k); if(tt&&tt!=='R'&&!bl.some(b=>b.tr===k)&&!(hm().days[k]||{}).train) out.unshift({tr:k,t:'鍛錬：'+TR_LAB[tt]});
-  bkAll().filter(B=>!B.ret&&!B.fin&&B.pages&&B.start<=k&&k<=B.due&&!bl.some(b=>b.bk===B.id)&&!bkPlan(B,k).met).forEach(B=>out.push({bk:B.id,t:`解読：${B.title||'(無題)'}（p.${bkPlan(B,k).to}まで）`}));
+  bkAll().filter(B=>!B.ret&&!B.fin&&!B.drop&&B.pages&&B.start<=k&&k<=B.due&&!bl.some(b=>b.bk===B.id)&&!bkPlan(B,k).met).forEach(B=>out.push({bk:B.id,t:`解読：${B.title||'(無題)'}（p.${bkPlan(B,k).to}まで）`}));
   return out;
 }
 // 空いている時間を探す（今より後、なければ朝から）
