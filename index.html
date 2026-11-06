@@ -4671,21 +4671,30 @@ async function pLookOpen(){
   const mir=x=>{ const p=2*W; x=((x%p)+p)%p; return x>W?p-x:x; }, vOf=y=>y/PX+pOff, rng=pRng('lk'+k,3), sm=(a,b,x)=>{ const t=Math.max(0,Math.min(1,(x-a)/(b-a))); return t*t*(3-2*t); };
   const HS=118, elev=h=>h>=P_SEA?(h-P_SEA)*HS:(h-P_SEA)*HS*.6;
   // ---- 近くの地面（細かい格子）----
-  const ST=4, XA=-Math.round(W*.75), XB=Math.round(W*1.75), yA=Math.max(-800,y0-300), yB=Math.min(H+800,y0+1400), nx=Math.ceil((XB-XA)/ST)+1, ny=Math.ceil((yB-yA)/ST)+1;
+  // 縮尺は本当の時間と同じ：馬が駆ける1秒が1秒。1分ぶんの道は540（馬の体の約200頭ぶん）。
+  // だから見える範囲は、地図の「今いる場所」をうんと拡げたところ。地図の高さ・土地の種類・起伏の強さをそこから受け継ぎ、
+  // 細かな丘と曲がる道を足す。景色は2400の長さでくり返し（走り続けても切れない）
+  const KM=540, P=2400, ST=4, XA=-Math.round(W*.75), XB=Math.round(W*1.75), yA=y0-300, yB=yA+P, nx=Math.ceil((XB-XA)/ST)+1, ny=P/ST+1;
+  const mx0=pRX(y0), hb=Math.max(P_SEA+.025,pHgt(mx0,y0)), b0=Float32Array.from(pBiomeW(mx0,vOf(y0)));
+  let hmn=9, hmx=-9; for(let q=0;q<48;q++){ const a=q/16*6.2832, r=[15,40,80][q%3]; const h=pHgt(mir(mx0+Math.cos(a)*r),y0+Math.sin(a)*r); hmn=Math.min(hmn,h); hmx=Math.max(hmx,h); }
+  const rug=Math.min(.6,hmx-hmn), AMP=.035+rug*.3;
+  const fr=v=>v-Math.floor(v), pn=(x,y,s,ox=0,oy=0)=>{ const t=fr((y-yA)/P); return pNoise(x/s+ox,y/s+oy)*(1-t)+pNoise(x/s+ox,(y-P)/s+oy)*t; };
+  const rX=y=>{ const t=(y-yA)/P*6.2832; return mx0+52*Math.sin(t*2)+20*Math.sin(t*5+1.3)+7*Math.sin(t*11+.4); };
+  const lH=(x,y)=>hb+AMP*((pn(x,y,520,3,7)-.5)*1.6+(pn(x,y,140,9,2)-.5)*.8+(pn(x,y,38,1,5)-.5)*.2);
   const hv=new Float32Array(nx*ny), bio=new Float32Array(nx*ny*4);
-  for(let j=0;j<ny;j++){ const y=yA+j*ST; for(let i=0;i<nx;i++){ const x=mir(XA+i*ST), o=j*nx+i; hv[o]=pHgt(x,y); if(i%2===0||i===nx-1) bio.set(pBiomeW(x,vOf(y)),o*4); else bio.set(bio.subarray((o-1)*4,(o-1)*4+4),o*4); } if(j%20===0&&!(await tick(j/ny*.6))) return; }
+  for(let j=0;j<ny;j++){ const y=yA+j*ST; for(let i=0;i<nx;i++){ const o=j*nx+i; hv[o]=lH(XA+i*ST,y); bio.set(b0,o*4); } if(j%20===0&&!(await tick(j/ny*.6))) return; }
   // 道をならす：道の高さを前後になだらかにして、まわりの地面をそこへ寄せる（山は切り通し、谷は土手）
-  { const rh=new Float32Array(ny); for(let j=0;j<ny;j++){ const y=yA+j*ST, i=Math.max(0,Math.min(nx-1,Math.round((pRX(y)-XA)/ST))); rh[j]=hv[j*nx+i]; }
-    const R=18, sm2=new Float32Array(ny); for(let j=0;j<ny;j++){ let a=0,c=0; for(let q=-R;q<=R;q++){ const jj=j+q; if(jj<0||jj>=ny) continue; const w=1-Math.abs(q)/(R+1); a+=rh[jj]*w; c+=w; } sm2[j]=Math.max(P_SEA+.025,a/c); }
-    for(let j=0;j<ny;j++){ const y=yA+j*ST, rx=pRX(y); for(let i=0;i<nx;i++){ const dx=Math.abs(XA+i*ST-rx); if(dx>40) continue; const w=sm(40,9,dx); hv[j*nx+i]+=(sm2[j]-hv[j*nx+i])*w; } } }
-  const hAt=(x,y)=>{ const fx=Math.max(0,Math.min(nx-1.001,(x-XA)/ST)), fy=Math.max(0,Math.min(ny-1.001,(y-yA)/ST)), i=fx|0, j=fy|0, a=fx-i, b=fy-j, o=j*nx+i; return elev((hv[o]*(1-a)+hv[o+1]*a)*(1-b)+(hv[o+nx]*(1-a)+hv[o+nx+1]*a)*b); };
-  const bAt=(x,y)=>{ const i=Math.max(0,Math.min(nx-1,Math.round((x-XA)/ST))), j=Math.max(0,Math.min(ny-1,Math.round((y-yA)/ST))), o=j*nx+i; return bio.subarray(o*4,o*4+4); };
+  { const rh=new Float32Array(ny); for(let j=0;j<ny;j++){ const y=yA+j*ST, i=Math.max(0,Math.min(nx-1,Math.round((rX(y)-XA)/ST))); rh[j]=hv[j*nx+i]; }
+    const R=18, sm2=new Float32Array(ny); for(let j=0;j<ny;j++){ let a=0,c=0; for(let q=-R;q<=R;q++){ const jj=((j+q)%(ny-1)+ny-1)%(ny-1); const w=1-Math.abs(q)/(R+1); a+=rh[jj]*w; c+=w; } sm2[j]=Math.max(P_SEA+.025,a/c); }
+    for(let j=0;j<ny;j++){ const y=yA+j*ST, rx=rX(y); for(let i=0;i<nx;i++){ const dx=Math.abs(XA+i*ST-rx); if(dx>40) continue; const w=sm(40,9,dx); hv[j*nx+i]+=(sm2[j]-hv[j*nx+i])*w; } } }
+  const hAt=(x,y)=>{ const fx=Math.max(0,Math.min(nx-1.001,(x-XA)/ST)), fy=Math.min(ny-1.001,fr((y-yA)/P)*(ny-1)), i=fx|0, j=fy|0, a=fx-i, b=fy-j, o=j*nx+i; return elev((hv[o]*(1-a)+hv[o+1]*a)*(1-b)+(hv[o+nx]*(1-a)+hv[o+nx+1]*a)*b); };
+  const jW=y=>Math.min(ny-1,Math.round(fr((y-yA)/P)*(ny-1))), bAt=(x,y)=>{ const i=Math.max(0,Math.min(nx-1,Math.round((x-XA)/ST))), j=jW(y), o=j*nx+i; return bio.subarray(o*4,o*4+4); };
   const X=x=>x-W/2, Z=y=>-(y-y0), lin=c=>c.map(v=>Math.pow(v/255,2.2));
   // 色（sRGB で決めて、線形に直す）
   const C={g1:lin([118,158,62]),g2:lin([88,128,52]),dry:lin([150,150,80]),rock:lin([150,140,135]),rock2:lin([112,104,100]),sand:lin([214,200,160]),snow:lin([235,240,250]),desert:lin([222,186,124]),dune:lin([196,150,96]),vrock:lin([98,86,82]),vash:lin([64,58,58]),wet:lin([78,104,58]),mud:lin([96,88,60]),bed:lin([60,90,96])};
   const mix=(a,b,t)=>[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t];
-  const colAt=(x,y,e,nyy,b)=>{ const n1=pNoise(x/46+3,y/46), n2=pNoise(x/6+7,y/6+2), slope=1-nyy, [bv,bd,bw,bs]=b;
-    let c=mix(C.g1,C.g2,sm(.35,.7,n1)); c=mix(c,C.dry,sm(.62,.9,pNoise(x/90+1,y/90+5))*.45);
+  const colAt=(x,y,e,nyy,b)=>{ const n1=pn(x,y,46,3), n2=pn(x,y,6,7,2), slope=1-nyy, [bv,bd,bw,bs]=b;
+    let c=mix(C.g1,C.g2,sm(.35,.7,n1)); c=mix(c,C.dry,sm(.62,.9,pn(x,y,90,1,5))*.45);
     if(bw>.05) c=mix(c,mix(C.wet,C.mud,n2*.6),bw);
     if(bd>.05) c=mix(c,mix(C.desert,C.dune,sm(.3,.8,n1)),bd);
     if(bv>.05) c=mix(c,mix(C.vrock,C.vash,n2),bv);
@@ -4704,7 +4713,7 @@ async function pLookOpen(){
   if(!(await tick(.68))) return;
   // ---- 遠くの山なみ：高く、尖らせる（近くの地面と重ならないよう下げる）----
   const ridge=(x,y)=>{ const n=1-Math.abs(pNoise(x/300+9,y/300+4)*2-1); return n*n; };
-  const FA=XA-2400, FB=XB+2400, FyA=yA-1200, FyB=yB+2400, fst=24, far=mkGround(FA,FB,FyA,FyB,fst,(x,y)=>{ const inN=x>XA+8&&x<XB-8&&y>yA+8&&y<yB-8, dd=Math.max(0,Math.max(XA-x,x-XB,yA-y,y-yB)); return elev(pHgt(mir(x),y))*(1+.6*sm(0,400,dd))+ridge(x,y)*HS*.5*sm(100,700,dd)-(inN?40:0); },(x,y)=>pBiomeW(mir(x),vOf(y)));
+  const nA=y0-2300, nB=y0+2300, FA=XA-2400, FB=XB+2400, FyA=nA-1500, FyB=nB+2400, fst=24, far=mkGround(FA,FB,FyA,FyB,fst,(x,y)=>{ const inN=x>XA+8&&x<XB-8&&y>nA&&y<nB, dd=Math.max(0,Math.max(XA-x,x-XB,nA-y,y-nB)); return elev(hb+AMP*(pNoise(x/520+3,y/520+7)-.5)*1.6)*(1+.6*sm(0,400,dd))+ridge(x,y)*HS*(.3+rug*1.4)*sm(100,700,dd)-(inN?40:0); },()=>b0);
   if(!(await tick(.8))) return;
   // ---- 描く道具 ----
   const ren=new T.WebGLRenderer({canvas:cv,antialias:true,powerPreference:'high-performance'}); L.ren=ren; ren.setPixelRatio(Math.min(2,window.devicePixelRatio||1)); ren.shadowMap.enabled=true; ren.shadowMap.type=T.PCFSoftShadowMap; ren.outputColorSpace=T.SRGBColorSpace; ren.toneMapping=T.ACESFilmicToneMapping; ren.toneMappingExposure=.9;
@@ -4746,7 +4755,7 @@ async function pLookOpen(){
   const gc=document.createElement('canvas'); gc.width=3; gc.height=1; { const x=gc.getContext('2d'); [[0,90],[1,178],[2,255]].forEach(([i,v])=>{ x.fillStyle=`rgb(${v},${v},${v})`; x.fillRect(i,0,1,1); }); }
   const gmap=new T.CanvasTexture(gc); gmap.minFilter=gmap.magFilter=T.NearestFilter; gmap.colorSpace=T.NoColorSpace;
   const gMat=patch(new T.MeshToonMaterial({vertexColors:true,gradientMap:gmap}),0,1);
-  const gN=new T.Mesh(near,gMat); gN.receiveShadow=true; gN.castShadow=true; scene.add(gN); const gF=new T.Mesh(far,gMat); scene.add(gF);
+  const tileG=new T.Group(), farG=new T.Group(); scene.add(tileG,farG); const gN=new T.Mesh(near,gMat); gN.receiveShadow=true; gN.castShadow=true; tileG.add(gN); const gF=new T.Mesh(far,gMat); farG.add(gF);
   // ---- 光 ----
   const sun=new T.DirectionalLight(day>.1?c3(lerpA([255,246,232],[255,190,130],eve)):c3([160,186,240]),day>.1?2.2:1.5); scene.add(sun.target); sun.castShadow=true; sun.shadow.mapSize.set(2048,2048);
   const sc=sun.shadow.camera; sc.left=-260; sc.right=260; sc.top=320; sc.bottom=-320; sc.near=10; sc.far=2400; sun.shadow.bias=-.0005; sun.shadow.normalBias=.4; scene.add(sun);
@@ -4758,36 +4767,37 @@ async function pLookOpen(){
     const nc=document.createElement('canvas'); nc.width=nc.height=128; { const x=nc.getContext('2d'), im=x.createImageData(128,128); for(let q=0;q<128*128;q++){ const u=q%128, v=q/128|0, a=Math.sin(u*.29+Math.sin(v*.13)*2)*.5+Math.sin(v*.37+u*.05)*.5; im.data[q*4]=128+a*36; im.data[q*4+1]=128+Math.cos(v*.31+u*.11)*36; im.data[q*4+2]=255; im.data[q*4+3]=255; } x.putImageData(im,0,0); }
     const nt=new T.CanvasTexture(nc); nt.wrapS=nt.wrapT=T.RepeatWrapping; nt.repeat.set(.02,.02); L.nt=nt;
     if(n){ const g=new T.BufferGeometry(); g.setAttribute('position',new T.Float32BufferAttribute(P,3)); g.setIndex(I); g.computeVertexNormals(); const uv=new Float32Array(P.length/3*2); for(let q=0;q<P.length/3;q++){ uv[q*2]=P[q*3]; uv[q*2+1]=P[q*3+2]; } g.setAttribute('uv',new T.BufferAttribute(uv,2));
-      L.water=new T.Mesh(g,patch(new T.MeshStandardMaterial({color:c3([62,120,140]),roughness:.12,metalness:.0,envMap:env,envMapIntensity:1.1,normalMap:nt,normalScale:new T.Vector2(.25,.25),transparent:true,opacity:.9}))); scene.add(L.water); }
-    if(nl){ const g=new T.BufferGeometry(); g.setAttribute('position',new T.Float32BufferAttribute(Pl,3)); g.setIndex(Il); scene.add(new T.Mesh(g,new T.MeshBasicMaterial({color:c3([255,120,20]).multiplyScalar(2)}))); } }
-  { const fw=new T.Mesh(new T.PlaneGeometry(FB-FA,FyB-FyA),patch(new T.MeshStandardMaterial({color:c3([60,110,130]),roughness:.2,envMap:L.env}))); fw.rotation.x=-Math.PI/2; fw.position.set(X((FA+FB)/2),-1.5,Z((FyA+FyB)/2)); scene.add(fw); }
+      L.water=new T.Mesh(g,patch(new T.MeshStandardMaterial({color:c3([62,120,140]),roughness:.12,metalness:.0,envMap:env,envMapIntensity:1.1,normalMap:nt,normalScale:new T.Vector2(.25,.25),transparent:true,opacity:.9}))); tileG.add(L.water); }
+    if(nl){ const g=new T.BufferGeometry(); g.setAttribute('position',new T.Float32BufferAttribute(Pl,3)); g.setIndex(Il); tileG.add(new T.Mesh(g,new T.MeshBasicMaterial({color:c3([255,120,20]).multiplyScalar(2)}))); } }
+  { const fw=new T.Mesh(new T.PlaneGeometry(FB-FA,FyB-FyA),patch(new T.MeshStandardMaterial({color:c3([60,110,130]),roughness:.2,envMap:L.env}))); fw.rotation.x=-Math.PI/2; fw.position.set(X((FA+FB)/2),-1.5,Z((FyA+FyB)/2)); farG.add(fw); }
   if(!(await tick(.86))) return;
-  const mx0=pRX(y0);
   let cx=mx0, cy=y0+40, best=-1e9; for(let q=0;q<160;q++){ const a=rng()*6.28, r=Math.sqrt(rng())*60, x=mx0+Math.cos(a)*r, y=y0+40+Math.sin(a)*r*.6; const e=hAt(x,y); if(e>best&&e>-.2){ best=e; cx=x; cy=y; } }
   // ---- 木：幹のある丸い広葉樹（3つの房）が群れる。雪山・高地は針葉樹 ----
   const mergeG=gs=>{ const P=[], N=[]; gs.forEach(g=>{ const q=g.toNonIndexed(); P.push(...q.attributes.position.array); N.push(...q.attributes.normal.array); }); const g=new T.BufferGeometry(); g.setAttribute('position',new T.Float32BufferAttribute(P,3)); g.setAttribute('normal',new T.Float32BufferAttribute(N,3)); return g; };
   const canopy=mergeG([new T.IcosahedronGeometry(2.4,1).translate(0,8.2,0),new T.IcosahedronGeometry(2.0,1).translate(1.7,7.0,.6),new T.IcosahedronGeometry(2.1,1).translate(-1.4,7.1,-.8)]);
   const trunk=new T.CylinderGeometry(.5,.9,6,5).translate(0,3,0), cone=mergeG([new T.ConeGeometry(2.6,6,7).translate(0,6,0),new T.ConeGeometry(2.0,5,7).translate(0,9,0),new T.CylinderGeometry(.4,.6,3,5).translate(0,1.5,0)]);
   const mR=patch(new T.MeshToonMaterial({color:0xffffff,gradientMap:gmap}),.15), mT=patch(new T.MeshToonMaterial({color:c3([92,70,48]),gradientMap:gmap})), mC=patch(new T.MeshToonMaterial({color:c3([46,82,56]),gradientMap:gmap}),.08);
-  { const sp=[]; for(let q=0;q<26000&&sp.length<4500;q++){ const x=XA+rng()*(XB-XA), y=yA+rng()*(yB-yA), f=pNoise(x/70+11,vOf(y)/70+4); if(f<.55) continue; const e=hAt(x,y); if(e<1.5) continue; if(Math.abs(mir(x)-pRX(y))<12&&x>=0&&x<=W) continue; if(Math.hypot(x-cx,y-cy)<34) continue;
+  { const sp=[]; for(let q=0;q<26000&&sp.length<4500;q++){ const x=XA+rng()*(XB-XA), y=yA+rng()*P, f=pn(x,y,70,11,4); if(f<.55) continue; const e=hAt(x,y); if(e<1.5) continue; if(Math.abs(x-rX(y))<12) continue; if(Math.hypot(x-cx,y-cy)<34) continue;
       const b=bAt(x,y); if(b[0]>.25||b[1]>.3) continue; const i=Math.round((x-XA)/ST), j=Math.round((y-yA)/ST); if(near.attributes.normal.array[(j*nx+i)*3+1]<.82) continue; const con=b[3]>.2||e>.45*HS; if(b[3]>.3&&e>30) continue; sp.push([x,y,e,con,(.85+rng()*.5)*(9+rng()*4)/10*1.4,rng()*6.28]); }
     const nR=sp.filter(s=>!s[3]).length, iR=new T.InstancedMesh(canopy,mR,nR), iT=new T.InstancedMesh(trunk,mT,nR), iC=new T.InstancedMesh(cone,mC,sp.length-nR), M=new T.Matrix4(), Q=new T.Quaternion(), V=new T.Vector3(), Sc=new T.Vector3(), up=new T.Vector3(0,1,0), cA=c3([72,118,48]), cB=c3([96,142,56]), cc2=new T.Color();
     let a=0,c=0; sp.forEach(([x,y,e,con,s,r])=>{ Q.setFromAxisAngle(up,r); Sc.set(s,s,s); V.set(X(x),e-.4,Z(y)); M.compose(V,Q,Sc); if(con){ iC.setMatrixAt(c++,M); } else { iR.setMatrixAt(a,M); iT.setMatrixAt(a,M); iR.setColorAt(a,cc2.copy(cA).lerp(cB,rng())); a++; } });
-    [iR,iT,iC].forEach(m=>{ m.castShadow=true; m.receiveShadow=true; scene.add(m); }); }
+    [iR,iT,iC].forEach(m=>{ m.castShadow=true; m.receiveShadow=true; tileG.add(m); }); }
   // ---- 足もとの草の板（カメラのまわり）----
   const gcv=document.createElement('canvas'); gcv.width=64; gcv.height=64; { const x=gcv.getContext('2d'); x.fillStyle='#fff'; for(let q=0;q<9;q++){ const bx=6+q*6+rng()*3, h=34+rng()*28; x.beginPath(); x.moveTo(bx-2.5,64); x.quadraticCurveTo(bx+rng()*6-3,64-h*.6,bx+rng()*8-4,64-h); x.quadraticCurveTo(bx+1,64-h*.5,bx+2.5,64); x.fill(); } }
   const gtx=new T.CanvasTexture(gcv);
   // ---- 道：土の小道 ----
-  const road=(wd,col,lift)=>{ const P=[], I=[]; let n=0; for(let y=yA;y<=yB;y+=3){ const x=pRX(y), dx=pRX(y+2)-pRX(y-2), l=Math.hypot(dx,4)||1, ax=4/l*wd/2, ay=dx/l*wd/2; for(const sg of [-1,1]){ const px=x+sg*ax, py=y-sg*ay; P.push(X(px),Math.max(-.2,hAt(px,py))+lift,Z(py)); } if(n) I.push(2*n-2,2*n,2*n-1,2*n-1,2*n,2*n+1); n++; }
-    const g=new T.BufferGeometry(); g.setAttribute('position',new T.Float32BufferAttribute(P,3)); g.setIndex(I); g.computeVertexNormals(); const m=new T.Mesh(g,patch(new T.MeshToonMaterial({color:col,gradientMap:gmap,side:T.DoubleSide,polygonOffset:true,polygonOffsetFactor:-2}))); m.receiveShadow=true; scene.add(m); };
+  const road=(wd,col,lift)=>{ const P=[], I=[]; let n=0; for(let y=yA;y<=yB;y+=3){ const x=rX(y), dx=rX(y+2)-rX(y-2), l=Math.hypot(dx,4)||1, ax=4/l*wd/2, ay=dx/l*wd/2; for(const sg of [-1,1]){ const px=x+sg*ax, py=y-sg*ay; P.push(X(px),Math.max(-.2,hAt(px,py))+lift,Z(py)); } if(n) I.push(2*n-2,2*n,2*n-1,2*n-1,2*n,2*n+1); n++; }
+    const g=new T.BufferGeometry(); g.setAttribute('position',new T.Float32BufferAttribute(P,3)); g.setIndex(I); g.computeVertexNormals(); const m=new T.Mesh(g,patch(new T.MeshToonMaterial({color:col,gradientMap:gmap,side:T.DoubleSide,polygonOffset:true,polygonOffsetFactor:-2}))); m.receiveShadow=true; tileG.add(m); };
   road(6,c3([150,128,90]),.3); road(3.8,c3([200,178,128]),.42);
   // ---- 道しるべ：光の柱と名前の札。今いる所は青い光 ----
   const beam=(x,y,col,h2,w)=>{ const e=Math.max(0,hAt(x,y)), m=new T.Mesh(new T.CylinderGeometry(w*.6,w,h2,10,1,true),new T.MeshBasicMaterial({color:col,transparent:true,opacity:.5,depthWrite:false,blending:T.AdditiveBlending,fog:false})); m.position.set(X(x),e+h2/2,Z(y)); scene.add(m); return e; };
   const label=(txt,sub,col)=>{ const c=document.createElement('canvas'), x=c.getContext('2d'), F='600 30px "Hiragino Sans","Noto Sans JP",sans-serif'; x.font=F; const w=Math.max(x.measureText(txt).width,sub?x.measureText(sub).width*.8:0)+36; c.width=Math.ceil(w); c.height=sub?92:58;
     x.fillStyle='rgba(16,22,24,.78)'; x.fillRect(0,0,c.width,c.height); x.fillStyle=col; x.fillRect(0,0,5,c.height); if(sub){ x.font='500 22px "Hiragino Sans",sans-serif'; x.fillStyle='#7fd8ef'; x.fillText(sub,18,30); } x.font=F; x.fillStyle='#f2ecd6'; x.fillText(txt,18,sub?72:40);
     const t=new T.CanvasTexture(c); t.colorSpace=T.SRGBColorSpace; const s=new T.Sprite(new T.SpriteMaterial({map:t,depthTest:false,fog:false,sizeAttenuation:false})); s.scale.set(c.width/1400,c.height/1400,1); s.center.set(0,0); s.renderOrder=10; return s; };
-  bl.filter(b=>{ const y=pm2y(b.s); return y>y0+5&&y<yB; }).slice(0,12).forEach(b=>{ const y=pm2y(b.s), x=pRX(y), dn=pDone(b), e=beam(x,y,dn?0x9a9a8a:0xffa63a,dn?20:90,1.4);
-    const s=label(pTitle(b)||'（名前なし）',pfmt(b.s)+(dn?'  CLEAR':''),dn?'#8a8a7a':'#f0a640'); s.position.set(X(x),e+(dn?22:30),Z(y)); scene.add(s); });
+  const beams=[]; bl.filter(b=>b.s>nowM).slice(0,12).forEach((b,q)=>{ const yw=y0+(b.s-nowM)*KM, dn=pDone(b), m=beam(0,yA,dn?0x9a9a8a:0xffa63a,dn?20:90,1.4);
+    const s=label(pTitle(b)||'（名前なし）',pfmt(b.s)+(dn?'  CLEAR':''),dn?'#8a8a7a':'#f0a640'); scene.add(s); const bm=scene.children[scene.children.length-2]; beams.push({yw,bm,s,h:dn?20:90,q}); });
+  const putBeams=py=>beams.forEach(o=>{ const wd=o.yw-py; if(wd<-200){ o.bm.visible=o.s.visible=false; return; } const sd=wd<1800?wd:1800+o.q*320+300*(1-Math.exp(-(wd-1800)/30000)), y=py+sd, x=rX(y), e=Math.max(0,hAt(x,y)), hs=1+Math.max(0,sd)/500;
+    o.bm.visible=o.s.visible=true; o.bm.position.set(X(x),e+o.h*hs/2,Z(y)); o.bm.scale.set(hs,hs,hs); o.s.position.set(X(x),e+(wd<1800?o.h*hs*.36:60+o.q*.06*sd),Z(y)); });
   // ---- 雲：下が灰色、上が白の2枚重ね ----
   const clc=document.createElement('canvas'); clc.width=256; clc.height=128; { const x=clc.getContext('2d'); for(let q=0;q<16;q++){ const px=36+rng()*184, py=48+rng()*44, r=20+rng()*32, g=x.createRadialGradient(px,py,2,px,py,r); g.addColorStop(0,'rgba(255,255,255,.95)'); g.addColorStop(1,'rgba(255,255,255,0)'); x.fillStyle=g; x.fillRect(0,0,256,128); } }
   const ct=new T.CanvasTexture(clc), clouds=[], ncl=Math.round(12+cc/16);
@@ -4872,22 +4882,25 @@ async function pLookOpen(){
     const m=new T.InstancedMesh(g,patch(new T.MeshLambertMaterial({map:gtx,alphaTest:.5,side:T.DoubleSide,color:wet?0xd8e8d0:0xffffff,emissive:wet?0x1a2414:0x0c1406}),.25),NG); m.receiveShadow=true; m.frustumCulled=false; scene.add(m); return m; })();
   const M=new T.Matrix4(), Q=new T.Quaternion(), V=new T.Vector3(), Sc=new T.Vector3(), up=new T.Vector3(0,1,0), cl=new T.Color(), gr=pRng('lkg'+k,5);
   let gC=null; const plant=(cx,cy)=>{ gC=[cx,cy]; let n=0; const ca=near.attributes.color.array, nr=near.attributes.normal.array;
-    for(let q=0;q<NG*3&&n<NG;q++){ const a=gr()*6.28, r=4+Math.pow(gr(),1.5)*130, x=cx+Math.cos(a)*r, y=cy+Math.sin(a)*r; if(x<XA||x>XB||y<yA||y>yB) continue; const e=hAt(x,y); if(e<1) continue; const b=bAt(x,y); if(b[0]>.2||b[1]>.25||b[3]>.3) continue; if(Math.abs(mir(x)-pRX(y))<4.5) continue;
-      const o=Math.round((y-yA)/ST)*nx+Math.round((x-XA)/ST); if(nr[o*3+1]<.8) continue;
+    for(let q=0;q<NG*3&&n<NG;q++){ const a=gr()*6.28, r=4+Math.pow(gr(),1.5)*130, x=cx+Math.cos(a)*r, y=cy+Math.sin(a)*r; if(x<XA||x>XB) continue; const e=hAt(x,y); if(e<1) continue; const b=bAt(x,y); if(b[0]>.2||b[1]>.25||b[3]>.3) continue; if(Math.abs(x-rX(y))<4.5) continue;
+      const o=jW(y)*nx+Math.round((x-XA)/ST); if(nr[o*3+1]<.8) continue;
       Q.setFromAxisAngle(up,gr()*6.28); const s=(.7+gr()*.7)*(.45+.55*Math.min(1,r/50)); Sc.set(s,s*(.7+gr()*.5),s); V.set(X(x),e-.1,Z(y)); M.compose(V,Q,Sc); iG.setMatrixAt(n,M); cl.setRGB(ca[o*3]*.95,ca[o*3+1]*1.12,ca[o*3+2]*.8); iG.setColorAt(n,cl); n++; }
     iG.count=/[?&]nograss/.test(location.search)?0:n; iG.instanceMatrix.needsUpdate=true; if(iG.instanceColor) iG.instanceColor.needsUpdate=true; };
   // 岩：道の両側に灰紫の角ばった石を散らす
   { const NR=700, iRk=new T.InstancedMesh(new T.DodecahedronGeometry(1,0),patch(new T.MeshToonMaterial({color:c3([150,142,140]),gradientMap:gmap})),NR); let m=0;
-    for(let q=0;q<NR*4&&m<NR;q++){ const y=y0-120+rng()*(yB-y0-200), x=pRX(y)+(rng()<.5?-1:1)*(6+Math.pow(rng(),1.4)*220), e=hAt(x,y); if(e<1||x<XA||x>XB) continue; const s2=.8+Math.pow(rng(),3)*5; Q.setFromEuler(new T.Euler(rng()*3,rng()*3,rng()*3)); Sc.set(s2*(1+rng()*.6),s2*(.5+rng()*.4),s2*(1+rng()*.5)); V.set(X(x),e-s2*.15,Z(y)); M.compose(V,Q,Sc); iRk.setMatrixAt(m++,M); }
-    iRk.count=m; iRk.castShadow=iRk.receiveShadow=true; scene.add(iRk); }
+    for(let q=0;q<NR*4&&m<NR;q++){ const y=yA+rng()*P, x=rX(y)+(rng()<.5?-1:1)*(6+Math.pow(rng(),1.4)*220), e=hAt(x,y); if(e<1||x<XA||x>XB) continue; const s2=.8+Math.pow(rng(),3)*5; Q.setFromEuler(new T.Euler(rng()*3,rng()*3,rng()*3)); Sc.set(s2*(1+rng()*.6),s2*(.5+rng()*.4),s2*(1+rng()*.5)); V.set(X(x),e-s2*.15,Z(y)); M.compose(V,Q,Sc); iRk.setMatrixAt(m++,M); }
+    iRk.count=m; iRk.castShadow=iRk.receiveShadow=true; tileG.add(iRk); }
+  // くり返しの区間を3つ並べ、馬の前後に置き直す
+  const tiles=[tileG,tileG.clone(),tileG.clone()]; tiles.slice(1).forEach(t=>scene.add(t));
+  const putTiles=py=>{ const kk=Math.floor((py-yA)/P); tiles.forEach((t,i)=>{ t.position.z=-(kk-1+i)*P; }); farG.position.z=-(py-y0); };
   // ---- 進む・見る ----
-  const yEnd=yB-320, gnd=(x,y)=>Math.max(-.2,hAt(x,y))+.42, tEl=ov.querySelector('.lk-t'), dLab=`${d.getMonth()+1}月${d.getDate()}日（${'日月火水木金土'[d.getDay()]}）`, goB=ov.querySelector('.lk-go');
+  const yEnd=y0+(PATH_H1-nowM)*KM, gnd=(x,y)=>Math.max(-.2,hAt(x,y))+.42, tEl=ov.querySelector('.lk-t'), dLab=`${d.getMonth()+1}月${d.getDate()}日（${'日月火水木金土'[d.getDay()]}）`, goB=ov.querySelector('.lk-go');
   const OFF=.2; let py=y0, v=0, go=true, ph=0, hY=0, off=OFF, cp=12*rad, dist=21, lastTouch=-1e9, tIn=performance.now(), intro=true;
-  const head0=()=>{ const a=pRX(py-3), b=pRX(py+3); return Math.atan2(X(b)-X(a),Z(py+3)-Z(py-3)); }; hY=head0();
+  const head0=()=>{ const a=rX(py-3), b=rX(py+3); return Math.atan2(X(b)-X(a),Z(py+3)-Z(py-3)); }; hY=head0();
   goB.addEventListener('click',()=>{ go=!go; if(go&&py>=yEnd-1) py=y0; goB.textContent=go?'手綱を引く':'駆ける'; });
-  await tick(1); plant(pRX(py),py); ov.querySelector('.lk-load').classList.add('done');
+  await tick(1); plant(rX(py),py); ov.querySelector('.lk-load').classList.add('done');
   const tgt=new T.Vector3();
-  const place=()=>{ const x=pRX(py), g=gnd(x,py); horse.position.set(X(x),g-.42,Z(py)); horse.rotation.y=hY;
+  const place=()=>{ putTiles(py); putBeams(py); const x=rX(py), g=gnd(x,py); horse.position.set(X(x),g-.42,Z(py)); horse.rotation.y=hY;
     const fa=L.focus?0:5; tgt.set(horse.position.x+Math.sin(hY)*fa,horse.position.y+(L.focus?3:3.6),horse.position.z+Math.cos(hY)*fa);
     const cy2=hY+off; cam.position.set(tgt.x-Math.sin(cy2)*Math.cos(cp)*dist,tgt.y+Math.sin(cp)*dist,tgt.z-Math.cos(cy2)*Math.cos(cp)*dist);
     const gc2=Math.max(0,hAt(cam.position.x+W/2,y0-cam.position.z))+1.6; if(cam.position.y<gc2) cam.position.y=gc2; cam.lookAt(tgt);
@@ -4900,7 +4913,7 @@ async function pLookOpen(){
   cv.addEventListener('touchend',e=>{ if(e.touches.length===0){ tp=null; pin=null; } },{passive:true});
   let mdn=null; cv.addEventListener('mousedown',e=>{ intro=false; mdn={x:e.clientX,y:e.clientY}; }); window.addEventListener('mouseup',()=>mdn=null); cv.addEventListener('mousemove',e=>{ if(!mdn) return; look(e.clientX-mdn.x,e.clientY-mdn.y); mdn={x:e.clientX,y:e.clientY}; });
   cv.addEventListener('wheel',e=>{ e.preventDefault(); intro=false; dist=Math.max(7,Math.min(40,dist*(1+e.deltaY*.001))); },{passive:false});
-  if(/[?&]lkshot/.test(location.search)){ intro=false; off=OFF+(+(new URLSearchParams(location.search).get('lkth'))||0); py+=+(new URLSearchParams(location.search).get('lkpy'))||0; dist=+(new URLSearchParams(location.search).get('lkdist'))||dist; L.focus=/lkfocus/.test(location.search); cp=(+(new URLSearchParams(location.search).get('lkcp'))||12)*rad; plant(pRX(py),py); hY=head0(); lastTouch=1e12; L.shot=()=>{ document.body.dataset.lkshot='1'; }; }
+  if(/[?&]lkshot/.test(location.search)){ intro=false; off=OFF+(+(new URLSearchParams(location.search).get('lkth'))||0); py+=+(new URLSearchParams(location.search).get('lkpy'))||0; dist=+(new URLSearchParams(location.search).get('lkdist'))||dist; L.focus=/lkfocus/.test(location.search); cp=(+(new URLSearchParams(location.search).get('lkcp'))||12)*rad; plant(rX(py),py); hY=head0(); lastTouch=1e12; L.shot=()=>{ document.body.dataset.lkshot='1'; }; }
   let last=performance.now(); const t00=performance.now();
   const loop=n=>{ if(!L.alive) return; const dt=Math.min(.05,(n-last)/1000); last=n; U.uTime.value=(n-t00)/1000;
     if(intro){ const kq=Math.min(1,(n-tIn)/2600), e2=1-Math.pow(1-kq,3); dist=50-29*e2; cp=(34-23*e2)*rad; if(kq>=1) intro=false; }
@@ -4915,9 +4928,9 @@ async function pLookOpen(){
       else { l.hip.rotation.x=.3+(-.5*sn-.05)*sw; l.kn.rotation.x=-.3-.75*cs*sw; l.fe.rotation.x=.45*cs*sw; } });
     body.rotation.x=Math.sin(T0+.6)*.06*sw; body.position.y=1.3+Math.sin(T0*2)*.05*sw; neck.rotation.x=-Math.sin(T0+.6)*.12*sw+Math.sin(n/1600)*.03*(1-sw);
     tail.rotation.x=.25*sw+Math.sin(n/600)*.06; tail.rotation.z=Math.sin(n/900)*.08; rider.position.y=RY+Math.max(0,Math.sin(T0*2))*.04*sw;
-    if(gC&&Math.hypot(pRX(py)-gC[0],py-gC[1])>45) plant(pRX(py),py);
-    if(isT||k){ const m=PATH_H0+py/PX; tEl.textContent=`${dLab}　${pfmt(Math.round(m))}`; }
-    place(); clouds.forEach(s=>{ s.position.x+=dt*7; if(s.position.x>1600) s.position.x=-1600; }); if(L.nt){ L.nt.offset.x+=dt*.004; L.nt.offset.y+=dt*.006; }
+    if(gC&&Math.hypot(rX(py)-gC[0],py-gC[1])>45) plant(rX(py),py);
+    if(isT||k){ const m=nowM+(py-y0)/KM; tEl.textContent=`${dLab}　${pfmt(Math.round(m))}`; }
+    place(); clouds.forEach(s=>{ s.position.x+=dt*7; if(s.position.x>1600) s.position.x=-1600; if(s.position.z>cam.position.z+600) s.position.z-=3100; }); if(L.nt){ L.nt.offset.x+=dt*.004; L.nt.offset.y+=dt*.006; }
     if(rain){ rain.position.set(cam.position.x,cam.position.y-40,cam.position.z); const P=rain.geometry.attributes.position.array; if(sl){ for(let q=1;q<P.length;q+=3){ P[q]-=10*dt; P[q-1]+=Math.sin(n/900+q)*dt*2; if(P[q]<0) P[q]+=120; } } else { for(let q=1;q<P.length;q+=6){ P[q]-=110*dt; P[q+3]-=110*dt; if(P[q+3]<0){ P[q]+=120; P[q+3]+=120; } } } rain.geometry.attributes.position.needsUpdate=true; }
     ren.render(scene,cam); if(L.shot&&n-tIn>1200){ L.shot(); return; } L.raf=requestAnimationFrame(loop); };
   L.raf=requestAnimationFrame(loop);
