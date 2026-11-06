@@ -4789,10 +4789,24 @@ async function pLookOpen(){
   // ---- 足もとの草の板（カメラのまわり）----
   const gcv=document.createElement('canvas'); gcv.width=64; gcv.height=64; { const x=gcv.getContext('2d'); x.fillStyle='#fff'; for(let q=0;q<9;q++){ const bx=6+q*6+rng()*3, h=34+rng()*28; x.beginPath(); x.moveTo(bx-2.5,64); x.quadraticCurveTo(bx+rng()*6-3,64-h*.6,bx+rng()*8-4,64-h); x.quadraticCurveTo(bx+1,64-h*.5,bx+2.5,64); x.fill(); } }
   const gtx=new T.CanvasTexture(gcv);
-  // ---- 道：土の小道 ----
-  const road=(wd,col,lift)=>{ const P=[], I=[]; let n=0; for(let y=yA;y<=yB;y+=3){ const x=rX(y), dx=rX(y+2)-rX(y-2), l=Math.hypot(dx,4)||1, ax=4/l*wd/2, ay=dx/l*wd/2; for(const sg of [-1,1]){ const px=x+sg*ax, py=y-sg*ay; P.push(X(px),Math.max(-.2,hAt(px,py))+lift,Z(py)); } if(n) I.push(2*n-2,2*n,2*n-1,2*n-1,2*n,2*n+1); n++; }
-    const g=new T.BufferGeometry(); g.setAttribute('position',new T.Float32BufferAttribute(P,3)); g.setIndex(I); g.computeVertexNormals(); const m=new T.Mesh(g,patch(new T.MeshToonMaterial({color:col,gradientMap:gmap,side:T.DoubleSide,polygonOffset:true,polygonOffsetFactor:-2}))); m.receiveShadow=true; tileG.add(m); };
-  road(6,c3([150,128,90]),.3); road(3.8,c3([200,178,128]),.42);
+  // ---- 道：踏み固められた土の小道。縁は草にほどけ、轍が2本、真ん中に草がうっすら（ブレワイの街道のように） ----
+  const rcv=document.createElement('canvas'); rcv.width=128; rcv.height=256; { const x=rcv.getContext('2d'), im=x.createImageData(128,256), d=im.data, TAU=6.2832;
+    const wv=(v,a)=>Math.sin(v*TAU*3+a)*.5+Math.sin(v*TAU*7+a*2.3)*.3+Math.sin(v*TAU*13+a*.7)*.2;
+    for(let yy=0;yy<256;yy++){ const v=yy/256, eL=.13+.035*wv(v,1), eR=.87+.035*wv(v,4);
+      for(let xx=0;xx<128;xx++){ const u=(xx+.5)/128, o=(yy*128+xx)*4, nz=Math.sin(xx*12.9898+yy*78.233)*43758.5453%1, n=Math.abs(nz);
+        const a=Math.min(1,Math.max(0,Math.min((u-eL)/.07,(eR-u)/.07)));
+        const rut=Math.exp(-Math.pow((u-.34-.01*wv(v,2))/.045,2))+Math.exp(-Math.pow((u-.66-.01*wv(v,5))/.045,2)), mid=Math.exp(-Math.pow((u-.5)/.06,2))*(.5+.5*wv(v,3)), edge=1-Math.min(1,Math.min(u-eL,eR-u)/.12);
+        let r=192,g=162,b=112; const k=.92+n*.14; r*=k; g*=k; b*=k;
+        r-=rut*30; g-=rut*28; b-=rut*22; r+=(150-r)*mid*.35; g+=(160-g)*mid*.35; b+=(96-b)*mid*.35; r+=(130-r)*edge*.45; g+=(150-g)*edge*.45; b+=(88-b)*edge*.45;
+        d[o]=r; d[o+1]=g; d[o+2]=b; d[o+3]=Math.round(255*Math.pow(a,1.4)*(n>.97&&a<1?0:1)); } }
+    x.putImageData(im,0,0); x.globalCompositeOperation='source-atop';
+    for(let q=0;q<40;q++){ const px=22+rng()*84, py=rng()*256, r=.5+rng()*.9, c=rng(); x.fillStyle=c<.5?`rgb(${150+c*40|0},${124+c*30|0},${88+c*20|0})`:`rgb(${214+c*20|0},${196+c*16|0},${156+c*10|0})`; for(const oy of [-256,0,256]){ x.beginPath(); x.ellipse(px,py+oy,r*1.3,r,0,0,6.3); x.fill(); } } }
+  const rtx=new T.CanvasTexture(rcv); rtx.wrapS=T.ClampToEdgeWrapping; rtx.wrapT=T.RepeatWrapping; rtx.colorSpace=T.SRGBColorSpace; rtx.anisotropy=4;
+  { const WD=15, NU=7, Pp=[], Uv=[], I=[]; let n=0; for(let y=yA;y<=yB+.1;y+=3){ const x=rX(y), dx=rX(y+2)-rX(y-2), l=Math.hypot(dx,4)||1, ax=4/l, ay=dx/l;
+      for(let q=0;q<NU;q++){ const t=q/(NU-1)-.5, px=x+t*WD*ax, py=y-t*WD*ay; Pp.push(X(px),Math.max(-.2,hAt(px,py))+.25,Z(py)); Uv.push(q/(NU-1),(y-yA)/P*Math.round(P/30)); }
+      if(n) for(let q=0;q<NU-1;q++){ const a=(n-1)*NU+q, b=a+1, c=a+NU, e=c+1; I.push(a,c,b,b,c,e); } n++; }
+    const g=new T.BufferGeometry(); g.setAttribute('position',new T.Float32BufferAttribute(Pp,3)); g.setAttribute('uv',new T.Float32BufferAttribute(Uv,2)); g.setIndex(I); g.computeVertexNormals();
+    const m=new T.Mesh(g,patch(new T.MeshToonMaterial({map:rtx,gradientMap:gmap,side:T.DoubleSide,transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2}))); m.receiveShadow=true; m.renderOrder=1; tileG.add(m); }
   // ---- 道しるべ：光の柱と名前の札。今いる所は青い光 ----
   const beam=(x,y,col,h2,w)=>{ const e=Math.max(0,hAt(x,y)), m=new T.Mesh(new T.CylinderGeometry(w*.6,w,h2,10,1,true),new T.MeshBasicMaterial({color:col,transparent:true,opacity:.5,depthWrite:false,blending:T.AdditiveBlending,fog:false})); m.position.set(X(x),e+h2/2,Z(y)); scene.add(m); return e; };
   const label=(txt,sub,col)=>{ const c=document.createElement('canvas'), x=c.getContext('2d'), F='600 30px "Hiragino Sans","Noto Sans JP",sans-serif'; x.font=F; const w=Math.max(x.measureText(txt).width,sub?x.measureText(sub).width*.8:0)+36; c.width=Math.ceil(w); c.height=sub?92:58;
@@ -4810,7 +4824,8 @@ async function pLookOpen(){
   // 栗毛にクリーム色の長いたてがみと尾。影は2段でくっきり（ブレワイのような塗り）
   const gc2=document.createElement('canvas'); gc2.width=2; gc2.height=1; { const x=gc2.getContext('2d'); x.fillStyle='rgb(150,150,150)'; x.fillRect(0,0,1,1); x.fillStyle='#fff'; x.fillRect(1,0,1,1); }
   const gmap2=new T.CanvasTexture(gc2); gmap2.minFilter=gmap2.magFilter=T.NearestFilter; gmap2.colorSpace=T.NoColorSpace;
-  const tm=(c)=>patch(new T.MeshToonMaterial({color:c3(c),gradientMap:gmap2}));
+  // 筒の面の向きが内側を向く所があるので、両面を描く（向こう側が透けて見えないように）
+  const tm=(c)=>patch(new T.MeshToonMaterial({color:c3(c),gradientMap:gmap2,side:T.DoubleSide}));
   const coat=tm([184,118,68]), coatD=tm([140,86,50]), mane=tm([238,220,172]), maneD=tm([214,190,140]), hoof=tm([66,58,54]), eyeM=tm([24,18,14]), strap=tm([70,42,28]), metal=tm([200,186,140]),
     cloak=tm([74,98,84]), cloakD=tm([56,74,64]), skin=tm([232,192,160]), hair=tm([96,64,40]), boot=tm([70,50,36]), saddle=tm([108,62,36]), blanket=tm([42,92,104]), blanketE=tm([226,206,160]);
   const shad=o=>{ o.castShadow=true; o.receiveShadow=true; return o; };
@@ -4881,7 +4896,7 @@ async function pLookOpen(){
     const m=new T.InstancedMesh(g,patch(new T.MeshLambertMaterial({map:gtx,alphaTest:.5,side:T.DoubleSide,color:wet?0xd8e8d0:0xffffff,emissive:wet?0x1a2414:0x0c1406}),.25),NG); m.receiveShadow=true; m.frustumCulled=false; scene.add(m); return m; })();
   const M=new T.Matrix4(), Q=new T.Quaternion(), V=new T.Vector3(), Sc=new T.Vector3(), up=new T.Vector3(0,1,0), cl=new T.Color(), gr=pRng('lkg'+k,5);
   let gC=null; const plant=(cx,cy)=>{ gC=[cx,cy]; let n=0; const ex=[]; { const a=Math.max(0,Math.floor((cy-y0-260)/480)-1); for(let q=a;q<a+3;q++){ const s2=dSpot(q), R={'花畑':26,'小さな池':24,'鹿の群れ':14,'岩の上の宝箱':9}[s2.nm]||12; ex.push([s2.x,s2.yy,R]); } } const ca=near.attributes.color.array, nr=near.attributes.normal.array;
-    for(let q=0;q<NG*3&&n<NG;q++){ const a=gr()*6.28, r=4+Math.pow(gr(),1.5)*130, x=cx+Math.cos(a)*r, y=cy+Math.sin(a)*r; if(x<XA||x>XB) continue; const e=hAt(x,y); if(e<1) continue; const b=bAt(x,y); if(b[0]>.2||b[1]>.25||b[3]>.3) continue; if(Math.abs(x-rX(y))<4.5) continue; if(ex.some(([ex2,ey,R])=>Math.hypot(x+sh(y)-ex2,y-ey)<R)) continue;
+    for(let q=0;q<NG*3&&n<NG;q++){ const a=gr()*6.28, r=4+Math.pow(gr(),1.5)*130, x=cx+Math.cos(a)*r, y=cy+Math.sin(a)*r; if(x<XA||x>XB) continue; const e=hAt(x,y); if(e<1) continue; const b=bAt(x,y); if(b[0]>.2||b[1]>.25||b[3]>.3) continue; { const dr=Math.abs(x-rX(y)); if(dr<5.2||(dr<8&&gr()<(8-dr)/2.8)) continue; } if(ex.some(([ex2,ey,R])=>Math.hypot(x+sh(y)-ex2,y-ey)<R)) continue;
       const o=jW(y)*nx+Math.round((x-XA)/ST); if(nr[o*3+1]<.8) continue;
       Q.setFromAxisAngle(up,gr()*6.28); const s=(.7+gr()*.7)*(.45+.55*Math.min(1,r/50)); Sc.set(s,s*(.7+gr()*.5),s); V.set(X(x+sh(y)),e-.1,Z(y)); M.compose(V,Q,Sc); iG.setMatrixAt(n,M); cl.setRGB(ca[o*3]*.95,ca[o*3+1]*1.12,ca[o*3+2]*.8); iG.setColorAt(n,cl); n++; }
     iG.count=/[?&]nograss/.test(location.search)?0:n; iG.instanceMatrix.needsUpdate=true; if(iG.instanceColor) iG.instanceColor.needsUpdate=true; };
