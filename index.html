@@ -827,6 +827,19 @@ body{background:#050607}
 @media (max-width:820px){.topbar{grid-template-columns:1fr auto!important;grid-template-areas:'lv xp' 'tabs tabs';row-gap:6px}.tb-left{grid-area:lv}.tb-right{grid-area:xp}.tb-tabs{grid-area:tabs;justify-self:center!important}}
 .rest-link{font-size:11px;color:var(--dim);letter-spacing:0;margin-right:12px;padding:0 2px;opacity:.8}.rest-link:hover{color:#f0c38a}
 /* 赤い月 */
+.sl-look{position:absolute;right:10px;top:10px;z-index:4;display:flex;align-items:center;gap:6px;padding:6px 12px 6px 9px;border:1px solid rgba(111,224,255,.55);background:rgba(6,20,28,.72);color:#bff3ff;font-size:12.5px;letter-spacing:.12em;border-radius:2px;box-shadow:0 0 10px rgba(111,224,255,.25)}
+.lk-ico{width:14px;height:16px;background:linear-gradient(#6fe0ff,#6fe0ff) 50% 100%/2px 12px no-repeat,linear-gradient(#6fe0ff,#6fe0ff) 50% 2px/10px 2px no-repeat,linear-gradient(#6fe0ff,#6fe0ff) 50% 7px/7px 2px no-repeat;filter:drop-shadow(0 0 3px rgba(111,224,255,.8))}
+.look{position:fixed;inset:0;z-index:70;opacity:0;transition:opacity .4s;background:#0b1020;overflow:hidden;touch-action:none}.look.show{opacity:1}
+.lk-sky{position:absolute;inset:0}.lk-cv{position:absolute;inset:0;width:100%;height:100%;display:block}
+.lk-ui{position:absolute;inset:0;pointer-events:none;color:#f2ecd6;text-shadow:0 1px 6px rgba(0,0,0,.7)}
+.lk-k{position:absolute;left:18px;top:calc(env(safe-area-inset-top,0px) + 16px);font-size:12px;letter-spacing:.5em;color:#7fe6ff}
+.lk-t{position:absolute;left:18px;top:calc(env(safe-area-inset-top,0px) + 34px);font-size:20px;letter-spacing:.18em}
+.lk-x{position:absolute;right:14px;bottom:calc(env(safe-area-inset-bottom,0px) + 16px);pointer-events:auto;display:flex;align-items:center;gap:8px;font-size:14px;color:#f2ecd6;background:rgba(0,0,0,.35);padding:6px 12px;border-radius:18px}
+.lk-x i{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#efe6cc;color:#222;font-style:normal;font-size:12px;font-weight:700}
+.lk-hint{position:absolute;left:18px;bottom:calc(env(safe-area-inset-bottom,0px) + 22px);font-size:11px;color:rgba(242,236,214,.7)}
+.lk-load{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:12px;font-size:13px;letter-spacing:.15em;transition:opacity .6s}.lk-load.done{opacity:0}
+.lk-load i{width:34px;height:34px;border:2px solid rgba(111,224,255,.25);border-top-color:#6fe0ff;border-radius:50%;animation:lkSpin 1s linear infinite}
+@keyframes lkSpin{to{transform:rotate(360deg)}}
 .wake{position:fixed;inset:0;z-index:61;display:none;align-items:center;justify-content:center;padding:20px;overflow:hidden;background:var(--wk-sky,#0b1020)}
 .wake.show{display:flex;animation:moonIn .9s ease}
 .wk-stars{position:absolute;inset:0 0 40% 0;background-image:radial-gradient(1px 1px at 12% 18%,#fff,transparent),radial-gradient(1px 1px at 32% 8%,#fff,transparent),radial-gradient(1.4px 1.4px at 58% 22%,#fff,transparent),radial-gradient(1px 1px at 78% 12%,#fff,transparent),radial-gradient(1px 1px at 88% 30%,#fff,transparent),radial-gradient(1px 1px at 22% 34%,#fff,transparent),radial-gradient(1.2px 1.2px at 44% 30%,#fff,transparent),radial-gradient(1px 1px at 68% 4%,#fff,transparent);opacity:var(--wk-star,0)}
@@ -2004,6 +2017,7 @@ document.addEventListener('click',e=>{
   const a=b.dataset.act, q=findQ(selId);
   if(a.startsWith('path')&&pathAct(a,b)) return;
   if(a.startsWith('wk')){ wakeAct(a,b); return; }
+  if(a==='lookx'){ pLookClose(); return; }
   switch(a){
     case 'tab': if(!draftLeave()) break; if(editing){cleanupEmpty();editing=false} goTab(b.dataset.v); break;
     case 'openq': { const t=findQ(b.dataset.id); if(!t) break; tab='list'; listCat=t.type; selId=t.id; pouchSel=null; editing=false; render(); window.scrollTo({top:0}); break; }
@@ -3546,7 +3560,7 @@ function pathList(){
   const hud=`<div class="sl-hud">${nb.length?`<b>${nd}/${nb.length}</b><i></i>`:''}${isT?`<b>${now>=6*60&&now<18*60?'<i class="ck-sun"></i>':'<i class="ck-moon"></i>'}${now<12*60?'AM':'PM'} ${String(Math.floor(now/60)%12||12).padStart(2,'0')}:${String(now%60).padStart(2,'0')}</b><i></i>`:''}${isT&&wx&&wx.temp!=null?`<b>${wx.temp>0?'+':''}${Math.round(wx.temp)}℃</b><i></i>`:''}</div>`;
   h+=`<div class="slate z${pZoom} ${pathBoot?'boot':''}">${SL_DEFS}<i class="sl-cn c1">${slCorner(0,0)}</i><i class="sl-cn c2">${slCorner(1,0)}</i><i class="sl-cn c3">${slCorner(0,1)}</i><i class="sl-cn c4">${slCorner(1,1)}</i>
     ${slBand('t')}<div class="sl-top"><button class="sl-tab" data-act="pathday" data-v="-1">${md(-1)} <i>L</i></button><div class="sl-title"><b>${isT?'今日の旅程':'旅程'}</b><small>${d.getMonth()+1}/${d.getDate()}（${'日月火水木金土'[d.getDay()]}）${holiday(k)?' '+holiday(k):''}</small></div><button class="sl-tab" data-act="pathday" data-v="1"><i>R</i> ${md(1)}</button></div>
-    <div class="sl-body">${pSunFx(isT)}<div class="sl-view" id="slView"><div class="tl road" id="tl" style="height:${H}px"><svg class="rd-svg" width="100%" height="${H}" aria-hidden="true">${svg}</svg>${pFxHtml(k,H)}${regs}${hrs}${mtags}${cards}${nowM}</div></div><div class="sl-fx" aria-hidden="true"></div>${hud}${pathSheet&&unH?`<div class="sl-sheet">${unH}</div>`:''}<div class="sl-ret" id="slRet" aria-hidden="true"><i class="rt-c"></i><span class="rt-l" id="slRetL"></span></div></div>
+    <div class="sl-body">${pSunFx(isT)}${P_LOOK?`<button class="sl-look" data-act="pathlook"><i class="lk-ico"></i>見渡す</button>`:''}<div class="sl-view" id="slView"><div class="tl road" id="tl" style="height:${H}px"><svg class="rd-svg" width="100%" height="${H}" aria-hidden="true">${svg}</svg>${pFxHtml(k,H)}${regs}${hrs}${mtags}${cards}${nowM}</div></div><div class="sl-fx" aria-hidden="true"></div>${hud}${pathSheet&&unH?`<div class="sl-sheet">${unH}</div>`:''}<div class="sl-ret" id="slRet" aria-hidden="true"><i class="rt-c"></i><span class="rt-l" id="slRetL"></span></div></div>
     <div class="sl-bot"><button class="sl-p sl-close" data-act="pathclose"><i>B</i>とじる</button><button class="sl-p sl-list ${pathSheet?'on':''}" data-act="pathsheet"><i>X</i>${un.length?`道しるべのない冒険<b class="sl-n">${un.length}</b>`:'冒険を選ぶ'}</button><span class="sl-zoom"><button data-act="pathzoom" data-v="-1" aria-label="ひろく見る" ${pZoom===0?'disabled':''}>−</button>ズーム<button data-act="pathzoom" data-v="1" aria-label="くわしく見る" ${pZoom===2?'disabled':''}>＋</button></span>${isT?'<button class="sl-p" data-act="pathhere">現在地<i>Y</i></button>':''}<button class="sl-p sl-a" data-act="pathA" id="slA"><span id="slAt">立てる</span><i>A</i></button></div>${slBand('b')}</div>`;
   pathBoot=false;
   return h;
@@ -4577,6 +4591,7 @@ function pathAct(a,b){
       pSet(to,nid,{...rest,del:0,done:x.q||x.tr||x.bk?undefined:0,...(x.bk?{d0:to}:{})}); pathSel=null; render(); toast(`${+to.slice(5,7)}/${+to.slice(8)} に回した`); return true; }
     case 'pathclose': pDropEmpty(); pathSel=null; pathSheet=false; listCat='today'; dayView=ymd(); render(); return true;
     case 'pathzoom': pZoomBy(+b.dataset.v); return true;
+    case 'pathlook': pLookOpen(); return true;
     case 'pathhere': { const sv=$('slView'); if(sv) sv.scrollTo({top:pm2y(pJNow()),behavior:'smooth'}); return true; }
     case 'pathA': { const r=$('slRet'); if(!r) return true; pDropEmpty(); if(r.dataset.id){ pathSel=r.dataset.id; render(); if(window.innerWidth<=820) pScroll(0); return true; }
       const s0=Math.max(PATH_H0,Math.min(PATH_H1-SNAP,+r.dataset.m)), bl=pBlocks(k), nx=bl.filter(x=>x.s>=s0+SNAP).map(x=>x.s)[0]||PATH_H1, id=uid();
@@ -4635,6 +4650,107 @@ function pathInput(e){
   document.addEventListener('touchmove',e=>{ if(pend&&pend.started) e.preventDefault(); },{passive:false});
   setInterval(()=>{ if(listCat==='path'&&tab==='list'&&!pend&&dayView===pJDay()&&!document.hidden&&!(document.activeElement&&/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))) renderList(); },60000);
 })();
+
+/* ---------- 見渡す：今いる場所から、道の先の地形を立体で眺める（WebGL） ---------- */
+// 平らな地図の絵をそのまま地面の模様にして、高さで盛り上げる。光は今の太陽の向き、天気は今の空
+const P_LOOK=true; // 試作：旅程の右上に「見渡す」
+let pLookSt=null;
+function pLookClose(){ const L=pLookSt; if(!L) return; pLookSt=null; L.alive=false; cancelAnimationFrame(L.raf); try{ L.ren&&L.ren.dispose(); L.scene&&L.scene.traverse(o=>{ o.geometry&&o.geometry.dispose(); if(o.material){ (Array.isArray(o.material)?o.material:[o.material]).forEach(m=>{ m.map&&m.map.dispose(); m.normalMap&&m.normalMap.dispose(); m.dispose(); }); } }); }catch(e){}
+  L.ov.classList.remove('show'); setTimeout(()=>L.ov.remove(),400); window.removeEventListener('resize',L.rs); }
+async function pLookOpen(){
+  if(pLookSt) return; const k=dayView, H=pm2y(PATH_H1)+10, W=pW, isT=k===pJDay(), bl=pBlocks(k);
+  const nowM=isT?Math.max(PATH_H0,Math.min(PATH_H1,pJNow())):(bl[0]?bl[0].s:8*60), y0=pm2y(nowM);
+  const ov=document.createElement('div'); ov.className='look';
+  const d=new Date(k+'T00:00:00');
+  ov.innerHTML=`<div class="lk-sky"></div><canvas class="lk-cv"></canvas><div class="lk-ui"><div class="lk-k">見渡す</div><div class="lk-t">${d.getMonth()+1}月${d.getDate()}日（${'日月火水木金土'[d.getDay()]}）${isT?`　${pfmt(nowM)}`:''}</div><button class="lk-x" data-act="lookx"><i>B</i>もどる</button><div class="lk-load"><i></i><span>塔に登っています…</span></div><div class="lk-hint">指でなぞって見回す・ふたつの指で寄る</div></div>`;
+  document.body.appendChild(ov); requestAnimationFrame(()=>ov.classList.add('show'));
+  const L=pLookSt={ov,alive:true,raf:0}; const cv=ov.querySelector('.lk-cv');
+  let T; try{ T=await import('./three.module.min.js'); }catch(e){ ov.querySelector('.lk-load span').textContent='景色を読み込めなかった'; return; }
+  if(!L.alive) return;
+  // ---- 高さ（地図と同じ計算）。少しずつ計算して、待つあいだも画面を止めない ----
+  const ST=4, XA=-Math.round(W*.7), XB=Math.round(W*1.7), yA=Math.max(-800,y0-320), yB=Math.min(H+800,y0+1500), nx=Math.ceil((XB-XA)/ST)+1, ny=Math.ceil((yB-yA)/ST)+1, HS=105;
+  const hv=new Float32Array(nx*ny); const loadEl=ov.querySelector('.lk-load span');
+  const mir=x=>x<0?-x:x>W?2*W-x:x;
+  for(let j=0;j<ny;j++){ const y=yA+j*ST; for(let i=0;i<nx;i++) hv[j*nx+i]=pHgt(mir(Math.min(XB,XA+i*ST)),y); if(j%24===0){ loadEl.textContent=`塔に登っています… ${Math.round(j/ny*100)}%`; await new Promise(r=>setTimeout(r,0)); if(!L.alive) return; } }
+  const elev=h=>h>=P_SEA?(h-P_SEA)*HS:(h-P_SEA)*HS*.5;
+  const hAt=(x,y)=>{ const fx=Math.max(0,Math.min(nx-1.001,(x-XA)/ST)), fy=Math.max(0,Math.min(ny-1.001,(y-yA)/ST)), i=fx|0, j=fy|0, a=fx-i, b=fy-j, o=j*nx+i; return elev((hv[o]*(1-a)+hv[o+1]*a)*(1-b)+(hv[o+nx]*(1-a)+hv[o+nx+1]*a)*b); };
+  // ---- 描く道具 ----
+  const ren=new T.WebGLRenderer({canvas:cv,antialias:true,alpha:true}); L.ren=ren; ren.setPixelRatio(Math.min(2,window.devicePixelRatio||1)); ren.shadowMap.enabled=true; ren.shadowMap.type=T.PCFSoftShadowMap; ren.outputColorSpace=T.SRGBColorSpace;
+  const scene=new T.Scene(); L.scene=scene; const cam=new T.PerspectiveCamera(42,1,2,4000);
+  const rs=()=>{ const w=ov.clientWidth, h=ov.clientHeight; ren.setSize(w,h,false); cam.aspect=w/h; cam.updateProjectionMatrix(); }; L.rs=rs; window.addEventListener('resize',rs); rs();
+  // 世界の向き：地図の右＝x、高さ＝y、道の先（あとの時刻）＝奥（-z）
+  const X=x=>x-W/2, Z=y=>-(y-y0);
+  // ---- 地面：地図の絵を模様に ----
+  const g=new T.BufferGeometry(), pos=new Float32Array(nx*ny*3), uv=new Float32Array(nx*ny*2), idx=[];
+  const tk=pTerKey(k,pOff), url=pTerCache[tk];
+  for(let j=0;j<ny;j++) for(let i=0;i<nx;i++){ const o=j*nx+i, x=Math.min(XB,XA+i*ST), y=yA+j*ST; pos[o*3]=X(x); pos[o*3+1]=elev(hv[o]); pos[o*3+2]=Z(y); uv[o*2]=mir(x)/W; uv[o*2+1]=1-(y+900)/(H+1800); }
+  for(let j=0;j<ny-1;j++) for(let i=0;i<nx-1;i++){ const a=j*nx+i, b=a+1, c=a+nx, e=c+1; idx.push(a,b,c,b,e,c); }
+  g.setAttribute('position',new T.BufferAttribute(pos,3)); g.setAttribute('uv',new T.BufferAttribute(uv,2)); g.setIndex(idx); g.computeVertexNormals();
+  const gm=new T.MeshLambertMaterial({color:url?0xffffff:0xb8a070});
+  if(url){ new T.TextureLoader().load(url,t=>{ t.colorSpace=T.SRGBColorSpace; t.anisotropy=Math.min(8,ren.capabilities.getMaxAnisotropy()); gm.map=t; gm.needsUpdate=true; }); }
+  const ground=new T.Mesh(g,gm); ground.receiveShadow=true; ground.castShadow=true; scene.add(ground);
+  // ---- 水面：光を返して、ゆっくり揺れる ----
+  const nc=document.createElement('canvas'); nc.width=nc.height=128; { const x=nc.getContext('2d'), im=x.createImageData(128,128); for(let q=0;q<128*128;q++){ const u=q%128, v=q/128|0, a=Math.sin(u*.29+Math.sin(v*.13)*2)*.5+Math.sin(v*.37+u*.05)*.5; im.data[q*4]=128+a*40; im.data[q*4+1]=128+Math.cos(v*.31+u*.11)*40; im.data[q*4+2]=255; im.data[q*4+3]=255; } x.putImageData(im,0,0); }
+  const nt=new T.CanvasTexture(nc); nt.wrapS=nt.wrapT=T.RepeatWrapping; nt.repeat.set(10,40);
+  const wm=new T.MeshPhongMaterial({color:0x3f7f99,transparent:true,opacity:.42,shininess:120,specular:0xd8f2ff,normalMap:nt,normalScale:new T.Vector2(.35,.35),depthWrite:false});
+  const water=new T.Mesh(new T.PlaneGeometry(XB-XA+40,yB-yA+40),wm); water.rotation.x=-Math.PI/2; water.position.set(X((XA+XB)/2),-.4,Z((yA+yB)/2)); scene.add(water);
+  // ---- 道：地面にそって細い帯 ----
+  const road=(wd,col,lift)=>{ const P=[], I=[]; let n=0; for(let y=yA;y<=yB;y+=3){ const x=pRX(y), dx=pRX(y+2)-pRX(y-2), l=Math.hypot(dx,4)||1, nx2=4/l*wd/2, nz=dx/l*wd/2; for(const sgn of [-1,1]){ const px=x+sgn*nx2, py=y+sgn*nz*-1; P.push(X(px),Math.max(0,hAt(px,py))+lift,Z(py)); } if(n) I.push(2*n-2,2*n,2*n-1,2*n-1,2*n,2*n+1); n++; }
+    const gg=new T.BufferGeometry(); gg.setAttribute('position',new T.Float32BufferAttribute(P,3)); gg.setIndex(I); gg.computeVertexNormals(); const m=new T.Mesh(gg,new T.MeshLambertMaterial({color:col,side:T.DoubleSide})); m.receiveShadow=true; scene.add(m); };
+  road(6.5,0x3a2c14,.5); road(4.2,0xeee0b4,.8);
+  // ---- 道しるべと今いる所 ----
+  const label=(txt,sub,col)=>{ const c=document.createElement('canvas'), x=c.getContext('2d'), F='600 30px "Hiragino Sans","Noto Sans JP",sans-serif'; x.font=F; const w=Math.max(x.measureText(txt).width,sub?x.measureText(sub).width*.8:0)+36; c.width=Math.ceil(w); c.height=sub?92:58;
+    x.fillStyle='rgba(16,22,24,.82)'; x.fillRect(0,0,c.width,c.height); x.fillStyle=col; x.fillRect(0,0,5,c.height); x.font='500 22px "Hiragino Sans",sans-serif'; if(sub){ x.fillStyle='#7fd8ef'; x.fillText(sub,18,30); } x.font=F; x.fillStyle='#f2ecd6'; x.fillText(txt,18,sub?72:40);
+    const t=new T.CanvasTexture(c); t.colorSpace=T.SRGBColorSpace; const s=new T.Sprite(new T.SpriteMaterial({map:t,depthTest:false})); s.scale.set(c.width/7,c.height/7,1); s.center.set(0,0); s.renderOrder=10; return s; };
+  bl.filter(b=>{ const y=pm2y(b.s); return y>yA&&y<yB; }).slice(0,14).forEach(b=>{ const y=pm2y(b.s), x=pRX(y), h=Math.max(0,hAt(x,y)), dn=pDone(b);
+    const m=new T.Mesh(new T.OctahedronGeometry(3.2),new T.MeshLambertMaterial({color:dn?0x8a8a7a:0xf0a640,emissive:dn?0:0x553300})); m.position.set(X(x),h+7,Z(y)); m.castShadow=true; scene.add(m);
+    const st=new T.Mesh(new T.CylinderGeometry(.35,.35,7,6),new T.MeshLambertMaterial({color:0x2a2010})); st.position.set(X(x),h+3.5,Z(y)); scene.add(st);
+    const s=label(pTitle(b)||'（名前なし）',pfmt(b.s)+(dn?'  CLEAR':''),dn?'#8a8a7a':'#f0a640'); s.position.set(X(x)+4,h+12,Z(y)); scene.add(s); });
+  const ny0=Math.max(0,hAt(pRX(y0),y0)), me=new T.Mesh(new T.ConeGeometry(3,8,3),new T.MeshLambertMaterial({color:0x2f8cff,emissive:0x0a3a88})); me.rotation.x=Math.PI; me.position.set(X(pRX(y0)),ny0+9,Z(y0)); me.castShadow=true; scene.add(me);
+  const ring=new T.Mesh(new T.RingGeometry(4,5,32),new T.MeshBasicMaterial({color:0x6fe0ff,transparent:true,opacity:.8,side:T.DoubleSide})); ring.rotation.x=-Math.PI/2; ring.position.set(me.position.x,ny0+.9,me.position.z); scene.add(ring);
+  // ---- 光と空：今の太陽 ----
+  const t0=new Date(); if(!isT){ t0.setHours(12,0,0,0); } const el=isT?sunElev(t0):40, az=isT?sunAz(t0):180, er=el*rad, ar=az*rad;
+  const day=Math.max(0,Math.min(1,(el+4)/14)), warm=Math.max(0,Math.min(1,1-(el-2)/18));
+  const sun=new T.DirectionalLight(new T.Color().setHSL(day>.1?.09:.62,.6+.3*warm,.92-.2*warm),.45+1.25*day); const sd=new T.Vector3(Math.sin(ar)*Math.cos(Math.max(er,.12)),Math.sin(Math.max(er,.12)),-Math.cos(ar)*Math.cos(Math.max(er,.12)));
+  // 北＝地図の上（奥）、東＝右
+  sun.position.copy(sd.clone().multiplyScalar(900)); sun.target.position.set(0,0,Z(y0+500)); scene.add(sun.target); sun.castShadow=true; sun.shadow.mapSize.set(2048,2048);
+  const sc=sun.shadow.camera; sc.left=-700; sc.right=700; sc.top=900; sc.bottom=-900; sc.near=10; sc.far=2400; sun.shadow.bias=-.0008; scene.add(sun);
+  scene.add(new T.HemisphereLight(day>.3?0xbfd8f0:0x6a74a8,0x4a3a20,.75+.25*day));
+  const fogC=new T.Color(day>.5?(warm>.6?0xe2b48a:0xb9cbd6):day>.1?0x8a6a7a:0x2a3352); scene.fog=new T.Fog(fogC,600,2100);
+  ov.querySelector('.lk-sky').style.background=day>.5?(warm>.6?'linear-gradient(180deg,#5d7fb0,#e7b07c 70%,#f2c48e)':'linear-gradient(180deg,#5b8fc4,#a9c6da 65%,#d6e1e4)'):day>.1?'linear-gradient(180deg,#2c3360,#a86a6a 65%,#e09468)':'linear-gradient(180deg,#0a1024,#222c50 70%,#34406a)';
+  // ---- 雲と天気 ----
+  let wx=null; try{ wx=JSON.parse(localStorage.getItem(WX_KEY)||'null'); }catch(e){} const wc=isT&&wx&&Date.now()-wx.at<3*3600e3?(+(new URLSearchParams(location.search).get('wx'))||wx.code):0, cc=isT&&wx&&wx.cc!=null?wx.cc:40;
+  const cl=document.createElement('canvas'); cl.width=cl.height=128; { const x=cl.getContext('2d'), gr=x.createRadialGradient(64,64,4,64,64,62); gr.addColorStop(0,'rgba(255,255,255,.95)'); gr.addColorStop(.5,'rgba(255,255,255,.5)'); gr.addColorStop(1,'rgba(255,255,255,0)'); x.fillStyle=gr; x.fillRect(0,0,128,128); }
+  const ct=new T.CanvasTexture(cl), clouds=[], ncl=Math.round(4+cc/7), rr=pRng('lk'+k,3), cloudCol=WXFX.rain[wc]?0x9aa2aa:0xffffff;
+  for(let q=0;q<ncl;q++){ const s=new T.Sprite(new T.SpriteMaterial({map:ct,color:cloudCol,transparent:true,opacity:.55*(day*.8+.2),depthWrite:false,fog:true})); s.position.set((rr()-.5)*900,150+rr()*70,-rr()*1500+200); const w=160+rr()*200; s.scale.set(w,w*.42,1); scene.add(s); clouds.push(s); }
+  let rain=null; const rl=WXFX.rain[wc]||0, sl=WXFX.snow[wc]||0;
+  if(sl){ const N=1800+sl*500, P=new Float32Array(N*3); for(let q=0;q<N;q++){ P[q*3]=(rr()-.5)*600; P[q*3+1]=rr()*260; P[q*3+2]=-rr()*900+150; }
+    const gg=new T.BufferGeometry(); gg.setAttribute('position',new T.BufferAttribute(P,3)); rain=new T.Points(gg,new T.PointsMaterial({color:0xffffff,size:1.8,transparent:true,opacity:.9,depthWrite:false})); scene.add(rain); }
+  else if(rl){ const N=1800+rl*700, P=new Float32Array(N*6); for(let q=0;q<N;q++){ const x=(rr()-.5)*600, y=rr()*260, z=-rr()*900+150; P.set([x,y,z,x-.6,y-7,z],q*6); }
+    const gg=new T.BufferGeometry(); gg.setAttribute('position',new T.BufferAttribute(P,3)); rain=new T.LineSegments(gg,new T.LineBasicMaterial({color:0xc8dcf0,transparent:true,opacity:.45,depthWrite:false})); scene.add(rain); }
+  // ---- カメラ：今いる所から、塔の上へ ----
+  const tgt=new T.Vector3(me.position.x,20,Z(y0+120)); let th=0, ph=1.2, R0=300, R=40, phS=1.45;
+  const place=()=>{ cam.position.set(tgt.x+R*Math.sin(phS)*Math.sin(th),tgt.y+R*Math.cos(phS),tgt.z+R*Math.sin(phS)*Math.cos(th)); const lo=Math.max(0,hAt(cam.position.x+W/2,y0-cam.position.z))+6; if(cam.position.y<lo) cam.position.y=lo; cam.lookAt(tgt); };
+  ov.querySelector('.lk-load').classList.add('done');
+  const tIn=performance.now(); let intro=true;
+  // ---- 指で見回す ----
+  let tp=null, pin=null; cv.addEventListener('touchstart',e=>{ intro=false; if(e.touches.length===1) tp={x:e.touches[0].clientX,y:e.touches[0].clientY}; else if(e.touches.length===2){ tp=null; pin={d:Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY),R,my:(e.touches[0].clientY+e.touches[1].clientY)/2,z:tgt.z}; } },{passive:true});
+  cv.addEventListener('touchmove',e=>{ e.preventDefault(); if(e.touches.length===1&&tp){ const dx=e.touches[0].clientX-tp.x, dy=e.touches[0].clientY-tp.y; tp={x:e.touches[0].clientX,y:e.touches[0].clientY}; th-=dx*.006; ph=Math.max(.35,Math.min(1.42,ph-dy*.004)); phS=ph; }
+    else if(e.touches.length===2&&pin){ const dd=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY); R=Math.max(90,Math.min(1100,pin.R*pin.d/dd)); R0=R; const my=(e.touches[0].clientY+e.touches[1].clientY)/2; tgt.z=Math.max(Z(yB-100),Math.min(Z(yA+60),pin.z+(my-pin.my)*1.4*Math.cos(th))); } },{passive:false});
+  cv.addEventListener('touchend',e=>{ if(e.touches.length===0){ tp=null; pin=null; } },{passive:true});
+  let md=null; cv.addEventListener('mousedown',e=>{ intro=false; md={x:e.clientX,y:e.clientY}; }); window.addEventListener('mouseup',()=>md=null); cv.addEventListener('mousemove',e=>{ if(!md) return; th-=(e.clientX-md.x)*.006; ph=Math.max(.35,Math.min(1.42,ph-(e.clientY-md.y)*.004)); phS=ph; md={x:e.clientX,y:e.clientY}; });
+  cv.addEventListener('wheel',e=>{ e.preventDefault(); intro=false; R=Math.max(90,Math.min(1100,R*(1+e.deltaY*.001))); R0=R; },{passive:false});
+  // ---- 動かす ----
+  let last=performance.now();
+  const loop=n=>{ if(!L.alive) return; const dt=Math.min(.05,(n-last)/1000); last=n;
+    if(intro){ const kq=Math.min(1,(n-tIn)/2600), e2=1-Math.pow(1-kq,3); R=40+(R0-40)*e2; phS=1.45+(ph-1.45)*e2; th=.5*(1-e2); if(kq>=1) intro=false; }
+    place(); nt.offset.x+=dt*.012; nt.offset.y+=dt*.02; clouds.forEach(s=>{ s.position.x+=dt*6; if(s.position.x>520) s.position.x=-520; });
+    ring.scale.setScalar(1+.25*Math.sin(n/350)); ring.material.opacity=.5+.3*Math.sin(n/350); me.position.y=ny0+9+Math.sin(n/500)*1.2;
+    if(rain){ const P=rain.geometry.attributes.position.array; if(sl){ for(let q=1;q<P.length;q+=3){ P[q]-=30*dt; P[q-1]+=Math.sin(n/900+q)*dt*4; if(P[q]<0) P[q]+=260; } } else { for(let q=1;q<P.length;q+=6){ P[q]-=230*dt; P[q+3]-=230*dt; if(P[q+3]<0){ P[q]+=260; P[q+3]+=260; } } } rain.geometry.attributes.position.needsUpdate=true; }
+    ren.render(scene,cam); if(L.shot&&!intro&&n-tIn>2500){ L.shot(); return; } L.raf=requestAnimationFrame(loop); };
+  if(/[?&]lkshot/.test(location.search)){ intro=false; R=R0; phS=ph; th=+(new URLSearchParams(location.search).get('lkth'))||0; L.shot=()=>{ document.body.dataset.lkshot='1'; }; }
+  L.raf=requestAnimationFrame(loop);
+}
 
 /* ---------- PCとスマホのデータ同期 ---------- */
 let qSigs=null, qFS={};
