@@ -1178,7 +1178,7 @@ function gain(n){
 /* ---------- actions ---------- */
 function toggleStep(qid,sid){
   const q=findQ(qid), s=q&&q.steps.find(x=>x.id===sid); if(!s||s.qref) return;
-  s.done=!s.done; s.doneAt=s.done?Date.now():null; if(s.done) doneToday(s); gain((s.done?1:-1)*10*(q.rank||1)); if(s.done) earnRupee(5);
+  s.done=!s.done; s.doneAt=s.done?Date.now():null; if(s.done){ doneToday(s); pLogDone({q:qid,sid},s.doDur); } else pUnlog({q:qid,sid}); gain((s.done?1:-1)*10*(q.rank||1)); if(s.done) earnRupee(5);
   save(); render();
   if(s.done){
     toast(`工程クリア  +${10*(q.rank||1)} XP ・ +5ルピー`); maybeSeed();
@@ -1197,7 +1197,7 @@ function xpFor(q){return (q.type==='mini'?15:50)*(q.rank||1)}
 function doneToday(o){ const t=ymd(); if(o.doDate&&o.doDate>t){ o.doDate=t; o.doTime=''; o.carry=0; } }
 function completeQuest(q){
   if(q.bk){ const B=(state.books||{})[q.bk]; if(B&&!B.ret){ B.ret=ymd(); B.u=Date.now(); } }
-  q.done=true; q.doneAt=Date.now(); q.accepted=false; doneToday(q);
+  q.done=true; q.doneAt=Date.now(); q.accepted=false; doneToday(q); if(!(q.steps&&q.steps.length)&&!q.bk) pLogDone({q:q.id,sid:''},q.doDur);
   const xp=xpFor(q), rp=q.type==='mini'?10:30*(q.rank||1); gain(xp); earnRupee(rp); save();
   if(q.type==='mini'){ render(); toast(`ミニチャレンジ達成  +${xp} XP ・ +${rp}ルピー`); maybeSeed(); return; }
   $('clearT').textContent=q.title; $('clearXp').textContent=`+${xp} XP ・ +${rp}ルピー${q.reward?'　報酬：'+q.reward:''}`;
@@ -1205,7 +1205,7 @@ function completeQuest(q){
   selId=q.id; editing=false; memEdit=q.id; render();
   setTimeout(()=>toast('思い出にひとこと残せます'),2700);
 }
-function reopen(q){ if(q.bk){ const B=(state.books||{})[q.bk]; if(B&&B.ret){ B.ret=null; B.u=Date.now(); } } q.done=false;q.doneAt=null;gain(-xpFor(q));save();render()}
+function reopen(q){ pUnlog({q:q.id,sid:''}); if(q.bk){ const B=(state.books||{})[q.bk]; if(B&&B.ret){ B.ret=null; B.u=Date.now(); } } q.done=false;q.doneAt=null;gain(-xpFor(q));save();render()}
 function addMinis(text){
   const lines=text.split(/\r?\n/).map(x=>x.replace(/^\s*([-*・●○◇◆□■]|\d+[.)．]|\[\s?\])\s*/,'').trim()).filter(Boolean);
   lines.forEach((t,i)=>state.quests.push({id:uid(),title:t,type:'mini',parentId:null,rank:0,deadline:'',reward:'',memo:'',steps:[],accepted:false,done:false,created:Date.now()+i}));
@@ -2015,7 +2015,7 @@ document.addEventListener('click',e=>{
     case 'bkundo': { const B=state.books[bkSel], d=b.dataset.v; if(B&&B.log&&d in B.log){ delete B.log[d]; B.u=Date.now(); save(); render(); } break; }
     case 'restsel': restSel=b.dataset.v; selId=null; render(); window.innerWidth<=820&&window.scrollTo({top:0}); break;
     case 'restback': restSel=null; render(); break;
-    case 'trfin': { const k=trSel, H=hm(), on=b.dataset.v==='1', was=!!(H.days[k]||{}).train; if(!k||on===was) break; if(on) trPin(k); const vb=trVessels(); H.days[k]={...(H.days[k]||{}),train:on}; hmTouch('days',k);
+    case 'trfin': { const k=trSel, H=hm(), on=b.dataset.v==='1', was=!!(H.days[k]||{}).train; if(!k||on===was) break; if(on){ trPin(k); pLogDone({tr:k},trSets(k)===2?15:20); } else pUnlog({tr:k}); const vb=trVessels(); H.days[k]={...(H.days[k]||{}),train:on}; hmTouch('days',k);
       if(on){ gain(30); earnRupee(20); toast('鍛錬クリア  +30 XP ・ +20ルピー'); maybeSeed(); const p=TR_PART[trType(k)]; if(p) setTimeout(()=>toast(`克服の証（${PART_NAME[p]}）を手に入れた`),1300); trVesselBanner(vb); } else gain(-30);
       save(); render(); break; }
     case 'trsw': { const H=hm(); H.ovr={...H.ovr,[trSel]:b.dataset.v}; hmTouch('ovr',trSel); save(); render(); break; }
@@ -2820,7 +2820,7 @@ function trOnChange(e){
   if(el.dataset.trex&&el.type==='checkbox'){ const id=el.dataset.trex, ix=+el.dataset.i; const day={...(H.lift[k]||{})}, arr=(day[id]||[]).slice(), s=(arr[ix]||[null,null]).slice(); s[2]=el.checked?1:0; arr[ix]=s; day[id]=arr; H.lift[k]=day; hmTouch('lift',k); el.parentNode.classList.toggle('on',el.checked); save(); renderList(); return true; }
   if(el.dataset.trex){ const id=el.dataset.trex, ix=+el.dataset.i, f=+el.dataset.f, v=el.value===''?null:Math.max(0,parseFloat(el.value)); if(v) trPin(k);
     const day={...(H.lift[k]||{})}, arr=(day[id]||[]).slice(), s=(arr[ix]||[null,null]).slice(); s[f]=v; if(EX[id].knee&&s[2]==null) s[2]=trKneeDef(k,ix); arr[ix]=s; day[id]=arr; H.lift[k]=day; hmTouch('lift',k);
-    if((f===1||f===2)&&v&&!(H.days[k]||{}).train&&trAllSets(k)){ H.days[k]={...(H.days[k]||{}),train:true}; hmTouch('days',k); gain(30); earnRupee(20); toast('鍛錬クリア  +30 XP ・ +20ルピー'); maybeSeed();
+    if((f===1||f===2)&&v&&!(H.days[k]||{}).train&&trAllSets(k)){ pLogDone({tr:k},trSets(k)===2?15:20); H.days[k]={...(H.days[k]||{}),train:true}; hmTouch('days',k); gain(30); earnRupee(20); toast('鍛錬クリア  +30 XP ・ +20ルピー'); maybeSeed();
       const fin=document.querySelector('.tr-fin'); if(fin){ fin.classList.add('done'); fin.innerHTML='<span class="r-clear">CLEAR</span><button class="btn small ghost" data-act="trfin" data-v="0">クリアを取り消す</button>'; }
       const p=TR_PART[trType(k)]; if(p) setTimeout(()=>toast(`克服の証（${PART_NAME[p]}）を手に入れた`),1300); trVesselBanner(vb); }
     if((f===1||f===2)&&v) trCheckPR(id,k);
@@ -2925,7 +2925,7 @@ function bkRecord(){
   const before=bkPlan(B,t); B.log={...(B.log||{}),[t]:pg}; B.u=Date.now(); const P=bkPlan(B,t);
   // 記し直しても、ごほうびは1日1回。減らして届かなくなったら、その日のぶんは戻す
   B.clr={...(B.clr||{})}; let msg='';
-  if(P.met&&!B.clr[t]){ B.clr[t]=1; gain(10); earnRupee(5); msg='clear'; }
+  if(P.met&&!B.clr[t]){ B.clr[t]=1; gain(10); earnRupee(5); msg='clear'; if(t===pJDay()) pLogDone({bk:bkSel,d0:t},30); }
   else if(!P.met&&B.clr[t]){ delete B.clr[t]; gain(-10); state.rupeeEarned=Math.max(0,(state.rupeeEarned||0)-5); }
   if(pg>=B.pages&&!B.fin){ B.fin=t; gain(40); earnRupee(30); setTimeout(()=>banner('book','古文書を解き明かした',`${B.title}　全${B.pages}ページ　+40 XP ・ +30ルピー`),200); }
   else if(pg<B.pages&&B.fin===t){ B.fin=null; gain(-40); state.rupeeEarned=Math.max(0,(state.rupeeEarned||0)-30); toast(`p.${pg} に記し直した`); }
@@ -3347,6 +3347,15 @@ let pathSel=null, pathScrolled=null, pathDrag=null, pathFocus=null;
 const pm2y=m=>(m-PATH_H0)*PX;
 const pfmt=m=>Math.floor((m%1440)/60)+':'+String(m%60).padStart(2,'0');
 // 旅の「今日」：0時を過ぎても4時までは前の日の旅の続き（0時すぎに寝ることもあるので）。時刻は24時より先を25:00…のように数える
+// 冒険手帳で終えた物が今日の旅程になければ、終えた時刻に道しるべを立てて記録する（取り消したら外す）
+function pRefMatch(b,x){ return x.tr?b.tr===x.tr:x.bk?b.bk===x.bk:b.q===x.q&&(x.sid?(b.sid===x.sid||(b.sids||[]).includes(x.sid)):!b.sid&&!(b.sids&&b.sids.length)); }
+function pLogDone(x,dur){ const k=pJDay(), n=pJNow(); if(n>=1440||n<PATH_H0+5) return; if(x.tr&&x.tr!==k) return; if(pBlocks(k).some(b=>pRefMatch(b,x))) return;
+  // 終えた時刻で終わる短い道しるべ。ほかの道しるべと重なるなら、その手前へずらす
+  const bl=pBlocks(k), d=10; let e=Math.round(n/5)*5, st=e-d;
+  for(let i=0;i<8;i++){ const hit=bl.find(b=>b.s<e&&b.e>st&&!(b.wake)); if(!hit) break; e=hit.s; st=e-d; }
+  if(st<PATH_H0){ e=Math.round(n/5)*5; st=e-d; }
+  pSet(k,uid(),{s:st,e,...x,auto:1}); }
+function pUnlog(x){ const k=pJDay(), b=pBlocks(k).find(y=>y.auto&&pRefMatch(y,x)); if(b) pDel(k,b.id); }
 const pJDay=()=>pnow()<PATH_H0?ymd(new Date(Date.now()-DAY)):ymd(), pJNow=()=>{ const n=pnow(); return n<PATH_H0?n+1440:n; };
 const pScroll=y=>{ window.scrollTo({top:y}); document.body.scrollTo({top:y}); }, pScrollY=()=>window.scrollY||document.body.scrollTop||0;
 const pnow=()=>{ const d=new Date(); return d.getHours()*60+d.getMinutes(); };
