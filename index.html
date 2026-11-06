@@ -428,6 +428,16 @@ select{max-width:100%;text-overflow:ellipsis}
 .tl{position:relative;margin:6px 0 30px;user-select:none;-webkit-user-select:none;touch-action:pan-y;cursor:crosshair}
 .tl.road{background:transparent;overflow:visible}
 .rd-svg{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
+.mp-fx{position:absolute;left:0;right:0;top:-900px;pointer-events:none;overflow:hidden}
+.mp-cloud{position:absolute;left:0;top:0;bottom:0;animation:mpCloud 420s linear infinite;will-change:transform}
+.mp-cloud i{position:absolute;border-radius:50%;background:radial-gradient(closest-side,rgba(14,20,24,.34),rgba(14,20,24,.16) 55%,rgba(14,20,24,0))}
+@keyframes mpCloud{from{transform:translateX(-50%)}to{transform:translateX(0)}}
+.mp-water{position:absolute;inset:0;opacity:0;transition:opacity 1.2s;-webkit-mask-size:100% 100%;mask-size:100% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}.mp-water.on{opacity:1}
+.mp-water i{position:absolute;left:-60px;right:-60px;top:0;bottom:0;background:radial-gradient(ellipse 9px 1.6px at 30% 40%,rgba(235,250,255,.55),rgba(235,250,255,0)),radial-gradient(ellipse 6px 1.2px at 78% 80%,rgba(235,250,255,.45),rgba(235,250,255,0)),radial-gradient(ellipse 12px 2px at 60% 15%,rgba(235,250,255,.3),rgba(235,250,255,0));background-size:52px 26px,38px 22px,70px 34px;animation:mpWave 9s ease-in-out infinite alternate;will-change:transform,opacity}
+@keyframes mpWave{0%{transform:translateX(0);opacity:.55}50%{opacity:1}100%{transform:translateX(26px);opacity:.6}}
+.sl-sun{position:absolute;inset:0;pointer-events:none;z-index:1;mix-blend-mode:soft-light}.sl-sun.night{mix-blend-mode:multiply}
+.rd-step{position:absolute;width:4px;height:4px;margin:-2px 0 0 -2px;border-radius:50%;background:#2f8cff;box-shadow:0 0 4px rgba(47,140,255,.8);pointer-events:none}
+@media (prefers-reduced-motion:reduce){.mp-cloud,.mp-water i{animation:none}}
 .rd-bed{fill:none;stroke:rgba(60,50,25,.55);stroke-width:5;stroke-linecap:round}
 .rd-edge{fill:none;stroke:#e6d9a8;stroke-width:2.6;stroke-linecap:round}
 .rd-ghost{opacity:.7}
@@ -3076,6 +3086,7 @@ const SUN_LAT=35.73, SUN_LON=139.54, rad=Math.PI/180;
 function sunDay(d){ const n=Math.round(d.getTime()/864e5+2440587.5-2451545.0+.0008), J=n-SUN_LON/360, M=(357.5291+.98560028*J)%360, C=1.9148*Math.sin(M*rad)+.02*Math.sin(2*M*rad)+.0003*Math.sin(3*M*rad), L=(M+C+180+102.9372)%360,
     Jt=2451545+J+.0053*Math.sin(M*rad)-.0069*Math.sin(2*L*rad), dec=Math.asin(Math.sin(L*rad)*Math.sin(23.44*rad)), cw=(Math.sin(-.833*rad)-Math.sin(SUN_LAT*rad)*Math.sin(dec))/(Math.cos(SUN_LAT*rad)*Math.cos(dec)), w=Math.acos(Math.max(-1,Math.min(1,cw)))/rad;
   const toD=j=>new Date((j-2440587.5)*864e5), mm=x=>x.getHours()*60+x.getMinutes(); return {rise:mm(toD(Jt-w/360)),set:mm(toD(Jt+w/360)),noon:toD(Jt),dec}; }
+function sunAz(t){ const S=sunDay(t), H=(t-S.noon)/36e5*15*rad, f=SUN_LAT*rad; return (Math.atan2(Math.sin(H),Math.cos(H)*Math.sin(f)-Math.tan(S.dec)*Math.cos(f))/rad+180+360)%360; }
 function sunElev(t){ const S=sunDay(t), H=(t-S.noon)/36e5*15; return Math.asin(Math.sin(SUN_LAT*rad)*Math.sin(S.dec)+Math.cos(SUN_LAT*rad)*Math.cos(S.dec)*Math.cos(H*rad))/rad; }
 function wakeSky(){ const t=new Date(), el=sunElev(t), S=sunDay(t), n=pnow(), w=$('wake');
   // 高さで空の色と太陽の出具合を決める：-12°より下は夜、0°で地平線、+25°より上は高く上がった太陽
@@ -3496,13 +3507,14 @@ function pathList(){
   if(isT){ const y=pm2y(hn), x=pRX(y), day=now>=6*60&&now<18*60, ang=Math.atan2(6,pRX(y+3)-pRX(y-3))*180/Math.PI-90;
     // 寝ている間もエポナが道をたどって運んでくれる（よく慣れた馬は地図の道をひとりでたどる）。印はいつもの矢印、寝ている間は z z
     if(!asleep) nowM+=`<div class="rd-link" style="top:${y}px;left:${x.toFixed(1)}px;transform:rotate(${ang.toFixed(0)}deg)" aria-hidden="true"><svg viewBox="0 0 22 30" width="22" height="30"><path d="M11 28.5 2 2.5h18Z" fill="#2f8cff" stroke="#fff" stroke-width="2" stroke-linejoin="round"/><circle cx="11" cy="8.5" r="2.6" fill="#fff"/></svg></div>`;
+    if(P_25D&&!asleep){ for(let q=1;q<=7;q++){ const m2=hn-q*6; if(m2<G.s) break; const y2=pm2y(m2), x2=pRX(y2), nx=pRX(y2+2)-pRX(y2-2), L2=Math.hypot(nx,4)||1, side=q%2?1:-1; nowM+=`<i class="rd-step" style="top:${(y2+side*0).toFixed(1)}px;left:${(x2+side*3*4/L2).toFixed(1)}px;opacity:${(.75-q*.09).toFixed(2)}"></i>`; } }
     nowM+=`${asleep?`<div class="rd-zz" style="top:${y}px;left:${x.toFixed(1)}px" aria-hidden="true"><i>z</i><i>z</i></div>`:''}`; }
   const md=x=>{ const t=new Date(k+'T00:00:00'); t.setDate(t.getDate()+x); return (t.getMonth()+1)+'/'+t.getDate(); };
   const nb=bls.filter(b=>!b.fix), nd=nb.filter(pDone).length; let wx=null; try{ wx=JSON.parse(localStorage.getItem(WX_KEY)||'null'); }catch(e){}
   const hud=`<div class="sl-hud">${nb.length?`<b>${nd}/${nb.length}</b><i></i>`:''}${isT?`<b>${now>=6*60&&now<18*60?'<i class="ck-sun"></i>':'<i class="ck-moon"></i>'}${now<12*60?'AM':'PM'} ${String(Math.floor(now/60)%12||12).padStart(2,'0')}:${String(now%60).padStart(2,'0')}</b><i></i>`:''}${isT&&wx&&wx.temp!=null?`<b>${wx.temp>0?'+':''}${Math.round(wx.temp)}℃</b><i></i>`:''}</div>`;
   h+=`<div class="slate z${pZoom} ${pathBoot?'boot':''}">${SL_DEFS}<i class="sl-cn c1">${slCorner(0,0)}</i><i class="sl-cn c2">${slCorner(1,0)}</i><i class="sl-cn c3">${slCorner(0,1)}</i><i class="sl-cn c4">${slCorner(1,1)}</i>
     ${slBand('t')}<div class="sl-top"><button class="sl-tab" data-act="pathday" data-v="-1">${md(-1)} <i>L</i></button><div class="sl-title"><b>${isT?'今日の旅程':'旅程'}</b><small>${d.getMonth()+1}/${d.getDate()}（${'日月火水木金土'[d.getDay()]}）${holiday(k)?' '+holiday(k):''}</small></div><button class="sl-tab" data-act="pathday" data-v="1"><i>R</i> ${md(1)}</button></div>
-    <div class="sl-body"><div class="sl-view" id="slView"><div class="tl road" id="tl" style="height:${H}px"><svg class="rd-svg" width="100%" height="${H}" aria-hidden="true">${svg}</svg>${regs}${hrs}${mtags}${cards}${nowM}</div></div><div class="sl-fx" aria-hidden="true"></div>${hud}${pathSheet&&unH?`<div class="sl-sheet">${unH}</div>`:''}<div class="sl-ret" id="slRet" aria-hidden="true"><i class="rt-c"></i><span class="rt-l" id="slRetL"></span></div></div>
+    <div class="sl-body">${pSunFx(isT)}<div class="sl-view" id="slView"><div class="tl road" id="tl" style="height:${H}px"><svg class="rd-svg" width="100%" height="${H}" aria-hidden="true">${svg}</svg>${pFxHtml(k,H)}${regs}${hrs}${mtags}${cards}${nowM}</div></div><div class="sl-fx" aria-hidden="true"></div>${hud}${pathSheet&&unH?`<div class="sl-sheet">${unH}</div>`:''}<div class="sl-ret" id="slRet" aria-hidden="true"><i class="rt-c"></i><span class="rt-l" id="slRetL"></span></div></div>
     <div class="sl-bot"><button class="sl-p sl-close" data-act="pathclose"><i>B</i>とじる</button><button class="sl-p sl-list ${pathSheet?'on':''}" data-act="pathsheet"><i>X</i>${un.length?`道しるべのない冒険<b class="sl-n">${un.length}</b>`:'冒険を選ぶ'}</button><span class="sl-zoom"><button data-act="pathzoom" data-v="-1" aria-label="ひろく見る" ${pZoom===0?'disabled':''}>−</button>ズーム<button data-act="pathzoom" data-v="1" aria-label="くわしく見る" ${pZoom===2?'disabled':''}>＋</button></span>${isT?'<button class="sl-p" data-act="pathhere">現在地<i>Y</i></button>':''}<button class="sl-p sl-a" data-act="pathA" id="slA"><span id="slAt">立てる</span><i>A</i></button></div>${slBand('b')}</div>`;
   pathBoot=false;
   return h;
@@ -4016,6 +4028,7 @@ function pBiomeW(x,v){ if(!P_BIOMES) return (P_VOLC||P_SNOW||P_DESERT||P_WET)?[P
   return [wv,wd,ww,wsn]; }
 const pBiome=(x,y)=>pBiomeW(x,y/PX+pOff);
 // ハイラル城のような大きな城：たまに（約3日に1度）、道のそばの堀の中の島に建つ
+const P_25D=false; // 動く地図（陰影を強く・雲の影・水のきらめき・時刻の光・足あと）
 const P_CASTLE=true, P_CA=7000, P_CAK=.86, pCaMemo=new Map();
 // ハイラル城（ブレワイの地図から）：大きく不規則な湖に、段々に重なった台地の島が浮かぶ。島は入り江と池で刻まれ、
 // 南西（牢獄）と南東（森の公園）から大きな半島が湖に突き出す。北は段々の崖、南に崩れた格子の城下町
@@ -4141,7 +4154,7 @@ function* pTerGen(H){
       if(wv>.01){ const vc=[136+50*t0,132+52*t0,104+52*t0], wq=wv*.95; c=[c[0]+(vc[0]-c[0])*wq,c[1]+(vc[1]-c[1])*wq,c[2]+(vc[2]-c[2])*wq]; }
       if(wn>.01){ const k=P_BIOMES?wn:wn*.45*pSnowWhite(i/R,(Y0+j/R)/PX+pOff), tt=Math.pow(Math.max(0,t0),.7), sc=P_BIOMES?[186+60*tt,176+68*tt,146+92*tt]:[230,222,196]; c=[c[0]+(sc[0]-c[0])*k,c[1]+(sc[1]-c[1])*k,c[2]+(sc[2]-c[2])*k]; } // 雪山：高い所だけ白っぽいクリーム色
       if(wd>.01){ const dc=P_BIOMES?[112,92,50]:[88,68,10], k7=wd*(P_BIOMES?.8:.95); c=[c[0]+(dc[0]-c[0])*k7,c[1]+(dc[1]-c[1])*k7,c[2]+(dc[2]-c[2])*k7]; const dk=P_DESERT?L(bDk):0; if(dk>.01){ const k8=1-.1*dk; c=[c[0]*k8,c[1]*k8,c[2]*k8]; } }
-      const sh=((hl+cs[o-(i>0?1:0)]-hr-cs[o+(i<cw-1?1:0)])+(hu+cs[o-(j>0?cw:0)]-hd-cs[o+(j<ch-1?cw:0)]))*SH*3*(1-.75*wn)*(1-.75*Math.max(wd,P_DESERT?L(bRm):0)); const m=Math.max(.72+.18*Math.min(1,wn*2),Math.min(1.22,1+sh)); c=[c[0]*m,c[1]*m,c[2]*m];
+      const sh=((hl+cs[o-(i>0?1:0)]-hr-cs[o+(i<cw-1?1:0)])+(hu+cs[o-(j>0?cw:0)]-hd-cs[o+(j<ch-1?cw:0)]))*SH*(P_25D?8:3)*(1-.75*wn)*(1-.75*Math.max(wd,P_DESERT?L(bRm):0)); const m=Math.max((P_25D?.55:.72)+.18*Math.min(1,wn*2),Math.min(P_25D?1.42:1.22,1+sh))*(P_25D?.94+.12*Math.max(0,Math.min(1,t0)):1); c=[c[0]*m,c[1]*m,c[2]*m];
       const lwo=P_SNOW?L(bLo):0; if(lwo>.01){ const k6=1-.15*lwo; c=[c[0]*k6,c[1]*k6,c[2]*k6]; }
       const wwo=P_WET&&!P_BIOMES?L(bW):0; if(wwo>.01&&h<P_SEA+.12){ const ic=[116,101,50], k9=wwo*pSm(P_SEA+.12,P_SEA+.06,h); c=[c[0]+(ic[0]-c[0])*k9,c[1]+(ic[1]-c[1])*k9,c[2]+(ic[2]-c[2])*k9]; }
       const CLe=CL*(1+.6*wv+(P_BIOMES?.8:1.4)*wn+(P_BIOMES?-.75:.8)*wd)*(1-.4*lwo), b0=Math.floor(t*CLe), b1=Math.floor(((hr-P_SEA)/(1-P_SEA))*CLe), b2=Math.floor(((hd-P_SEA)/(1-P_SEA))*CLe);
@@ -4157,7 +4170,7 @@ function* pTerGen(H){
   cx.putImageData(im,0,0); return cv;
 }
 function pTerDone(key,url){
-  pTerCache[key]=url; pTerOrd.push(key);
+  pTerCache[key]=url; pTerOrd.push(key); pMakeWaterMask(key,url);
   while(pTerOrd.length>10){ const i=pTerOrd.findIndex(x=>x!==pTerShown&&x!==key); if(i<0) break; const old=pTerOrd.splice(i,1)[0]; const u=pTerCache[old]; delete pTerCache[old]; if(u&&u.startsWith('blob:')) setTimeout(()=>URL.revokeObjectURL(u),3000); }
   document.querySelectorAll('image.mp-ter').forEach(e=>{ if(e.dataset.k===key){ e.setAttribute('href',url); e.classList.add('on'); pTerShown=key; } });
 }
@@ -4197,6 +4210,20 @@ function pTerPrefetch(k){
   [1,-1].forEach(n=>pTerAsk(ymd(new Date(d0+n*DAY+DAY/2)),H(),false));
   PZOOM.forEach(z=>{ if(z===PX) return; PX=z; pTerAsk(k,H(),false); PX=sv[0]; });
 }
+// 雲の影（地面といっしょに流れる）と、水面のきらめき（水の所だけ）
+const pWaterMask={};
+function pFxHtml(k,H){ if(!P_25D) return ''; const W=pW, r=pRng('cl'+k,7), hh=H+1800, n=Math.ceil(hh/110); let cl='';
+  for(let i=0;i<n;i++){ const x=r()*W, y=r()*hh, w=140+r()*200, h=w*(.4+.25*r()); for(const dx of [0,W]) cl+=`<i style="left:${(x+dx-w/2).toFixed(0)}px;top:${(y-h/2).toFixed(0)}px;width:${w.toFixed(0)}px;height:${h.toFixed(0)}px"></i>`; }
+  const tk=pTerKey(k,pOff), m=pWaterMask[tk];
+  return `<div class="mp-fx" style="height:${hh}px"><div class="mp-water ${m?'on':''}" data-k="${tk}" style="${m?`-webkit-mask-image:url(${m});mask-image:url(${m})`:''}"><i></i></div><div class="mp-cloud" style="width:${W*2}px">${cl}</div></div>`; }
+function pMakeWaterMask(key,url){ if(!P_25D||pWaterMask[key]) return; const im=new Image(); im.onload=()=>{ const w=Math.max(1,im.width>>1), h=Math.max(1,im.height>>1), c=document.createElement('canvas'); c.width=w; c.height=h; const x=c.getContext('2d'); x.drawImage(im,0,0,w,h); const D=x.getImageData(0,0,w,h), d=D.data;
+    for(let i=0;i<d.length;i+=4){ const a=Math.max(0,Math.min(255,((d[i+2]-d[i])*6-50))); d[i]=d[i+1]=d[i+2]=255; d[i+3]=a; } x.putImageData(D,0,0);
+    c.toBlob(b=>{ if(!b) return; const u=URL.createObjectURL(b); pWaterMask[key]=u; document.querySelectorAll('.mp-water').forEach(e=>{ if(e.dataset.k===key){ e.style.webkitMaskImage=e.style.maskImage=`url(${u})`; e.classList.add('on'); } }); },'image/png'); }; im.src=url; }
+// 時刻の光：今日の地図だけ。日の出・日の入りのころは太陽の側から斜めに赤い光、夜は青く沈む
+function pSunFx(isT){ if(!P_25D||!isT) return ''; const t=new Date(), el=sunElev(t), az=sunAz(t), ang=(az+180)%360;
+  if(el>=12){ const a=Math.max(.06,.22-(el-12)/200); return `<div class="sl-sun" style="background:linear-gradient(${ang.toFixed(0)}deg,rgba(255,236,190,${a.toFixed(2)}),rgba(255,236,190,0) 55%,rgba(30,40,60,${(a*.8).toFixed(2)}))"></div>`; }
+  if(el>=-1){ const k=(12-el)/13; return `<div class="sl-sun" style="background:linear-gradient(${ang.toFixed(0)}deg,rgba(255,140,60,${(.4+.3*k).toFixed(2)}),rgba(255,170,100,${(.15+.1*k).toFixed(2)}) 50%,rgba(50,30,80,${(.3+.2*k).toFixed(2)}))"></div>`; }
+  const k=Math.min(1,(-el-1)/10); return `<div class="sl-sun night" style="background:linear-gradient(${ang.toFixed(0)}deg,rgba(200,110,90,${(.35*(1-k)).toFixed(2)}),rgba(40,55,110,${(.35+.25*k).toFixed(2)}) 45%,rgba(25,35,80,${(.45+.25*k).toFixed(2)}))"></div>`; }
 function pMapArt(k,H){
   // 世界を縦 CW ずつの区画に分け、区画ごとに決まった乱数で川・森・村などを置く（隣の日と同じ場所には同じ物がある）
   const W=pW, Y0=-900, Y1=H+900, off=pOff, CW=300, v2y=v=>(v-off)*PX, vA=off+Y0/PX, vB=off+Y1/PX, c0=Math.floor(vA/CW), c1=Math.floor(vB/CW);
