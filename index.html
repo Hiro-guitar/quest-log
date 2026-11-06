@@ -428,8 +428,7 @@ select{max-width:100%;text-overflow:ellipsis}
 .tl{position:relative;margin:6px 0 30px;user-select:none;-webkit-user-select:none;touch-action:pan-y;cursor:crosshair}
 .tl.road{background:transparent;overflow:visible}
 .rd-svg{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
-body.p25 .sl-view{overflow-x:hidden}
-body.p25 .sl-view{transform:perspective(760px) rotateX(30deg) scale(1.45);transform-origin:50% 42%;transition:transform .3s ease;will-change:transform}
+body.p25 .sl-view{overflow:hidden!important;touch-action:none;transform:perspective(760px) rotateX(30deg) scale(1.45);transform-origin:50% 42%;transition:transform .3s ease;will-change:transform}
 body.p25.pdrag .sl-view{transform:none}
 body.p25 .sl-view.tin{animation:pTiltIn 1.4s cubic-bezier(.3,.7,.2,1)}
 @keyframes pTiltIn{from{transform:perspective(760px) rotateX(0deg) scale(1)}}
@@ -4433,9 +4432,27 @@ function pMapArt(k,H){
 }
 const pRetY=sv=>Math.round(sv.clientHeight*.42);
 // 地図の上下に余白をつけて、朝早くや夜遅くの時刻にも照準が届くようにする（地図の座標＝スクロール量）
-function pPad(){ const sv=$('slView'), tl=$('tl'); if(!sv||!tl) return; const ry=pRetY(sv); tl.style.marginTop=ry+'px'; tl.style.marginBottom=(sv.clientHeight-ry)+'px'; pTiltO(); }
+function pPad(){ const sv=$('slView'), tl=$('tl'); if(!sv||!tl) return; pVS(sv); const ry=pRetY(sv); tl.style.marginTop=ry+'px'; tl.style.marginBottom=(sv.clientHeight-ry)+'px'; pTiltO(); }
 const P_TILT={a:30,p:760,s:1.45}; let pTiltDone=false; if(P_25D) document.body.classList.add('p25');
 function pTiltO(){}
+// 傾いた窓の中は、指の動きで地図を流す（iPhoneは傾いた窓をそのままスクロールできないため）。
+// scrollTop・scrollTo・scroll の知らせは、ふつうの窓と同じように使える
+function pVS(sv){ if(!P_25D||sv.__vs) return; sv.__vs=1; let top=0, anim=0;
+  const tl=()=>sv.querySelector('.tl'), max=()=>{ const t=tl(); return t?Math.max(0,t.offsetHeight):0; };
+  const apply=()=>{ const t=tl(); if(t) t.style.transform=`translate3d(0,${-top}px,0)`; sv.dispatchEvent(new Event('scroll')); };
+  const stop=()=>{ if(anim){ cancelAnimationFrame(anim); anim=0; } };
+  Object.defineProperty(sv,'scrollTop',{configurable:true,get:()=>top,set:v=>{ top=Math.max(0,Math.min(max(),+v||0)); apply(); }});
+  Object.defineProperty(sv,'scrollHeight',{configurable:true,get:()=>max()+sv.clientHeight});
+  sv.scrollTo=(o,y)=>{ const to=typeof o==='object'?o.top:y; stop(); if(!(typeof o==='object'&&o.behavior==='smooth')){ sv.scrollTop=to; return; }
+    const f=top, t0=performance.now(), D=Math.max(0,Math.min(max(),to)); const step=n=>{ const k=Math.min(1,(n-t0)/420), e=1-Math.pow(1-k,3); sv.scrollTop=f+(D-f)*e; if(k<1) anim=requestAnimationFrame(step); else anim=0; }; anim=requestAnimationFrame(step); };
+  let y0=null, s0=0, vy=0, lt=0, ly=0, lock=null, x0=0;
+  sv.addEventListener('touchstart',e=>{ if(e.touches.length!==1){ y0=null; return; } stop(); y0=ly=e.touches[0].clientY; x0=e.touches[0].clientX; s0=top; vy=0; lt=performance.now(); lock=null; },{passive:true});
+  sv.addEventListener('touchmove',e=>{ if(y0==null||e.touches.length!==1||document.body.classList.contains('pdrag')) return; const y=e.touches[0].clientY, x=e.touches[0].clientX;
+    if(lock==null){ if(Math.abs(y-y0)<6&&Math.abs(x-x0)<6) return; lock=Math.abs(y-y0)>=Math.abs(x-x0)?'v':'h'; } if(lock!=='v') return;
+    e.preventDefault(); const n=performance.now(), dt=Math.max(1,n-lt); vy=.8*((ly-y)/dt)+.2*vy; lt=n; ly=y; sv.scrollTop=s0-(y-y0)/P_TILT.s; },{passive:false});
+  sv.addEventListener('touchend',()=>{ if(y0==null) return; y0=null; if(lock!=='v'||document.body.classList.contains('pdrag')) return; let v=vy/P_TILT.s*16, last=performance.now();
+    const glide=n=>{ const dt=(n-last)/16; last=n; v*=Math.pow(.95,dt); if(Math.abs(v)<.3){ anim=0; return; } sv.scrollTop=top+v*dt; anim=requestAnimationFrame(glide); }; if(Math.abs(v)>1) anim=requestAnimationFrame(glide); },{passive:true});
+  sv.addEventListener('wheel',e=>{ if(e.ctrlKey) return; e.preventDefault(); stop(); sv.scrollTop=top+e.deltaY; },{passive:false}); }
 // 傾いた地図で指が触れた所：照準からの見かけの距離を、地図の上の距離に戻す
 function pUntilt(e,tl){ const sv=$('slView'); if(!P_25D||!sv||document.body.classList.contains('pdrag')) return e.clientY-tl.getBoundingClientRect().top;
   const ys=e.clientY-(sv.parentNode.getBoundingClientRect().top+sv.offsetTop+pRetY(sv)), a=P_TILT.a*Math.PI/180, P=P_TILT.p, Y=ys*P/(P*Math.cos(a)+ys*Math.sin(a)); return sv.scrollTop+Y/P_TILT.s; }
