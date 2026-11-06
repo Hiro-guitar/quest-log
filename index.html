@@ -428,9 +428,13 @@ select{max-width:100%;text-overflow:ellipsis}
 .tl{position:relative;margin:6px 0 30px;user-select:none;-webkit-user-select:none;touch-action:pan-y;cursor:crosshair}
 .tl.road{background:transparent;overflow:visible}
 .rd-svg{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
+body.p25 .sl-view{overflow-x:hidden}
+body.p25 .tl.road{transform:perspective(760px) rotateX(30deg) scale(1.18);transition:transform .35s ease;will-change:transform;animation:pTiltIn 1.4s cubic-bezier(.3,.7,.2,1)}
+body.p25.pdrag .tl.road{transform:none}
+@keyframes pTiltIn{from{transform:perspective(620px) rotateX(0deg) scale(1)}}
 .mp-fx{position:absolute;left:0;right:0;top:-900px;pointer-events:none;overflow:hidden}
-.mp-cloud{position:absolute;left:0;top:0;bottom:0;animation:mpCloud 420s linear infinite;will-change:transform}
-.mp-cloud i{position:absolute;border-radius:50%;background:radial-gradient(closest-side,rgba(14,20,24,.34),rgba(14,20,24,.16) 55%,rgba(14,20,24,0))}
+.mp-cloud{position:absolute;left:0;top:0;bottom:0;animation:mpCloud 140s linear infinite;will-change:transform}
+.mp-cloud i{position:absolute;border-radius:50%;background:radial-gradient(closest-side,rgba(10,16,22,.42),rgba(10,16,22,.2) 55%,rgba(10,16,22,0))}
 @keyframes mpCloud{from{transform:translateX(-50%)}to{transform:translateX(0)}}
 .mp-water{position:absolute;inset:0;opacity:0;transition:opacity 1.2s;-webkit-mask-size:100% 100%;mask-size:100% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}.mp-water.on{opacity:1}
 .mp-water i{position:absolute;left:-60px;right:-60px;top:0;bottom:0;background:radial-gradient(ellipse 9px 1.6px at 30% 40%,rgba(235,250,255,.55),rgba(235,250,255,0)),radial-gradient(ellipse 6px 1.2px at 78% 80%,rgba(235,250,255,.45),rgba(235,250,255,0)),radial-gradient(ellipse 12px 2px at 60% 15%,rgba(235,250,255,.3),rgba(235,250,255,0));background-size:52px 26px,38px 22px,70px 34px;animation:mpWave 9s ease-in-out infinite alternate;will-change:transform,opacity}
@@ -4147,6 +4151,8 @@ function* pTerGen(H){
     for(let o0=0;o0<gw*gh;o0++){ if(lab[o0]||g[o0]>=P_SEA) continue; nl++; let qh=0,qt=0,sw=0,n=0; qu[qt++]=o0; lab[o0]=nl;
       while(qh<qt){ const o=qu[qh++], i=o%gw; sw+=vt[o]; n++; const nb=[i>0?o-1:-1,i<gw-1?o+1:-1,o-gw,o+gw]; for(const q of nb){ if(q<0||q>=gw*gh||lab[q]||g[q]>=P_SEA) continue; lab[q]=nl; qu[qt++]=q; } }
       lavaOf[nl]=sw/n>.5?1:0; } }
+  const shd=new Float32Array(gw*gh); if(P_25D){ const st=.019; for(let j=0;j<gh;j++){ for(let i=0;i<gw;i++){ const o=j*gw+i, h0=g[o]; if(h0<P_SEA) continue; let sh=0;
+      for(let q=1;q<=34;q++){ const ii=i-q, jj=j-q; if(ii<0||jj<0) break; const hq=g[jj*gw+ii], over=hq-(h0+q*st); if(over>0){ sh=Math.max(sh,Math.min(1,over*14)); if(sh>=1) break; } } shd[o]=sh; } if(j%40===0) yield; } }
   yield;
   const R=Math.min(2,window.devicePixelRatio||1)>1.5?1.5:1, cw=Math.ceil(pW*R), ch=Math.ceil((H+1800)*R), hs=new Float32Array(cw*ch), cs=new Float32Array(cw*ch), es=new Float32Array(cw*ch), cls=new Float32Array(cw*ch);
   for(let j=0;j<ch;j++){ const gy=j/R/G, j0=Math.min(gh-2,gy|0), fy=gy-j0; for(let i=0;i<cw;i++){ const gx=i/R/G, i0=Math.min(gw-2,gx|0), fx=gx-i0, o=j0*gw+i0, a1=g[o], b1=g[o+1], c1=g[o+gw], d1=g[o+gw+1]; hs[j*cw+i]=a1+(b1-a1)*fx+(c1-a1)*fy+(a1-b1-c1+d1)*fx*fy; const a2=cg[o], b2=cg[o+1], c2=cg[o+gw], d2=cg[o+gw+1]; cs[j*cw+i]=a2+(b2-a2)*fx+(c2-a2)*fy+(a2-b2-c2+d2)*fx*fy; const a3=eg[o], b3=eg[o+1], c3=eg[o+gw], d3=eg[o+gw+1]; es[j*cw+i]=a3+(b3-a3)*fx+(c3-a3)*fy+(a3-b3-c3+d3)*fx*fy; if(P_CASTLE){ const a4=bCL[o], b4=bCL[o+1], c4=bCL[o+gw], d4=bCL[o+gw+1]; cls[j*cw+i]=a4+(b4-a4)*fx+(c4-a4)*fy+(a4-b4-c4+d4)*fx*fy; } } if(j%200===0) yield; }
@@ -4181,6 +4187,7 @@ function* pTerGen(H){
       if(wn>.01){ const k=P_BIOMES?wn:wn*.45*pSnowWhite(i/R,(Y0+j/R)/PX+pOff), tt=Math.pow(Math.max(0,t0),.7), sc=P_BIOMES?[186+60*tt,176+68*tt,146+92*tt]:[230,222,196]; c=[c[0]+(sc[0]-c[0])*k,c[1]+(sc[1]-c[1])*k,c[2]+(sc[2]-c[2])*k]; } // 雪山：高い所だけ白っぽいクリーム色
       if(wd>.01){ const dc=P_BIOMES?[112,92,50]:[88,68,10], k7=wd*(P_BIOMES?.8:.95); c=[c[0]+(dc[0]-c[0])*k7,c[1]+(dc[1]-c[1])*k7,c[2]+(dc[2]-c[2])*k7]; const dk=P_DESERT?L(bDk):0; if(dk>.01){ const k8=1-.1*dk; c=[c[0]*k8,c[1]*k8,c[2]*k8]; } }
       const sh=((hl+cs[o-(i>0?1:0)]-hr-cs[o+(i<cw-1?1:0)])+(hu+cs[o-(j>0?cw:0)]-hd-cs[o+(j<ch-1?cw:0)]))*SH*(P_25D?8:3)*(1-.75*wn)*(1-.75*Math.max(wd,P_DESERT?L(bRm):0)); const m=Math.max((P_25D?.55:.72)+.18*Math.min(1,wn*2),Math.min(P_25D?1.42:1.22,1+sh))*(P_25D?.94+.12*Math.max(0,Math.min(1,t0)):1); c=[c[0]*m,c[1]*m,c[2]*m];
+      if(P_25D){ const sq=L(shd); if(sq>.01){ const k5=1-.34*sq; c=[c[0]*k5,c[1]*k5*1.01,c[2]*k5*1.06]; } }
       const lwo=P_SNOW?L(bLo):0; if(lwo>.01){ const k6=1-.15*lwo; c=[c[0]*k6,c[1]*k6,c[2]*k6]; }
       const wwo=P_WET&&!P_BIOMES?L(bW):0; if(wwo>.01&&h<P_SEA+.12){ const ic=[116,101,50], k9=wwo*pSm(P_SEA+.12,P_SEA+.06,h); c=[c[0]+(ic[0]-c[0])*k9,c[1]+(ic[1]-c[1])*k9,c[2]+(ic[2]-c[2])*k9]; }
       const CLe=CL*(1+.6*wv+(P_BIOMES?.8:1.4)*wn+(P_BIOMES?-.75:.8)*wd)*(1-.4*lwo), b0=Math.floor(t*CLe), b1=Math.floor(((hr-P_SEA)/(1-P_SEA))*CLe), b2=Math.floor(((hd-P_SEA)/(1-P_SEA))*CLe);
@@ -4209,7 +4216,7 @@ function pTerAsk(k,H,first){
   if(!pTerBusy){ pTerBusy=true; setTimeout(pTerStep,0); }
 }
 // 一度描いた地形の絵は端末に取っておく（次に開いたときは描かずにすぐ出す）。描き方を変えたら版を上げて作り直す
-const P_TER_V="t135|", P_TER_MAX=36;
+const P_TER_V="t136|", P_TER_MAX=36;
 const pIDB=(()=>{ let dbp=null; const open=()=>dbp||(dbp=new Promise((res,rej)=>{ try{ const r=indexedDB.open('ql-ter',1); r.onupgradeneeded=()=>r.result.createObjectStore('img'); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }catch(e){ rej(e); } }));
   const st=m=>open().then(db=>db.transaction('img',m).objectStore('img'));
   const keys=()=>{ try{ return JSON.parse(localStorage.getItem('ql-ter-keys')||'[]'); }catch(e){ return []; } }, setKeys=a=>{ try{ localStorage.setItem('ql-ter-keys',JSON.stringify(a)); }catch(e){} };
@@ -4411,15 +4418,21 @@ function pMapArt(k,H){
 }
 const pRetY=sv=>Math.round(sv.clientHeight*.42);
 // 地図の上下に余白をつけて、朝早くや夜遅くの時刻にも照準が届くようにする（地図の座標＝スクロール量）
-function pPad(){ const sv=$('slView'), tl=$('tl'); if(!sv||!tl) return; const ry=pRetY(sv); tl.style.marginTop=ry+'px'; tl.style.marginBottom=(sv.clientHeight-ry)+'px'; }
+function pPad(){ const sv=$('slView'), tl=$('tl'); if(!sv||!tl) return; const ry=pRetY(sv); tl.style.marginTop=ry+'px'; tl.style.marginBottom=(sv.clientHeight-ry)+'px'; pTiltO(); }
+const P_TILT={a:30,p:760,s:1.18}; if(P_25D) document.body.classList.add('p25');
+function pTiltO(){ if(!P_25D) return; const sv=$('slView'), tl=$('tl'); if(sv&&tl) tl.style.transformOrigin=`50% ${sv.scrollTop}px`; }
+// 傾いた地図で指が触れた所：照準からの見かけの距離を、地図の上の距離に戻す
+function pUntilt(e,tl){ const sv=$('slView'); if(!P_25D||!sv||document.body.classList.contains('pdrag')) return e.clientY-tl.getBoundingClientRect().top;
+  const ys=e.clientY-(sv.getBoundingClientRect().top+pRetY(sv)), a=P_TILT.a*Math.PI/180, P=P_TILT.p, Y=ys*P/(P*Math.cos(a)+ys*Math.sin(a)); return sv.scrollTop+Y/P_TILT.s; }
 // 地図の真ん中の照準：その時刻を読み取り、近くの道しるべに吸い付く
 let pHover=null;
 function pRetUpdate(){
   const sv=$('slView'), ret=$('slRet'), tl=$('tl'); if(!sv||!ret||!tl) return;
   const ry=pRetY(sv), y=sv.scrollTop, m=Math.max(PATH_H0,Math.min(PATH_H1,PATH_H0+y/PX)), bl=pBlocks(dayView);
   let hit=null, bd=1e9; bl.forEach(b=>{ const d=Math.abs(pm2y(b.s)-y); if(d<Math.max(14,SNAP*PX*.9)&&d<bd){ bd=d; hit=b; } });
-  const yy=hit?pm2y(hit.s):y, x=pRX(yy), off=tl.getBoundingClientRect().left-sv.parentNode.getBoundingClientRect().left;
-  ret.style.top=(yy+ry-sv.scrollTop)+'px'; ret.style.left=(off+x)+'px'; ret.classList.toggle('hit',!!hit); ret.classList.toggle('nolab',!!hit&&pZoom>0);
+  const yy=hit?pm2y(hit.s):y, x0=pRX(yy), tw=tl.offsetWidth, tilt=P_25D&&!document.body.classList.contains('pdrag'), x=tilt?tw/2+(x0-tw/2)*P_TILT.s:x0, off=sv.getBoundingClientRect().left+tl.offsetLeft-sv.parentNode.getBoundingClientRect().left;
+  let ty=yy-sv.scrollTop; if(tilt){ const a=P_TILT.a*Math.PI/180, Y=ty*P_TILT.s; ty=Y*Math.cos(a)*P_TILT.p/(P_TILT.p-Y*Math.sin(a)); }
+  ret.style.top=(ty+ry)+'px'; ret.style.left=(off+x)+'px'; ret.classList.toggle('hit',!!hit); ret.classList.toggle('nolab',!!hit&&pZoom>0);
   const sm=Math.round(m/SNAP)*SNAP; $('slRetL').innerHTML=hit?esc(pTitle(hit)||'（名前なし）')+(hit.pre||hit.post?`<small>${hit.pre?`支度 ${pfmt(hit.s-hit.pre)}〜`:''}${hit.pre&&hit.post?'　':''}${hit.post?`ゆとり 〜${pfmt(hit.e+hit.post)}`:''}</small>`:''):pfmt(sm);
   const at=$('slAt'); if(at) at.textContent=hit?'開く':'立てる';
   if((hit&&hit.id)!==pHover){ document.querySelectorAll('.rd-card.hover').forEach(e=>e.classList.remove('hover')); pHover=hit&&hit.id; if(pHover){ const c=document.querySelector(`.rd-card[data-pb="${pHover}"]`); c&&c.classList.add('hover'); } }
@@ -4434,7 +4447,7 @@ function pathAfter(){
   if(listCat!=='path'||tab!=='list') return;
   const sv=$('slView'); if(!sv) return;
   pLayout(); pPad();
-  if(!sv.__ret){ sv.__ret=1; sv.addEventListener('scroll',()=>requestAnimationFrame(pRetUpdate),{passive:true});
+  if(!sv.__ret){ sv.__ret=1; sv.addEventListener('scroll',()=>requestAnimationFrame(()=>{ pTiltO(); pRetUpdate(); }),{passive:true});
     sv.addEventListener('wheel',e=>{ if(!e.ctrlKey) return; e.preventDefault(); pZoomBy(e.deltaY<0?1:-1); },{passive:false}); }
   const key=dayView; try{ localStorage.setItem('ql-pw',pW); }catch(e){} setTimeout(()=>{ if(listCat==='path') pTerPrefetch(key); },60);
   if(pathScrolled!==key){ pathScrolled=key; const bl=pBlocks(key), m=pathFocus!=null?pathFocus:key===pJDay()?pJNow():(bl[0]?bl[0].s:8*60); pathFocus=null; sv.scrollTop=pm2y(Math.max(PATH_H0,m)); }
@@ -4552,7 +4565,7 @@ function pathInput(e){
 // 道の上の操作：空いている所をタップ→道しるべを立てる／予定を押したまま動かす→時間をずらす／下の端→長さを変える
 (function(){
   const snap=m=>Math.round(m/SNAP)*SNAP;
-  const yOf=(e,tl)=>e.clientY-tl.getBoundingClientRect().top;
+  const yOf=(e,tl)=>pUntilt(e,tl);
   let pend=null, timer=null;
   function start(e){
     const tl=e.target.closest('#tl'); if(!tl||listCat!=='path'||e.target.closest('[data-act]')) return;
