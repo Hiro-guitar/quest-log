@@ -3350,11 +3350,8 @@ const pfmt=m=>Math.floor((m%1440)/60)+':'+String(m%60).padStart(2,'0');
 // 冒険手帳で終えた物が今日の旅程になければ、終えた時刻に道しるべを立てて記録する（取り消したら外す）
 function pRefMatch(b,x){ return x.tr?b.tr===x.tr:x.bk?b.bk===x.bk:b.q===x.q&&(x.sid?(b.sid===x.sid||(b.sids||[]).includes(x.sid)):!b.sid&&!(b.sids&&b.sids.length)); }
 function pLogDone(x,dur){ const k=pJDay(), n=pJNow(); if(n>=1440||n<PATH_H0+5) return; if(x.tr&&x.tr!==k) return; if(pBlocks(k).some(b=>pRefMatch(b,x))) return;
-  // 終えた時刻で終わる短い道しるべ。ほかの道しるべと重なるなら、その手前へずらす
-  const bl=pBlocks(k), d=10; let e=Math.round(n/5)*5, st=e-d;
-  for(let i=0;i<8;i++){ const hit=bl.find(b=>b.s<e&&b.e>st&&!(b.wake)); if(!hit) break; e=hit.s; st=e-d; }
-  if(st<PATH_H0){ e=Math.round(n/5)*5; st=e-d; }
-  pSet(k,uid(),{s:st,e,...x,auto:1}); }
+  // 終えた時刻ちょうどに立てる（ほかの道しるべと重なっても、時刻は動かさない）
+  pSet(k,uid(),{s:n,e:Math.min(PATH_H1,n+10),...x,auto:1}); }
 function pUnlog(x){ const k=pJDay(), b=pBlocks(k).find(y=>y.auto&&pRefMatch(y,x)); if(b) pDel(k,b.id); }
 const pJDay=()=>pnow()<PATH_H0?ymd(new Date(Date.now()-DAY)):ymd(), pJNow=()=>{ const n=pnow(); return n<PATH_H0?n+1440:n; };
 const pScroll=y=>{ window.scrollTo({top:y}); document.body.scrollTo({top:y}); }, pScrollY=()=>window.scrollY||document.body.scrollTop||0;
