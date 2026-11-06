@@ -1375,7 +1375,7 @@ function stepRowToday(q,st,inGroup){
 // 焚き火で休む：今日の分を明日に回す（持ち越し回数は増やさない）
 let pouchSel=null, restSel=null;
 function pouchList(){
-  const it=[['mats','素材メモ',(()=>{ const n=matsAll().filter(x=>!x.got).length; return n?`集める素材 ${n}`:'買い物のメモ'; })()],['shop','ごほうびの店',`${rupeeSvg} ${rupeeBal()} ルピー`],['records','冒険の記録',(()=>{const L=lvInfo(state.xp); return `Lv.${L.lv} ${TITLES[Math.min(L.lv-1,TITLES.length-1)]}・✿ ${state.seeds||0}`;})()],['chap','章と振り返り',(()=>{const {c,pro,left,until}=chapNow(); return pro?`序章・第${c.n}章まで あと${until}日`:`第${c.n}章${c.theme?'「'+c.theme+'」':''}・残り${left}日`;})()],['memory','思い出',`${state.quests.filter(q=>q.done&&q.type!=='mini').length}件の達成`],['equip','装備',equipNow().name]];
+  const it=[['mats','素材メモ',(()=>{ const n=matsAll().filter(x=>!x.got).length; return n?`集める素材 ${n}`:'買い物のメモ'; })()],['shop','ごほうびの店',`${rupeeSvg} ${rupeeBal()} ルピー`],['body','からだの手記',(()=>{ const H=hm(), b=Object.entries(H.body).sort((a,c)=>a[0]<c[0]?1:-1)[0]; return b&&b[1].kg?`体重 ${b[1].kg}kg・目覚めと眠り`:'体重・お腹まわり・目覚めと眠り'; })()],['records','冒険の記録',(()=>{const L=lvInfo(state.xp); return `Lv.${L.lv} ${TITLES[Math.min(L.lv-1,TITLES.length-1)]}・✿ ${state.seeds||0}`;})()],['chap','章と振り返り',(()=>{const {c,pro,left,until}=chapNow(); return pro?`序章・第${c.n}章まで あと${until}日`:`第${c.n}章${c.theme?'「'+c.theme+'」':''}・残り${left}日`;})()],['memory','思い出',`${state.quests.filter(q=>q.done&&q.type!=='mini').length}件の達成`],['equip','装備',equipNow().name]];
   return `<div class="cat-bar"><div class="cat-name">ポーチ</div><div class="cat-icons"><span class="cat on" style="cursor:default">${ICON.pouch}</span></div></div><div class="rows">`+
     it.map(([k,l,sub])=>`<button class="row ${pouchSel===k?'sel':''}" data-act="pouch" data-v="${k}"><span class="r-mark">✦</span><span class="r-main"><span class="r-title">${l}</span><span class="r-sub">${sub}</span></span><span class="r-notch"></span></button>`).join('')+'</div>';
 }
@@ -1686,8 +1686,7 @@ function pouchPanel(){
 function restList(){
   const t=ymd(), rested=(state.rested||{})[t], items=dayItems(t).filter(x=>!(x.s?x.s.done:x.q.done));
   let h=`<div class="cat-bar"><div class="cat-name">焚き火</div><div class="cat-icons"><span class="cat on" style="cursor:default">🔥</span></div></div>`;
-  const bodyRow=`<div class="rows" style="margin-top:14px"><button class="row ${restSel==='body'?'sel':''}" data-act="restsel" data-v="body"><span class="r-mark">📖</span><span class="r-main"><span class="r-title">からだの手記</span><span class="r-sub">体重・お腹まわり・起きた時間と寝た時間</span></span><span class="r-notch"></span></button></div>`;
-  if(rested) return h+`<div class="sec-empty">🔥 今日はもう焚き火で休みました。ゆっくりしよう</div>`+bodyRow;
+  if(rested) return h+`<div class="sec-empty">🔥 今日はもう焚き火で休みました。ゆっくりしよう</div>`;
   h+=`<div class="rows" style="margin-bottom:14px"><button class="row morning-row" data-act="pathmorning"><span class="r-mark">${ico('path')}</span><span class="r-main"><span class="r-title">今日の段取りを組む</span><span class="r-sub">${pBlocks(t).length?`道しるべ ${pBlocks(t).length}本`:'まだ道しるべを立てていない'}</span></span><span class="r-notch"></span></button></div>`;
   const grp=[]; items.forEach(x=>{ let g=grp.find(z=>z.q===x.q); if(!g){ g={q:x.q,ss:[]}; grp.push(g); } if(x.s) g.ss.push(x.s); });
   h+=`<div class="day-h"><span>今日やる予定だった残り</span><span>${grp.length}件</span></div><div class="rows">`;
@@ -1696,7 +1695,7 @@ function restList(){
     :`<div class="tgroup"><div class="tg-h fire-row"><span class="tg-i">${ico(g.q.type)}</span><span class="tg-t">${esc(g.q.title||'(無題)')}</span><small>${g.ss.length}</small></div>${g.ss.map(st=>`<div class="row srow fire-row"><span class="r-mark"><i class="sq"></i></span><span class="r-main"><span class="r-title">${esc(st.text)}</span></span><span class="r-side">${st.doTime?`<span class="do">${st.doTime}</span>`:''}</span><span class="r-notch"></span></div>`).join('')}</div>`).join(''):'<div class="sec-empty">今日の残りはありません</div>';
   h+='</div>';
   if(items.length) h+=`<button class="row fire-btn" data-act="rest"><span class="r-mark">🔥</span><span class="r-main"><span class="r-title">焚き火で休む</span><span class="r-sub">この${grp.length}件を明日に回す（持ち越しには数えません）</span></span><span class="r-notch"></span></button>`;
-  return h+bodyRow;
+  return h;
 }
 function restToday(){
   const t=ymd(), tm=ymd(new Date(Date.now()+DAY)); let n=0;
@@ -1827,8 +1826,8 @@ function toolPanel(){
 }
 function renderDetail(){
   const D=$('detail');
+  if(tab==='pouch'&&pouchSel==='body'){ D.innerHTML=bodyPanel(); return; }
   if(tab==='pouch'){ D.innerHTML=pouchSel?`<div class="panel"><button class="back" data-act="back">‹ 一覧へ</button>${pouchPanel()}</div>`:`<div class="panel p-empty"><p>左から選ぶと、ここに表示されます</p></div>`; return; }
-  if(tab==='rest'&&restSel==='body'){ D.innerHTML=bodyPanel(); return; }
   if(tab==='rest'){ D.innerHTML=`<div class="panel p-empty fire-panel"><div class="fire">🔥</div><p>疲れた日や体調が悪い日は、焚き火で休もう。<br>休んだ日の分は明日に回して、持ち越しには数えません。</p></div>`; return; }
   if(tab==='tools'){ D.innerHTML=`<div class="panel"><button class="back" data-act="back">‹ 一覧へ</button>${toolPanel()}</div>`; return; }
   if(tab==='list'&&listCat==='train'){ D.innerHTML=trPanel(); return; }
@@ -2019,7 +2018,7 @@ document.addEventListener('click',e=>{
       if(on){ gain(30); earnRupee(20); toast('鍛錬クリア  +30 XP ・ +20ルピー'); maybeSeed(); const p=TR_PART[trType(k)]; if(p) setTimeout(()=>toast(`克服の証（${PART_NAME[p]}）を手に入れた`),1300); trVesselBanner(vb); } else gain(-30);
       save(); render(); break; }
     case 'trsw': { const H=hm(); H.ovr={...H.ovr,[trSel]:b.dataset.v}; hmTouch('ovr',trSel); save(); render(); break; }
-    case 'trbody': { const d=$('trBd').value, kg=parseFloat($('trKg').value), cm=parseFloat($('trCm').value); if(!d||!(kg>40||cm>50)){ toast('体重かお腹まわりを入れてください'); break; } const H=hm(); H.body={...H.body,[d]:{...(H.body[d]||{}),...(kg>40&&kg<120?{kg:Math.round(kg*10)/10}:{}),...(cm>50&&cm<130?{cm:Math.round(cm*2)/2}:{})}}; hmTouch('body',d); save(); renderDetail(); toast('記録しました'); break; }
+    case 'trbody': { const d=$('trBd').value, kg=parseFloat($('trKg').value), cm=parseFloat($('trCm').value); if(!d||!(kg>40||cm>50)){ toast('体重かお腹まわりを入れてください'); break; } const H=hm(); H.body={...H.body,[d]:{...(H.body[d]||{}),...(kg>40&&kg<120?{kg:Math.round(kg*10)/10}:{}),...(cm>50&&cm<130?{cm:Math.round(cm*2)/2}:{})}}; hmTouch('body',d); save(); render(); toast('記録しました'); break; }
     case 'slsave': { const d=$('slD').value, tw=pTm($('slW').value), tb=pTm($('slB').value); if(!d||(tw==null&&tb==null)){ toast('起きた時間か寝た時間を入れてください'); break; } if(tw!=null) slSet(d,'w',tw); if(tb!=null) slSet(d,'b',tb<PATH_H0?tb+1440:tb); renderDetail(); toast('記録しました'); break; }
     case 'sldel': { const H=hm(); const o={...H.sleep}; delete o[b.dataset.v]; H.sleep=o; hmTouch('sleep',b.dataset.v); save(); renderDetail(); break; }
     case 'trbdel': { const H=hm(); const o={...H.body}; delete o[b.dataset.v]; H.body=o; hmTouch('body',b.dataset.v); save(); renderDetail(); break; }
@@ -2742,7 +2741,7 @@ function slChart(){
 // からだの手記：体重・お腹まわりと、起きた時間・寝た時間（焚き火のタブ）
 function bodyPanel(){
   const H=hm(), bs=Object.entries(H.body).sort((a,b)=>a[0]<b[0]?-1:1), t=ymd();
-  let h=`<div class="panel tr-panel"><button class="back" data-act="restback">‹ 焚き火へ</button><h2 class="p-title">からだの手記</h2>
+  let h=`<div class="panel tr-panel"><button class="back" data-act="back">‹ ポーチへ</button><h2 class="p-title">からだの手記</h2>
   <div class="sec-h"><span>体重とお腹まわり</span></div><p class="hint" style="margin:0 0 8px">週1回、日曜の朝（起きてトイレのあと・食べる前）に。お腹まわりはおへその高さで。最初の記録：65.7kg（10月末）。</p>
   <div class="tr-bin"><input type="date" id="trBd" value="${t<TR_START?TR_START:t}"><input type="number" id="trKg" step="0.1" min="40" max="120" placeholder="体重 kg" inputmode="decimal"><input type="number" id="trCm" step="0.5" min="50" max="130" placeholder="お腹 cm" inputmode="decimal"><button class="btn primary small" data-act="trbody">記録する</button></div>`;
   const ws=[['2026-10-29',65.7],...bs.filter(([,v])=>v&&v.kg).map(([d,v])=>[d,v.kg])];
