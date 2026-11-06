@@ -4789,20 +4789,24 @@ async function pLookOpen(){
   // ---- 足もとの草の板（カメラのまわり）----
   const gcv=document.createElement('canvas'); gcv.width=64; gcv.height=64; { const x=gcv.getContext('2d'); x.fillStyle='#fff'; for(let q=0;q<9;q++){ const bx=6+q*6+rng()*3, h=34+rng()*28; x.beginPath(); x.moveTo(bx-2.5,64); x.quadraticCurveTo(bx+rng()*6-3,64-h*.6,bx+rng()*8-4,64-h); x.quadraticCurveTo(bx+1,64-h*.5,bx+2.5,64); x.fill(); } }
   const gtx=new T.CanvasTexture(gcv);
-  // ---- 道：踏み固められた土の小道。縁は草にほどけ、轍が2本、真ん中に草がうっすら（ブレワイの街道のように） ----
-  const rcv=document.createElement('canvas'); rcv.width=128; rcv.height=256; { const x=rcv.getContext('2d'), im=x.createImageData(128,256), d=im.data, TAU=6.2832;
-    const wv=(v,a)=>Math.sin(v*TAU*3+a)*.5+Math.sin(v*TAU*7+a*2.3)*.3+Math.sin(v*TAU*13+a*.7)*.2;
-    for(let yy=0;yy<256;yy++){ const v=yy/256, eL=.13+.035*wv(v,1), eR=.87+.035*wv(v,4);
-      for(let xx=0;xx<128;xx++){ const u=(xx+.5)/128, o=(yy*128+xx)*4, nz=Math.sin(xx*12.9898+yy*78.233)*43758.5453%1, n=Math.abs(nz);
-        const a=Math.min(1,Math.max(0,Math.min((u-eL)/.07,(eR-u)/.07)));
-        const rut=Math.exp(-Math.pow((u-.34-.01*wv(v,2))/.045,2))+Math.exp(-Math.pow((u-.66-.01*wv(v,5))/.045,2)), mid=Math.exp(-Math.pow((u-.5)/.06,2))*(.5+.5*wv(v,3)), edge=1-Math.min(1,Math.min(u-eL,eR-u)/.12);
-        let r=192,g=162,b=112; const k=.92+n*.14; r*=k; g*=k; b*=k;
-        r-=rut*30; g-=rut*28; b-=rut*22; r+=(150-r)*mid*.35; g+=(160-g)*mid*.35; b+=(96-b)*mid*.35; r+=(130-r)*edge*.45; g+=(150-g)*edge*.45; b+=(88-b)*edge*.45;
-        d[o]=r; d[o+1]=g; d[o+2]=b; d[o+3]=Math.round(255*Math.pow(a,1.4)*(n>.97&&a<1?0:1)); } }
+  // ---- 道：ブレワイの街道のような赤茶の土の道。轍はなく、まだらな色むらと小石。縁は草がまだらに食い込む ----
+  const rcv=document.createElement('canvas'); rcv.width=128; rcv.height=256; { const x=rcv.getContext('2d'), im=x.createImageData(128,256), d=im.data;
+    // 縦にくり返せる値ノイズ（格子を縦方向に巻く）
+    const hs=(i,j,sd)=>{ const v=Math.sin(i*127.1+j*311.7+sd*74.7)*43758.5453; return v-Math.floor(v); };
+    const vn=(u,v,cx,cy,sd)=>{ const X0=u*cx, Y0=v*cy, i=Math.floor(X0), j=Math.floor(Y0), fx=X0-i, fy=Y0-j, sx=fx*fx*(3-2*fx), sy=fy*fy*(3-2*fy), w=jj=>((jj%cy)+cy)%cy;
+      const a=hs(i,w(j),sd), b=hs(i+1,w(j),sd), c=hs(i,w(j+1),sd), e=hs(i+1,w(j+1),sd); return a+(b-a)*sx+(c-a)*sy+(a-b-c+e)*sx*sy; };
+    for(let yy=0;yy<256;yy++){ const v=yy/256; for(let xx=0;xx<128;xx++){ const u=(xx+.5)/128, o=(yy*128+xx)*4;
+      const big=vn(u,v,4,8,1), mid=vn(u,v,10,20,2), fine=vn(u,v,40,80,3), grit=hs(xx,yy,9);
+      // 縁：中心からの距離に大きなまだらを足し、草がまだらに食い込む
+      const dc=Math.abs(u-.5)*2+(big-.5)*.38+(mid-.5)*.22, a=Math.min(1,Math.max(0,(.86-dc)/.12));
+      let r=162,g=118,b=78; const k=.88+big*.18+(mid-.5)*.12+(fine-.5)*.1;
+      r*=k; g*=k; b*=k; if(mid>.62){ r+=10; g+=8; b+=6; } if(grit>.985){ r-=34; g-=30; b-=24; } else if(grit>.97){ r+=26; g+=22; b+=18; }
+      const ed=1-Math.min(1,(.86-dc)/.3); r+=(132-r)*ed*.35; g+=(138-g)*ed*.35; b+=(70-b)*ed*.35;
+      d[o]=r; d[o+1]=g; d[o+2]=b; d[o+3]=Math.round(255*a); } }
     x.putImageData(im,0,0); x.globalCompositeOperation='source-atop';
-    for(let q=0;q<40;q++){ const px=22+rng()*84, py=rng()*256, r=.5+rng()*.9, c=rng(); x.fillStyle=c<.5?`rgb(${150+c*40|0},${124+c*30|0},${88+c*20|0})`:`rgb(${214+c*20|0},${196+c*16|0},${156+c*10|0})`; for(const oy of [-256,0,256]){ x.beginPath(); x.ellipse(px,py+oy,r*1.3,r,0,0,6.3); x.fill(); } } }
+    for(let q=0;q<28;q++){ const px=24+rng()*80, py=rng()*256, r=.6+rng()*1.1, c=rng(); x.fillStyle=c<.6?`rgb(${176+c*40|0},${160+c*30|0},${138+c*20|0})`:`rgb(${118+c*20|0},${92+c*16|0},${66+c*10|0})`; for(const oy of [-256,0,256]){ x.beginPath(); x.ellipse(px,py+oy,r*1.3,r,0,0,6.3); x.fill(); } } }
   const rtx=new T.CanvasTexture(rcv); rtx.wrapS=T.ClampToEdgeWrapping; rtx.wrapT=T.RepeatWrapping; rtx.colorSpace=T.SRGBColorSpace; rtx.anisotropy=4;
-  { const WD=15, NU=7, Pp=[], Uv=[], I=[]; let n=0; for(let y=yA;y<=yB+.1;y+=3){ const x=rX(y), dx=rX(y+2)-rX(y-2), l=Math.hypot(dx,4)||1, ax=4/l, ay=dx/l;
+  { const WD=13, NU=7, Pp=[], Uv=[], I=[]; let n=0; for(let y=yA;y<=yB+.1;y+=3){ const x=rX(y), dx=rX(y+2)-rX(y-2), l=Math.hypot(dx,4)||1, ax=4/l, ay=dx/l;
       for(let q=0;q<NU;q++){ const t=q/(NU-1)-.5, px=x+t*WD*ax, py=y-t*WD*ay; Pp.push(X(px),Math.max(-.2,hAt(px,py))+.25,Z(py)); Uv.push(q/(NU-1),(y-yA)/P*Math.round(P/30)); }
       if(n) for(let q=0;q<NU-1;q++){ const a=(n-1)*NU+q, b=a+1, c=a+NU, e=c+1; I.push(a,c,b,b,c,e); } n++; }
     const g=new T.BufferGeometry(); g.setAttribute('position',new T.Float32BufferAttribute(Pp,3)); g.setAttribute('uv',new T.Float32BufferAttribute(Uv,2)); g.setIndex(I); g.computeVertexNormals();
