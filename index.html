@@ -2858,15 +2858,15 @@ function bkPanel(){
     <div class="f"><label>返却の刻限（借りた日を入れると自動で2週間後に）</label><input type="date" id="bkDue" value="${B.due}"></div>
     <p class="hint">借りた日を変えると、解き明かす日と返却の刻限もそれに合わせて動きます。休館で延びたときや更新したときは、古文書の画面の「返却の刻限」から変えられます。</p>
     <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" data-act="bksave">これで決める</button>${B.title?'<button class="btn ghost" data-act="bkback">やめる</button>':''}<button class="btn danger" data-act="bkdel">消す</button></div></div></div>`;
-  const N=B.pages, now=bkAt(B,t), P=bkPlan(B,t), id=bkIdeal(B,bkAdd(t,-1)), diff=now-id, dl=bkDays(t,B.due);
+  const N=B.pages, now=bkAt(B,t), P=bkPlan(B,t), id=bkIdeal(B,bkAdd(t,-1)), idT=bkIdeal(B,t), diff=now>idT?now-idT:now<id?now-id:0, dl=bkDays(t,B.due);
   let h=`<div class="panel bk-panel"><div class="p-wm">${SECBG.book}</div>${back}<h2 class="p-title">${esc(B.title||'(無題)')}</h2>
   <div class="p-giver"><span><i class="giver-mark">!</i>古文書・全${N}ページ</span><span class="p-place">図書館</span></div>`;
-  h+=`<div class="bk-gauge"><div class="bk-gh"><span>解読の進み</span><span><b>p.${now}</b> / ${N}　${Math.round(now/N*100)}%</span></div>${bkSegs(B,now,id)}${t>=B.start&&!B.fin&&!B.ret?`<p class="bk-pace ${diff>=0?'ok':'late'}">${diff>=0?`予定より ${diff}ページ 先を進んでいる`:`予定より ${-diff}ページ 遅れている`}</p>`:''}</div>`;
+  h+=`<div class="bk-gauge"><div class="bk-gh"><span>解読の進み</span><span><b>p.${now}</b> / ${N}　${Math.round(now/N*100)}%</span></div>${bkSegs(B,now,id)}${t>=B.start&&!B.fin&&!B.ret?`<p class="bk-pace ${diff>=0?'ok':'late'}">${diff>0?`予定より ${diff}ページ 先を進んでいる`:diff<0?`予定より ${-diff}ページ 遅れている`:now>=idT?'予定どおり進んでいる':`予定どおり（今日の分はあと${idT-now}ページ）`}</p>`:''}</div>`;
   if(B.fin) h+=`<div class="bk-slate done"><div class="bk-sh">解き明かした</div><p>${bkMD(B.fin)}、この古文書のすべてを読み解いた。${B.ret?'':'忘れずに図書館へ返そう。'}</p>
     <div class="f" style="margin-top:8px"><label class="hint">思い出（ひとこと）</label><textarea id="bkMemo" class="tr-memo" placeholder="心に残ったことを一行で">${esc(B.memo||'')}</textarea></div></div>`;
   else if(!B.ret){
     const body=t<B.start?`<p>${bkMD(B.start)}から解読をはじめる。</p>`:`<p class="bk-q">${P.met?`今日の試練は果たした。<br><small>目安の p.${P.to} まで読み進めた</small>`:`p.<em>${P.to}</em> まで読み進めよ<small>（${P.quota}ページ）</small>`}</p><p class="hint">${P.over?(t<=B.due?`解き明かす日（${bkMD(B.goal)}）を過ぎた。返却の刻限までの${P.left}日で割っている。`:'返却の刻限を過ぎた。残りを今日のうちに。'):`解き明かす日 ${bkMD(B.goal)} まであと${P.left}日。残り${N-P.s0}ページ ÷ ${P.left}日。`}</p>`;
-    h+=`<div class="bk-slate ${P.met?'done':''}"><div class="bk-sh">今日の解読の試練${P.met?'<span class="r-clear">CLEAR</span>':''}</div>${body}<div class="bk-rec"><span>今日は p.</span><input type="number" id="bkPg" inputmode="numeric" min="0" max="${N}" value="" placeholder="${P.now||''}"><span>まで読んだ</span><button class="btn primary small" data-act="bkrec">記す</button></div></div>`;
+    h+=`<div class="bk-slate ${P.met?'done':''}"><div class="bk-sh">今日の解読の試練${P.met?'<span class="r-clear">CLEAR</span>':''}</div>${body}<div class="bk-rec"><span>今日は p.</span><input type="number" id="bkPg" inputmode="numeric" min="0" max="${N}" value="${B.log&&t in B.log?B.log[t]:''}" placeholder="${P.now||''}"><span>まで読んだ</span><button class="btn primary small" data-act="bkrec">${B.log&&t in B.log?'記し直す':'記す'}</button></div>${B.log&&t in B.log?'<p class="hint" style="margin:4px 0 0">続きを読んだら、読み終えたページに直して記し直す。</p>':''}</div>`;
   }
   // 解読の軌跡：日ごとの端末。読んだ日は青く灯り、まだの日は橙のまま
   { let pips=''; for(let k=B.start;k<=B.due;k=bkAdd(k,1)){ const ex=bkAt(B,k)-bkAt(B,k,true), lg=B.log&&(k in B.log), pre=B.reg&&k<B.reg&&!lg, cls=[k===t?'now':'',k>B.goal?'grace':'',lg&&ex>0?'on':'',pre?'pre':k<t&&!(lg&&ex>0)?'miss':'',k===B.goal?'goal':''].join(' ');
@@ -2904,8 +2904,13 @@ function bkRecord(){
   const B=state.books[bkSel]; if(!B) return; const t=ymd(), el=$('bkPg'), pg=Math.min(B.pages,Math.max(0,parseInt(el&&el.value,10)));
   if(!(pg>=0)||el.value===''){ toast('読んだページを入れよう'); return; }
   const before=bkPlan(B,t); B.log={...(B.log||{}),[t]:pg}; B.u=Date.now(); const P=bkPlan(B,t);
+  // 記し直しても、ごほうびは1日1回。減らして届かなくなったら、その日のぶんは戻す
+  B.clr={...(B.clr||{})}; let msg='';
+  if(P.met&&!B.clr[t]){ B.clr[t]=1; gain(10); earnRupee(5); msg='clear'; }
+  else if(!P.met&&B.clr[t]){ delete B.clr[t]; gain(-10); state.rupeeEarned=Math.max(0,(state.rupeeEarned||0)-5); }
   if(pg>=B.pages&&!B.fin){ B.fin=t; gain(40); earnRupee(30); setTimeout(()=>banner('book','古文書を解き明かした',`${B.title}　全${B.pages}ページ　+40 XP ・ +30ルピー`),200); }
-  else if(P.met&&!before.met){ gain(10); earnRupee(5); setTimeout(()=>banner('book','解読の試練 クリア',`p.${pg} まで読み進めた　+10 XP ・ +5ルピー`),150); }
+  else if(pg<B.pages&&B.fin===t){ B.fin=null; gain(-40); state.rupeeEarned=Math.max(0,(state.rupeeEarned||0)-30); toast(`p.${pg} に記し直した`); }
+  else if(msg) setTimeout(()=>banner('book','解読の試練 クリア',`p.${pg} まで読み進めた　+10 XP ・ +5ルピー`),150);
   else toast(`p.${pg} まで解読を記した`);
   save(); renderLv(); render();
 }
