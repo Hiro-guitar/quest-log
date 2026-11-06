@@ -198,7 +198,8 @@ button{cursor:pointer;background:none;border:0;padding:0}
 .sdate.on{color:var(--blue);border-color:rgba(95,212,239,.35)}
 .step.done .sdate.on{color:var(--dim);border-color:transparent}
 @media (hover:none){.step.pick .sdate{border-color:var(--line)}}
-.sdate-row{display:flex;gap:8px;align-items:center;padding:6px 0 10px 28px;flex-wrap:wrap}
+.sdate-row{display:flex;gap:8px;align-items:center;padding:6px 0 10px 28px;flex-wrap:wrap}.sd-l{font-size:11px;color:var(--dim);min-width:36px}.sd-br{flex-basis:100%;height:0}
+.sdue{font-size:11px;color:var(--dim);white-space:nowrap}.sdue.soon{color:var(--orange)}.sdue.over{color:#ff8a6a}.sdl{padding:1px 6px}
 .sdate-row input{width:auto;flex:1;min-width:120px;background:rgba(0,0,0,.35);border:1px solid var(--line);border-radius:3px;padding:7px 10px;outline:none}
 .sdate-row input:focus{border-color:var(--blue)}
 .due.over{color:var(--red)}
@@ -1110,6 +1111,8 @@ let carryDay=ymd();
 function runCarry(){ if(dayView===carryDay) dayView=ymd(); carryDay=ymd(); const n=carryOver(); if(n){ save(); render(); toast(`冒険手帳を更新　${n}件を今日に持ち越しました`); } return n; }
 const carryHtml=o=>o&&o.carry&&!o.done?`<span class="carry" title="${o.carry}回持ち越し">↻${o.carry}</span>`:'';
 function daysLeft(d){if(!d)return null;const t=new Date(d+'T00:00:00');const n=new Date();n.setHours(0,0,0,0);return Math.round((t-n)/DAY)}
+const stepDue=q=>(q.steps||[]).filter(x=>!x.qref&&!x.done&&x.deadline).map(x=>x.deadline).sort()[0]||'';
+const sDueHtml=d=>{ const n=daysLeft(d); if(n===null) return ''; return `<span class="sdue ${n<0||n===0?'over':n<=3?'soon':''}" title="工程の期限">${n<0?`期限切れ${-n}日`:n===0?'今日まで':`〜${+d.slice(5,7)}/${+d.slice(8)}`}</span>`; };
 function dueHtml(d){
   const n=daysLeft(d); if(n===null) return '';
   if(n<0) return `<span class="due over">期限切れ ${-n}日</span>`;
@@ -1313,7 +1316,7 @@ function row(q){
   const mark=q.type==='mini'&&!q.done?`<span class="r-mark qcheck" data-act="quickdone" data-id="${q.id}" title="クリア">${ico('mini')}</span>`:`<span class="r-mark">${ico(q.type,q.done)}</span>`;
   return `<button class="row ${q.id===selId?'sel':''} ${q.done?'done':''}" data-act="select" data-id="${q.id}">
     ${mark}<span class="r-main"><span class="r-title">${esc(q.title||'(無題)')}</span>${sub?`<span class="r-sub ${isPlace?'place':''}">${esc(sub)}</span>`:''}</span>
-    <span class="r-side">${q.done?'<span class="r-clear">COMPLETE</span>':`${q.accepted?'<span class="r-dest" title="目的地に設定中">◎</span>':''}${(()=>{const e=effDo(q); return e?`<span class="do">${doLabel(e,true)}${carryHtml(e)}</span>`:'';})()}${false?`<span class="do">${doLabel(q,true)}${carryHtml(q)}</span>`:''}${dueHtml(q.deadline)}`}</span><span class="r-notch"></span>
+    <span class="r-side">${q.done?'<span class="r-clear">COMPLETE</span>':`${q.accepted?'<span class="r-dest" title="目的地に設定中">◎</span>':''}${(()=>{const e=effDo(q); return e?`<span class="do">${doLabel(e,true)}${carryHtml(e)}</span>`:'';})()}${false?`<span class="do">${doLabel(q,true)}${carryHtml(q)}</span>`:''}${dueHtml(q.deadline||stepDue(q))}`}</span><span class="r-notch"></span>
   </button>`;
 }
 function catBar(t){
@@ -1366,7 +1369,7 @@ function stepRowToday(q,st,inGroup){
   return `<button class="row srow ${st.done?'done':''} ${q.id===selId?'sel':''}" data-act="select" data-id="${q.id}">
     <span class="r-mark qcheck" data-act="step" data-q="${q.id}" data-s="${st.id}" title="工程をクリア"><i class="sq ${st.done?'on':''}"></i></span>
     <span class="r-main"><span class="r-title">${esc(st.text)}</span>${inGroup?'':`<span class="r-sub">${TYPES[q.type].mark} ${esc(q.title||'(無題)')} の工程</span>`}</span>
-    <span class="r-side">${st.done?'<span class="r-clear">CLEAR</span>':`${st.doTime?`<span class="do">${st.doTime}</span>`:''}${carryHtml(st)}`}</span><span class="r-notch"></span></button>`;
+    <span class="r-side">${st.done?'<span class="r-clear">CLEAR</span>':`${st.doTime?`<span class="do">${st.doTime}</span>`:''}${carryHtml(st)}${st.deadline?sDueHtml(st.deadline):''}`}</span><span class="r-notch"></span></button>`;
 }
 // 焚き火で休む：今日の分を明日に回す（持ち越し回数は増やさない）
 let pouchSel=null, restSel=null;
@@ -1842,7 +1845,7 @@ function renderView(D,q){
   <h2 class="p-title">${esc(q.title||'(無題)')}</h2>
   ${q.giver||q.place?`<div class="p-giver"><span>${q.giver?`<i class="giver-mark">!</i>${esc(q.giver)}`:''}</span><span class="p-place">${esc(q.place||'')}</span></div>`:''}
   <div class="p-desc">${q.memo?esc(q.memo).split('\n').map(l=>`<p>${l||'&nbsp;'}</p>`).join(''):''}${(()=>{ if(q.done||q.steps.length||kids(q.id).length) return ''; return `<p class="p-next">まずは 最初の工程を書き出してみよう</p>`; })()}</div>`;
-  const meta=[q.rank?stars(q.rank):'', (()=>{const e=effDo(q); if(!e||q.done) return ''; return `<span class="do">やる日 ${doLabel(e)}${e.own?'':'<small class="hint">（工程の日付）</small>'}${e.carry?`<span class="carry">↻${e.carry}回持ち越し</span>`:''}</span>`;})(), q.deadline?`<span>期限 ${q.deadline.replace(/-/g,'/')} ${dueHtml(q.deadline)}</span>`:'', q.reward?`<span>報酬：${esc(q.reward)}</span>`:''].filter(Boolean).join('');
+  const meta=[q.rank?stars(q.rank):'', (()=>{const e=effDo(q); if(!e||q.done) return ''; return `<span class="do">やる日 ${doLabel(e)}${e.own?'':'<small class="hint">（工程の日付）</small>'}${e.carry?`<span class="carry">↻${e.carry}回持ち越し</span>`:''}</span>`;})(), q.deadline?`<span>期限 ${q.deadline.replace(/-/g,'/')} ${dueHtml(q.deadline||stepDue(q))}</span>`:'', q.reward?`<span>報酬：${esc(q.reward)}</span>`:''].filter(Boolean).join('');
   if(meta) h+=`<div class="p-meta">${meta}</div>`;
   if(anc.length) h+=`<div class="crumb link">${anc.map(a=>`${ico(a.type)} <button data-act="select" data-id="${a.id}">${esc(a.title||'(無題)')}</button>`).join('　›　')}　のためのチャレンジ</div>`;
   if(q.steps.length||!q.done){
@@ -1855,11 +1858,11 @@ function renderView(D,q){
         const na=!dn&&isNext?nextAction(r):null;
         h+=`<li class="step qstep ${dn?'done':''} ${isNext?'next':''}" data-sid="${s.id}"><button class="qico" data-act="select" data-id="${r.id}" aria-label="チャレンジを開く">${ico(r.type,dn)}</button><span class="step-t"><button class="qlink" data-act="select" data-id="${r.id}">${esc(r.title||'(無題)')}</button><span class="qpct">${dn?'COMPLETE':Math.round(progress(r)*100)+'%'}</span>${na?`<span class="qnext">▸ ${esc(na)}</span>`:''}</span><span class="drag" data-drag title="ドラッグで並び替え">⋮⋮</span></li>`;
       }else{
-        const chip=s.doDate?`<button class="sdate on" data-act="sdate" data-s="${s.id}">${doLabel(s,true).replace(' やる','')}${carryHtml(s)}</button>`:`<button class="sdate" data-act="sdate" data-s="${s.id}" title="日付を入れる">日付</button>`;
+        const chip=(s.doDate?`<button class="sdate on" data-act="sdate" data-s="${s.id}">${doLabel(s,true).replace(' やる','')}${carryHtml(s)}</button>`:s.deadline?'':`<button class="sdate" data-act="sdate" data-s="${s.id}" title="日付・期限を入れる">日付</button>`)+(s.deadline&&!dn?`<button class="sdate on sdl" data-act="sdate" data-s="${s.id}">${sDueHtml(s.deadline)}</button>`:'');
         if(bulkSel){ if(dn) return; h+=`<li class="step bstep ${bulkSel.has(s.id)?'bon':''}" data-sid="${s.id}"><button class="bchk" data-act="bulkpick" data-s="${s.id}" aria-label="選ぶ"></button><span class="step-t" data-act="bulkpick" data-s="${s.id}">${esc(s.text)}</span>${s.doDate?`<span class="sdate on">${doLabel(s,true).replace(' やる','')}</span>`:''}</li>`; return; }
         h+=`<li class="step ${dn?'done':''} ${isNext?'next':''} ${pickSid===s.id?'pick':''}" data-sid="${s.id}"><button class="chk" data-act="step" data-q="${q.id}" data-s="${s.id}" aria-label="完了切替"></button><span class="step-t" data-act="pickstep" data-s="${s.id}">${esc(s.text)}</span>${chip}<span class="drag" data-drag title="ドラッグで並び替え">⋮⋮</span></li>`;
         if(pickSid===s.id&&!dn&&!q.done) h+=`<li class="shrine-row"><button data-act="shrine" data-q="${q.id}" data-s="${s.id}"><i class="sh-ico"></i>この工程で祠に挑む<small>25分だけ集中</small></button></li>`;
-        if(dateSid===s.id) h+=`<li class="sdate-row"><input type="date" data-sdate="${s.id}" value="${esc(s.doDate||'')}"><input type="time" data-stime="${s.id}" value="${esc(s.doTime||'')}"><button class="btn small ghost" data-act="sdateclear" data-s="${s.id}">消す</button><button class="btn small" data-act="sdateclose">OK</button></li>`;
+        if(dateSid===s.id) h+=`<li class="sdate-row"><label class="sd-l">やる日</label><input type="date" data-sdate="${s.id}" value="${esc(s.doDate||'')}"><input type="time" data-stime="${s.id}" value="${esc(s.doTime||'')}"><span class="sd-br"></span><label class="sd-l">期限</label><input type="date" data-sdue="${s.id}" value="${esc(s.deadline||'')}"><span class="sd-br"></span><button class="btn small ghost" data-act="sdateclear" data-s="${s.id}">消す</button><button class="btn small" data-act="sdateclose">OK</button></li>`;
       }
     });
     h+=`</ul>`;
@@ -1886,7 +1889,8 @@ function renderView(D,q){
 // 日付の入力欄の値を工程に反映（OKを押したときだけ）
 function applyDateRow(){
   if(!dateSid) return; const q=findQ(selId), st=q&&q.steps.find(x=>x.id===dateSid); if(!st) return;
-  const d=document.querySelector(`[data-sdate="${dateSid}"]`), t=document.querySelector(`[data-stime="${dateSid}"]`); if(!d) return;
+  const d=document.querySelector(`[data-sdate="${dateSid}"]`), t=document.querySelector(`[data-stime="${dateSid}"]`), dl=document.querySelector(`[data-sdue="${dateSid}"]`); if(!d) return;
+  if(dl&&(dl.value||'')!==(st.deadline||'')){ st.deadline=dl.value||''; q.u=Date.now(); save(); renderList(); }
   const nd=d.value||''; let nt=(t&&t.value)||'';
   if(nd===(st.doDate||'')&&nt===(st.doTime||'')) return;
   // 日付だけ変えたら、前の時刻は持ち越さない（時刻も入れ直したときだけ残す）
@@ -2078,7 +2082,7 @@ document.addEventListener('click',e=>{
       if(j<0||j>=q.steps.length) break; [q.steps[i],q.steps[j]]=[q.steps[j],q.steps[i]]; save(); renderEdit($('detail'),q); break;}
     case 'sdate': applyDateRow(); dateSid=dateSid===b.dataset.s?null:b.dataset.s; renderDetail(); setTimeout(()=>{const el=document.querySelector(`[data-sdate="${dateSid}"]`); el&&!el.value&&el.showPicker&&(()=>{try{el.showPicker()}catch(e){}})()},30); break;
     case 'sdateclose': applyDateRow(); dateSid=null; renderDetail(); renderList(); break;
-    case 'sdateclear': {const st=q.steps.find(x=>x.id===b.dataset.s); if(st){st.doDate='';st.doTime='';st.carry=0;} dateSid=null; save(); renderDetail(); renderList(); break;}
+    case 'sdateclear': {const st=q.steps.find(x=>x.id===b.dataset.s); if(st){st.doDate='';st.doTime='';st.carry=0;st.deadline='';} dateSid=null; save(); renderDetail(); renderList(); break;}
     case 'promote': promoteStep(q,b.dataset.s); break;
     case 'demote': demoteStep(q,b.dataset.s); break;
     case 'move': moveSid=b.dataset.s; renderEdit($('detail'),q); break;
@@ -2156,7 +2160,7 @@ document.addEventListener('change',e=>{
   if(e.target.type==='checkbox'&&pathInput(e)) return;
   if(trOnChange(e)) return;
   if(e.target.dataset.chap){ state.chap.cur[e.target.dataset.chap]=e.target.value.trim(); state.chap.u=Date.now(); save(); renderList(); return; }
-  if(e.target.dataset.sdate||e.target.dataset.stime){
+  if(e.target.dataset.sdate||e.target.dataset.stime||e.target.dataset.sdue){
     return; // スマホは日付欄を開いた瞬間に今日が入るので、OKを押すまで保存しない
   }
   if(e.target.id==='insRef'&&e.target.value){const q=findQ(selId); q&&insertRef(q,e.target.value); return;}
