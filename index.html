@@ -198,7 +198,8 @@ button{cursor:pointer;background:none;border:0;padding:0}
 .sdate.on{color:var(--blue);border-color:rgba(95,212,239,.35)}
 .step.done .sdate.on{color:var(--dim);border-color:transparent}
 @media (hover:none){.step.pick .sdate{border-color:var(--line)}}
-.sdate-row{display:flex;gap:8px;align-items:center;padding:6px 0 10px 28px;flex-wrap:wrap}.sd-l{font-size:11px;color:var(--dim);min-width:36px}.sd-br{flex-basis:100%;height:0}
+.sdate-row{display:flex;gap:8px;align-items:center;padding:6px 0 10px 28px;flex-wrap:wrap}.bulk-row .bk-l{font-size:11px;color:var(--dim);min-width:36px}.bulk-row .bk-br{flex-basis:100%;height:0}
+.sd-l{font-size:11px;color:var(--dim);min-width:36px}.sd-br{flex-basis:100%;height:0}
 .sdue{font-size:11px;color:var(--dim);white-space:nowrap}.sdue.soon{color:var(--orange)}.sdue.over{color:#ff8a6a}.sdl{padding:1px 6px}
 .sdate-row input{width:auto;flex:1;min-width:120px;background:rgba(0,0,0,.35);border:1px solid var(--line);border-radius:3px;padding:7px 10px;outline:none}
 .sdate-row input:focus{border-color:var(--blue)}
@@ -1109,7 +1110,7 @@ function carryOver(){
   return n;
 }
 let carryDay=ymd();
-function runCarry(){ if(dayView===carryDay) dayView=ymd(); carryDay=ymd(); const n=carryOver(); if(n){ save(); render(); toast(`冒険手帳を更新　${n}件を今日に持ち越しました`); } return n; }
+function runCarry(){ if(dayView===carryDay) dayView=ymd(); carryDay=ymd(); const n=carryOver(); if(n){ save(); render(); toast(`夜が明けた。やり残した${n}つの冒険を今日へ持ち越した`); } return n; }
 const carryHtml=o=>o&&o.carry&&!o.done?`<span class="carry" title="${o.carry}回持ち越し">↻${o.carry}</span>`:'';
 function daysLeft(d){if(!d)return null;const t=new Date(d+'T00:00:00');const n=new Date();n.setHours(0,0,0,0);return Math.round((t-n)/DAY)}
 const stepDue=q=>(q.steps||[]).filter(x=>!x.qref&&!x.done&&x.deadline).map(x=>x.deadline).sort()[0]||'';
@@ -1203,13 +1204,13 @@ function completeQuest(q){
   $('clearT').textContent=q.title; $('clearXp').textContent=`+${xp} XP ・ +${rp}ルピー${q.reward?'　報酬：'+q.reward:''}`;
   const c=$('clear'); c.classList.remove('show'); void c.offsetWidth; c.classList.add('show');
   selId=q.id; editing=false; memEdit=q.id; render();
-  setTimeout(()=>toast('思い出にひとこと残せます'),2700);
+  setTimeout(()=>toast('ひとこと、思い出に刻んでおこう'),2700);
 }
 function reopen(q){ pUnlog({q:q.id,sid:''}); if(q.bk){ const B=(state.books||{})[q.bk]; if(B&&B.ret){ B.ret=null; B.u=Date.now(); } } q.done=false;q.doneAt=null;gain(-xpFor(q));save();render()}
 function addMinis(text){
   const lines=text.split(/\r?\n/).map(x=>x.replace(/^\s*([-*・●○◇◆□■]|\d+[.)．]|\[\s?\])\s*/,'').trim()).filter(Boolean);
   lines.forEach((t,i)=>state.quests.push({id:uid(),title:t,type:'mini',parentId:null,rank:0,deadline:'',reward:'',memo:'',steps:[],accepted:false,done:false,created:Date.now()+i}));
-  if(lines.length){ save(); renderList(); renderTabs(); if(lines.length>1) toast(`${lines.length}個のミニチャレンジを追加`); }
+  if(lines.length){ save(); renderList(); renderTabs(); if(lines.length>1) toast(`ミニチャレンジを${lines.length}つ書き加えた`); }
   const el=$('miniAdd'); if(el){ el.value=''; el.focus(); }
 }
 function newQuest(type,parentId){
@@ -1241,7 +1242,7 @@ function promoteStep(q,sid){
   if(canLink(n,q)) n.parentId=q.id; else if(canLink(n,findQ(q.parentId))) n.parentId=q.parentId;
   state.quests.push(n); s.qref=n.id; save();
   renderEdit($('detail'),q); renderList(); renderTabs(); renderHud();
-  toast('チャレンジに格上げしました');
+  toast('チャレンジとして記し直した');
 }
 function insertRef(q,id){
   const r=findQ(id); if(!r||q.steps.some(s=>s.qref===id)||contains(r,q)) return;
@@ -1257,16 +1258,16 @@ function demoteStep(q,sid){
   state.quests.forEach(o=>o.steps.forEach(x=>{if(x.qref===r.id){x.qref=null;x.text=r.title;x.done=!!r.done}}));
   state.quests=state.quests.filter(o=>o!==r);
   save(); renderEdit($('detail'),q); renderList(); renderTabs(); renderHud();
-  toast('工程に戻しました');
+  toast('工程に戻した');
 }
 let moveSid=null, dateSid=null;
 function moveStep(q,sid,tid){
   const t=findQ(tid), i=q.steps.findIndex(x=>x.id===sid); if(!t||i<0) return;
   const s=q.steps[i], r=refQ(s);
-  if(r&&(r.id===t.id||contains(r,t))){toast('そこには移せません');return}
+  if(r&&(r.id===t.id||contains(r,t))){toast('そこへは移せない');return}
   q.steps.splice(i,1); t.steps.push(s); moveSid=null;
   save(); renderEdit($('detail'),q); renderList(); renderHud();
-  toast(`「${t.title||'(無題)'}」に移しました`);
+  toast(`「${t.title||'(無題)'}」の工程に移した`);
 }
 function deleteQuest(q){
   if(!confirm(`「${q.title||'(無題)'}」を削除する？`)) return;
@@ -1277,7 +1278,7 @@ function deleteQuest(q){
 function addSteps(q,text){
   const lines=text.split(/\r?\n/).map(s=>s.replace(/^\s*([-*・●○◇◆□■]|\d+[.)．]|\[\s?\])\s*/,'').trim()).filter(Boolean);
   lines.forEach(l=>q.steps.push(st(l)));
-  if(lines.length){save();render();if(lines.length>1)toast(`${lines.length}個の工程を追加`);}
+  if(lines.length){save();render();if(lines.length>1)toast(`工程を${lines.length}つ書き加えた`);}
   return lines.length;
 }
 
@@ -1704,7 +1705,7 @@ function restToday(){
     (q.steps||[]).forEach(st=>{ if(!st.qref&&!st.done&&st.doDate===t){ st.doDate=tm; n++; } });
   });
   state.rested={...(state.rested||{}),[t]:1}; save(); render();
-  banner('rest','焚き火で休んだ',n?`今日の${n}件は明日に回しました`:'ゆっくり休もう');
+  banner('rest','焚き火で休んだ',n?`やり残した${n}つは明日へ。ゆっくり休もう`:'ゆっくり休もう');
 }
 function todayList(){
   const items=dayItems(dayView), d=new Date(dayView+'T00:00:00');
@@ -1850,7 +1851,7 @@ function renderView(D,q){
   if(anc.length) h+=`<div class="crumb link">${anc.map(a=>`${ico(a.type)} <button data-act="select" data-id="${a.id}">${esc(a.title||'(無題)')}</button>`).join('　›　')}　のためのチャレンジ</div>`;
   if(q.steps.length||!q.done){
     h+=`<div class="sec-h"><span>工程</span><span>${q.steps.filter(stepDone).length} / ${q.steps.length}${q.steps.length?`　・　${p}%`:''}</span></div>`;
-    if(bulkSel) h+=`<div class="bulk-bar"><p>日付を入れたい工程をタップして選んでください（${bulkSel.size}件選択中）</p><div class="bulk-row"><button class="btn small ghost" data-act="bulkall">${(()=>{ const all=q.steps.filter(x=>!x.qref&&!stepDone(x)); return all.length&&all.every(x=>bulkSel.has(x.id))?'選択をはずす':'すべて選ぶ'; })()}</button><input type="date" id="bulkDate"><input type="time" id="bulkTime"><button class="btn small primary" data-act="bulkapply">選んだ工程に入れる</button><button class="btn small ghost" data-act="bulkclear">日付を外す</button><button class="btn small ghost" data-act="bulkoff">やめる</button></div></div>`;
+    if(bulkSel) h+=`<div class="bulk-bar"><p>やる日や期限を記したい工程を選ぼう（${bulkSel.size}つ選んでいる）</p><div class="bulk-row"><button class="btn small ghost" data-act="bulkall">${(()=>{ const all=q.steps.filter(x=>!x.qref&&!stepDone(x)); return all.length&&all.every(x=>bulkSel.has(x.id))?'選択をはずす':'すべて選ぶ'; })()}</button><span class="bk-br"></span><span class="bk-l">やる日</span><input type="date" id="bulkDate"><input type="time" id="bulkTime"><span class="bk-br"></span><span class="bk-l">期限</span><input type="date" id="bulkDue"><span class="bk-br"></span><button class="btn small primary" data-act="bulkapply">選んだ工程に記す</button><button class="btn small ghost" data-act="bulkclear">やる日と期限を外す</button><button class="btn small ghost" data-act="bulkoff">やめる</button></div></div>`;
     h+=`<ul class="steps ${bulkSel?'bulk':''}" ${bulkSel?'':'data-sortable'}>`;
     q.steps.forEach(s=>{
       const r=refQ(s), dn=stepDone(s), isNext=!q.done&&ns&&s.id===ns.id;
@@ -1977,20 +1978,20 @@ document.addEventListener('click',e=>{
     case 'openq': { const t=findQ(b.dataset.id); if(!t) break; tab='list'; listCat=t.type; selId=t.id; pouchSel=null; editing=false; render(); window.scrollTo({top:0}); break; }
     case 'bulkon': if(editing){ editing=false; save(); } bulkSel=new Set(); dateSid=null; pickSid=null; render(); window.innerWidth<=820&&window.scrollTo({top:0}); break;
     case 'bulkoff': bulkSel=null; renderDetail(); break;
-    case 'bulkall': { if(!bulkSel||!q) break; const all=q.steps.filter(x=>!x.qref&&!stepDone(x)); const d=($('bulkDate')||{}).value, t=($('bulkTime')||{}).value;
+    case 'bulkall': { if(!bulkSel||!q) break; const all=q.steps.filter(x=>!x.qref&&!stepDone(x)); const d=($('bulkDate')||{}).value, t=($('bulkTime')||{}).value, du=($('bulkDue')||{}).value;
       if(all.every(x=>bulkSel.has(x.id))) bulkSel.clear(); else all.forEach(x=>bulkSel.add(x.id));
-      renderDetail(); if($('bulkDate')){ $('bulkDate').value=d||''; $('bulkTime').value=t||''; } break; }
-    case 'bulkpick': bulkSel&&(bulkSel.has(b.dataset.s)?bulkSel.delete(b.dataset.s):bulkSel.add(b.dataset.s)); { const d=($('bulkDate')||{}).value, t=($('bulkTime')||{}).value; renderDetail(); if($('bulkDate')){ $('bulkDate').value=d||''; $('bulkTime').value=t||''; } } break;
-    case 'bulkapply': case 'bulkclear': { if(!bulkSel||!bulkSel.size){ toast('工程を選んでください'); break; } const d=a==='bulkclear'?'':($('bulkDate')||{}).value, t=a==='bulkclear'?'':($('bulkTime')||{}).value;
-      if(a==='bulkapply'&&!d){ toast('日付を選んでください'); break; }
-      q.steps.forEach(st=>{ if(bulkSel.has(st.id)){ if(st.doDate!==d) st.carry=0; st.doDate=d; st.doTime=t||''; } });
-      const n=bulkSel.size; bulkSel=null; save(); render(); toast(a==='bulkclear'?`${n}件の日付を外しました`:`${n}件の工程に日付を入れました`); break; }
+      renderDetail(); if($('bulkDate')){ $('bulkDate').value=d||''; $('bulkTime').value=t||''; $('bulkDue').value=du||''; } break; }
+    case 'bulkpick': bulkSel&&(bulkSel.has(b.dataset.s)?bulkSel.delete(b.dataset.s):bulkSel.add(b.dataset.s)); { const d=($('bulkDate')||{}).value, t=($('bulkTime')||{}).value, du=($('bulkDue')||{}).value; renderDetail(); if($('bulkDate')){ $('bulkDate').value=d||''; $('bulkTime').value=t||''; $('bulkDue').value=du||''; } } break;
+    case 'bulkapply': case 'bulkclear': { if(!bulkSel||!bulkSel.size){ toast('工程を選ぼう'); break; } const d=a==='bulkclear'?'':($('bulkDate')||{}).value, t=a==='bulkclear'?'':($('bulkTime')||{}).value, du=a==='bulkclear'?'':($('bulkDue')||{}).value;
+      if(a==='bulkapply'&&!d&&!du){ toast('やる日か期限を選ぼう'); break; }
+      q.steps.forEach(st=>{ if(bulkSel.has(st.id)){ if(a==='bulkclear'){ st.doDate=''; st.doTime=''; st.carry=0; st.deadline=''; return; } if(d){ if(st.doDate!==d) st.carry=0; st.doDate=d; st.doTime=t||''; } if(du) st.deadline=du; } });
+      const n=bulkSel.size; bulkSel=null; save(); render(); toast(a==='bulkclear'?`${n}つの工程を白紙に戻した`:`${n}つの工程に${d&&du?'やる日と期限':d?'やる日':'期限'}を記した`); break; }
     case 'matadd': { const el=$('matName'); const v=(el&&el.value||'').trim(); if(!v){ el&&el.focus(); break; } matAdd(v,(($('matStoreIn')||{}).value||'').trim()); renderDetail(); renderList(); setTimeout(()=>{ const n=$('matName'); n&&n.focus(); },20); break; }
     case 'matsug': matAdd(b.dataset.v,matStore); renderDetail(); renderList(); break;
     case 'matget': { const x=(state.mats||{})[b.dataset.v]; if(!x) break; x.got=!x.got; x.u=Date.now(); matJust=x.got?b.dataset.v:null; save(); renderDetail(); renderList(); setTimeout(()=>{ matJust=null; },900);
       if(x.got&&!matsAll().some(m=>!m.got&&(!matStore||m.store===matStore))) setTimeout(()=>banner('reward','素材がそろった',matStore||'買い物おつかれさま'),500); break; }
     case 'matdel': { const x=(state.mats||{})[b.dataset.v]; if(!x) break; x.del=1; x.u=Date.now(); save(); renderDetail(); renderList(); break; }
-    case 'matclear': { const now=Date.now(); matsAll().filter(x=>x.got).forEach(x=>{ state.mats[x.id].del=1; state.mats[x.id].u=now; }); save(); renderDetail(); renderList(); toast('手に入れた素材を片づけました'); break; }
+    case 'matclear': { const now=Date.now(); matsAll().filter(x=>x.got).forEach(x=>{ state.mats[x.id].del=1; state.mats[x.id].u=now; }); save(); renderDetail(); renderList(); toast('手に入れた素材をポーチにしまった'); break; }
     case 'matstore': matStore=b.dataset.v; renderDetail(); break;
     case 'pickstep': pickSid=pickSid===b.dataset.s?null:b.dataset.s; renderDetail(); break;
     case 'select': if(!draftLeave()) break; bulkSel=null; applyDateRow(); dateSid=null; pickSid=null; if(editing){cleanupEmpty();editing=false} selId=b.dataset.id; render(); window.innerWidth<=820&&window.scrollTo({top:0}); break;
@@ -2008,8 +2009,8 @@ document.addEventListener('click',e=>{
     case 'bksave': bkSave(); break;
     case 'bkrec': bkRecord(); break;
     case 'bkret': { const B=state.books[bkSel]; if(B){ const q=state.quests.find(x=>x.bk===bkSel); if(!B.ret){ B.ret=ymd(); B.u=Date.now(); if(q&&!q.done) completeQuest(q); else { save(); render(); toast('古文書を図書館へ返した'); } } else { B.ret=null; B.u=Date.now(); if(q&&q.done) reopen(q); else { save(); render(); } } } break; }
-    case 'bkrenew': { const B=state.books[bkSel]; if(B){ const t=ymd(), nd=bkAdd(t,14); if((B.renew||[]).length){ toast('更新は1回しかできない'); break; } if(nd<=B.due){ toast('今更新しても返す日は延びない'); break; } B.renew=[...(B.renew||[]),t]; B.due=nd; if(!B.fin&&B.goal<bkAdd(nd,-5)) B.goal=bkAdd(nd,-5); B.u=Date.now(); bkSyncQ(bkSel); save(); render(); setTimeout(()=>banner('book','返却の刻限が延びた',`${B.title}　${bkMD(nd)} まで`),150); } break; }
-    case 'bkdue': { const B=state.books[bkSel], v=($('bkDueQ')||{}).value; if(B&&v){ if(v<B.start){ toast('借りた日より前にはできない'); break; } B.due=v; if(B.goal>v) B.goal=v; B.u=Date.now(); bkSyncQ(bkSel); save(); render(); toast(`返す日を ${bkMD(v)} にした`); } break; }
+    case 'bkrenew': { const B=state.books[bkSel]; if(B){ const t=ymd(), nd=bkAdd(t,14); if((B.renew||[]).length){ toast('刻限を延ばせるのは一度きり'); break; } if(nd<=B.due){ toast('いま延ばしても刻限は変わらない'); break; } B.renew=[...(B.renew||[]),t]; B.due=nd; if(!B.fin&&B.goal<bkAdd(nd,-5)) B.goal=bkAdd(nd,-5); B.u=Date.now(); bkSyncQ(bkSel); save(); render(); setTimeout(()=>banner('book','返却の刻限が延びた',`${B.title}　${bkMD(nd)} まで`),150); } break; }
+    case 'bkdue': { const B=state.books[bkSel], v=($('bkDueQ')||{}).value; if(B&&v){ if(v<B.start){ toast('借りた日より前にはできない'); break; } B.due=v; if(B.goal>v) B.goal=v; B.u=Date.now(); bkSyncQ(bkSel); save(); render(); toast(`返却の刻限を ${bkMD(v)} にした`); } break; }
     case 'bkdrop': { const B=state.books[bkSel]; if(B){ B.drop=B.drop?null:ymd(); B.u=Date.now(); save(); render(); toast(B.drop?`解読の旅はここまで。刻限の${bkMD(B.due)}までに図書館へ`:'ふたたび古文書の解読へ'); } break; }
     case 'bkdel': { const B=state.books[bkSel]; if(B&&confirm('この古文書を消しますか？')){ B.del=1; B.u=Date.now(); bkSyncQ(bkSel); bkSel=null; bkEdit=false; save(); render(); } break; }
     case 'bkundo': { const B=state.books[bkSel], d=b.dataset.v; if(B&&B.log&&d in B.log){ delete B.log[d]; B.u=Date.now(); save(); render(); } break; }
@@ -2019,8 +2020,8 @@ document.addEventListener('click',e=>{
       if(on){ gain(30); earnRupee(20); toast('鍛錬クリア  +30 XP ・ +20ルピー'); maybeSeed(); const p=TR_PART[trType(k)]; if(p) setTimeout(()=>toast(`克服の証（${PART_NAME[p]}）を手に入れた`),1300); trVesselBanner(vb); } else gain(-30);
       save(); render(); break; }
     case 'trsw': { const H=hm(); H.ovr={...H.ovr,[trSel]:b.dataset.v}; hmTouch('ovr',trSel); save(); render(); break; }
-    case 'trbody': { const d=$('trBd').value, kg=parseFloat($('trKg').value), cm=parseFloat($('trCm').value); if(!d||!(kg>40||cm>50)){ toast('体重かお腹まわりを入れてください'); break; } const H=hm(); H.body={...H.body,[d]:{...(H.body[d]||{}),...(kg>40&&kg<120?{kg:Math.round(kg*10)/10}:{}),...(cm>50&&cm<130?{cm:Math.round(cm*2)/2}:{})}}; hmTouch('body',d); save(); render(); toast('記録しました'); break; }
-    case 'slsave': { const d=$('slD').value, tw=pTm($('slW').value), tb=pTm($('slB').value); if(!d||(tw==null&&tb==null)){ toast('起きた時間か寝た時間を入れてください'); break; } if(tw!=null) slSet(d,'w',tw); if(tb!=null) slSet(d,'b',tb<PATH_H0?tb+1440:tb); renderDetail(); toast('記録しました'); break; }
+    case 'trbody': { const d=$('trBd').value, kg=parseFloat($('trKg').value), cm=parseFloat($('trCm').value); if(!d||!(kg>40||cm>50)){ toast('体重かお腹まわりを記そう'); break; } const H=hm(); H.body={...H.body,[d]:{...(H.body[d]||{}),...(kg>40&&kg<120?{kg:Math.round(kg*10)/10}:{}),...(cm>50&&cm<130?{cm:Math.round(cm*2)/2}:{})}}; hmTouch('body',d); save(); render(); toast('からだの手記に記した'); break; }
+    case 'slsave': { const d=$('slD').value, tw=pTm($('slW').value), tb=pTm($('slB').value); if(!d||(tw==null&&tb==null)){ toast('目覚めた刻か休んだ刻を記そう'); break; } if(tw!=null) slSet(d,'w',tw); if(tb!=null) slSet(d,'b',tb<PATH_H0?tb+1440:tb); renderDetail(); toast('からだの手記に記した'); break; }
     case 'sldel': { const H=hm(); const o={...H.sleep}; delete o[b.dataset.v]; H.sleep=o; hmTouch('sleep',b.dataset.v); save(); renderDetail(); break; }
     case 'trbdel': { const H=hm(); const o={...H.body}; delete o[b.dataset.v]; H.body=o; hmTouch('body',b.dataset.v); save(); renderDetail(); break; }
     case 'step': toggleStep(b.dataset.q,b.dataset.s); break;
@@ -2031,7 +2032,7 @@ document.addEventListener('click',e=>{
     case 'newcur': if(listCat==='today'){ newQuest('challenge',null); const nq=findQ(selId); if(nq){ nq.doDate=dayView; listCat='today'; save(); render(); } break; } if(listCat==='mini'){ miniOpen=true; renderList(); setTimeout(()=>{const el=$('miniAdd'); el&&el.focus()},20);} else newQuest(listCat,null); break;
     case 'tool': if(b.dataset.v==='moon'){ openMoon(); break; } toolSel=b.dataset.v; toolPicked=true; render(); break;
     case 'memedit': memEdit=q.id; renderDetail(); setTimeout(()=>{const t=$('memIn'); t&&t.focus();},30); break;
-    case 'memsave': { const v=($('memIn')||{}).value||''; q.memory=v.trim(); memEdit=null; save(); render(); toast(q.memory?'思い出に残しました':'思い出を消しました'); break; }
+    case 'memsave': { const v=($('memIn')||{}).value||''; q.memory=v.trim(); memEdit=null; save(); render(); toast(q.memory?'思い出に刻んだ':'思い出を消した'); break; }
     case 'rest': if(confirm('焚き火で休みますか？\n今日の分を明日に回します（持ち越しには数えません）')){ restToday(); render(); } break;
     case 'moonclose': revSkip.moon=1; $('moon').classList.remove('show'); break;
     case 'revclose': if(revCur) revSkip[revCur.kind]=1; $('rev').classList.remove('show'); break;
@@ -2067,13 +2068,13 @@ document.addEventListener('click',e=>{
       break;}
     case 'miniopen': miniOpen=true; renderList(); setTimeout(()=>{const el=$('miniAdd'); el&&el.focus()},20); break;
     case 'quickdone': { const m=findQ(b.dataset.id); if(m){ const row=b.closest('.row'); row&&row.classList.add('vanish'); setTimeout(()=>completeQuest(m),260); } break; }
-    case 'accept': q.accepted=!q.accepted; save(); render(); if(q.accepted) banner('accept','チャレンジ受注',q.title||'(無題)'); else toast('目的地を解除しました'); break;
+    case 'accept': q.accepted=!q.accepted; save(); render(); if(q.accepted) banner('accept','チャレンジ受注',q.title||'(無題)'); else toast('目的地の印を外した'); break;
     case 'complete':
       if(!allStepsDone(q) && !confirm('まだ終わっていない工程があります。達成を報告しますか？')) break;
       completeQuest(q); break;
     case 'reopen': reopen(q); break;
     case 'edit': editing=true; moveSid=null; render(); break;
-    case 'doneedit': if(q===draft){ if(!q.title.trim()){ toast('名前を入れてください'); const t=document.querySelector('[data-field=title]'); t&&t.focus(); break; } q.created=Date.now(); state.quests.push(q); draft=null; editing=false; save(); render(); toast('登録しました'); break; }
+    case 'doneedit': if(q===draft){ if(!q.title.trim()){ toast('名前を記そう'); const t=document.querySelector('[data-field=title]'); t&&t.focus(); break; } q.created=Date.now(); state.quests.push(q); draft=null; editing=false; save(); render(); toast('登録しました'); break; }
       if(!q.title.trim()){q.title='名もなきチャレンジ'} editing=false; save(); render(); break;
     case 'delete': if(q===draft){ if(!draftLeave()) break; draft=null; selId=null; editing=false; render(); break; } deleteQuest(q); break;
     case 'addchild': newQuest(TYPES[q.type].child,q.id); break;
@@ -2100,7 +2101,7 @@ document.addEventListener('click',e=>{
     case 'shdone': { const o=shrineGet(); shrineClose(); if(o){ const sq=findQ(o.qid), st=sq&&sq.steps.find(x=>x.id===o.sid); if(st&&!st.done) toggleStep(o.qid,o.sid); } break; }
     case 'shexit': shrineClose(); break;
     case 'shquit': if(confirm('試練をあきらめて祠を出ますか？')) shrineClose(); break;
-    case 'shopadd': { const nm=($('shopName').value||'').trim(), c=Math.round(+$('shopCost').value); if(!nm||!(c>0)){ toast('品物の名前とルピーを入れてください'); break; } state.shop={...(state.shop||{}),[uid()]:{name:nm.slice(0,60),cost:c,u:Date.now()}}; save(); renderDetail(); toast('店に並べました'); break; }
+    case 'shopadd': { const nm=($('shopName').value||'').trim(), c=Math.round(+$('shopCost').value); if(!nm||!(c>0)){ toast('品物の名前とルピーを記そう'); break; } state.shop={...(state.shop||{}),[uid()]:{name:nm.slice(0,60),cost:c,u:Date.now()}}; save(); renderDetail(); toast('店に新しい品が並んだ'); break; }
     case 'shopdel': { const it=(state.shop||{})[b.dataset.v]; if(it&&confirm(`「${it.name}」を店から下げますか？`)){ state.shop={...state.shop,[b.dataset.v]:{...it,del:1,u:Date.now()}}; save(); renderDetail(); } break; }
     case 'shopbuy': { const it=(state.shop||{})[b.dataset.v]; if(!it||rupeeBal()<it.cost) break; if(!confirm(`「${it.name}」を ${it.cost} ルピーで買いますか？`)) break; state.purchases={...(state.purchases||{}),[uid()]:{item:it.name,cost:it.cost,at:Date.now()}}; save(); renderLv(); render(); banner('reward','ごほうびを手に入れた',it.name); break; }
     case 'goconnect': tab='tools'; toolSel='sync'; toolPicked=true; render(); setTimeout(()=>{const el=$('codeIn'); el&&el.focus();},50); break;
@@ -2230,7 +2231,7 @@ function endDrag(){
   { const i=q.steps.findIndex(x=>x.id===mid), m=q.steps[i], dd=x=>{ const r=x.qref?findQ(x.qref):null; return (r||x).doDate||''; };
     if(m&&!m.qref&&!m.doDate&&!stepDone(m)){
       const below=q.steps.slice(i+1).find(x=>!stepDone(x)&&dd(x));
-      if(below){ const above=q.steps.slice(0,i).reverse().find(x=>dd(x)); m.doDate=above?dd(above):dd(below); m.carry=0; toast(`「${m.text}」のやる日を ${m.doDate.slice(5).replace('-','/')} にしました`); }
+      if(below){ const above=q.steps.slice(0,i).reverse().find(x=>dd(x)); m.doDate=above?dd(above):dd(below); m.carry=0; toast(`「${m.text}」のやる日を ${m.doDate.slice(5).replace('-','/')} に決めた`); }
     } }
   save(); editing ? renderEdit($('detail'),q) : (renderDetail(), renderList(), renderHud());
 }
@@ -2346,7 +2347,7 @@ async function pull(){
       const t=entTarget(id); if(!t||!t.doDate||sync.pending[id]) return;
       if(t.doDate!==v.date||(t.doTime||'')!==(v.time||'')){ t.doDate=v.date; t.doTime=v.time||''; ch++; }
     });
-    if(ch){ save(); render(); toast(`カレンダーで動かした予定を${ch}件反映しました`); }
+    if(ch){ save(); render(); toast(`暦で動かした${ch}つの予定を、旅程に写した`); }
   }catch(e){}
 }
 document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible'&&sync.url){ pull(); flush(); } });
@@ -2911,7 +2912,7 @@ function bkSyncQ(id){ const B=(state.books||{})[id]; let q=state.quests.find(x=>
 function bkSave(){
   const B=state.books[bkSel]; if(!B) return; const v=id=>($(id)||{}).value||'';
   const title=v('bkTitle').trim(), pages=parseInt(v('bkPages'),10), st=v('bkStart')||B.start;
-  if(!title){ toast('書名を入れよう'); return; } if(!(pages>0)){ toast('ページ数を入れよう'); return; }
+  if(!title){ toast('書名を記そう'); return; } if(!(pages>0)){ toast('ページ数を記そう'); return; }
   let goal=v('bkGoal')||B.goal, due=v('bkDue')||B.due;
   if(st!==B.start){ if(goal===B.goal) goal=bkAdd(st,9); if(due===B.due) due=bkAdd(st,14); }
   if(goal<st) goal=st; if(due<goal) due=goal;
@@ -2922,7 +2923,7 @@ function bkSave(){
 }
 function bkRecord(){
   const B=state.books[bkSel]; if(!B) return; const t=ymd(), el=$('bkPg'), pg=Math.min(B.pages,Math.max(0,parseInt(el&&el.value,10)));
-  if(!(pg>=0)||el.value===''){ toast('読んだページを入れよう'); return; }
+  if(!(pg>=0)||el.value===''){ toast('読んだページを記そう'); return; }
   const before=bkPlan(B,t); B.log={...(B.log||{}),[t]:pg}; B.u=Date.now(); const P=bkPlan(B,t);
   // 記し直しても、ごほうびは1日1回。減らして届かなくなったら、その日のぶんは戻す
   B.clr={...(B.clr||{})}; let msg='';
@@ -3098,7 +3099,7 @@ function wakeAct(a,b){
   if(a==='wkx'){ wakeLater=true; $('wake').classList.remove('show'); return; }
   if(a==='wkskip'){ try{ localStorage.setItem('ql-wakeskip',ymd()); }catch(e){} $('wake').classList.remove('show'); return; }
   if(a==='wkdel'){ slSet(ymd(),'w',null); $('wake').classList.remove('show'); render(); return; }
-  if(a==='wkok'){ const m=pTm($('wkT').value); if(m==null){ toast('時刻を入れてください'); return; } if(m>pnow()+5){ toast('まだ来ていない時刻です'); return; }
+  if(a==='wkok'){ const m=pTm($('wkT').value); if(m==null){ toast('刻を記そう'); return; } if(m>pnow()+5){ toast('その刻はまだ来ていない'); return; }
     const t=ymd(); slSet(t,'w',m); const bb=$('wkB')&&pTm($('wkB').value); if(bb!=null) slSet(ymd(new Date(Date.now()-DAY)),'b',bb<PATH_H0?bb+1440:bb);
     $('wake').classList.remove('show'); render(); const d=slDur(t); banner('wake','目覚め',`${pfmt(m)}　${d!=null?`${slDurFmt(d)}眠った　`:''}さあ、手綱をとって進もう`); }
 }
@@ -3387,7 +3388,7 @@ function pCarry(){ const t=pJDay(); if(pCarryDay===t) return 0; pCarryDay=t; con
       if(!td[nid]) td[nid]={s:b.s,e:b.e,t:b.t,...(b.pre?{pre:b.pre}:{}),...(b.post?{post:b.post}:{}),carry:(b.carry||0)+1,from:k,u:now};
       P.d={...P.d,[t]:td}; day[id]={...b,del:1,moved:t,u:now}; ch=true; n++; });
     if(ch) P.d={...P.d,[k]:day}; });
-  if(n){ save(); if(listCat==='path'||listCat==='today') render(); toast(`旅程の予定 ${n}件を今日に持ち越しました`); } return n; }
+  if(n){ save(); if(listCat==='path'||listCat==='today') render(); toast(`やり残した道しるべ${n}本を、今日の道へ移した`); } return n; }
 // 冒険手帳でやる日を別の日に変えた冒険（工程）は、その日の旅程から外す（今日から先の日だけ。過去の旅程は記録として残す）
 function pPrune(k){ if(k<ymd()) return; const P=plan(), day={...(P.d[k]||{})}, now=Date.now(); let ch=false;
   Object.entries(day).forEach(([id,b])=>{ if(!b||b.del) return;
@@ -4448,7 +4449,7 @@ function pathAct(a,b){
     case 'pathput': { pathSheet=false; const x=pUnplaced(k)[+b.dataset.i]; if(!x) return true; const xo=x.q&&findQ(x.q), xs=xo&&x.sid?(xo.steps||[]).find(z=>z.id===x.sid):xo, len=x.tr?30:x.bk?45:((xs&&xs.doDur)||60), s=pFree(k,len), id=uid();
       pSet(k,id,{s,e:Math.min(PATH_H1,s+len),...(x.tr?{tr:x.tr}:x.bk?{bk:x.bk,d0:k}:{q:x.q,sid:x.sid})}); pathSel=id; pathScrolled=null; render(); return true; }
     case 'pathtpl': { const tpl=(plan().tpl[pTpl(k)]||{}).b||[]; const P=plan(), day={...(P.d[k]||{})}, now=Date.now(); tpl.forEach(t=>{ day[uid()]={s:t.s,e:t.e,t:t.t,fix:1,...(t.wake?{wake:1}:{}),u:now}; }); P.d={...P.d,[k]:day}; save(); pathScrolled=null; render(); toast('いつもの旅程を敷いた'); return true; }
-    case 'pathsave': { const bl=pBlocks(k).filter(x=>!x.q&&!x.tr&&x.fix).map(x=>({s:x.s,e:x.e,t:x.t||'',...(x.wake?{wake:1}:{})})); plan().tpl={...plan().tpl,[b.dataset.v]:{b:bl,u:Date.now()}}; save(); renderDetail(); toast(`${b.dataset.v==='we'?'休日':'平日'}の型にした（${bl.length}件）`); return true; }
+    case 'pathsave': { const bl=pBlocks(k).filter(x=>!x.q&&!x.tr&&x.fix).map(x=>({s:x.s,e:x.e,t:x.t||'',...(x.wake?{wake:1}:{})})); plan().tpl={...plan().tpl,[b.dataset.v]:{b:bl,u:Date.now()}}; save(); renderDetail(); toast(`いつもの${b.dataset.v==='we'?'休日':'平日'}の道として覚えた（${bl.length}本）`); return true; }
     case 'pathdone': { const x=pBlocks(k).find(y=>y.id===pathSel); if(x){ pSet(k,x.id,{done:!x.done}); gain(x.done?-5:5); render(); } return true; }
     case 'pathstep': { const x=pBlocks(k).find(y=>y.id===pathSel), r=x&&pRef(x); if(r&&r.s) toggleStep(r.q.id,r.s.id); render(); return true; }
     case 'pathshift': { const x=pBlocks(k).find(y=>y.id===pathSel); if(x){ pathShift(k,x.s,+b.dataset.v); render(); } return true; }
@@ -4464,7 +4465,7 @@ function pathAct(a,b){
       const len=o.doDur||60, s=pFree(k,len), id=uid(); if(o.doDate!==k) o.carry=0; o.doDate=k; q.u=Date.now();
       pathPick=false; pathSheet=false; pSet(k,id,{s,e:Math.min(PATH_H1,s+len),q:q.id,sid:b.dataset.s||''}); pathSel=id; pathScrolled=null; pathFocus=s; render(); toast(`${pfmt(s)}に道しるべを立てた`); return true; }
     case 'pathmini': { const x=pBlocks(k).find(y=>y.id===pathSel); if(!x||!(x.t||'').trim()) return true; const q={id:uid(),title:x.t.trim(),type:'mini',parentId:null,rank:0,deadline:'',reward:'',memo:'',steps:[],accepted:false,done:!!x.done,doneAt:x.done?Date.now():null,created:Date.now(),doDate:k,doTime:x.s<1440?pHM(x.s):'',doDur:x.e-x.s};
-      state.quests.push(q); pSet(k,x.id,{q:q.id,sid:'',t:'',fix:0}); render(); toast('ミニチャレンジにした（冒険手帳にも並ぶ）'); return true; }
+      state.quests.push(q); pSet(k,x.id,{q:q.id,sid:'',t:'',fix:0}); render(); toast('冒険手帳に書き留めた'); return true; }
     case 'pathclear': { const x=pBlocks(k).find(y=>y.id===pathSel), r=x&&pRef(x); if(r&&!r.s&&!r.ss){ if(r.q.done){ reopen(r.q); } else completeQuest(r.q); } render(); return true; }
     case 'pathtrfin': { const x=pBlocks(k).find(y=>y.id===pathSel); if(x&&x.tr){ const H=hm(), was=!!(H.days[x.tr]||{}).train; if(!was){ trPin(x.tr); const vb=trVessels(); H.days[x.tr]={...(H.days[x.tr]||{}),train:true}; hmTouch('days',x.tr); gain(30); earnRupee(20); toast('鍛錬クリア  +30 XP ・ +20ルピー'); maybeSeed(); const pp=TR_PART[trType(x.tr)]; if(pp) setTimeout(()=>toast(`克服の証（${PART_NAME[pp]}）を手に入れた`),1300); trVesselBanner(vb); save(); } } render(); return true; }
     case 'pathbkrec': { const keep=bkSel; bkSel=b.dataset.v; bkRecord(); bkSel=keep; return true; }
@@ -4608,7 +4609,7 @@ async function loadData(){
     const needPush=fingerprint(m)!==fingerprint(j.data);
     const changed=fingerprint(m)!==fingerprint(state);
     applyState(m);
-    if(changed) toast('ほかの端末の変更を反映しました');
+    if(changed) toast('もう一つのシーカーストーンの記録を写した');
     if(needPush) schedulePush(200);
   }catch(e){}
 }
