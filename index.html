@@ -4796,30 +4796,54 @@ async function pLookOpen(){
   else if(rl){ const N=2600+rl*800, P=new Float32Array(N*6); for(let q=0;q<N;q++){ const x=(rng()-.5)*300, y=rng()*120, z=(rng()-.5)*300; P.set([x,y,z,x-.3,y-3.5,z],q*6); } const g=new T.BufferGeometry(); g.setAttribute('position',new T.BufferAttribute(P,3)); rain=new T.LineSegments(g,new T.LineBasicMaterial({color:0xc8dcf0,transparent:true,opacity:.42,depthWrite:false})); scene.add(rain); }
   // ---- 馬：道をたどって進む。うしろから見る（ブレワイで馬に乗っているときのように）----
   const tm=(c)=>patch(new T.MeshToonMaterial({color:c3(c),gradientMap:gmap}));
-  const coat=tm([128,78,46]), dark=tm([42,32,28]), hoof=tm([60,52,46]), cloak=tm([74,98,84]), cloakD=tm([56,74,64]), skin=tm([232,192,160]), hair=tm([96,64,40]), boot=tm([70,50,36]), saddle=tm([110,60,34]);
-  const horse=new T.Group(), body=new T.Group(); horse.add(body);
-  const add=(par,g,m,x,y,z,rx=0,ry=0,rz=0)=>{ const o=new T.Mesh(g,m); o.position.set(x,y,z); o.rotation.set(rx,ry,rz); o.castShadow=true; par.add(o); return o; };
-  { const b=add(body,new T.SphereGeometry(1,18,12),coat,0,2.35,0); b.scale.set(.82,.86,1.85);
-    add(body,new T.SphereGeometry(.7,14,10),coat,0,2.55,1.25).scale.set(1,1.1,1.1);
-    add(body,new T.SphereGeometry(.72,14,10),coat,0,2.45,-1.25).scale.set(1.05,1.05,1.1); }
-  const neck=new T.Group(); neck.position.set(0,2.9,1.55); body.add(neck);
-  add(neck,new T.CylinderGeometry(.36,.56,1.9,12).translate(0,.95,0),coat,0,0,0,.85);
-  add(neck,new T.BoxGeometry(.14,.5,1.9).translate(0,.95,0),dark,0,.2,-.2,.85);
-  const head=new T.Group(); head.position.set(0,1.3,1.42); neck.add(head);
-  add(head,new T.CylinderGeometry(.2,.33,1.25,10).translate(0,-.6,0),coat,0,0,0,-2.0);
-  add(head,new T.ConeGeometry(.1,.32,5),coat,.17,.22,-.1,-.3); add(head,new T.ConeGeometry(.1,.32,5),coat,-.17,.22,-.1,-.3);
-  add(head,new T.BoxGeometry(.1,.3,.6),dark,0,.12,-.2,-.3);
-  const tail=new T.Group(); tail.position.set(0,2.7,-2.0); body.add(tail); add(tail,new T.ConeGeometry(.24,1.9,8).translate(0,-.95,0),dark,0,0,0,-.35);
-  const legs=[[.42,1.3],[-.42,1.3],[.42,-1.35],[-.42,-1.35]].map(([x,z])=>{ const g=new T.Group(); g.position.set(x,2.05,z); horse.add(g); add(g,new T.CylinderGeometry(.2,.13,1.85,8).translate(0,-.92,0),coat,0,0,0); add(g,new T.CylinderGeometry(.15,.17,.24,8),hoof,0,-1.9,0); return g; });
-  // 乗り手：旅人のマント
-  const rider=new T.Group(); rider.position.set(0,3.15,.15); body.add(rider);
-  add(rider,new T.BoxGeometry(1.5,.16,1.1),saddle,0,-.05,0);
-  add(rider,new T.CylinderGeometry(.28,.36,1.0,10).translate(0,.5,0),cloak,0,.05,0,.12);
-  add(rider,new T.ConeGeometry(.62,1.2,10,1,true).translate(0,.2,0),cloakD,0,.6,-.08,.08).material.side=T.DoubleSide;
-  add(rider,new T.SphereGeometry(.26,12,10),skin,0,1.32,.1);
-  add(rider,new T.SphereGeometry(.29,12,10,0,6.3,0,1.7),hair,0,1.36,.05,-.25);
-  [-1,1].forEach(sg=>{ add(rider,new T.CylinderGeometry(.11,.1,.85,6).translate(0,-.42,0),boot,sg*.52,.05,.15,-.35,0,sg*.3); add(rider,new T.CylinderGeometry(.09,.08,.75,6).translate(0,-.37,0),cloak,sg*.32,.88,.12,-1.0,0,sg*.15); });
-  horse.scale.setScalar(1.15); scene.add(horse);
+  // 栗毛（茶色）にクリーム色のたてがみと尾。体は背骨に沿った断面をつないで、首・頭・関節のある脚を作る
+  const coat=tm([150,86,44]), coatD=tm([118,66,36]), mane=tm([240,220,170]), hoof=tm([70,62,56]), eyeM=tm([20,16,14]), cloak=tm([74,98,84]), cloakD=tm([56,74,64]), skin=tm([232,192,160]), hair=tm([96,64,40]), boot=tm([70,50,36]), saddle=tm([112,64,36]), blanket=tm([70,80,110]);
+  const shad=o=>{ o.castShadow=true; o.receiveShadow=true; return o; };
+  // pts: [x,y,z,横の半径,上側の半径,下側の半径]
+  const tube=(pts,mat,seg=16,ox=0,oy=0,oz=0)=>{ const P=[], I=[], A=new T.Vector3(), B=new T.Vector3(), sd=new T.Vector3(1,0,0), t=new T.Vector3(), u=new T.Vector3(); const n=pts.length;
+    pts.forEach((q,k)=>{ A.fromArray(pts[Math.max(0,k-1)]); B.fromArray(pts[Math.min(n-1,k+1)]); t.subVectors(B,A).normalize(); u.crossVectors(t,sd).normalize();
+      for(let j=0;j<seg;j++){ const a=j/seg*6.2832, c=Math.cos(a), si=Math.sin(a), r=si>0?q[4]:q[5]; P.push(q[0]+c*q[3]+u.x*si*r-ox,q[1]+u.y*si*r-oy,q[2]+u.z*si*r-oz); } });
+    for(let k=0;k<n-1;k++) for(let j=0;j<seg;j++){ const a=k*seg+j, b=k*seg+(j+1)%seg, c=a+seg, d=b+seg; I.push(a,c,b,b,c,d); }
+    const c0=P.length/3; P.push(pts[0][0]-ox,pts[0][1]-oy,pts[0][2]-oz); const c1=c0+1; P.push(pts[n-1][0]-ox,pts[n-1][1]-oy,pts[n-1][2]-oz);
+    for(let j=0;j<seg;j++){ I.push(c0,j,(j+1)%seg); I.push(c1,(n-1)*seg+(j+1)%seg,(n-1)*seg+j); }
+    const g=new T.BufferGeometry(); g.setAttribute('position',new T.Float32BufferAttribute(P,3)); g.setIndex(I); g.computeVertexNormals(); return shad(new T.Mesh(g,mat)); };
+  // 2点を結ぶ先細りの円柱（脚・腕）
+  const seg2=(a,b,r0,r1,mat)=>{ const A=new T.Vector3(...a), B=new T.Vector3(...b), dv=B.clone().sub(A), L=dv.length(), m=shad(new T.Mesh(new T.CylinderGeometry(r1,r0,L,14).translate(0,L/2,0),mat)); m.position.copy(A); m.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),dv.normalize()); return m; };
+  const horse=new T.Group(), body=new T.Group(), bo=new T.Group(); body.position.set(0,1.3,0); bo.position.set(0,-1.3,0); body.add(bo); horse.add(body);
+  bo.add(tube([[0,1.36,-1.3,.1,.1,.1],[0,1.4,-1.22,.3,.24,.32],[0,1.38,-1.02,.44,.3,.5],[0,1.35,-.72,.46,.3,.52],[0,1.32,-.36,.43,.28,.52],[0,1.33,0,.45,.3,.58],[0,1.38,.35,.45,.34,.6],[0,1.42,.64,.4,.39,.56],[0,1.38,.88,.32,.36,.46],[0,1.3,1.02,.2,.26,.3],[0,1.26,1.08,.05,.08,.08]],coat,18));
+  // 首と頭（首の付け根で動く）
+  const NP=[0,1.5,.72], neck=new T.Group(); neck.position.set(...NP); bo.add(neck);
+  const nk=[[0,1.5,.72,.29,.32,.36],[0,1.84,.93,.22,.2,.28],[0,2.1,1.12,.16,.15,.2],[0,2.27,1.29,.12,.11,.15],[0,2.36,1.36,.11,.1,.12]];
+  neck.add(tube(nk,coat,14,...NP));
+  neck.add(tube([[0,2.4,1.32,.12,.1,.16],[0,2.32,1.45,.13,.1,.18],[0,2.1,1.62,.11,.08,.13],[0,1.88,1.78,.09,.07,.1],[0,1.77,1.86,.085,.06,.08],[0,1.71,1.9,.03,.03,.03]],coat,14,...NP));
+  neck.add(tube([[0,1.93,1.78,.092,.075,.1],[0,1.77,1.87,.088,.065,.085],[0,1.71,1.91,.03,.03,.03]],coatD,12,...NP));
+  [-1,1].forEach(sg=>{ const e=shad(new T.Mesh(new T.ConeGeometry(.045,.17,6),coat)); e.position.set(sg*.07-NP[0],2.5-NP[1],1.33-NP[2]); e.rotation.set(-.25,0,-sg*.25); neck.add(e);
+    const ey=new T.Mesh(new T.SphereGeometry(.03,8,6),eyeM); ey.position.set(sg*.115-NP[0],2.26-NP[1],1.5-NP[2]); neck.add(ey); });
+  // たてがみ：首すじに沿った帯と、右側に垂れる房、前髪
+  neck.add(tube(nk.map(q=>[.05,q[1]+q[4]*.86+.04,q[2]-q[4]*.5,.06,.08,.05]),mane,10,...NP));
+  for(let q=0;q<30;q++){ const f=q/29, a=nk[Math.min(3,Math.floor(f*3.99))], b=nk[Math.min(4,Math.floor(f*3.99)+1)], w=f*3.99%1, y=a[1]+(b[1]-a[1])*w, z=a[2]+(b[2]-a[2])*w, r=a[4]+(b[4]-a[4])*w;
+    const st=shad(new T.Mesh(new T.BoxGeometry(.018,.3-f*.1,.06).translate(0,-.14,0),mane)); st.position.set(.07-NP[0],y+r*.8+.05-NP[1],z-r*.45-NP[2]); st.position.x+=Math.sin(q*2.3)*.015; st.rotation.set(-.6+Math.sin(q*3.1)*.1,0,.5+Math.sin(q*1.7)*.15); neck.add(st); }
+  { const fl=shad(new T.Mesh(new T.BoxGeometry(.1,.2,.03).translate(0,-.09,0),mane)); fl.position.set(-NP[0],2.48-NP[1],1.38-NP[2]); fl.rotation.x=.5; neck.add(fl); }
+  // 尾：クリーム色の房を数本
+  const tail=new T.Group(); tail.position.set(0,1.52,-1.25); bo.add(tail);
+  for(let q=0;q<7;q++){ const ox=(q-3)*.025, sp=(q%3-1)*.05; tail.add(tube([[ox,0,0,.06,.06,.06],[ox+sp*.3,-.12,-.18,.07,.07,.07],[ox+sp*.6,-.45,-.3,.065,.065,.065],[ox+sp,-.85,-.32,.05,.05,.05],[ox+sp*1.2,-1.12,-.28,.02,.02,.02]],mane,7)); }
+  // 脚：肩（ひじ）・ひざ・球節の関節で曲がる
+  const legs=[], mkLeg=(x,y,z,hind)=>{ const hip=new T.Group(); hip.position.set(x,y,z); bo.add(hip); const L1=hind?.46:.42, L2=hind?.4:.33;
+    hip.add(seg2([0,-L1,0],[0,0,0],hind?.075:.065,hind?.13:.11,coat)); const kn=new T.Group(); kn.position.set(0,-L1,0); hip.add(kn);
+    kn.add(seg2([0,-L2,0],[0,0,0],.05,.06,coat)); const fe=new T.Group(); fe.position.set(0,-L2,0); kn.add(fe);
+    fe.add(seg2([0,-.17,.03],[0,0,0],.05,.055,coat)); { const h=shad(new T.Mesh(new T.CylinderGeometry(.06,.075,.12,10),hoof)); h.position.set(0,-.22,.04); fe.add(h); }
+    legs.push({hip,kn,fe,hind}); };
+  mkLeg(.22,1.06,.72,0); mkLeg(-.22,1.06,.72,0); mkLeg(.24,1.12,-.86,1); mkLeg(-.24,1.12,-.86,1);
+  // 乗り手：鞍とマントの旅人
+  const rider=new T.Group(), RY=1.72; rider.position.set(0,RY,.12); bo.add(rider);
+  { const m=shad(new T.Mesh(new T.BoxGeometry(.66,.03,.78),blanket)); m.position.y=-.06; rider.add(m); }
+  rider.add(shad(new T.Mesh(new T.BoxGeometry(.52,.1,.56),saddle)));
+  rider.add(seg2([0,.04,0],[0,.6,.1],.17,.14,cloak));
+  { const c=shad(new T.Mesh(new T.ConeGeometry(.34,.66,12,1,true),cloakD)); c.material=c.material.clone(); c.material.side=T.DoubleSide; c.position.set(0,.33,-.04); c.rotation.x=.12; rider.add(c); }
+  { const h=shad(new T.Mesh(new T.SphereGeometry(.11,12,10),skin)); h.position.set(0,.78,.13); rider.add(h); const hr=shad(new T.Mesh(new T.SphereGeometry(.12,12,10,0,6.3,0,1.75),hair)); hr.position.set(0,.8,.11); hr.rotation.x=-.3; rider.add(hr); }
+  [-1,1].forEach(sg=>{ rider.add(seg2([sg*.16,.05,.05],[sg*.46,-.28,.22],.075,.07,cloak)); rider.add(seg2([sg*.46,-.28,.22],[sg*.43,-.72,.08],.065,.055,boot));
+    rider.add(seg2([sg*.17,.52,.1],[sg*.21,.3,.3],.05,.045,cloak)); rider.add(seg2([sg*.21,.3,.3],[sg*.08,.24,.5],.045,.04,cloak)); });
+  horse.scale.setScalar(1.75); scene.add(horse);
   // ---- 足もとの草：馬のまわりに生やし、進んだら植え直す ----
   const NG=16000, iG=(()=>{ const pl=new T.PlaneGeometry(2.6,3.6).translate(0,1.8,0), a=pl.toNonIndexed(), b=pl.clone().rotateY(Math.PI/2).toNonIndexed(), g=new T.BufferGeometry(); g.setAttribute('position',new T.Float32BufferAttribute([...a.attributes.position.array,...b.attributes.position.array],3)); g.setAttribute('normal',new T.Float32BufferAttribute([...a.attributes.normal.array,...b.attributes.normal.array],3)); g.setAttribute('uv',new T.Float32BufferAttribute([...a.attributes.uv.array,...b.attributes.uv.array],2));
     const m=new T.InstancedMesh(g,patch(new T.MeshLambertMaterial({map:gtx,alphaTest:.5,side:T.DoubleSide,color:wet?0xd8e8d0:0xffffff,emissive:wet?0x1a2414:0x0c1406}),.25),NG); m.receiveShadow=true; m.frustumCulled=false; scene.add(m); return m; })();
@@ -4835,13 +4859,13 @@ async function pLookOpen(){
     iRk.count=m; iRk.castShadow=iRk.receiveShadow=true; scene.add(iRk); }
   // ---- 進む・見る ----
   const yEnd=yB-320, gnd=(x,y)=>Math.max(-.2,hAt(x,y))+.42, tEl=ov.querySelector('.lk-t'), dLab=`${d.getMonth()+1}月${d.getDate()}日（${'日月火水木金土'[d.getDay()]}）`, goB=ov.querySelector('.lk-go');
-  const OFF=.2; let py=y0, v=0, go=true, ph=0, hY=0, off=OFF, cp=12*rad, dist=32, lastTouch=-1e9, tIn=performance.now(), intro=true;
+  const OFF=.2; let py=y0, v=0, go=true, ph=0, hY=0, off=OFF, cp=12*rad, dist=21, lastTouch=-1e9, tIn=performance.now(), intro=true;
   const head0=()=>{ const a=pRX(py-3), b=pRX(py+3); return Math.atan2(X(b)-X(a),Z(py+3)-Z(py-3)); }; hY=head0();
   goB.addEventListener('click',()=>{ go=!go; if(go&&py>=yEnd-1) py=y0; goB.textContent=go?'手綱を引く':'駆ける'; });
   await tick(1); plant(pRX(py),py); ov.querySelector('.lk-load').classList.add('done');
   const tgt=new T.Vector3();
-  const place=()=>{ const x=pRX(py), g=gnd(x,py); horse.position.set(X(x),g-.42+Math.abs(Math.sin(ph))*.12*Math.min(1,v/5),Z(py)); horse.rotation.y=hY;
-    tgt.set(horse.position.x+Math.sin(hY)*5,horse.position.y+6,horse.position.z+Math.cos(hY)*5);
+  const place=()=>{ const x=pRX(py), g=gnd(x,py); horse.position.set(X(x),g-.42,Z(py)); horse.rotation.y=hY;
+    const fa=L.focus?0:5; tgt.set(horse.position.x+Math.sin(hY)*fa,horse.position.y+(L.focus?3:3.6),horse.position.z+Math.cos(hY)*fa);
     const cy2=hY+off; cam.position.set(tgt.x-Math.sin(cy2)*Math.cos(cp)*dist,tgt.y+Math.sin(cp)*dist,tgt.z-Math.cos(cy2)*Math.cos(cp)*dist);
     const gc2=Math.max(0,hAt(cam.position.x+W/2,y0-cam.position.z))+1.6; if(cam.position.y<gc2) cam.position.y=gc2; cam.lookAt(tgt);
     U.uFogH.value=g-5; sun.target.position.set(tgt.x+Math.sin(cy2)*200,0,tgt.z+Math.cos(cy2)*200); sun.position.copy(sun.target.position).addScaledVector(sd,900); sky.position.copy(cam.position); };
@@ -4853,17 +4877,21 @@ async function pLookOpen(){
   cv.addEventListener('touchend',e=>{ if(e.touches.length===0){ tp=null; pin=null; } },{passive:true});
   let mdn=null; cv.addEventListener('mousedown',e=>{ intro=false; mdn={x:e.clientX,y:e.clientY}; }); window.addEventListener('mouseup',()=>mdn=null); cv.addEventListener('mousemove',e=>{ if(!mdn) return; look(e.clientX-mdn.x,e.clientY-mdn.y); mdn={x:e.clientX,y:e.clientY}; });
   cv.addEventListener('wheel',e=>{ e.preventDefault(); intro=false; dist=Math.max(7,Math.min(40,dist*(1+e.deltaY*.001))); },{passive:false});
-  if(/[?&]lkshot/.test(location.search)){ intro=false; off=OFF+(+(new URLSearchParams(location.search).get('lkth'))||0); py+=+(new URLSearchParams(location.search).get('lkpy'))||0; plant(pRX(py),py); hY=head0(); lastTouch=1e12; L.shot=()=>{ document.body.dataset.lkshot='1'; }; }
+  if(/[?&]lkshot/.test(location.search)){ intro=false; off=OFF+(+(new URLSearchParams(location.search).get('lkth'))||0); py+=+(new URLSearchParams(location.search).get('lkpy'))||0; dist=+(new URLSearchParams(location.search).get('lkdist'))||dist; L.focus=/lkfocus/.test(location.search); cp=(+(new URLSearchParams(location.search).get('lkcp'))||12)*rad; plant(pRX(py),py); hY=head0(); lastTouch=1e12; L.shot=()=>{ document.body.dataset.lkshot='1'; }; }
   let last=performance.now(); const t00=performance.now();
   const loop=n=>{ if(!L.alive) return; const dt=Math.min(.05,(n-last)/1000); last=n; U.uTime.value=(n-t00)/1000;
-    if(intro){ const kq=Math.min(1,(n-tIn)/2600), e2=1-Math.pow(1-kq,3); dist=56-24*e2; cp=(34-23*e2)*rad; if(kq>=1) intro=false; }
+    if(intro){ const kq=Math.min(1,(n-tIn)/2600), e2=1-Math.pow(1-kq,3); dist=50-29*e2; cp=(34-23*e2)*rad; if(kq>=1) intro=false; }
     // 道をたどる：駆けているときは速く、手綱を引くと止まる。道の終わりで止まる
     const vt=go&&py<yEnd?9:0; v+=(vt-v)*Math.min(1,dt*1.6); py=Math.min(yEnd,py+v*dt); if(py>=yEnd&&go){ go=false; goB.textContent='駆ける'; }
     const ht=head0(); let dh=ht-hY; dh=Math.atan2(Math.sin(dh),Math.cos(dh)); hY+=dh*Math.min(1,dt*3);
     if(n-lastTouch>1800){ let e3=off-OFF; e3=Math.atan2(Math.sin(e3),Math.cos(e3)); off=OFF+e3*Math.pow(.25,dt); }
-    ph+=dt*v*.95; const sw=Math.min(1,v/4), a1=Math.sin(ph)*.55*sw, a2=Math.sin(ph+Math.PI)*.55*sw;
-    legs[0].rotation.x=a1; legs[3].rotation.x=a1; legs[1].rotation.x=a2; legs[2].rotation.x=a2;
-    neck.rotation.x=Math.sin(ph*2)*.05*sw+Math.sin(n/1400)*.02; tail.rotation.x=-.2*sw+Math.sin(n/700)*.08; rider.position.y=3.15+Math.abs(Math.sin(ph))*.08*sw; body.rotation.x=Math.sin(ph*2)*.015*sw;
+    ph+=dt*v*.21; const sw=Math.min(1,v/4);
+    // 駆け足：4本の脚を少しずつずらして運ぶ。体は前後にゆれ、首はそれと逆にうなずく
+    const T0=ph*6.2832; [0,.12,.52,.64].forEach((of,q)=>{ const l=legs[q], th=T0+of*6.2832, sn=Math.sin(th), cs=Math.max(0,Math.cos(th));
+      if(!l.hind){ l.hip.rotation.x=-.55*sn*sw; l.kn.rotation.x=1.15*cs*sw; l.fe.rotation.x=.5*cs*sw-.25*Math.max(0,-sn)*sw; }
+      else { l.hip.rotation.x=.3+(-.5*sn-.05)*sw; l.kn.rotation.x=-.3-.75*cs*sw; l.fe.rotation.x=.45*cs*sw; } });
+    body.rotation.x=Math.sin(T0+.6)*.06*sw; body.position.y=1.3+Math.sin(T0*2)*.05*sw; neck.rotation.x=-Math.sin(T0+.6)*.12*sw+Math.sin(n/1600)*.03*(1-sw);
+    tail.rotation.x=.25*sw+Math.sin(n/600)*.06; tail.rotation.z=Math.sin(n/900)*.08; rider.position.y=RY+Math.max(0,Math.sin(T0*2))*.04*sw;
     if(gC&&Math.hypot(pRX(py)-gC[0],py-gC[1])>45) plant(pRX(py),py);
     if(isT||k){ const m=PATH_H0+py/PX; tEl.textContent=`${dLab}　${pfmt(Math.round(m))}`; }
     place(); clouds.forEach(s=>{ s.position.x+=dt*7; if(s.position.x>1600) s.position.x=-1600; }); if(L.nt){ L.nt.offset.x+=dt*.004; L.nt.offset.y+=dt*.006; }
