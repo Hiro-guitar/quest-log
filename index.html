@@ -839,7 +839,8 @@ body{background:#050607}
 .tr-cue{font-size:12px;color:var(--muted);margin:0 0 6px;line-height:1.6}
 .tr-prev{font-size:12px;margin:0 0 6px}.tr-prev b{color:var(--blue)}
 .tr-up{font-size:11px;padding:1px 8px;border-radius:999px;background:rgba(240,166,64,.18);color:var(--orange);margin-left:4px}
-.tr-sets{display:grid;gap:6px}.tr-set{display:flex;align-items:center;gap:6px;font-size:13px}.tr-set .n{width:4.2em;color:var(--muted)}
+.tr-sets{display:grid;gap:6px}.tr-set{display:flex;align-items:center;gap:6px;font-size:13px}.tr-set .n{width:4.2em;color:var(--muted)}.tr-knee{display:inline-flex;align-items:center;gap:3px;font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:10px;padding:2px 8px;cursor:pointer}.tr-knee input{display:none}.tr-knee.on{color:var(--blue);border-color:rgba(95,212,239,.5)}
+.tr-set .tr-side{font-size:11px;color:var(--blue);margin-left:4px}.tr-set.uni{gap:4px}.tr-set.uni input{width:46px!important}
 .tr-set input{width:4.8em!important;padding:6px 8px!important;text-align:right}
 .tr-food{display:grid;gap:4px;font-size:13px;margin-bottom:6px}.tr-food div{display:grid;grid-template-columns:4.5em minmax(0,1fr);gap:4px}.tr-food b{color:var(--muted);font-weight:500}
 .tr-checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-bottom:6px}
@@ -2559,11 +2560,11 @@ if('serviceWorker' in navigator && location.protocol==='https:'){
 const TR_START='2026-11-01', TR_END='2026-12-31', TR_LATE='2027-01-31'; // 休んで後ろにずれた分は1月末までに回す
 const EX={
  gs:{n:'ゴブレットスクワット',r:'8〜12回',hi:12,kg:1,cue:'ダンベル1個を胸の前で縦に持つ。足は肩幅で、太ももが床と平行になるまでしゃがむ。かかとは浮かせない'},
- pu:{n:'腕立て伏せ',r:'限界の2回手前まで',hi:20,kg:0,cue:'頭からかかとまで一直線。胸が床に近づくまで下ろす。きつければ膝つきでOK。全セット20回を超えたら足を椅子に乗せる'},
- row:{n:'ダンベルロウ（片手ずつ）',r:'左右8〜12回',hi:12,kg:1,cue:'片手と片ひざを椅子かソファについて、背中を平らに。ダンベルを脇腹に向かって引き上げる'},
+ pu:{knee:1,n:'腕立て伏せ',r:'限界の2回手前まで',hi:20,kg:0,cue:'頭からかかとまで一直線。胸が床に近づくまで下ろす。きつければ膝つきでOK。全セット20回を超えたら足を椅子に乗せる'},
+ row:{n:'ダンベルロウ（片手ずつ）',r:'左右8〜12回',hi:12,kg:1,uni:1,cue:'片手と片ひざを椅子かソファについて、背中を平らに。ダンベルを脇腹に向かって引き上げる'},
  sp:{n:'ショルダープレス（座って）',r:'8〜12回',hi:12,kg:1,cue:'ダンベルを肩の高さから真上に押し上げる。腰は反らせない'},
  ab:{n:'腹筋ローラー（膝つき）',r:'8〜12回',hi:12,kg:0,cue:'お腹に力を入れたまま、腰が反らない所まで転がして戻る。全セット12回できたら転がす距離を伸ばす'},
- bs:{n:'ブルガリアンスクワット',r:'左右8〜12回',hi:12,kg:1,cue:'後ろ足の甲を椅子に乗せ、前足で上下する。最初はダンベルなし（0kg）でOK'},
+ bs:{n:'ブルガリアンスクワット',r:'左右8〜12回',hi:12,kg:1,uni:1,cue:'後ろ足の甲を椅子に乗せ、前足で上下する。最初はダンベルなし（0kg）でOK'},
  fp:{n:'ダンベルフロアプレス',r:'8〜12回',hi:12,kg:1,cue:'床にあおむけで膝を立てる。肘が床に軽く触れるまで下ろし、真上に押し上げる'},
  rdl:{n:'ルーマニアンデッドリフト',r:'8〜12回',hi:12,kg:1,cue:'膝を軽く曲げたまま、お尻を後ろに引いて上体を倒す。背中は丸めない。太ももの裏が伸びる所まで'},
  cu:{n:'ダンベルカール',r:'10〜15回',hi:15,kg:1,cue:'肘を脇につけたまま持ち上げる。反動は使わない'},
@@ -2615,7 +2616,7 @@ const trMD=k=>{ const d=new Date(k+'T00:00:00'); return (d.getMonth()+1)+'/'+d.g
 const trChecks=k=>trType(k)&&trType(k)!=='R'?[['train','筋トレ']]:[];
 const trDone=k=>{ const d=hm().days[k]||{}; return trChecks(k).filter(([c])=>d[c]).length; };
 // その日の種目を、決められたセット数ぶん全部記録したら鍛錬クリア
-const trAllSets=k=>{ const t=trType(k); if(!TR_MENU[t]) return false; const L=hm().lift[k]||{}, n=trSets(k); return TR_MENU[t].every(id=>{ const a=L[id]||[]; for(let i=0;i<n;i++) if(!(a[i]&&a[i][1])) return false; return true; }); };
+const trAllSets=k=>{ const t=trType(k); if(!TR_MENU[t]) return false; const L=hm().lift[k]||{}, n=trSets(k); return TR_MENU[t].every(id=>{ const a=L[id]||[]; for(let i=0;i<n;i++) if(!trSetDone(id,a[i])) return false; return true; }); };
 const trClear=k=>trChecks(k).length>0&&trDone(k)===trChecks(k).length;
 function trPhase(k){
   if(k<'2026-11-16') return '最初の2週間は慣らし：各種目2セット。重さは「あと3〜4回できる」くらいで、フォームを覚える';
@@ -2641,8 +2642,18 @@ function mergeHm(a,b){
   return o;
 }
 const hmRev=()=>{ const u=(state.hm||{}).u||{}; let m=0; for(const k in u) if(u[k]>m) m=u[k]; return m; };
+const trR=(id,x)=>!x||!x[1]?0:EX[id]&&EX[id].uni?Math.min(+x[1]||0,+(x[2]??x[1])||0):+x[1];
+// 腕立ての膝つきを決める：その日の前のセット → 前回の記録 → 膝つき
+function trKneeDef(k,ix){ const cur=(hm().lift[k]||{}).pu||[]; for(let i=ix-1;i>=0;i--) if(cur[i]&&cur[i][2]!=null) return +cur[i][2]; const pv=trPrev('pu',k); if(pv){ const z=pv.s.filter(x=>x&&x[1]&&x[2]!=null); if(z.length) return +z[z.length-1][2]; } return 1; }
+const trSetDone=(id,x)=>!!(x&&x[1]&&(!(EX[id]&&EX[id].uni)||x[2]));
+// 左右に分かれる種目の、前からある記録（左右の区別なし）は、同じ回数が左右に入っているとみなす（一度だけ書き直す）
+// 左右を分けたのは2026-11-06の午後。それより前に書いた記録だけが対象（同期で後から届いても直せるよう、描くたびに確かめる）
+const TR_UNI_AT=Date.parse('2026-11-06T05:40:00Z');
+function trUniMig(){ const H=hm(); let n=0; Object.keys(H.lift).forEach(d=>{ if((H.u['lift:'+d]||0)>=TR_UNI_AT) return; const day=H.lift[d]||{}; let ch=false; Object.keys(day).forEach(id=>{ if(!(EX[id]&&EX[id].uni)) return; day[id]=(day[id]||[]).map(x=>{ if(x&&x[1]!=null&&x[2]==null){ ch=true; return [x[0],x[1],x[1]]; } return x; }); });
+    if(day.pu) day.pu=day.pu.map(x=>{ if(x&&x[1]!=null&&x[2]==null){ ch=true; return [x[0],x[1],1]; } return x; }); // 腕立ての前からの記録は膝つき
+    if(ch){ H.lift[d]={...day}; hmTouch('lift',d); n++; } }); if(n) save(); return n; }
 function trPrev(id,k){ const L=hm().lift; const ds=Object.keys(L).filter(d=>d<k&&L[d][id]&&L[d][id].some(s=>s&&s[1])).sort(); return ds.length?{d:ds[ds.length-1],s:L[ds[ds.length-1]][id]}:null; }
-const trFmt=(e,s)=>s.filter(x=>x&&x[1]).map(x=>(e.kg?(x[0]||0)+'kg×':'')+x[1]).join('、');
+const trFmt=(e,s)=>s.filter(x=>x&&x[1]).map(x=>(e.knee&&x[2]?'膝':'')+(e.kg?(x[0]||0)+'kg×':'')+(e.uni&&x[2]!=null&&+x[2]!==+x[1]?`右${x[1]}・左${x[2]}`:x[1])).join('、');
 function trWeekStart(k){ const d=new Date(k+'T00:00:00'); d.setDate(d.getDate()-((d.getDay()+6)%7)); return ymd(d); }
 function trDefaultDay(){ const t=ymd(), L=trLast(); return t<TR_START?TR_START:t>L?L:t; }
 function trList(){
@@ -2669,15 +2680,18 @@ function trList(){
 function trExHtml(id,k){
   const e=EX[id], ns=trSets(k), cur=(hm().lift[k]||{})[id]||[], pv=trPrev(id,k);
   let tip='';
-  if(pv){ const ok=pv.s.filter(x=>x&&x[1]).length>=ns&&pv.s.slice(0,ns).every(x=>x&&+x[1]>=e.hi);
+  if(pv){ const ok=pv.s.filter(x=>x&&x[1]).length>=ns&&pv.s.slice(0,ns).every(x=>trR(id,x)>=e.hi);
     tip=`<p class="tr-prev">前回（${pv.d.slice(5).replace('-','/')}）：<b>${trFmt(e,pv.s)}</b> ${ok?`<span class="tr-up">${e.kg?'重さを1〜2kg上げよう':'次の段階へ'}</span>`:''}</p>`; }
   const lastKg=pv?(pv.s.find(x=>x&&x[0])||[''])[0]:'';
   let rows='';
   for(let i=0;i<ns;i++){ const s=cur[i]||[];
-    rows+=`<div class="tr-set"><span class="n">${i+1}セット</span>${e.kg?`<input type="number" inputmode="decimal" step="0.5" min="0" max="80" data-trex="${id}" data-i="${i}" data-f="0" value="${s[0]??''}" placeholder="${lastKg||'kg'}">kg`:''}<input type="number" inputmode="numeric" min="0" max="100" data-trex="${id}" data-i="${i}" data-f="1" value="${s[1]??''}" placeholder="回">回</div>`; }
+    const rp=(f,lb)=>`${lb?`<span class="tr-side">${lb}</span>`:''}<input type="number" inputmode="numeric" min="0" max="100" data-trex="${id}" data-i="${i}" data-f="${f}" value="${s[f]??''}" placeholder="回">回`;
+    const kn=e.knee?(s[2]!=null?+s[2]:trKneeDef(k,i)):0;
+    rows+=`<div class="tr-set ${e.uni?'uni':''}"><span class="n">${i+1}セット</span>${e.knee?`<label class="tr-knee ${kn?'on':''}"><input type="checkbox" data-trex="${id}" data-i="${i}" data-f="2" ${kn?'checked':''}>膝つき</label>`:''}${e.kg?`<input type="number" inputmode="decimal" step="0.5" min="0" max="80" data-trex="${id}" data-i="${i}" data-f="0" value="${s[0]??''}" placeholder="${lastKg||'kg'}">kg`:''}${e.uni?rp(1,'右')+rp(2,'左'):rp(1,'')}</div>`; }
   return `<div class="tr-ex"><h4>${esc(e.n)}<span>${ns}セット・${e.r}</span></h4><p class="tr-cue">${esc(e.cue)}</p>${tip}<div class="tr-sets">${rows}</div></div>`;
 }
 function trDayPanel(k){
+  trUniMig();
   const t=trType(k), d=new Date(k+'T00:00:00'), dd=hm().days[k]||{};
   let h=`<div class="panel tr-panel"><div class="p-wm">${SECBG.train}</div><button class="back" data-act="trback">‹ 一覧へ</button>
   <h2 class="p-title">${d.getMonth()+1}月${d.getDate()}日（${'日月火水木金土'[d.getDay()]}）${t==='R'?'休みの日':'鍛錬：'+TR_SHORT[t]}</h2>
@@ -2746,7 +2760,7 @@ function trLogPanel(){
   let h=`<div class="panel tr-panel"><div class="p-wm">${SECBG.train}</div><button class="back" data-act="trback">‹ 一覧へ</button><h2 class="p-title">種目ごとの伸び</h2>`;
   h+=`<div class="sec-h"><span>いちばん良かったセット（はじめ → いま）</span></div><div class="kids">`;
   Object.entries(EX).forEach(([id,e])=>{ const L=H.lift, ds=Object.keys(L).filter(d=>L[d][id]&&L[d][id].some(s=>s&&s[1])).sort();
-    const best=d=>{ const s=L[d][id].filter(x=>x&&x[1]).sort((a,b)=>((b[0]||0)-(a[0]||0))||(b[1]-a[1]))[0]; return (e.kg?(s[0]||0)+'kg×':'')+s[1]+'回'; };
+    const best=d=>{ const s=L[d][id].filter(x=>x&&x[1]).sort((a,b)=>(e.knee?((a[2]?1:0)-(b[2]?1:0)):((b[0]||0)-(a[0]||0)))||(trR(id,b)-trR(id,a)))[0]; return (e.knee&&s[2]?'膝つき':'')+(e.kg?(s[0]||0)+'kg×':'')+(e.uni?`左右${trR(id,s)}`:s[1])+'回'; };
     h+=`<div class="kid"><span>${esc(e.n)}</span><span class="hint">${ds.length?best(ds[0]):'—'}　→　<b style="color:var(--blue)">${ds.length>1?best(ds[ds.length-1]):'—'}</b></span></div>`; });
   const tr=Object.keys(H.days).filter(k=>k<=t&&(H.days[k]||{}).train).length;
   let pl=0; for(let d=new Date(TR_START+'T00:00:00'); ymd(d)<=t&&ymd(d)<=TR_END; d.setDate(d.getDate()+1)) if(trType(ymd(d))!=='R') pl++;
@@ -2785,13 +2799,13 @@ function staminaSvg(fifths){ const wheels=Math.ceil(fifths/5); let h=''; for(let
   h+=`<svg viewBox="0 0 18 18" class="stm"><circle cx="9" cy="9" r="7" fill="none" stroke="rgba(159,217,138,.22)" stroke-width="3"/>${arc}</svg>`; } return h; }
 // 自己ベスト：その種目で今までの一番（重さ優先、同じ重さなら回数）を上回ったら演出
 const trShown={};
-function trBest(id,beforeK){ const L=hm().lift; let best=null; Object.keys(L).forEach(d=>{ if(d>=beforeK) return; ((L[d]||{})[id]||[]).forEach(x=>{ if(!x||!x[1]) return; const sc=[+(x[0]||0),+x[1]]; if(!best||sc[0]>best[0]||(sc[0]===best[0]&&sc[1]>best[1])) best=sc; }); }); return best; }
+function trBest(id,beforeK){ const L=hm().lift; let best=null; Object.keys(L).forEach(d=>{ if(d>=beforeK) return; ((L[d]||{})[id]||[]).forEach(x=>{ if(!trSetDone(id,x)) return; const sc=[EX[id].knee?(x[2]?0:1):+(x[0]||0),trR(id,x)]; if(!best||sc[0]>best[0]||(sc[0]===best[0]&&sc[1]>best[1])) best=sc; }); }); return best; }
 function trCheckPR(id,k){
   const e=EX[id], prev=trBest(id,k); if(!prev) return;
-  const cur=((hm().lift[k]||{})[id]||[]).filter(x=>x&&x[1]).map(x=>[+(x[0]||0),+x[1]]);
+  const cur=((hm().lift[k]||{})[id]||[]).filter(x=>trSetDone(id,x)).map(x=>[EX[id].knee?(x[2]?0:1):+(x[0]||0),trR(id,x)]);
   const top=cur.sort((a,b)=>(b[0]-a[0])||(b[1]-a[1]))[0]; if(!top) return;
   if(top[0]>prev[0]||(top[0]===prev[0]&&top[1]>prev[1])){ const key=k+id+top.join('x'); if(trShown[key]) return; trShown[key]=1;
-    setTimeout(()=>banner('pr','腕前が上がった！',`${e.n}　${e.kg?top[0]+'kg×':''}${top[1]}回（前回の一番：${e.kg?prev[0]+'kg×':''}${prev[1]}回）`),300); }
+    const kl=v=>e.knee?(v?'ふつう':'膝つき')+'で':e.kg?v+'kg×':''; setTimeout(()=>banner('pr','腕前が上がった！',`${e.n}　${kl(top[0])}${top[1]}回（前回の一番：${kl(prev[0])}${prev[1]}回）`),300); }
 }
 function trVesselBanner(before){ const a=trVessels(); if(a.hearts>before.hearts) setTimeout(()=>banner('heart','ハートの器を手に入れた',`押す・引くの証が4つたまった　ハート ${a.hearts}個`),900); else if(a.stamina>before.stamina) setTimeout(()=>banner('stamina','がんばりの器を手に入れた','脚の証が4つたまった　がんばりゲージがのびた'),900); }
 function trOnChange(e){
@@ -2803,12 +2817,13 @@ function trOnChange(e){
     else if(!el.checked&&was) gain(c==='train'?-30:-5);
     if(c==='train'&&el.checked&&!was){ const p=TR_PART[trType(k)]; if(p) setTimeout(()=>toast(`克服の証（${PART_NAME[p]}）を手に入れた`),1300); trVesselBanner(vb); }
     save(); renderLv(); renderList(); renderDetail(); return true; }
+  if(el.dataset.trex&&el.type==='checkbox'){ const id=el.dataset.trex, ix=+el.dataset.i; const day={...(H.lift[k]||{})}, arr=(day[id]||[]).slice(), s=(arr[ix]||[null,null]).slice(); s[2]=el.checked?1:0; arr[ix]=s; day[id]=arr; H.lift[k]=day; hmTouch('lift',k); el.parentNode.classList.toggle('on',el.checked); save(); renderList(); return true; }
   if(el.dataset.trex){ const id=el.dataset.trex, ix=+el.dataset.i, f=+el.dataset.f, v=el.value===''?null:Math.max(0,parseFloat(el.value)); if(v) trPin(k);
-    const day={...(H.lift[k]||{})}, arr=(day[id]||[]).slice(), s=(arr[ix]||[null,null]).slice(); s[f]=v; arr[ix]=s; day[id]=arr; H.lift[k]=day; hmTouch('lift',k);
-    if(f===1&&v&&!(H.days[k]||{}).train&&trAllSets(k)){ H.days[k]={...(H.days[k]||{}),train:true}; hmTouch('days',k); gain(30); earnRupee(20); toast('鍛錬クリア  +30 XP ・ +20ルピー'); maybeSeed();
+    const day={...(H.lift[k]||{})}, arr=(day[id]||[]).slice(), s=(arr[ix]||[null,null]).slice(); s[f]=v; if(EX[id].knee&&s[2]==null) s[2]=trKneeDef(k,ix); arr[ix]=s; day[id]=arr; H.lift[k]=day; hmTouch('lift',k);
+    if((f===1||f===2)&&v&&!(H.days[k]||{}).train&&trAllSets(k)){ H.days[k]={...(H.days[k]||{}),train:true}; hmTouch('days',k); gain(30); earnRupee(20); toast('鍛錬クリア  +30 XP ・ +20ルピー'); maybeSeed();
       const fin=document.querySelector('.tr-fin'); if(fin){ fin.classList.add('done'); fin.innerHTML='<span class="r-clear">CLEAR</span><button class="btn small ghost" data-act="trfin" data-v="0">クリアを取り消す</button>'; }
       const p=TR_PART[trType(k)]; if(p) setTimeout(()=>toast(`克服の証（${PART_NAME[p]}）を手に入れた`),1300); trVesselBanner(vb); }
-    if(f===1&&v) trCheckPR(id,k);
+    if((f===1||f===2)&&v) trCheckPR(id,k);
     // 入力中の欄が消えないよう、右の画面は描き直さない
     save(); renderList(); renderLv(); return true; }
   if(el.id==='trMemo'){ H.days[k]={...(H.days[k]||{}),memo:el.value.slice(0,500)}; hmTouch('days',k); save(); return true; }
@@ -4597,7 +4612,7 @@ document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==
 (function(){ const m=location.hash.match(/^#q=([\w-]+)/); const q=m&&findQ(m[1]); if(q){ selId=q.id; tab='list'; listCat=q.type; } if(m){ try{ history.replaceState(null,'',location.pathname+location.search); }catch(e){} } })();
 
 stamp(); window.__qlReady=true;
-render(); if(moveDoToSteps()){ save(); render(); } if(trImport()){ state.pristine=false; save(); render(); } runCarry(); pCarry(); { let n=0; bkAll().forEach(B=>{ if(!B.rq&&B.title&&B.pages){ bkSyncQ(B.id); n++; } }); if(n){ save(); render(); } } if(pBackfill()) render(); setTimeout(wakeCheck,600);
+render(); if(moveDoToSteps()){ save(); render(); } if(trImport()){ state.pristine=false; save(); render(); } runCarry(); pCarry(); if(trUniMig()) render(); { let n=0; bkAll().forEach(B=>{ if(!B.rq&&B.title&&B.pages){ bkSyncQ(B.id); n++; } }); if(n){ save(); render(); } } if(pBackfill()) render(); setTimeout(wakeCheck,600);
 // 起動して少ししたら、今日の地図を裏で描いておく（開いたときに待たないように）
 setTimeout(()=>{ try{ const w=+localStorage.getItem('ql-pw'); if(!w) return; const sv=pW; pW=w; pTerAsk(pJDay(),pm2y(PATH_H1)+10,false); pTerPrefetch(pJDay()); pW=sv; }catch(e){} },400);
 if(sync.url){ syncScan(); flush(); loadData().then(pull); }
