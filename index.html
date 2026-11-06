@@ -1192,6 +1192,7 @@ function xpFor(q){return (q.type==='mini'?15:50)*(q.rank||1)}
 // 先の日にやる予定だった物を今日クリアしたら、やる日を今日にする（今日やったことになる）
 function doneToday(o){ const t=ymd(); if(o.doDate&&o.doDate>t){ o.doDate=t; o.doTime=''; o.carry=0; } }
 function completeQuest(q){
+  if(q.bk){ const B=(state.books||{})[q.bk]; if(B&&!B.ret){ B.ret=ymd(); B.u=Date.now(); } }
   q.done=true; q.doneAt=Date.now(); q.accepted=false; doneToday(q);
   const xp=xpFor(q), rp=q.type==='mini'?10:30*(q.rank||1); gain(xp); earnRupee(rp); save();
   if(q.type==='mini'){ render(); toast(`ミニチャレンジ達成  +${xp} XP ・ +${rp}ルピー`); maybeSeed(); return; }
@@ -1200,7 +1201,7 @@ function completeQuest(q){
   selId=q.id; editing=false; memEdit=q.id; render();
   setTimeout(()=>toast('思い出にひとこと残せます'),2700);
 }
-function reopen(q){q.done=false;q.doneAt=null;gain(-xpFor(q));save();render()}
+function reopen(q){ if(q.bk){ const B=(state.books||{})[q.bk]; if(B&&B.ret){ B.ret=null; B.u=Date.now(); } } q.done=false;q.doneAt=null;gain(-xpFor(q));save();render()}
 function addMinis(text){
   const lines=text.split(/\r?\n/).map(x=>x.replace(/^\s*([-*・●○◇◆□■]|\d+[.)．]|\[\s?\])\s*/,'').trim()).filter(Boolean);
   lines.forEach((t,i)=>state.quests.push({id:uid(),title:t,type:'mini',parentId:null,rank:0,deadline:'',reward:'',memo:'',steps:[],accepted:false,done:false,created:Date.now()+i}));
@@ -2002,10 +2003,10 @@ document.addEventListener('click',e=>{
     case 'bkedit': bkEdit=true; renderDetail(); break;
     case 'bksave': bkSave(); break;
     case 'bkrec': bkRecord(); break;
-    case 'bkret': { const B=state.books[bkSel]; if(B){ B.ret=B.ret?null:ymd(); B.u=Date.now(); if(B.ret) toast('古文書を図書館へ返した'); save(); render(); } break; }
-    case 'bkrenew': { const B=state.books[bkSel]; if(B){ const t=ymd(), nd=bkAdd(t,14); if((B.renew||[]).length){ toast('更新は1回しかできない'); break; } if(nd<=B.due){ toast('今更新しても返す日は延びない'); break; } B.renew=[...(B.renew||[]),t]; B.due=nd; if(!B.fin&&B.goal<bkAdd(nd,-5)) B.goal=bkAdd(nd,-5); B.u=Date.now(); save(); render(); setTimeout(()=>banner('book','返却の刻限が延びた',`${B.title}　${bkMD(nd)} まで`),150); } break; }
-    case 'bkdue': { const B=state.books[bkSel], v=($('bkDueQ')||{}).value; if(B&&v){ if(v<B.start){ toast('借りた日より前にはできない'); break; } B.due=v; if(B.goal>v) B.goal=v; B.u=Date.now(); save(); render(); toast(`返す日を ${bkMD(v)} にした`); } break; }
-    case 'bkdel': { const B=state.books[bkSel]; if(B&&confirm('この古文書を消しますか？')){ B.del=1; B.u=Date.now(); bkSel=null; bkEdit=false; save(); render(); } break; }
+    case 'bkret': { const B=state.books[bkSel]; if(B){ const q=state.quests.find(x=>x.bk===bkSel); if(!B.ret){ B.ret=ymd(); B.u=Date.now(); if(q&&!q.done) completeQuest(q); else { save(); render(); toast('古文書を図書館へ返した'); } } else { B.ret=null; B.u=Date.now(); if(q&&q.done) reopen(q); else { save(); render(); } } } break; }
+    case 'bkrenew': { const B=state.books[bkSel]; if(B){ const t=ymd(), nd=bkAdd(t,14); if((B.renew||[]).length){ toast('更新は1回しかできない'); break; } if(nd<=B.due){ toast('今更新しても返す日は延びない'); break; } B.renew=[...(B.renew||[]),t]; B.due=nd; if(!B.fin&&B.goal<bkAdd(nd,-5)) B.goal=bkAdd(nd,-5); B.u=Date.now(); bkSyncQ(bkSel); save(); render(); setTimeout(()=>banner('book','返却の刻限が延びた',`${B.title}　${bkMD(nd)} まで`),150); } break; }
+    case 'bkdue': { const B=state.books[bkSel], v=($('bkDueQ')||{}).value; if(B&&v){ if(v<B.start){ toast('借りた日より前にはできない'); break; } B.due=v; if(B.goal>v) B.goal=v; B.u=Date.now(); bkSyncQ(bkSel); save(); render(); toast(`返す日を ${bkMD(v)} にした`); } break; }
+    case 'bkdel': { const B=state.books[bkSel]; if(B&&confirm('この古文書を消しますか？')){ B.del=1; B.u=Date.now(); bkSyncQ(bkSel); bkSel=null; bkEdit=false; save(); render(); } break; }
     case 'bkundo': { const B=state.books[bkSel], d=b.dataset.v; if(B&&B.log&&d in B.log){ delete B.log[d]; B.u=Date.now(); save(); render(); } break; }
     case 'restsel': restSel=b.dataset.v; selId=null; render(); window.innerWidth<=820&&window.scrollTo({top:0}); break;
     case 'restback': restSel=null; render(); break;
@@ -2133,6 +2134,7 @@ document.addEventListener('click',e=>{
 
 document.addEventListener('input',e=>{
   if(pathInput(e)) return;
+  if(e.target.id==='bkStart'&&e.target.value){ const v=e.target.value, g=$('bkGoal'), d=$('bkDue'); if(g) g.value=bkAdd(v,9); if(d) d.value=bkAdd(v,14); return; }
   if(e.target.id==='bkMemo'&&bkSel&&state.books&&state.books[bkSel]){ const B=state.books[bkSel]; B.memo=e.target.value.slice(0,300); B.u=Date.now(); save(); return; }
   const q=findQ(selId); if(!q) return;
   // 日付を変えたら時刻欄は空に（入れたいときだけ入れ直す）
@@ -2852,8 +2854,8 @@ function bkPanel(){
     <div class="f"><label>ページ数（読む所の最後のページ）</label><input type="number" id="bkPages" inputmode="numeric" min="1" value="${B.pages||''}" placeholder="例：320"></div>
     <div class="f"><label>借りた日（借りてしばらく経ってから記すときは、本当に借りた日に）</label><input type="date" id="bkStart" value="${B.start}"></div>
     <div class="f"><label>もう読んだ所（まだなら空のまま）</label><input type="number" id="bkP0" inputmode="numeric" min="0" value="${B.p0||''}" placeholder="例：45"></div>
-    <div class="f"><label>解き明かす日（借りた日から10日目）</label><input type="date" id="bkGoal" value="${B.goal}"></div>
-    <div class="f"><label>返却の刻限（借りた日から2週間）</label><input type="date" id="bkDue" value="${B.due}"></div>
+    <div class="f"><label>解き明かす日（借りた日を入れると自動で10日目に）</label><input type="date" id="bkGoal" value="${B.goal}"></div>
+    <div class="f"><label>返却の刻限（借りた日を入れると自動で2週間後に）</label><input type="date" id="bkDue" value="${B.due}"></div>
     <p class="hint">借りた日を変えると、解き明かす日と返却の刻限もそれに合わせて動きます。休館で延びたときや更新したときは、古文書の画面の「返却の刻限」から変えられます。</p>
     <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" data-act="bksave">これで決める</button>${B.title?'<button class="btn ghost" data-act="bkback">やめる</button>':''}<button class="btn danger" data-act="bkdel">消す</button></div></div></div>`;
   const N=B.pages, now=bkAt(B,t), P=bkPlan(B,t), id=bkIdeal(B,bkAdd(t,-1)), diff=now-id, dl=bkDays(t,B.due);
@@ -2880,6 +2882,12 @@ function bkPanel(){
   h+=`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px"><button class="btn ${B.fin&&!B.ret?'primary':''}" data-act="bkret">${B.ret?'返したのを取り消す':'図書館へ返した'}</button><button class="btn ghost" data-act="bkedit">記し直す</button></div></div>`;
   return h;
 }
+// 返却はミニチャレンジにする（やる日＝返却の刻限）。図書館へ返したらクリア、ミニチャレンジをクリアしたら返したことになる
+function bkSyncQ(id){ const B=(state.books||{})[id]; let q=state.quests.find(x=>x.bk===id);
+  if(!B||B.del||!B.title||!B.pages){ if(q) state.quests=state.quests.filter(x=>x!==q); return; }
+  const title=`古文書を図書館へ返す：${B.title}`; B.rq=1;
+  if(!q){ state.quests.push({id:uid(),title,type:'mini',parentId:null,rank:0,deadline:B.due,reward:'',memo:'',steps:[],accepted:false,done:!!B.ret,doneAt:B.ret?Date.now():null,created:Date.now(),doDate:B.due,doTime:'',bk:id}); return; }
+  q.title=title; q.deadline=B.due; if(!q.done&&!B.ret) q.doDate=B.due; }
 function bkSave(){
   const B=state.books[bkSel]; if(!B) return; const v=id=>($(id)||{}).value||'';
   const title=v('bkTitle').trim(), pages=parseInt(v('bkPages'),10), st=v('bkStart')||B.start;
@@ -2890,7 +2898,7 @@ function bkSave(){
   const p0=Math.min(pages,Math.max(0,parseInt(v('bkP0'),10)||0));
   Object.assign(B,{title:title.slice(0,80),pages,start:st,goal,due,p0,reg:B.reg||B.start,u:Date.now()});
   if(B.fin&&bkAt(B,ymd())<pages) B.fin=null;
-  bkEdit=false; save(); render();
+  bkSyncQ(bkSel); bkEdit=false; save(); render();
 }
 function bkRecord(){
   const B=state.books[bkSel]; if(!B) return; const t=ymd(), el=$('bkPg'), pg=Math.min(B.pages,Math.max(0,parseInt(el&&el.value,10)));
@@ -4580,7 +4588,7 @@ document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==
 (function(){ const m=location.hash.match(/^#q=([\w-]+)/); const q=m&&findQ(m[1]); if(q){ selId=q.id; tab='list'; listCat=q.type; } if(m){ try{ history.replaceState(null,'',location.pathname+location.search); }catch(e){} } })();
 
 stamp(); window.__qlReady=true;
-render(); if(moveDoToSteps()){ save(); render(); } if(trImport()){ state.pristine=false; save(); render(); } runCarry(); pCarry(); if(pBackfill()) render(); setTimeout(wakeCheck,600);
+render(); if(moveDoToSteps()){ save(); render(); } if(trImport()){ state.pristine=false; save(); render(); } runCarry(); pCarry(); { let n=0; bkAll().forEach(B=>{ if(!B.rq&&B.title&&B.pages){ bkSyncQ(B.id); n++; } }); if(n){ save(); render(); } } if(pBackfill()) render(); setTimeout(wakeCheck,600);
 // 起動して少ししたら、今日の地図を裏で描いておく（開いたときに待たないように）
 setTimeout(()=>{ try{ const w=+localStorage.getItem('ql-pw'); if(!w) return; const sv=pW; pW=w; pTerAsk(pJDay(),pm2y(PATH_H1)+10,false); pTerPrefetch(pJDay()); pW=sv; }catch(e){} },400);
 if(sync.url){ syncScan(); flush(); loadData().then(pull); }
