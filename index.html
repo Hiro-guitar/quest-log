@@ -5111,7 +5111,10 @@ async function pLookOpen(){
   cv.addEventListener('wheel',e=>{ e.preventDefault(); intro=false; dist=Math.max(7,Math.min(40,dist*(1+e.deltaY*.001))); },{passive:false});
   if(/[?&]lkshot/.test(location.search)){ intro=false; off=OFF+(+(new URLSearchParams(location.search).get('lkth'))||0); py+=+(new URLSearchParams(location.search).get('lkpy'))||0; dist=+(new URLSearchParams(location.search).get('lkdist'))||dist; L.focus=/lkfocus/.test(location.search); cp=(+(new URLSearchParams(location.search).get('lkcp'))||12)*rad; plant(rX(py),py); hY=head0(); lastTouch=1e12; L.shot=()=>{ document.body.dataset.lkshot='1'; }; }
   let last=performance.now(); const t00=performance.now();
+  // 別のアプリに切り替えて描画が止まっていた間も、馬は進んでいたことにする（時計とずれないように）
+  let wall=Date.now();
   const loop=n=>{ if(!L.alive) return; const dt=Math.min(.05,(n-last)/1000); last=n; U.uTime.value=(n-t00)/1000;
+    { const w=Date.now(), gap=(w-wall)/1000; wall=w; if(gap>.5&&go&&!L.shot){ py=Math.min(yEnd,py+(gap-dt)*Math.max(v,9)); v=9; } }
     if(intro){ const kq=Math.min(1,(n-tIn)/2600), e2=1-Math.pow(1-kq,3); dist=50-29*e2; cp=(34-23*e2)*rad; if(kq>=1) intro=false; }
     // 道をたどる：駆けているときは速く、手綱を引くと止まる。道の終わりで止まる
     const vt=go&&py<yEnd?9:0; v+=(vt-v)*Math.min(1,dt*1.6); py=Math.min(yEnd,py+v*dt); if(py>=yEnd&&go){ go=false; goB.textContent='駆ける'; }
