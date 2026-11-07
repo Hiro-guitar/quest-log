@@ -4853,8 +4853,17 @@ async function pLookOpen(){
   const gmap2=new T.CanvasTexture(gc2); gmap2.minFilter=gmap2.magFilter=T.NearestFilter; gmap2.colorSpace=T.NoColorSpace;
   // 筒の面の向きが内側を向く所があるので、両面を描く（向こう側が透けて見えないように）
   const tm=(c)=>patch(new T.MeshToonMaterial({color:c3(c),gradientMap:gmap2,side:T.DoubleSide}));
-  const coat=tm([184,118,68]), coatD=tm([140,86,50]), mane=tm([238,220,172]), maneD=tm([214,190,140]), hoof=tm([66,58,54]), eyeM=tm([24,18,14]), strap=tm([70,42,28]), metal=tm([200,186,140]),
-    cloak=tm([74,98,84]), cloakD=tm([56,74,64]), skin=tm([232,192,160]), hair=tm([96,64,40]), boot=tm([70,50,36]), saddle=tm([108,62,36]), blanket=tm([42,92,104]), blanketE=tm([226,206,160]);
+  // 馬と乗り手の質感：やわらかい2段の光（境目はなめらか）、毛並みのつや（輪郭がうっすら明るい）、
+  // 毛の細かな流れ、脚の下ほど濃い毛色、たてがみは毛の筋。影の側は少し青み
+  const HU={uHY:{value:0}};
+  const hm=(c,kind=0)=>{ const m=patch(new T.MeshLambertMaterial({color:c3(c),side:T.DoubleSide})), ob=m.onBeforeCompile;
+    m.onBeforeCompile=sh=>{ ob(sh); Object.assign(sh.uniforms,HU);
+      sh.fragmentShader='uniform float uHY;\n'+sh.fragmentShader
+        .replace('#include <lights_lambert_pars_fragment>',T.ShaderChunk.lights_lambert_pars_fragment.replace('float dotNL = saturate( dot( geometryNormal, directLight.direction ) );','float ndl = dot( geometryNormal, directLight.direction ); float dotNL = smoothstep( -0.18, 0.55, ndl ) * 0.9 + 0.1 * saturate( ndl );'))
+        .replace('#include <color_fragment>','#include <color_fragment>\n'+(kind===1?' { float hy=vWP.y-uHY; diffuseColor.rgb*=mix(.62,1.,smoothstep(.25,1.5,hy)); diffuseColor.rgb*=.95+.08*vn(vec2(dot(vWP.xz,vec2(.7,.7))*18.,vWP.y*5.)); }':kind===2?' { float st=vn(vec2(dot(vWP.xz,vec2(.6,.8))*26.,vWP.y*1.6)); diffuseColor.rgb*=.88+.2*st; }':''))
+        .replace('#include <lights_fragment_end>','irradiance=mix(irradiance,vec3(dot(irradiance,vec3(.333)))*vec3(.94,.98,1.08),.5);\n#include <lights_fragment_end>\n { float rim=pow(1.-saturate(dot(normal,normalize(vViewPosition))),2.5); reflectedLight.indirectDiffuse+=rim*'+(kind?'.38':'.22')+'*(diffuseColor.rgb+.08); }'); }; return m; };
+  const coat=hm([186,116,64],1), coatD=hm([120,72,42],1), mane=hm([240,224,182],2), maneD=hm([214,190,142],2), hoof=hm([58,52,48]), eyeM=hm([20,14,10]), strap=hm([70,42,28]), metal=hm([206,190,140]),
+    cloak=hm([74,98,84]), cloakD=hm([56,74,64]), skin=hm([232,192,160]), hair=hm([96,64,40]), boot=hm([70,50,36]), saddle=hm([108,62,36]), blanket=hm([42,92,104]), blanketE=hm([226,206,160]);
   const shad=o=>{ o.castShadow=true; o.receiveShadow=true; return o; };
   // pts: [x,y,z,横の半径,上側の半径,下側の半径]。点の間はなめらかに補う
   const smooth=(pts,k)=>{ const out=[], n=pts.length; for(let i=0;i<n-1;i++){ const p0=pts[Math.max(0,i-1)], p1=pts[i], p2=pts[i+1], p3=pts[Math.min(n-1,i+2)];
@@ -4879,7 +4888,8 @@ async function pLookOpen(){
   neck.add(tube([[0,2.5,1.28,.12,.09,.12],[0,2.44,1.4,.155,.12,.2],[0,2.26,1.58,.135,.1,.16],[0,2.04,1.76,.115,.085,.12],[0,1.88,1.88,.11,.08,.1],[0,1.8,1.95,.1,.07,.085],[0,1.76,1.98,.04,.04,.04]],coat,20,...NP));
   neck.add(tube([[0,1.96,1.82,.112,.083,.105],[0,1.86,1.9,.108,.078,.095],[0,1.79,1.96,.097,.068,.08],[0,1.755,1.99,.035,.035,.035]],coatD,18,...NP));
   [-1,1].forEach(sg=>{ const e=shad(new T.Mesh(new T.ConeGeometry(.05,.2,8),coat)); e.position.set(sg*.08-NP[0],2.6-NP[1],1.3-NP[2]); e.rotation.set(-.2,0,-sg*.3); neck.add(e);
-    const ey=new T.Mesh(new T.SphereGeometry(.034,10,8),eyeM); ey.position.set(sg*.14-NP[0],2.3-NP[1],1.5-NP[2]); neck.add(ey);
+    const ey=new T.Mesh(new T.SphereGeometry(.042,12,10),eyeM); ey.position.set(sg*.14-NP[0],2.3-NP[1],1.5-NP[2]); ey.scale.set(.7,1,1.25); neck.add(ey); { const hl=new T.Mesh(new T.SphereGeometry(.011,6,6),new T.MeshBasicMaterial({color:0xffffff})); hl.position.set(sg*.165-NP[0],2.315-NP[1],1.52-NP[2]); neck.add(hl); }
+    { const ns=new T.Mesh(new T.SphereGeometry(.025,8,6),eyeM); ns.position.set(sg*.055-NP[0],1.79-NP[1],1.985-NP[2]); ns.scale.set(.8,1.3,.5); neck.add(ns); }
     // 頭絡と手綱
     neck.add(seg2([sg*.115-NP[0],1.88-NP[1],1.84-NP[2]],[sg*.15-NP[0],2.38-NP[1],1.38-NP[2]],.016,.016,strap));
     { const r=new T.Mesh(new T.TorusGeometry(.03,.009,6,12),metal); r.position.set(sg*.12-NP[0],1.87-NP[1],1.86-NP[2]); r.rotation.y=Math.PI/2; neck.add(r); }
@@ -4908,12 +4918,12 @@ async function pLookOpen(){
   mkLeg(.24,1.06,.72,0); mkLeg(-.24,1.06,.72,0); mkLeg(.26,1.12,-.86,1); mkLeg(-.26,1.12,-.86,1);
   // 乗り手：鞍と鞍下の布、マントの旅人
   const rider=new T.Group(), RY=1.72; rider.position.set(0,RY,.12); bo.add(rider);
-  { const m=shad(new T.Mesh(new T.CylinderGeometry(.58,.58,.8,24,1,true,Math.PI-1.15,2.3),blanket)); m.material=m.material.clone(); m.material.side=T.DoubleSide; m.rotation.x=Math.PI/2; m.position.set(0,-.6,0); rider.add(m);
-    [-1,1].forEach(sg=>{ const e=shad(new T.Mesh(new T.BoxGeometry(.04,.06,.82),blanketE)); e.position.set(sg*.535,-.6+.58*Math.cos(1.13),0); e.rotation.z=sg*1.13; rider.add(e); }); }
+  { const m=shad(new T.Mesh(new T.CylinderGeometry(.592,.592,.8,24,1,true,Math.PI-1.15,2.3),blanket)); m.rotation.x=Math.PI/2; m.position.set(0,-.6,0); rider.add(m);
+    { const e=shad(new T.Mesh(new T.CylinderGeometry(.585,.585,.86,24,1,true,Math.PI-1.2,2.4),blanketE)); e.rotation.x=Math.PI/2; e.position.set(0,-.6,0); rider.add(e); } }
   rider.add(tube([[0,-.02,-.3,.24,.05,.05],[0,.0,-.22,.25,.1,.06],[0,-.02,0,.24,.05,.06],[0,.0,.2,.22,.08,.06],[0,.06,.27,.08,.06,.04]],saddle,16,0,0,0,3));
   [-1,1].forEach(sg=>{ rider.add(seg2([sg*.42,-.1,.02],[sg*.5,-.66,.06],.015,.015,strap)); const s=new T.Mesh(new T.TorusGeometry(.05,.012,6,12),metal); s.position.set(sg*.5,-.7,.06); rider.add(s); });
   rider.add(seg2([0,.04,0],[0,.6,.1],.17,.14,cloak));
-  { const c=shad(new T.Mesh(new T.ConeGeometry(.34,.66,14,1,true),cloakD)); c.material=c.material.clone(); c.material.side=T.DoubleSide; c.position.set(0,.33,-.04); c.rotation.x=.12; rider.add(c); }
+  { const c=shad(new T.Mesh(new T.ConeGeometry(.34,.66,14,1,true),cloakD)); c.position.set(0,.33,-.04); c.rotation.x=.12; rider.add(c); }
   { const h=shad(new T.Mesh(new T.SphereGeometry(.11,14,12),skin)); h.position.set(0,.78,.13); rider.add(h); const hr=shad(new T.Mesh(new T.SphereGeometry(.12,14,12,0,6.3,0,1.75),hair)); hr.position.set(0,.8,.11); hr.rotation.x=-.3; rider.add(hr); }
   [-1,1].forEach(sg=>{ rider.add(seg2([sg*.16,.05,.05],[sg*.5,-.26,.2],.075,.07,cloak)); rider.add(seg2([sg*.5,-.26,.2],[sg*.5,-.68,.06],.065,.055,boot));
     rider.add(seg2([sg*.17,.52,.1],[sg*.21,.3,.3],.05,.045,cloak)); rider.add(seg2([sg*.21,.3,.3],[sg*.08,.3,.5],.045,.04,cloak)); });
@@ -5054,7 +5064,7 @@ async function pLookOpen(){
   goB.addEventListener('click',()=>{ go=!go; if(go&&py>=yEnd-1) py=y0; goB.textContent=go?'手綱を引く':'駆ける'; });
   await tick(1); plant(rX(py),py); ov.querySelector('.lk-load').classList.add('done');
   const tgt=new T.Vector3();
-  const place=()=>{ putTiles(py); putBeams(py); putDisc(py); const x=rXw(py), g=gnd(x,py); horse.position.set(X(x),g-.42,Z(py)); horse.rotation.y=hY;
+  const place=()=>{ putTiles(py); putBeams(py); putDisc(py); const x=rXw(py), g=gnd(x,py); horse.position.set(X(x),g-.42,Z(py)); HU.uHY.value=g-.42; horse.rotation.y=hY;
     const fa=L.focus?0:5; tgt.set(horse.position.x+Math.sin(hY)*fa,horse.position.y+(L.focus?3:3.6),horse.position.z+Math.cos(hY)*fa);
     const cy2=hY+off; cam.position.set(tgt.x-Math.sin(cy2)*Math.cos(cp)*dist,tgt.y+Math.sin(cp)*dist,tgt.z-Math.cos(cy2)*Math.cos(cp)*dist);
     const gc2=Math.max(0,hW(cam.position.x+W/2,y0-cam.position.z))+1.6; if(cam.position.y<gc2) cam.position.y=gc2; cam.lookAt(tgt);
