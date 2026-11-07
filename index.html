@@ -4683,11 +4683,14 @@ async function pLookOpen(){
   // 細かな丘と曲がる道を足す。景色は2400の長さでくり返し（走り続けても切れない）
   const KM=540, P=2400, ST=4, XA=-Math.round(W*.75), XB=Math.round(W*1.75), yA=y0-300, yB=yA+P, nx=Math.ceil((XB-XA)/ST)+1, ny=P/ST+1;
   const mx0=pRX(y0), hb=Math.max(P_SEA+.025,pHgt(mx0,y0)), b0=Float32Array.from(pBiomeW(mx0,vOf(y0)));
+  // 土地の種類（火山・砂漠・湿地・雪山・草原）。確かめ用に ?lkbio=wet などで切り替えられる
+  { const fb=new URLSearchParams(location.search).get('lkbio'), ix={volc:0,desert:1,wet:2,snow:3}[fb]; if(ix!=null){ b0.fill(0); b0[ix]=1; } }
+  const BIO=(()=>{ let m=.35, r=''; ['volc','desert','wet','snow'].forEach((n,i)=>{ if(b0[i]>m){ m=b0[i]; r=n; } }); return r; })(); L.BIO=BIO;
   let hmn=9, hmx=-9; for(let q=0;q<48;q++){ const a=q/16*6.2832, r=[15,40,80][q%3]; const h=pHgt(mir(mx0+Math.cos(a)*r),y0+Math.sin(a)*r); hmn=Math.min(hmn,h); hmx=Math.max(hmx,h); }
   const rug=Math.min(.6,hmx-hmn), AMP=.035+rug*.3;
   const fr=v=>v-Math.floor(v), pn=(x,y,s,ox=0,oy=0)=>{ const t=fr((y-yA)/P); return pNoise(x/s+ox,y/s+oy)*(1-t)+pNoise(x/s+ox,(y-P)/s+oy)*t; };
   const rX=y=>{ const t=(y-yA)/P*6.2832; return mx0+52*Math.sin(t*2)+20*Math.sin(t*5+1.3)+7*Math.sin(t*11+.4); };
-  const lH=(x,y)=>hb+AMP*((pn(x,y,520,3,7)-.5)*1.6+(pn(x,y,140,9,2)-.5)*.8+(pn(x,y,38,1,5)-.5)*.2);
+  const lH=(x,y)=>hb+AMP*((pn(x,y,520,3,7)-.5)*1.6+(pn(x,y,140,9,2)-.5)*.8+(pn(x,y,38,1,5)-.5)*.2)+(BIO==='desert'?.022*Math.pow(.5+.5*Math.sin(x*.045+Math.sin(y*.013)*2.2+pn(x,y,90,4,4)*3),2):0);
   const hv=new Float32Array(nx*ny), bio=new Float32Array(nx*ny*4);
   for(let j=0;j<ny;j++){ const y=yA+j*ST; for(let i=0;i<nx;i++){ const o=j*nx+i; hv[o]=lH(XA+i*ST,y); bio.set(b0,o*4); } if(j%20===0&&!(await tick(j/ny*.6))) return; }
   // 道をならす：道の高さを前後になだらかにして、まわりの地面をそこへ寄せる（山は切り通し、谷は土手）
@@ -4698,7 +4701,7 @@ async function pLookOpen(){
   const jW=y=>Math.min(ny-1,Math.round(fr((y-yA)/P)*(ny-1))), bAt=(x,y)=>{ const i=Math.max(0,Math.min(nx-1,Math.round((x-XA)/ST))), j=jW(y), o=j*nx+i; return bio.subarray(o*4,o*4+4); };
   const X=x=>x-W/2, Z=y=>-(y-y0), lin=c=>c.map(v=>Math.pow(v/255,2.2));
   // 色（sRGB で決めて、線形に直す）
-  const C={g1:lin([128,170,64]),g2:lin([98,140,54]),dry:lin([150,150,80]),rock:lin([150,140,135]),rock2:lin([112,104,100]),sand:lin([214,200,160]),snow:lin([235,240,250]),desert:lin([222,186,124]),dune:lin([196,150,96]),vrock:lin([98,86,82]),vash:lin([64,58,58]),wet:lin([78,104,58]),mud:lin([96,88,60]),bed:lin([60,90,96])};
+  const C={g1:lin([128,170,64]),g2:lin([98,140,54]),dry:lin([150,150,80]),rock:lin([150,140,135]),rock2:lin([112,104,100]),sand:lin([214,200,160]),snow:lin([235,240,250]),desert:lin([222,186,124]),dune:lin([196,150,96]),vrock:lin([122,106,98]),vash:lin([86,78,78]),wet:lin([78,104,58]),mud:lin([96,88,60]),bed:lin([60,90,96])};
   const mix=(a,b,t)=>[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t];
   const colAt=(x,y,e,nyy,b)=>{ const n1=pn(x,y,46,3), n2=pn(x,y,6,7,2), slope=1-nyy, [bv,bd,bw,bs]=b;
     let c=mix(C.g1,C.g2,sm(.35,.7,n1)); c=mix(c,C.dry,sm(.62,.9,pn(x,y,90,1,5))*.45);
@@ -4707,7 +4710,7 @@ async function pLookOpen(){
     if(bv>.05) c=mix(c,mix(C.vrock,C.vash,n2),bv);
     if(e<2.4&&e>-1) c=mix(c,C.sand,(1-bv)*sm(2.4,.5,e)*.85);
     c=mix(c,mix(C.rock,C.rock2,n2),sm(.3,.52,slope)*(1-bv*.5));
-    if(bs>.05){ const sn=bs*sm(8,24,e+n1*8)*(1-sm(.55,.8,slope)*.5); c=mix(c,C.snow,Math.min(1,sn*1.25)); }
+    if(bs>.05){ const sn=bs*Math.max(BIO==='snow'?.85:0,sm(8,24,e+n1*8))*(1-sm(.55,.8,slope)*.5); c=mix(c,C.snow,Math.min(1,sn*1.25)); }
     if(e<-.3) c=mix(c,C.bed,sm(-.3,-4,e));
     const v=.92+.16*n2; return [c[0]*v,c[1]*v,c[2]*v]; };
   const mkGround=(XA2,XB2,YA2,YB2,st,hf,bf)=>{ const mx=Math.ceil((XB2-XA2)/st)+1, my=Math.ceil((YB2-YA2)/st)+1, pos=new Float32Array(mx*my*3), idx=new Uint32Array((mx-1)*(my-1)*6);
@@ -4740,7 +4743,11 @@ async function pLookOpen(){
   if(nf){ const n=nf; hz=lerpA(hz,[72,96,140],n); md=lerpA(md,[36,54,100],n); zn=lerpA(zn,[12,20,50],n); fA=lerpA(fA,[84,106,148],n); fB=lerpA(fB,[60,80,124],n); }
   if(wet){ const gry=v=>{ const m=(v[0]+v[1]+v[2])/3; return v.map(x=>x*.45+m*.45); }; hz=gry(hz); md=gry(md); zn=gry(zn); fA=gry(fA); fB=gry(fB); }
   // 空：大きな球の内側に3色のグラデーションと太陽のにじみ
-  const U={uSun:{value:sd},uFogA:{value:c3(fA)},uFogB:{value:c3(fB)},uFogD:{value:wet?.0021:.0009},uFogH:{value:0},uFogHk:{value:wet?.45:.35},uTime:{value:0},uSat:{value:wet?.85:1.22},uCloud:{value:cc/100}};
+  if(BIO==='wet'){ fA=lerpA(fA,[178,192,176],.7); fB=lerpA(fB,[150,168,160],.7); hz=lerpA(hz,[190,200,190],.5); }
+  if(BIO==='volc'){ hz=lerpA(hz,[200,128,96],.75); md=lerpA(md,[150,104,100],.7); zn=lerpA(zn,[80,64,80],.6); fA=lerpA(fA,[206,124,92],.8); fB=lerpA(fB,[118,92,92],.8); }
+  if(BIO==='snow'){ hz=lerpA(hz,[224,232,242],.6); fA=lerpA(fA,[230,236,246],.8); fB=lerpA(fB,[198,212,230],.8); }
+  if(BIO==='desert'){ hz=lerpA(hz,[238,222,192],.7); md=lerpA(md,[170,196,228],.4); fA=lerpA(fA,[242,216,170],.8); fB=lerpA(fB,[222,202,170],.8); }
+  const U={uSun:{value:sd},uFogA:{value:c3(fA)},uFogB:{value:c3(fB)},uFogD:{value:wet?.0021:{wet:.0014,volc:.0017,snow:.0013,desert:.0012}[BIO]||.0009},uFogH:{value:0},uFogHk:{value:wet?.45:BIO==='wet'?.75:.35},uTime:{value:0},uSat:{value:wet?.85:{wet:1.0,volc:1.0,snow:.92,desert:1.1}[BIO]||1.22},uCloud:{value:cc/100}};
   const sky=new T.Mesh(new T.SphereGeometry(2600,32,16),new T.ShaderMaterial({side:T.BackSide,depthWrite:false,fog:false,uniforms:{uHz:{value:c3(hz)},uMd:{value:c3(md)},uZn:{value:c3(zn)},uSun:U.uSun,uDay:{value:day},uNt:{value:wet?0:nf},uTime:U.uTime,uCov:{value:Math.min(.95,Math.max(.12,(wet?Math.max(cc,80):cc)/100))},uClA:{value:c3(wet?[196,200,210]:nf>.5?[120,138,176]:lerpA([255,255,255],[255,212,176],eve))},uClB:{value:c3(wet?[120,126,140]:nf>.5?[60,72,104]:lerpA([178,188,210],[176,128,132],eve))}},
     vertexShader:'varying vec3 vD; void main(){ vD=normalize(position); vec4 p=modelViewMatrix*vec4(position,1.); gl_Position=projectionMatrix*p; }',
     fragmentShader:`uniform vec3 uHz,uMd,uZn,uSun,uClA,uClB; uniform float uDay,uNt,uTime,uCov; varying vec3 vD; float h3(vec3 p){ return fract(sin(dot(p,vec3(127.1,311.7,74.7)))*43758.5453); } float hn(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); } float vn(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.-2.*f); return mix(mix(hn(i),hn(i+vec2(1.,0.)),f.x),mix(hn(i+vec2(0.,1.)),hn(i+vec2(1.,1.)),f.x),f.y); } float fbm(vec2 p){ float a=.5, s=0.; for(int i=0;i<5;i++){ s+=a*vn(p); p=p*2.03+vec2(1.7,9.2); a*=.5; } return s; } void main(){ float h=max(vD.y,0.); vec3 c=mix(uHz,uMd,pow(min(h*3.,1.),1.6)); c=mix(c,uZn,smoothstep(.3,1.,h)); float s=max(dot(vD,uSun),0.); c+=vec3(1.,.9,.7)*(pow(s,600.)*3.+pow(s,24.)*.35)*uDay; if(uNt>0.){ vec3 q=vD*220.; vec3 cl=floor(q); float st=step(.985,h3(cl)); float dd=length(fract(q)-.5); c+=vec3(.85,.9,1.)*st*smoothstep(.35,.0,dd)*(.5+.5*h3(cl+1.))*smoothstep(.02,.25,h)*uNt; float ms=max(dot(vD,uSun),0.); c+=vec3(.95,.97,1.)*smoothstep(.9994,.9996,ms)*uNt+vec3(.35,.45,.7)*pow(ms,40.)*.5*uNt; } if(vD.y>0.){ vec2 p=vD.xz/(vD.y+.15)*1.3+vec2(uTime*.006,uTime*.0025); float n=fbm(p); float d=smoothstep(.5,.66,n+uCov*.42-.2); float sh=fbm(p+uSun.xz*.18+.3); vec3 cc=mix(uClA,uClB,clamp((sh-n)*3.+.3,0.,1.)); c=mix(c,cc,d*smoothstep(.0,.14,vD.y)*.95); } if(vD.y<0.) c=uHz; gl_FragColor=vec4(c,1.);
@@ -4804,9 +4811,9 @@ async function pLookOpen(){
   const br=(x0,y0,z0,x1,y1,z1,r0,r1)=>{ const A=new T.Vector3(x0,y0,z0), B=new T.Vector3(x1,y1,z1), d=B.clone().sub(A), L=d.length(), g=new T.CylinderGeometry(r1,r0,L,6).translate(0,L/2,0); g.applyQuaternion(new T.Quaternion().setFromUnitVectors(new T.Vector3(0,1,0),d.normalize())); g.translate(x0,y0,z0); return g; };
   const trunk=mergeG([new T.CylinderGeometry(.5,.8,5.2,7).translate(0,2.6,0),new T.CylinderGeometry(.85,1.05,.6,7).translate(0,.3,0),br(0,4.6,0,2.4,7.4,.5,.44,.2),br(0,4.4,0,-2.3,7.5,-.6,.44,.2),br(0,4.8,0,.4,7.5,2.3,.38,.18),br(0,5,0,-.3,7.8,-2.4,.36,.17),br(0,5,0,.1,8.4,.1,.42,.25),br(2.4,7.4,.5,3.4,8.6,1.2,.2,.1),br(-2.3,7.5,-.6,-3.2,8.5,-1.4,.2,.1)]);
   const cone=mergeG([new T.ConeGeometry(2.8,4.5,8).translate(0,4.6,0),new T.ConeGeometry(2.3,4,8).translate(0,6.8,0),new T.ConeGeometry(1.7,3.5,8).translate(0,9,0),new T.ConeGeometry(1.0,2.6,8).translate(0,11,0),new T.CylinderGeometry(.35,.55,3,6).translate(0,1.5,0)]);
-  const mR=patch(new T.MeshToonMaterial({color:0xffffff,gradientMap:gmap,vertexColors:true}),.15), mL=patch(new T.MeshToonMaterial({color:0xffffff,gradientMap:gmap,vertexColors:true,map:ltx,alphaTest:.4}),.15), mT=patch(new T.MeshToonMaterial({color:c3([116,110,82]),gradientMap:gmap})), mC=patch(new T.MeshToonMaterial({color:c3([40,74,58]),gradientMap:gmap}),.08);
+  const mR=patch(new T.MeshToonMaterial({color:0xffffff,gradientMap:gmap,vertexColors:true}),.15), mL=patch(new T.MeshToonMaterial({color:0xffffff,gradientMap:gmap,vertexColors:true,map:ltx,alphaTest:.4}),.15), mT=patch(new T.MeshToonMaterial({color:c3([116,110,82]),gradientMap:gmap})), mC=patch(new T.MeshToonMaterial({color:c3([40,74,58]),gradientMap:gmap}),.08); if(BIO==='snow'){ const ob=mC.onBeforeCompile; mC.onBeforeCompile=sh=>{ ob(sh); sh.vertexShader='varying float vUp;\n'+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n vUp=normal.y;'); sh.fragmentShader='varying float vUp;\n'+sh.fragmentShader.replace('#include <color_fragment>','#include <color_fragment>\n diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.93,.96,1.),smoothstep(.15,.45,vUp));'); }; }
   { const sp=[]; for(let q=0;q<26000&&sp.length<3200;q++){ const x=XA+rng()*(XB-XA), y=yA+rng()*P, f=pn(x,y,70,11,4); if(f<.55) continue; const e=hAt(x,y); if(e<1.5) continue; if(Math.abs(x-rX(y))<19) continue; if(Math.hypot(x-cx,y-cy)<34) continue;
-      const b=bAt(x,y); if(b[0]>.25||b[1]>.3) continue; const i=Math.round((x-XA)/ST), j=Math.round((y-yA)/ST); if(near.attributes.normal.array[(j*nx+i)*3+1]<.82) continue; const con=b[3]>.2||e>.45*HS; if(b[3]>.3&&e>30) continue; sp.push([x,y,e,con,(.85+rng()*.5)*(9+rng()*4)/10*1.4,rng()*6.28]); }
+      const b=bAt(x,y); if(b[0]>.25||b[1]>.3) continue; if(BIO==='wet'&&rng()<.65) continue; const i=Math.round((x-XA)/ST), j=Math.round((y-yA)/ST); if(near.attributes.normal.array[(j*nx+i)*3+1]<.82) continue; const con=b[3]>.2||e>.45*HS; if(b[3]>.3&&e>60) continue; sp.push([x,y,e,con,(.85+rng()*.5)*(9+rng()*4)/10*1.4,rng()*6.28]); }
     const nR=sp.filter(s=>!s[3]).length, iR=new T.InstancedMesh(canopy,mR,nR), iL=new T.InstancedMesh(leafCards,mL,nR), iT=new T.InstancedMesh(trunk,mT,nR), iC=new T.InstancedMesh(cone,mC,sp.length-nR), M=new T.Matrix4(), Q=new T.Quaternion(), V=new T.Vector3(), Sc=new T.Vector3(), up=new T.Vector3(0,1,0), cA=c3([128,172,60]), cB=c3([150,190,72]), cc2=new T.Color();
     let a=0,c=0; sp.forEach(([x,y,e,con,s,r])=>{ Q.setFromAxisAngle(up,r); Sc.set(s,s,s); V.set(X(x),e-.4,Z(y)); M.compose(V,Q,Sc); if(con){ iC.setMatrixAt(c++,M); } else { iR.setMatrixAt(a,M); iL.setMatrixAt(a,M); iT.setMatrixAt(a,M); iR.setColorAt(a,cc2.copy(cA).lerp(cB,rng())); iL.setColorAt(a,cc2); a++; } });
     [iR,iL,iT,iC].forEach(m=>{ m.castShadow=true; m.receiveShadow=true; tileG.add(m); }); }
@@ -4848,7 +4855,8 @@ async function pLookOpen(){
     o.bm.visible=o.s.visible=true; o.bm.position.set(X(x+sh(y)),e+o.h*hs/2,Z(y)); o.bm.scale.set(hs,hs,hs); o.s.position.set(X(x+sh(y)),e+(wd<1800?o.h*hs*.36:60+o.q*.06*sd),Z(y)); });
   const clouds=[];
   let rain=null;
-  if(sl){ const N=2400+sl*500, P=new Float32Array(N*3); for(let q=0;q<N;q++){ P[q*3]=(rng()-.5)*300; P[q*3+1]=rng()*120; P[q*3+2]=(rng()-.5)*300; } const g=new T.BufferGeometry(); g.setAttribute('position',new T.BufferAttribute(P,3)); rain=new T.Points(g,new T.PointsMaterial({color:0xffffff,size:.7,transparent:true,opacity:.9,depthWrite:false})); scene.add(rain); }
+  const snowFx=sl||BIO==='snow';
+  if(snowFx){ const N=2400+(sl||1)*500, P=new Float32Array(N*3); for(let q=0;q<N;q++){ P[q*3]=(rng()-.5)*300; P[q*3+1]=rng()*120; P[q*3+2]=(rng()-.5)*300; } const g=new T.BufferGeometry(); g.setAttribute('position',new T.BufferAttribute(P,3)); rain=new T.Points(g,new T.PointsMaterial({color:0xffffff,size:.7,transparent:true,opacity:.9,depthWrite:false})); scene.add(rain); }
   else if(rl){ const N=2600+rl*800, P=new Float32Array(N*6); for(let q=0;q<N;q++){ const x=(rng()-.5)*300, y=rng()*120, z=(rng()-.5)*300; P.set([x,y,z,x-.3,y-3.5,z],q*6); } const g=new T.BufferGeometry(); g.setAttribute('position',new T.BufferAttribute(P,3)); rain=new T.LineSegments(g,new T.LineBasicMaterial({color:0xc8dcf0,transparent:true,opacity:.42,depthWrite:false})); scene.add(rain); }
   // ---- 馬：道をたどって進む。うしろから見る（ブレワイで馬に乗っているときのように）----
   // 栗毛にクリーム色の長いたてがみと尾。影は2段でくっきり（ブレワイのような塗り）
@@ -5014,7 +5022,8 @@ async function pLookOpen(){
 #ifdef SLAB
    col*=1.+.07*sin(vRP.y*5.+rn3(p*.3)*4.);
 #endif
-   float ms=smoothstep(.55,.85,vNy)*smoothstep(.45,.6,rn3(p*.3+3.)); col=mix(col,vec3(.16,.27,.05),ms*.85);
+   float ms=smoothstep(.55,.85,vNy)*smoothstep(.45,.6,rn3(p*.3+3.)); col=mix(col,vec3(.16,.27,.05),ms*.85*${BIO==='snow'||BIO==='volc'||BIO==='desert'?'0.':'1.'});
+${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)-.5)*.3));':''}
    col=mix(col,vec3(.48,.48,.25),smoothstep(.86,.9,rn3(p*2.2+4.))*smoothstep(.0,.5,vNy)*.4);
    float sk=1.-smoothstep(.0,.32,vOY+.3); col=mix(col,vec3(.26,.16,.07)*(.9+.2*rn3(p*.9)),sk*.7);
    diffuseColor.rgb=col; }`)
@@ -5023,7 +5032,7 @@ async function pLookOpen(){
           .replace('#include <lights_fragment_end>',`irradiance=mix(irradiance,vec3(dot(irradiance,vec3(.333)))*vec3(.96,.98,1.1),.6);
 #include <lights_fragment_end>
  { float rim=pow(1.-saturate(dot(normal,normalize(vViewPosition))),3.)*smoothstep(0.,.5,normal.y); reflectedLight.indirectDiffuse+=rim*.22*diffuseColor.rgb; }`); }; return m; };
-    const mB=mkMat(0), mS=mkMat(1), kinds=[[mkRock(1,3,1.0,0),mB,170],[mkRock(2,2,.95,0),mB,130],[mkRock(3,3,.55,3),mS,28],[mkRock(4,3,.92,0),mB,170]], im=kinds.map(([g,m,n])=>new T.InstancedMesh(g,m,n)), cnt=kinds.map(()=>0), rc=new T.Color(), tW=c3([184,172,152]), tC=c3([170,166,158]);
+    const mB=mkMat(0), mS=mkMat(1), kinds=[[mkRock(1,3,1.0,0),mB,170],[mkRock(2,2,.95,0),mB,130],[mkRock(3,3,.55,3),mS,28],[mkRock(4,3,.92,0),mB,170]], im=kinds.map(([g,m,n])=>new T.InstancedMesh(g,m,n)), cnt=kinds.map(()=>0), rc=new T.Color(), tW=c3({volc:[86,78,76],desert:[206,164,116]}[BIO]||[184,172,152]), tC=c3({volc:[70,64,66],desert:[190,148,104]}[BIO]||[170,166,158]);
     const ca=near.attributes.color.array;
     const place=(kd,s2,x,y,rot,tilt)=>{ if(cnt[kd]>=kinds[kd][2]||x<XA||x>XB) return; if(Math.abs(x-rX(y))<8+s2*1.3) return; const e=Math.min(hAt(x,y),hAt(x+s2*.7,y),hAt(x-s2*.7,y),hAt(x,y+s2*.7),hAt(x,y-s2*.7)); if(e<1) return;
       Q.setFromEuler(new T.Euler((rr0()-.5)*tilt,rot,(rr0()-.5)*tilt)); Sc.set(s2*(1+rr0()*.3),s2*(.85+rr0()*.3),s2*(1+rr0()*.3)); V.set(X(x),e-s2*(kd===2?.3:.16),Z(y)); M.compose(V,Q,Sc); im[kd].setMatrixAt(cnt[kd],M); RK.push([x,y,s2]);
@@ -5038,6 +5047,38 @@ async function pLookOpen(){
     for(let q=0;q<5;q++){ const y=yA+rr0()*P, x=rX(y)+(rr0()<.5?-1:1)*(16+rr0()*30); place(rr0()<.5?0:3,6+rr0()*4,x,y,rr0()*6.28,.2); }
     near.attributes.color.needsUpdate=true;
     im.forEach((m,q)=>{ m.count=cnt[q]; m.castShadow=q!==1; m.receiveShadow=true; tileG.add(m); }); }
+  // ---- 土地ごとの置きもの ----
+  { const br0=pRng('bio'+k,8), onG=(x,y)=>{ const e=hAt(x,y); return e>=.8?e:null; }, far=(x,y,d)=>Math.abs(x-rX(y))>d;
+    const scat=(geo,mat,N,f)=>{ const im=new T.InstancedMesh(geo,mat,N); let m=0; for(let q=0;q<N*6&&m<N;q++){ const r=f(); if(!r) continue; const [x,y,s,sy,rot,yo]=r, e=onG(x,y); if(e==null) continue; Q.setFromAxisAngle(up,rot); Sc.set(s,s*(sy||1),s); V.set(X(x),e+(yo||0),Z(y)); M.compose(V,Q,Sc); im.setMatrixAt(m++,M); } im.count=m; im.castShadow=im.receiveShadow=true; tileG.add(im); return im; };
+    const nearRoad=(d0,d1)=>{ const y=yA+br0()*P, sg=br0()<.5?-1:1, x=rX(y)+sg*(d0+Math.pow(br0(),1.3)*(d1-d0)); return [x,y]; };
+    const bt=(c)=>patch(new T.MeshToonMaterial({color:c3(c),gradientMap:gmap}));
+    if(BIO==='wet'){
+      // 葦の茂み・水たまり・枯れ木
+      const rd=[]; for(let q=0;q<9;q++){ const a=q/9*6.28, d=q?.35+.25*(q%3):0, h=2.2+(q%4)*.35; rd.push(new T.ConeGeometry(.09,h,4).translate(Math.cos(a)*d,h/2,Math.sin(a)*d)); }
+      const reedG=mergeG(rd), reedM=patch(new T.MeshToonMaterial({color:c3([110,122,58]),gradientMap:gmap}),.25);
+      const anc=[]; for(let q=0;q<200;q++){ const [x,y]=nearRoad(9,120); anc.push([x,y]); }
+      scat(reedG,reedM,1100,()=>{ const a=anc[Math.floor(br0()*anc.length)], r=Math.sqrt(br0())*9, t=br0()*6.28, x=a[0]+Math.cos(t)*r, y=a[1]+Math.sin(t)*r; return far(x,y,8)?[x,y,1.6+br0()*1,1.1,br0()*6.28,-.1]:null; });
+      const pud=new T.InstancedMesh(new T.CircleGeometry(1,20).rotateX(-Math.PI/2),patch(new T.MeshStandardMaterial({color:c3([66,92,88]),roughness:.08,envMap:L.env||null,envMapIntensity:1})),90); let pm=0;
+      for(let q=0;q<400&&pm<90;q++){ const [x,y]=nearRoad(9,140); const s2=3+br0()*7, e=Math.min(hAt(x,y),hAt(x+s2,y),hAt(x-s2,y),hAt(x,y+s2),hAt(x,y-s2)); if(e<.8||!far(x,y,9+s2)) continue; Q.identity(); Sc.set(s2*(1+br0()*.6),1,s2); V.set(X(x),e+.1,Z(y)); M.compose(V,Q,Sc); pud.setMatrixAt(pm++,M); RK.push([x,y,s2*1.25]); } pud.count=pm; pud.receiveShadow=true; tileG.add(pud);
+      const dt0=mergeG([new T.CylinderGeometry(.35,.6,6,6).translate(0,3,0),br(0,4,0,1.8,6.4,.4,.3,.08),br(0,4.6,0,-1.5,6.8,-.5,.28,.07),br(0,5.4,0,.3,7.6,1.4,.22,.06),br(0,3.2,0,1.4,4.2,-1.1,.2,.06)]);
+      scat(dt0,bt([112,100,86]),70,()=>{ const [x,y]=nearRoad(14,160); return far(x,y,12)?[x,y,.9+br0()*.6,1,br0()*6.28,-.2]:null; });
+    }
+    if(BIO==='volc'){
+      // 黒い岩の尖塔と、地面を流れる溶岩の筋
+      scat(mergeG([new T.ConeGeometry(1,4,6).translate(0,2,0),new T.ConeGeometry(.6,2.6,5).translate(.9,1.3,.3)]),bt([62,56,58]),260,()=>{ const [x,y]=nearRoad(10,170); return far(x,y,10)?[x,y,1.5+br0()*3.5,1+br0()*.9,br0()*6.28,-.4]:null; });
+      const LP=[], LI=[]; let ln=0;
+      for(let q=0;q<26;q++){ let [x,y]=nearRoad(18,140); let a=br0()*6.28; const w=3.5+br0()*4, L2=60+br0()*180;
+        for(let t=0;t<=L2;t+=4){ a+=(br0()-.5)*.35; x+=Math.cos(a)*4; y+=Math.sin(a)*4; if(!far(x,y,12)) a+=Math.PI*.5; const nx2=-Math.sin(a), ny2=Math.cos(a), ww=w*(1-.6*Math.pow(t/L2,2));
+          for(const sg of [-1,1]){ const px=x+nx2*ww*sg, pyy=y+ny2*ww*sg; LP.push(X(px),Math.max(-.2,hAt(px,pyy))+.15,Z(pyy)); } if(t) LI.push(ln-2,ln,ln-1,ln-1,ln,ln+1); ln+=2; } ln+=0; LI.push(); }
+      { const g=new T.BufferGeometry(); g.setAttribute('position',new T.Float32BufferAttribute(LP,3)); const I2=[]; for(let i=0;i<LI.length;i+=6){ I2.push(...LI.slice(i,i+6)); } g.setIndex(I2); g.computeVertexNormals(); tileG.add(new T.Mesh(g,new T.MeshBasicMaterial({color:c3([255,110,30]).multiplyScalar(1.8),side:T.DoubleSide,polygonOffset:true,polygonOffsetFactor:-2}))); }
+    }
+    if(BIO==='desert'){
+      // サボテンと枯れた茂み
+      const cac=mergeG([new T.CylinderGeometry(.45,.5,5,8).translate(0,2.5,0),new T.SphereGeometry(.45,8,6).translate(0,5,0),br(0,2.2,0,1.1,2.4,0,.3,.3),new T.CylinderGeometry(.3,.3,1.6,8).translate(1.1,3.2,0),new T.SphereGeometry(.3,8,6).translate(1.1,4,0),br(0,3,0,-1,3.2,0,.28,.28),new T.CylinderGeometry(.28,.28,1.2,8).translate(-1,3.8,0),new T.SphereGeometry(.28,8,6).translate(-1,4.4,0)]);
+      scat(cac,bt([92,136,70]),110,()=>{ const [x,y]=nearRoad(12,210); return far(x,y,10)?[x,y,.8+br0()*.6,1,br0()*6.28,-.2]:null; });
+      scat(new T.IcosahedronGeometry(1,1),patch(new T.MeshToonMaterial({color:c3([176,152,98]),gradientMap:gmap}),.1),320,()=>{ const [x,y]=nearRoad(7,210); return far(x,y,7)?[x,y,.5+br0()*.9,.6,br0()*6.28,0]:null; });
+    }
+  }
   // くり返しの区間を3つ並べ、馬の前後に置き直す
   const tiles=[tileG,tileG.clone(),tileG.clone()]; tiles.slice(1).forEach(t=>scene.add(t));
   const putTiles=py=>{ const kk=Math.floor((py-yA)/P); tiles.forEach((t,i)=>{ t.position.set((kk-1+i)*SL*P,0,-(kk-1+i)*P); }); farG.position.set(sh(py),0,-(py-y0)); };
@@ -5047,7 +5088,7 @@ async function pLookOpen(){
     else if(o.isMesh){ const p=o.geometry.attributes.position, a=p.array; for(let q=0;q<p.count;q++) a[q*3]+=SL*(y0-a[q*3+2]-yA); p.needsUpdate=true; o.geometry.computeVertexNormals(); o.geometry.computeBoundingSphere(); } });
   tiles.slice(1).forEach(t=>scene.remove(t)); tiles[1]=tileG.clone(); tiles[2]=tileG.clone(); scene.add(tiles[1],tiles[2]);
   // ---- 見つけるもの：1分ほど走るごとに何かがある（遺跡・野営地・風車・鹿の群れ・宝箱…）。近づくと名前が出る ----
-  const mPondE=tm([120,108,80]), mFlower=tm([255,255,255]), mStone=tm([190,182,164]), mMoss=tm([104,138,66]), mWood=tm([128,88,54]), mWoodD=tm([88,62,40]), mCanvas=tm([222,208,176]), mRedC=tm([176,64,48]), mLeaf=tm([76,128,54]), mLeaf2=tm([58,104,46]), mApple=tm([210,44,40]),
+  const mPondE=tm([120,108,80]), mFlower=tm([255,255,255]), mFlower2=tm([240,190,214]), mLava=new T.MeshBasicMaterial({color:c3([255,110,30]).multiplyScalar(1.8)}), mDark=tm([70,62,62]), mIce=tm([176,220,240]), mSnow=tm([236,242,250]), mSand2=tm([206,170,120]), mSandG=tm([222,186,124]), mBone=tm([236,226,204]), mStone=tm([190,182,164]), mMoss=tm([104,138,66]), mWood=tm([128,88,54]), mWoodD=tm([88,62,40]), mCanvas=tm([222,208,176]), mRedC=tm([176,64,48]), mLeaf=tm([76,128,54]), mLeaf2=tm([58,104,46]), mApple=tm([210,44,40]),
     mWhite=tm([236,230,216]), mRoof=tm([150,74,52]), mDeer=tm([160,106,62]), mDeerL=tm([232,214,188]), mGold=tm([226,182,72]), mFire=new T.MeshBasicMaterial({color:c3([255,170,60]).multiplyScalar(1.6)}),
     mWater=patch(new T.MeshStandardMaterial({color:c3([62,120,140]),roughness:.12,envMap:L.env||null,envMapIntensity:1.1}));
   const mk=(g,m,x=0,y=0,z=0)=>{ const o=shad(new T.Mesh(g,m)); o.position.set(x,y,z); return o; };
@@ -5080,9 +5121,27 @@ async function pLookOpen(){
     ['岩の上の宝箱',g=>{ const rk=Sp(3,mStone,0,1.4,0,0); rk.scale.set(1.3,.7,1.1); g.add(rk); g.add(Bx(2.2,1.3,1.4,mWood,0,3.4,0)); const ld=mk(new T.CylinderGeometry(.7,.7,2.2,10,1,false,0,3.1416),mWood,0,4.05,0); ld.rotation.z=1.5708; g.add(ld);
       [-.7,.7].forEach(x=>g.add(Bx(.18,1.36,1.46,mGold,x,3.4,0))); g.add(Bx(.4,.4,.1,mGold,0,3.6,.72)); }],
     ['道しるべ',g=>{ g.add(Cy(.22,.26,5,mWood,0,2.5,0,6)); const a=Bx(3,.6,.15,mWoodD,1.2,4.3,0); a.rotation.y=.3; g.add(a); const b=Bx(2.6,.6,.15,mWoodD,-1,3.4,0); b.rotation.y=-.5; g.add(b); }],
-    ['石積み',g=>{ let y=0; for(let q=0;q<6;q++){ const r=1.6-q*.2, s=Sp(r,mStone,(q%2-.5)*.2,y+r*.4,0,0); s.scale.y=.55; g.add(s); y+=r*.9; } }]];
-  const dRng=pRng('lkd'+k,7), perm=DK.map((_,q)=>q).sort(()=>dRng()-.5), LG=480, disc=L.disc=new Map(), findEl=ov.querySelector('.lk-find'); let findT=0;
-  const dSpot=n=>{ const r=pRng('lkd'+k+'_'+n,9), tp=perm[n%perm.length], yy=y0+260+n*LG+(r()-.5)*160, nm=DK[tp][0], road2=nm==='道しるべ', sg=r()<.5?-1:1, big=nm==='丘の大樹'||nm==='丘の風車'||nm==='見張り台', SC={'鹿の群れ':1.6,'花畑':1.8,'道しるべ':1.5,'岩の上の宝箱':1.8,'小さな池':1.8,'石積み':1.8}[nm]||2.4, FR={'古い柱の遺跡':12,'崩れた石の門':8,'旅人の野営地':10,'丘の大樹':10,'りんごの木立':12,'丘の風車':5,'見張り台':4,'苔むした石像':3.5,'壊れた荷車':6,'小さな池':11,'鹿の群れ':9,'花畑':14,'岩の上の宝箱':4,'石積み':2}[nm]||4, off=road2?8:12+FR*SC+r()*(big?70:25); return {tp,yy,nm,x:rXw(yy)+sg*off,sg,SC}; };
+    ['石積み',g=>{ let y=0; for(let q=0;q<6;q++){ const r=1.6-q*.2, s=Sp(r,mStone,(q%2-.5)*.2,y+r*.4,0,0); s.scale.y=.55; g.add(s); y+=r*.9; } }],
+    // 湿地
+    ['沈みかけた柱',g=>{ g.add(mk(new T.CylinderGeometry(10,10,.3,26),mWater,0,.1,0)); const r=pRng('sk',g.id); for(let q=0;q<5;q++){ const a=q/5*6.28+r(), h=2+r()*5, c=Cy(1,1.1,h,mStone,Math.cos(a)*6,h/2-.5,Math.sin(a)*6,8); c.rotation.z=(r()-.5)*.4; g.add(c); g.add(Cy(1.05,1.05,.3,mMoss,Math.cos(a)*6,h-.4,Math.sin(a)*6,8)); } },'wet'],
+    ['古い木道',g=>{ for(let q=0;q<12;q++){ const p=Bx(3.2,.2,1,mWood,0,.9+Math.sin(q*.7)*.1,q*1.25-7); p.rotation.y=(Math.sin(q*1.9))*.06; g.add(p); if(q%3===0) [-1.4,1.4].forEach(x=>g.add(Cy(.15,.18,1.8,mWoodD,x,.3,q*1.25-7,5))); } },'wet'],
+    ['大きな睡蓮',g=>{ g.add(mk(new T.CylinderGeometry(9,9,.3,24),mWater,0,.1,0)); const r=pRng('ly',g.id); for(let q=0;q<11;q++){ const a=r()*6.28, d=r()*6.5, s=.8+r()*1.4; g.add(Cy(s,s,.08,mLeaf,Math.cos(a)*d,.3,Math.sin(a)*d,10)); if(q%3===0) g.add(mk(new T.ConeGeometry(.35,.6,6),mFlower2,Math.cos(a)*d,.6,Math.sin(a)*d)); } },'wet'],
+    // 火山
+    ['溶岩をまたぐ石橋',g=>{ g.add(Bx(4,.6,16,mLava,0,.05,0)); g.add(Bx(5,.8,3,mDark,0,2.4,0)); [-1,1].forEach(z=>{ g.add(Bx(5,2.2,1.4,mDark,0,1.1,z*2.2)); g.add(Bx(.4,.8,3,mDark,z*2.3,3.2,0)); }); },'volc'],
+    ['焼け落ちた砦',g=>{ const r=pRng('fo',g.id); [[0,-5,10,1],[5,0,1,8],[-5,1,1,6]].forEach(([x,z,w,d])=>{ for(let k2=0;k2<4;k2++){ const h=2+r()*4; g.add(Bx(w===10?2.4:1.2,h,d===1?1.2:2,mDark,x+(w===10?(k2-1.5)*2.5:0),h/2,z+(d>1?(k2-1.5)*(d/4):0))); } }); for(let q=0;q<4;q++){ const b=Cy(.25,.3,4,mWoodD,(r()-.5)*6,.5,(r()-.5)*6,5); b.rotation.set(r(),0,1.4); g.add(b); } },'volc'],
+    ['噴気孔',g=>{ for(let q=0;q<9;q++){ const a=q/9*6.28; g.add(Sp(1.2,mDark,Math.cos(a)*2.4,.4,Math.sin(a)*2.4,0)); } g.add(Cy(1.6,1.6,.2,mLava,0,.2,0,12)); g.userData.vent=1; },'volc'],
+    // 雪山
+    ['氷の柱',g=>{ const r=pRng('ic',g.id); for(let q=0;q<7;q++){ const h=3+r()*6, c=mk(new T.ConeGeometry(.6+r()*.6,h,5),mIce,(r()-.5)*7,h/2-.3,(r()-.5)*7); c.rotation.set((r()-.5)*.4,r()*3,(r()-.5)*.4); g.add(c); } },'snow'],
+    ['凍った池',g=>{ g.add(mk(new T.CylinderGeometry(9,9,.3,26),mIce,0,.12,0)); for(let q=0;q<10;q++){ const a=q/10*6.28; g.add(Sp(.9,mSnow,Math.cos(a)*9.4,.2,Math.sin(a)*9.4,0)); } },'snow'],
+    ['雪をかぶった石塔',g=>{ let y=0; for(let q=0;q<4;q++){ const w=3-q*.6; g.add(Bx(w,1.6,w,mStone,0,y+.8,0)); g.add(Bx(w+.3,.35,w+.3,mSnow,0,y+1.7,0)); y+=1.85; } },'snow'],
+    // 砂漠
+    ['砂に埋もれた巨像',g=>{ g.add(Bx(4.5,5,4,mSand2,0,2,0)); g.add(Bx(4.7,1,1.2,mSand2,0,4.6,2)); g.add(Bx(1,1.4,1.2,mSand2,0,2.8,2.4)); [-1,1].forEach(x=>g.add(Bx(.9,.4,.3,mDark,x*1.1,3.6,2.05))); g.add(Sp(3.2,mSandG,0,-.6,0,1)); },'desert'],
+    ['オアシス',g=>{ g.add(mk(new T.CylinderGeometry(8,8,.3,24),mWater,0,.1,0)); for(let q=0;q<5;q++){ const a=q/5*6.28+.4, x=Math.cos(a)*9.5, z=Math.sin(a)*9.5, tr=Cy(.35,.5,8,mWood,x,4,z,6); tr.rotation.z=.15; g.add(tr); for(let k2=0;k2<6;k2++){ const l=Bx(4,.12,1.1,mLeaf,x+.6+Math.cos(k2)*1.6,8.2,z+Math.sin(k2)*1.6); l.rotation.set(0,k2,-.35); g.add(l); } } },'desert'],
+    ['大きな獣の骨',g=>{ for(let q=0;q<7;q++){ const t=mk(new T.TorusGeometry(3.2-q*.25,.25,6,16,Math.PI),mBone,0,0,q*1.4-4); g.add(t); } { const sp2=Cy(.4,.4,11,mBone,0,3,0,6); sp2.rotation.x=1.5708; g.add(sp2); } g.add(Sp(1.6,mBone,0,1.5,6.5,1)); },'desert']];
+  // 土地に合わないものは出さない
+  const NOT={volc:['りんごの木立','花畑','鹿の群れ','小さな池','丘の大樹','丘の風車','苔むした石像'],desert:['りんごの木立','花畑','鹿の群れ','小さな池','丘の大樹','丘の風車','苔むした石像'],snow:['りんごの木立','花畑','鹿の群れ','小さな池','丘の風車'],wet:['りんごの木立','丘の風車','花畑']}[BIO]||[];
+  const dRng=pRng('lkd'+k,7), perm=DK.map((_,q)=>q).filter(q=>(DK[q][2]?DK[q][2]===BIO:true)&&!NOT.includes(DK[q][0])).sort(()=>dRng()-.5), LG=480, disc=L.disc=new Map(), findEl=ov.querySelector('.lk-find'); let findT=0;
+  const dSpot=n=>{ const r=pRng('lkd'+k+'_'+n,9), tp=perm[n%perm.length], yy=y0+260+n*LG+(r()-.5)*160, nm=DK[tp][0], road2=nm==='道しるべ', sg=r()<.5?-1:1, big=nm==='丘の大樹'||nm==='丘の風車'||nm==='見張り台', SC={'鹿の群れ':1.6,'花畑':1.8,'道しるべ':1.5,'岩の上の宝箱':1.8,'小さな池':1.8,'石積み':1.8}[nm]||2.4, FR={'古い柱の遺跡':12,'崩れた石の門':8,'旅人の野営地':10,'丘の大樹':10,'りんごの木立':12,'丘の風車':5,'見張り台':4,'苔むした石像':3.5,'壊れた荷車':6,'小さな池':11,'鹿の群れ':9,'花畑':14,'岩の上の宝箱':4,'石積み':2,'沈みかけた柱':11,'古い木道':8,'大きな睡蓮':10,'溶岩をまたぐ石橋':9,'焼け落ちた砦':7,'噴気孔':4,'氷の柱':5,'凍った池':10,'雪をかぶった石塔':2,'砂に埋もれた巨像':4,'オアシス':12,'大きな獣の骨':7}[nm]||4, off=road2?8:12+FR*SC+r()*(big?70:25); return {tp,yy,nm,x:rXw(yy)+sg*off,sg,SC}; };
   const putDisc=py=>{ const n0=Math.max(0,Math.floor((py-y0-260)/LG)-1), n1=Math.floor((py-y0+2600)/LG);
     for(const [n,o] of disc) if(n<n0||n>n1){ scene.remove(o.g); o.g.traverse(m=>{ if(m.geometry) m.geometry.dispose(); }); disc.delete(n); }
     for(let n=n0;n<=n1;n++){ if(disc.has(n)) continue; const s=dSpot(n), g=new T.Group(); DK[s.tp][1](g); g.scale.setScalar(s.SC); let e=hW(s.x,s.yy); if(s.nm==='小さな池') e=Math.min(e,hW(s.x+12,s.yy),hW(s.x-12,s.yy),hW(s.x,s.yy+12),hW(s.x,s.yy-12))+.3; g.position.set(X(s.x),Math.max(-.2,e)-.15,Z(s.yy)); g.rotation.y=s.nm==='道しるべ'?(s.sg>0?-1.5708:1.5708):s.sg*.3; scene.add(g); disc.set(n,{g,s,seen:false}); }
@@ -5091,6 +5150,10 @@ async function pLookOpen(){
   // 鳥の群れ：ときどき空を横切る
   const birds=new T.Group(); scene.add(birds); { const wg=new T.BufferGeometry(); wg.setAttribute('position',new T.Float32BufferAttribute([0,0,0,-2.2,.3,-.6,0,0,-1.2, 0,0,0,0,0,-1.2,2.2,.3,-.6],3)); wg.computeVertexNormals(); const bm=new T.MeshBasicMaterial({color:c3([40,44,52]),side:T.DoubleSide});
     for(let q=0;q<9;q++){ const b=new T.Mesh(wg,bm); b.position.set((q%2?1:-1)*Math.ceil(q/2)*3.4,Math.sin(q)*1.2,Math.ceil(q/2)*3.6); b.userData.ph=q*.7; birds.add(b); } }
+  const smk=[]; if(BIO==='volc'){ const sc2=document.createElement('canvas'); sc2.width=sc2.height=64; { const x=sc2.getContext('2d'), gd=x.createRadialGradient(32,32,2,32,32,30); gd.addColorStop(0,'rgba(255,255,255,.9)'); gd.addColorStop(1,'rgba(255,255,255,0)'); x.fillStyle=gd; x.fillRect(0,0,64,64); }
+    const st=new T.CanvasTexture(sc2); for(let q=0;q<7;q++){ const g=new T.Group(); for(let k2=0;k2<8;k2++){ const sp=new T.Sprite(new T.SpriteMaterial({map:st,color:c3([92,84,84]),transparent:true,depthWrite:false})); sp.userData.t=k2/8; g.add(sp); } g.userData.need=1; scene.add(g); smk.push(g); } }
+  const animSmoke=(t,dt)=>{ smk.forEach((g,q)=>{ if(g.userData.need||g.position.distanceTo(cam.position)>1300||(new T.Vector3().subVectors(g.position,cam.position).dot(new T.Vector3(Math.sin(hY),0,Math.cos(hY))))<-200){ const d=300+dRng()*800, a=hY+(dRng()-.5)*1.6, x=cam.position.x+Math.sin(a)*d, z=cam.position.z+Math.cos(a)*d; g.position.set(x,horse.position.y-6,z); g.userData.need=0; }
+      g.children.forEach(sp=>{ let u=(sp.userData.t+t*.05+q*.13)%1; const s=10+u*60; sp.position.set(Math.sin(u*5+q)*u*14,u*140,0); sp.scale.set(s,s,1); sp.material.opacity=.55*Math.sin(Math.PI*u); }); }); };
   let bT=-1e9; const animBirds=(t,dt)=>{ if(t-bT>40){ bT=t; const a=dRng()*6.28; birds.userData.v=new T.Vector3(Math.cos(a)*22,0,Math.sin(a)*22); birds.position.set(cam.position.x-Math.cos(a)*420+(dRng()-.5)*200,cam.position.y+60+dRng()*50,cam.position.z-260-Math.sin(a)*420); birds.rotation.y=Math.atan2(Math.cos(a),Math.sin(a)); }
     birds.position.addScaledVector(birds.userData.v,dt); birds.children.forEach(b=>{ const f=Math.sin(t*9+b.userData.ph); b.scale.set(1,1+f*.6,1); b.rotation.z=f*.15; }); };
   // ---- 進む・見る ----
@@ -5134,8 +5197,8 @@ async function pLookOpen(){
       MANE.forEach(g=>{ const u=g.userData; g.rotation.x=(.32*sw+.1*sw*Math.sin(T0*2+u.ph*.3)+.05*Math.sin(t*1.8+u.ph))*u.k; g.rotation.z=u.sd*(-.12*sw*Math.max(0,gb)+.04*Math.sin(t*1.3+u.ph))*u.k; }); } rider.position.y=RY+Math.max(0,Math.sin(T0*2))*.04*sw;
     if(gC&&!gJob&&Math.hypot(rX(py)-gC[0],py-gC[1])>35) gJob=plantGen(rX(py+12),py+12); plantStep(3);
     if(isT||k){ const m=nowM+(py-y0)/KM; tEl.textContent=`${dLab}　${pfmt(Math.round(m))}`; }
-    animDisc(n/1000,dt); animBirds(n/1000,dt); place(); clouds.forEach(s=>{ s.position.x+=dt*7; if(s.position.x>1600) s.position.x=-1600; if(s.position.z>cam.position.z+600) s.position.z-=3100; }); if(L.nt){ L.nt.offset.x+=dt*.004; L.nt.offset.y+=dt*.006; }
-    if(rain){ rain.position.set(cam.position.x,cam.position.y-40,cam.position.z); const P=rain.geometry.attributes.position.array; if(sl){ for(let q=1;q<P.length;q+=3){ P[q]-=10*dt; P[q-1]+=Math.sin(n/900+q)*dt*2; if(P[q]<0) P[q]+=120; } } else { for(let q=1;q<P.length;q+=6){ P[q]-=110*dt; P[q+3]-=110*dt; if(P[q+3]<0){ P[q]+=120; P[q+3]+=120; } } } rain.geometry.attributes.position.needsUpdate=true; }
+    animDisc(n/1000,dt); animBirds(n/1000,dt); animSmoke(n/1000,dt); place(); clouds.forEach(s=>{ s.position.x+=dt*7; if(s.position.x>1600) s.position.x=-1600; if(s.position.z>cam.position.z+600) s.position.z-=3100; }); if(L.nt){ L.nt.offset.x+=dt*.004; L.nt.offset.y+=dt*.006; }
+    if(rain){ rain.position.set(cam.position.x,cam.position.y-40,cam.position.z); const P=rain.geometry.attributes.position.array; if(snowFx){ for(let q=1;q<P.length;q+=3){ P[q]-=10*dt; P[q-1]+=Math.sin(n/900+q)*dt*2; if(P[q]<0) P[q]+=120; } } else { for(let q=1;q<P.length;q+=6){ P[q]-=110*dt; P[q+3]-=110*dt; if(P[q+3]<0){ P[q]+=120; P[q+3]+=120; } } } rain.geometry.attributes.position.needsUpdate=true; }
     ren.render(scene,cam); if(L.shot&&n-tIn>1200){ L.shot(); return; } L.raf=requestAnimationFrame(loop); };
   L.raf=requestAnimationFrame(loop);
 }
