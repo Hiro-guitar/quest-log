@@ -4909,20 +4909,22 @@ async function pLookOpen(){
     { const r=new T.Mesh(new T.TorusGeometry(.03,.009,6,12),metal); r.position.set(sg*.12-NP[0],1.87-NP[1],1.86-NP[2]); r.rotation.y=Math.PI/2; hd.add(r); }
     hd.add(seg2([sg*.12-NP[0],1.86-NP[1],1.86-NP[2]],[sg*.1-NP[0],2.02-NP[1],.68-NP[2]],.011,.011,strap)); });
   hd.add(tube([[-.12,1.92,1.82,.012,.012,.012],[0,1.98,1.86,.012,.012,.012],[.12,1.92,1.82,.012,.012,.012]],strap,6,...NP,2));
+  const MANE=[];
   // たてがみ：首すじから右に長く垂れる房と、前髪
   neck.add(tube(nk.map(q=>[.03,q[1]+q[4]*.92+.02,q[2]-q[4]*.42,.11,.13,.07]),mane,12,...NP));
   for(let q=0;q<14;q++){ const sd=q<9?1:-1, qq=q<9?q:q-9, nq=q<9?8:4, f=qq/nq, i0=Math.min(3,Math.floor(f*3.99)), a=nk[i0], b=nk[i0+1], w=f*3.99-i0, y=a[1]+(b[1]-a[1])*w+(a[4]+(b[4]-a[4])*w)*.85, z=a[2]+(b[2]-a[2])*w-(a[4]+(b[4]-a[4])*w)*.4, rx=(a[3]+(b[3]-a[3])*w)*sd;
     const ln=(.56-f*.18+Math.sin(q*2.7)*.05)*(sd>0?1:.7), wd=.14+Math.sin(q*1.9)*.025, dz=-.1-.04*Math.sin(q*1.3);
-    neck.add(tube([[rx*.4,y+.03,z,.05,wd,wd],[rx*.85,y-.08,z-.02,.05,wd,wd],[rx+.02*sd,y-ln*.45,z+dz*.5,.04,wd*1.05,wd*1.05],[rx+.04*sd,y-ln*.8,z+dz,.03,wd*.75,wd*.75],[rx+.06*sd,y-ln,z+dz*1.2,.01,wd*.15,wd*.15]],q%4===3?maneD:mane,10,...NP,3)); }
+    { const lg=new T.Group(), r0=[rx*.4-NP[0],y+.03-NP[1],z-NP[2]]; lg.position.set(...r0); lg.userData={sd,ph:q*1.37,k:.6+f*.5}; neck.add(lg); MANE.push(lg); const lm=tube([[rx*.4,y+.03,z,.05,wd,wd],[rx*.85,y-.08,z-.02,.05,wd,wd],[rx+.02*sd,y-ln*.45,z+dz*.5,.04,wd*1.05,wd*1.05],[rx+.04*sd,y-ln*.8,z+dz,.03,wd*.75,wd*.75],[rx+.06*sd,y-ln,z+dz*1.2,.01,wd*.15,wd*.15]],q%4===3?maneD:mane,10,...NP,3); lm.position.set(-r0[0],-r0[1],-r0[2]); lg.add(lm); } }
   hd.add(tube([[0,2.64,1.25,.09,.1,.1],[.02,2.57,1.4,.13,.1,.1],[.03,2.43,1.54,.11,.08,.08],[.04,2.3,1.62,.07,.05,.05],[.05,2.22,1.65,.01,.015,.015]],mane,12,...NP,3));
   [-1,1].forEach(sg=>hd.add(tube([[sg*.08,2.6,1.3,.03,.06,.06],[sg*.17,2.45,1.42,.03,.05,.05],[sg*.2,2.3,1.46,.01,.01,.01]],mane,8,...NP,3)));
   // 尾：根もとが太く、長く流れる
   const tail=new T.Group(); tail.position.set(0,1.9,-1.1); bo.add(tail);
+  const TB={value:new T.Vector2()}, bend=m=>{ const c=m.clone(), ob=m.onBeforeCompile; c.onBeforeCompile=sh=>{ ob(sh); sh.uniforms.uTB=TB; sh.vertexShader='uniform vec2 uTB;\n'+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n { float d=max(0.,-position.y); transformed.x+=uTB.x*d*d; transformed.z+=uTB.y*d*d; }'); }; return c; }, tM=bend(mane), tD=bend(maneD);
   tail.add(tube([[0,.04,.06,.1,.1,.1],[0,-.06,-.06,.11,.11,.11],[0,-.24,-.14,.09,.09,.09]],coat,12,0,0,0,3));
   // 房のすき間を埋める芯（うしろから見ても一つの尾に見えるように）
-  tail.add(tube([[0,-.05,-.08,.1,.1,.1],[0,-.45,-.16,.15,.1,.1],[0,-.85,-.19,.17,.09,.09],[0,-1.05,-.19,.14,.06,.06],[0,-1.12,-.18,.02,.02,.02]],maneD,14,0,0,0,3));
+  tail.add(tube([[0,-.05,-.08,.1,.1,.1],[0,-.45,-.16,.15,.1,.1],[0,-.85,-.19,.17,.09,.09],[0,-1.05,-.19,.14,.06,.06],[0,-1.12,-.18,.02,.02,.02]],tD,14,0,0,0,3));
   for(let q=0;q<8;q++){ const ox=(q-3.5)*.02, sp=(q-3.5)*.03, ln=1.15+Math.sin(q*2.1)*.08;
-    tail.add(tube([[ox,0,-.04,.08,.08,.08],[ox+sp*.3,-.15,-.1,.11,.09,.09],[ox+sp*.6,-.5,-.16,.12,.09,.09],[ox+sp,-.85,-.2,.11,.08,.08],[ox+sp*1.5,-ln+.1,-.2,.07,.05,.05],[ox+sp*1.8,-ln,-.17,.015,.015,.015]],q%3?mane:maneD,10,0,0,0,3)); }
+    tail.add(tube([[ox,0,-.04,.08,.08,.08],[ox+sp*.3,-.15,-.1,.11,.09,.09],[ox+sp*.6,-.5,-.16,.12,.09,.09],[ox+sp,-.85,-.2,.11,.08,.08],[ox+sp*1.5,-ln+.1,-.2,.07,.05,.05],[ox+sp*1.8,-ln,-.17,.015,.015,.015]],q%3?tM:tD,10,0,0,0,3)); }
   // 脚：太い腕と腿、細い管、球節、ひづめ。肩（ひじ）・ひざ・球節で曲がる
   const legs=[], mkLeg=(x,y,z,hind)=>{ const hip=new T.Group(); hip.position.set(x,y,z); bo.add(hip); const L1=hind?.62:.6, L2=hind?.52:.47, ys=L1/(hind?.46:.42), rs=.95;
     // 上は筋肉、下は骨ばって平たい。後ろ脚はひざ（スタイフル）が前、飛節が後ろに曲がる
@@ -5118,7 +5120,8 @@ async function pLookOpen(){
       if(!l.hind){ l.hip.rotation.x=-.55*sn*sw; l.kn.rotation.x=1.15*cs*sw; l.fe.rotation.x=.5*cs*sw-.25*Math.max(0,-sn)*sw; }
       else { l.hip.rotation.x=.3+(-.5*sn-.05)*sw; l.kn.rotation.x=-.3-.75*cs*sw; l.fe.rotation.x=.45*cs*sw; } });
     body.rotation.x=Math.sin(T0+.6)*.06*sw; body.position.y=1.3+Math.sin(T0*2)*.05*sw; neck.rotation.x=-Math.sin(T0+.6)*.12*sw+Math.sin(n/1600)*.03*(1-sw);
-    tail.rotation.x=.25*sw+Math.sin(n/600)*.06; tail.rotation.z=Math.sin(n/900)*.08; rider.position.y=RY+Math.max(0,Math.sin(T0*2))*.04*sw;
+    tail.rotation.x=.25*sw+Math.sin(n/600)*.06; tail.rotation.z=Math.sin(n/900)*.08; { const t=n/1000, gb=Math.sin(T0*2); TB.value.set(Math.sin(t*1.6)*.07+Math.sin(t*3.7)*.03+Math.sin(T0)*.05*sw,-.22*sw-.06*sw*gb+Math.sin(t*2.1)*.04);
+      MANE.forEach(g=>{ const u=g.userData; g.rotation.x=(.32*sw+.1*sw*Math.sin(T0*2+u.ph*.3)+.05*Math.sin(t*1.8+u.ph))*u.k; g.rotation.z=u.sd*(-.12*sw*Math.max(0,gb)+.04*Math.sin(t*1.3+u.ph))*u.k; }); } rider.position.y=RY+Math.max(0,Math.sin(T0*2))*.04*sw;
     if(gC&&Math.hypot(rX(py)-gC[0],py-gC[1])>45) plant(rX(py),py);
     if(isT||k){ const m=nowM+(py-y0)/KM; tEl.textContent=`${dLab}　${pfmt(Math.round(m))}`; }
     animDisc(n/1000,dt); animBirds(n/1000,dt); place(); clouds.forEach(s=>{ s.position.x+=dt*7; if(s.position.x>1600) s.position.x=-1600; if(s.position.z>cam.position.z+600) s.position.z-=3100; }); if(L.nt){ L.nt.offset.x+=dt*.004; L.nt.offset.y+=dt*.006; }
