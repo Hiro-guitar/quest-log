@@ -1,5 +1,0 @@
-horse.glb — "Horse" from Quaternius "Ultimate Animated Animal Pack"
-https://quaternius.com/packs/ultimateanimatedanimals.html
-License: CC0 1.0 Universal (public domain)
-
-gltf-loader.min.js — GLTFLoader from three.js r160 (MIT License, Copyright © 2010-2024 three.js authors)
