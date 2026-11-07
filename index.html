@@ -4948,7 +4948,17 @@ async function pLookOpen(){
         const mn=Math.sin(v.x*3.3+sd)*Math.sin(v.z*2.9)*.5+.5, moss=top>.5?Math.min(1,(top-.5)*2.4)*(.35+.65*mn):0, str=.94+.06*Math.sin(v.y*26+Math.sin(v.x*4)*2);
         let r=(.9+top*.12-bot*.35)*str, g2=(.88+top*.12-bot*.35)*str, b=(.82+top*.08-bot*.3)*str; r=r*(1-moss)+.5*moss; g2=g2*(1-moss)+.7*moss; b=b*(1-moss)+.32*moss; C.push(r,g2,b); }
       g.setAttribute('color',new T.Float32BufferAttribute(C,3)); return g; };
-    const rMat=patch(new T.MeshLambertMaterial({color:0xffffff,vertexColors:true}),0,true), kinds=[mkRock(1,1,.82,0),mkRock(2,1,.9,0),mkRock(3,2,.42,4)], NR=[300,300,160], im=kinds.map((g,q)=>new T.InstancedMesh(g,rMat,NR[q])), cnt=[0,0,0], rc=new T.Color();
+    const rMat=(()=>{ const m=patch(new T.MeshLambertMaterial({color:0xffffff,vertexColors:true})), ob=m.onBeforeCompile;
+      // 岩肌：割れ目・層の筋・色むら・地衣類の点を岩そのものの座標で描き、割れ目には凹凸の陰（ブレワイの岩のように）
+      m.onBeforeCompile=sh=>{ ob(sh); sh.vertexShader='varying vec3 vRP;\n'+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n vRP=position;');
+        sh.fragmentShader='varying vec3 vRP;\nfloat rh3(vec3 p){ return fract(sin(dot(p,vec3(127.1,311.7,74.7)))*43758.5453); }\nfloat rn3(vec3 p){ vec3 i=floor(p), f=fract(p); f=f*f*(3.-2.*f); return mix(mix(mix(rh3(i),rh3(i+vec3(1,0,0)),f.x),mix(rh3(i+vec3(0,1,0)),rh3(i+vec3(1,1,0)),f.x),f.y),mix(mix(rh3(i+vec3(0,0,1)),rh3(i+vec3(1,0,1)),f.x),mix(rh3(i+vec3(0,1,1)),rh3(i+vec3(1,1,1)),f.x),f.y),f.z); }\nfloat rf3(vec3 p){ float a=.5,s=0.; for(int i=0;i<4;i++){ s+=a*rn3(p); p=p*2.07+vec3(3.1,1.7,5.3); a*=.5; } return s; }\nfloat rockH(vec3 p){ float c=abs(rf3(p*1.6)-.5); float cr=1.-smoothstep(.0,.035,c); return rf3(p*3.)*.35-cr*.5+sin(p.y*16.+rf3(p*1.5)*5.)*.05; }\n'
+          +sh.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
+ { vec3 p=vRP; float big=rf3(p*.8+7.), mid=rf3(p*2.), c=abs(rf3(p*1.6)-.5), cr=1.-smoothstep(.0,.04,c), cr2=1.-smoothstep(.0,.012,abs(rf3(p*4.+2.)-.5));
+   vec3 col=diffuseColor.rgb; col*=mix(.72,1.16,mid)*(.94+.12*rn3(p*14.)); col=mix(col,col*vec3(1.1,1.02,.86),smoothstep(.42,.68,big)); col=mix(col,col*vec3(.88,.92,1.02),smoothstep(.55,.8,rf3(p*1.3+11.)));
+   col*=1.-.38*cr-.15*cr2; col*=1.+.05*sin(p.y*16.+rf3(p*1.5)*5.);
+   float li=smoothstep(.78,.86,rf3(p*9.+4.))*smoothstep(-.1,.4,p.y); col=mix(col,vec3(.72,.74,.5),li*.35);
+   diffuseColor.rgb=col; }`).replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
+ { float h=rockH(vRP); vec3 sx=dFdx(-vViewPosition), sy=dFdy(-vViewPosition), r1=cross(sy,normal), r2=cross(normal,sx); float dt=dot(sx,r1); vec3 gr=sign(dt)*(dFdx(h)*r1+dFdy(h)*r2); normal=normalize(abs(dt)*normal-gr*.3); }`); }; return m; })(), kinds=[mkRock(1,1,.82,0),mkRock(2,1,.9,0),mkRock(3,2,.42,4)], NR=[300,300,160], im=kinds.map((g,q)=>new T.InstancedMesh(g,rMat,NR[q])), cnt=[0,0,0], rc=new T.Color();
     for(let q=0;q<2400&&cnt.reduce((a,b)=>a+b)<760;q++){ const kd=rng()<.2?2:rng()<.5?0:1; if(cnt[kd]>=NR[kd]) continue; const s2=kd===2?3+rng()*7:.7+Math.pow(rng(),3)*5.5, y=yA+rng()*P, x=rX(y)+(rng()<.5?-1:1)*(8+s2*1.7+Math.pow(rng(),1.4)*220), e=hAt(x,y); if(e<1||x<XA||x>XB) continue;
       Q.setFromEuler(new T.Euler((rng()-.5)*.25,rng()*6.28,(rng()-.5)*.25)); Sc.set(s2*(1+rng()*.4),s2*(.8+rng()*.4),s2*(1+rng()*.4)); V.set(X(x),e-s2*(kd===2?.12:.22),Z(y)); M.compose(V,Q,Sc); im[kd].setMatrixAt(cnt[kd],M); const w=.9+rng()*.16; im[kd].setColorAt(cnt[kd],rc.setRGB(c3([168,160,144]).r*w,c3([168,160,144]).g*w,c3([168,160,144]).b*w)); cnt[kd]++; }
     im.forEach((m,q)=>{ m.count=cnt[q]; m.castShadow=m.receiveShadow=true; tileG.add(m); }); }
