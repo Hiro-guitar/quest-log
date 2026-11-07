@@ -836,10 +836,10 @@ body{background:#050607}
 .lk-t{position:absolute;left:18px;top:calc(env(safe-area-inset-top,0px) + 34px);font-size:20px;letter-spacing:.18em}
 .lk-x{position:absolute;right:14px;bottom:calc(env(safe-area-inset-bottom,0px) + 16px);pointer-events:auto;display:flex;align-items:center;gap:8px;font-size:14px;color:#f2ecd6;background:rgba(0,0,0,.35);padding:6px 12px;border-radius:18px}
 .lk-x i{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#efe6cc;color:#222;font-style:normal;font-size:12px;font-weight:700}
-.lk-find{position:absolute;left:0;right:0;top:34%;text-align:center;font-size:24px;letter-spacing:.2em;color:#f6f0dc;text-shadow:0 2px 10px rgba(0,0,0,.7);opacity:0;pointer-events:none;font-weight:600}
+.lk-find{position:absolute;left:0;right:0;top:34%;text-align:center;font-size:24px;letter-spacing:.2em;color:#f6f0dc;text-shadow:0 1px 3px rgba(0,0,0,.8);opacity:0;pointer-events:none;font-weight:600;will-change:opacity;transform:translateZ(0)}
 .lk-find.on{animation:lkFind 4.2s ease forwards}
 .lk-find::before,.lk-find::after{content:'';display:block;width:140px;height:1px;margin:8px auto;background:linear-gradient(90deg,transparent,rgba(246,240,220,.8),transparent)}
-@keyframes lkFind{0%{opacity:0;transform:translateY(8px)}15%{opacity:1;transform:none}75%{opacity:1}100%{opacity:0}}
+@keyframes lkFind{0%{opacity:0}15%{opacity:1}75%{opacity:1}100%{opacity:0}}
 .lk-go{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 62px);pointer-events:auto;font-size:14px;color:#f2ecd6;background:rgba(0,0,0,.4);border:1px solid rgba(242,236,214,.35);padding:7px 18px;border-radius:18px}
 .lk-hint{position:absolute;left:18px;bottom:calc(env(safe-area-inset-bottom,0px) + 22px);font-size:11px;color:rgba(242,236,214,.7)}
 .lk-load{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:12px;font-size:13px;letter-spacing:.15em;transition:opacity .6s}.lk-load.done{opacity:0}
@@ -5184,6 +5184,8 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
   const OFF=.2; let py=y0, v=0, go=true, ph=0, hY=0, off=OFF, cp=12*rad, dist=21, lastTouch=-1e9, tIn=performance.now(), intro=true;
   const head0=()=>{ const a=rXw(py-3), b=rXw(py+3); return Math.atan2(X(b)-X(a),Z(py+3)-Z(py-3)); }; hY=head0();
   goB.addEventListener('click',()=>{ go=!go; if(go&&py>=yEnd-1) py=y0; goB.textContent=go?'手綱を引く':'駆ける'; });
+  // 見つけるもの全種類の色（シェーダー）を先に用意しておく（近づいた瞬間に準備が走って引っかからないように）
+  { const tmp=new T.Group(); perm.forEach(q=>{ const g=new T.Group(); DK[q][1](g); bake(g); tmp.add(g); }); tmp.position.set(0,-5000,0); scene.add(tmp); try{ ren.compile(scene,cam); }catch(e){} scene.remove(tmp); tmp.traverse(m=>{ if(m.geometry) m.geometry.dispose(); }); }
   await tick(1); plant(rX(py),py); ov.querySelector('.lk-load').classList.add('done');
   const tgt=new T.Vector3();
   const place=()=>{ putTiles(py); putBeams(py); putDisc(py); const x=rXw(py), g=gnd(x,py); horse.position.set(X(x),g-.42,Z(py)); HU.uHY.value=g-.42; horse.rotation.y=hY;
