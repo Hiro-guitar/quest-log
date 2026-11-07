@@ -4930,38 +4930,68 @@ async function pLookOpen(){
     const m=new T.InstancedMesh(g,gm,NG); m.receiveShadow=true; m.frustumCulled=false; scene.add(m); return m; })();
   const M=new T.Matrix4(), Q=new T.Quaternion(), V=new T.Vector3(), Sc=new T.Vector3(), up=new T.Vector3(0,1,0), cl=new T.Color(), gr=pRng('lkg'+k,5);
   let gC=null; const plant=(cx,cy)=>{ gC=[cx,cy]; let n=0; const ex=[]; { const a=Math.max(0,Math.floor((cy-y0-260)/480)-1); for(let q=a;q<a+3;q++){ const s2=dSpot(q), R={'花畑':26,'小さな池':24,'鹿の群れ':14,'岩の上の宝箱':9}[s2.nm]||12; ex.push([s2.x,s2.yy,R]); } } const ca=near.attributes.color.array, nr=near.attributes.normal.array;
-    for(let q=0;q<NG*3&&n<NG;q++){ const a=gr()*6.28, r=4+Math.pow(gr(),1.5)*130, x=cx+Math.cos(a)*r, y=cy+Math.sin(a)*r; if(x<XA||x>XB) continue; const e=hAt(x,y); if(e<1) continue; const b=bAt(x,y); if(b[0]>.2||b[1]>.25||b[3]>.3) continue; { const dr=Math.abs(x-rX(y)); if(dr<5.2||(dr<8&&gr()<(8-dr)/2.8)) continue; } if(ex.some(([ex2,ey,R])=>Math.hypot(x+sh(y)-ex2,y-ey)<R)) continue;
+    for(let q=0;q<NG*3&&n<NG;q++){ const a=gr()*6.28, r=4+Math.pow(gr(),1.5)*130, x=cx+Math.cos(a)*r, y=cy+Math.sin(a)*r; if(x<XA||x>XB) continue; const e=hAt(x,y); if(e<1) continue; const b=bAt(x,y); if(b[0]>.2||b[1]>.25||b[3]>.3) continue; { const dr=Math.abs(x-rX(y)); if(dr<5.2||(dr<8&&gr()<(8-dr)/2.8)) continue; } if(ex.some(([ex2,ey,R])=>Math.hypot(x+sh(y)-ex2,y-ey)<R)) continue; { const yw=yA+fr((y-yA)/P)*P; if(RK.some(([rx2,ry2,rs])=>Math.abs(ry2-yw)<rs*1.1&&Math.hypot(rx2-x,ry2-yw)<rs*1.05)) continue; }
       const o=jW(y)*nx+Math.round((x-XA)/ST); if(nr[o*3+1]<.8) continue;
       Q.setFromAxisAngle(up,gr()*6.28); const s=(.7+gr()*.7)*(.45+.55*Math.min(1,r/50)); Sc.set(s,s*(.7+gr()*.5),s); V.set(X(x+sh(y)),e-.1,Z(y)); M.compose(V,Q,Sc); iG.setMatrixAt(n,M); { const vb=.84+.2*pNoise(x/9,y/9)+gr()*.06; cl.setRGB(Math.min(1,ca[o*3]*1.08*vb),Math.min(1,ca[o*3+1]*1.2*vb),ca[o*3+2]*.7*vb); } iG.setColorAt(n,cl); n++; }
     iG.count=/[?&]nograss/.test(location.search)?0:n; iG.instanceMatrix.needsUpdate=true; if(iG.instanceColor) iG.instanceColor.needsUpdate=true; };
-  // 岩：ブレワイのように、角の丸い大きな面の塊（温かい灰色・上は明るく苔がのる・下は暗い）と、地面から顔を出す層になった平たい岩盤
-  { const rh=(x,y,z,sd)=>{ const v=Math.sin(x*12.99+y*78.23+z*37.72+sd*5.1)*43758.55; return v-Math.floor(v); };
-    // なめらかな岩：細かい球を、大きな平面で何度か削って面を作り、縁は丸く残す。法線はなめらかに（ポリゴンの角を見せない）
-    const mkRock=(sd,det,sy,layers)=>{ const g0=new T.IcosahedronGeometry(1,4), p0=g0.attributes.position, key=new Map(), P=[], I=[], v=new T.Vector3(), rr=pRng('rock'+sd,4);
+  // 岩：Fableと相談して、ブレワイの岩に寄せた作り
+  //  ・形：上を平らに削り、4〜5枚の大きな面と、はっきり丸い角（縁は明るく擦れた色）
+  //  ・色：日なたは草より明るい温かいベージュ、影は青みの灰色。光は2段にやわらかく分かれる
+  //  ・模様：大きな筆の色むら、ところどころだけの太めの割れ目、上向きの面に土ぼこり、苔はまだらに暗め、根元は土色
+  //  ・置き方：大きな岩を2〜4個寄せた群れ＋中くらいの石＋層の岩盤。小石はまかない。地面に接する所を暗く
+  const RK=[];
+  { const rr0=pRng('rk'+k,6);
+    const mkRock=(sd,det,sy,layers)=>{ const g0=new T.IcosahedronGeometry(1,det), p0=g0.attributes.position, key=new Map(), P=[], I=[], v=new T.Vector3(), rr=pRng('rock'+sd,4);
       for(let k2=0;k2<p0.count;k2++){ v.fromBufferAttribute(p0,k2); const kk=v.x.toFixed(4)+','+v.y.toFixed(4)+','+v.z.toFixed(4); let id=key.get(kk); if(id==null){ id=P.length/3; key.set(kk,id); P.push(v.x,v.y,v.z); } I.push(id); }
-      const cuts=[]; for(let q=0;q<7;q++){ const th=rr()*6.28, ph=Math.acos(rr()*1.6-.6); cuts.push([new T.Vector3(Math.sin(ph)*Math.cos(th),Math.cos(ph),Math.sin(ph)*Math.sin(th)),.62+rr()*.22]); }
-      for(let k2=0;k2<P.length/3;k2++){ v.set(P[k2*3],P[k2*3+1],P[k2*3+2]); const n=v.clone().normalize(); v.multiplyScalar(1+.07*Math.sin(n.x*3.1+sd)*Math.cos(n.z*2.7+sd*.5)+.05*Math.sin(n.y*5+n.x*2+sd));
-        for(const [cn,c] of cuts){ const d=v.dot(cn); if(d>c-.08){ const t=d-(c-.08), s2=t<.16?t*t/.32:t-.08; v.addScaledVector(cn,-s2*.92); } }
-        v.y*=sy; if(layers){ const yy=v.y, f=yy*layers, fl=Math.floor(f), w=f-fl, st=(fl+Math.min(1,Math.max(0,(w-.7)/.3)))/layers; v.y=st*.65+yy*.35; } if(v.y<-.25*sy) v.y=-.25*sy+(v.y+.25*sy)*.4; P[k2*3]=v.x; P[k2*3+1]=v.y; P[k2*3+2]=v.z; }
+      const bw=.14+.06*rr(), cuts=[[new T.Vector3(rr()*.3-.15,1,rr()*.3-.15).normalize(),.66+rr()*.12]], nc=4+Math.floor(rr()*2);
+      for(let q=0;q<nc;q++){ const th=q/nc*6.28+rr()*.8, ph=1.0+rr()*.9; cuts.push([new T.Vector3(Math.sin(ph)*Math.cos(th),Math.cos(ph),Math.sin(ph)*Math.sin(th)),.55+rr()*.25]); }
+      const E=new Float32Array(P.length/3);
+      for(let k2=0;k2<P.length/3;k2++){ v.set(P[k2*3],P[k2*3+1],P[k2*3+2]); const n=v.clone().normalize(); v.multiplyScalar(1+.06*Math.sin(n.x*3.1+sd)*Math.cos(n.z*2.7+sd*.5)); v.x*=1.15;
+        for(const [cn,c] of cuts){ const d=v.dot(cn); if(d>c-bw){ const t=d-(c-bw), s2=t<2*bw?t*t/(4*bw):t-bw; v.addScaledVector(cn,-s2*.95); E[k2]=Math.max(E[k2],1-Math.abs(t-bw)/bw); } }
+        v.y*=sy; if(layers){ const yy=v.y, f=yy*layers, fl=Math.floor(f), w=f-fl, st=(fl+Math.min(1,Math.max(0,(w-.75)/.25)))/layers; v.y=st*.85+yy*.15; } if(v.y<-.3*sy) v.y=-.3*sy+(v.y+.3*sy)*.4; P[k2*3]=v.x; P[k2*3+1]=v.y; P[k2*3+2]=v.z; }
       const g=new T.BufferGeometry(); g.setAttribute('position',new T.Float32BufferAttribute(P,3)); g.setIndex(I); g.computeVertexNormals(); const nr=g.attributes.normal, C=[];
-      for(let k2=0;k2<P.length/3;k2++){ v.set(P[k2*3],P[k2*3+1],P[k2*3+2]); const n=new T.Vector3().fromBufferAttribute(nr,k2), top=Math.max(0,n.y), bot=Math.max(0,-n.y);
-        const mn=Math.sin(v.x*3.3+sd)*Math.sin(v.z*2.9)*.5+.5, moss=top>.5?Math.min(1,(top-.5)*2.4)*(.35+.65*mn):0, str=.94+.06*Math.sin(v.y*26+Math.sin(v.x*4)*2);
-        let r=(.9+top*.12-bot*.35)*str, g2=(.88+top*.12-bot*.35)*str, b=(.82+top*.08-bot*.3)*str; r=r*(1-moss)+.5*moss; g2=g2*(1-moss)+.7*moss; b=b*(1-moss)+.32*moss; C.push(r,g2,b); }
-      g.setAttribute('color',new T.Float32BufferAttribute(C,3)); return g; };
-    const rMat=(()=>{ const m=patch(new T.MeshLambertMaterial({color:0xffffff,vertexColors:true})), ob=m.onBeforeCompile;
-      // 岩肌：割れ目・層の筋・色むら・地衣類の点を岩そのものの座標で描き、割れ目には凹凸の陰（ブレワイの岩のように）
-      m.onBeforeCompile=sh=>{ ob(sh); sh.vertexShader='varying vec3 vRP;\n'+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n vRP=position;');
-        sh.fragmentShader='varying vec3 vRP;\nfloat rh3(vec3 p){ return fract(sin(dot(p,vec3(127.1,311.7,74.7)))*43758.5453); }\nfloat rn3(vec3 p){ vec3 i=floor(p), f=fract(p); f=f*f*(3.-2.*f); return mix(mix(mix(rh3(i),rh3(i+vec3(1,0,0)),f.x),mix(rh3(i+vec3(0,1,0)),rh3(i+vec3(1,1,0)),f.x),f.y),mix(mix(rh3(i+vec3(0,0,1)),rh3(i+vec3(1,0,1)),f.x),mix(rh3(i+vec3(0,1,1)),rh3(i+vec3(1,1,1)),f.x),f.y),f.z); }\nfloat rf3(vec3 p){ float a=.5,s=0.; for(int i=0;i<4;i++){ s+=a*rn3(p); p=p*2.07+vec3(3.1,1.7,5.3); a*=.5; } return s; }\nfloat rockH(vec3 p){ float c=abs(rf3(p*1.6)-.5); float cr=1.-smoothstep(.0,.035,c); return rf3(p*3.)*.35-cr*.5+sin(p.y*16.+rf3(p*1.5)*5.)*.05; }\n'
-          +sh.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
- { vec3 p=vRP; float big=rf3(p*.8+7.), mid=rf3(p*2.), c=abs(rf3(p*1.6)-.5), cr=1.-smoothstep(.0,.04,c), cr2=1.-smoothstep(.0,.012,abs(rf3(p*4.+2.)-.5));
-   vec3 col=diffuseColor.rgb; col*=mix(.72,1.16,mid)*(.94+.12*rn3(p*14.)); col=mix(col,col*vec3(1.1,1.02,.86),smoothstep(.42,.68,big)); col=mix(col,col*vec3(.88,.92,1.02),smoothstep(.55,.8,rf3(p*1.3+11.)));
-   col*=1.-.38*cr-.15*cr2; col*=1.+.05*sin(p.y*16.+rf3(p*1.5)*5.);
-   float li=smoothstep(.78,.86,rf3(p*9.+4.))*smoothstep(-.1,.4,p.y); col=mix(col,vec3(.72,.74,.5),li*.35);
-   diffuseColor.rgb=col; }`).replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
- { float h=rockH(vRP); vec3 sx=dFdx(-vViewPosition), sy=dFdy(-vViewPosition), r1=cross(sy,normal), r2=cross(normal,sx); float dt=dot(sx,r1); vec3 gr=sign(dt)*(dFdx(h)*r1+dFdy(h)*r2); normal=normalize(abs(dt)*normal-gr*.3); }`); }; return m; })(), kinds=[mkRock(1,1,.82,0),mkRock(2,1,.9,0),mkRock(3,2,.42,4)], NR=[300,300,160], im=kinds.map((g,q)=>new T.InstancedMesh(g,rMat,NR[q])), cnt=[0,0,0], rc=new T.Color();
-    for(let q=0;q<2400&&cnt.reduce((a,b)=>a+b)<760;q++){ const kd=rng()<.2?2:rng()<.5?0:1; if(cnt[kd]>=NR[kd]) continue; const s2=kd===2?3+rng()*7:.7+Math.pow(rng(),3)*5.5, y=yA+rng()*P, x=rX(y)+(rng()<.5?-1:1)*(8+s2*1.7+Math.pow(rng(),1.4)*220), e=hAt(x,y); if(e<1||x<XA||x>XB) continue;
-      Q.setFromEuler(new T.Euler((rng()-.5)*.25,rng()*6.28,(rng()-.5)*.25)); Sc.set(s2*(1+rng()*.4),s2*(.8+rng()*.4),s2*(1+rng()*.4)); V.set(X(x),e-s2*(kd===2?.12:.22),Z(y)); M.compose(V,Q,Sc); im[kd].setMatrixAt(cnt[kd],M); const w=.9+rng()*.16; im[kd].setColorAt(cnt[kd],rc.setRGB(c3([168,160,144]).r*w,c3([168,160,144]).g*w,c3([168,160,144]).b*w)); cnt[kd]++; }
-    im.forEach((m,q)=>{ m.count=cnt[q]; m.castShadow=m.receiveShadow=true; tileG.add(m); }); }
+      for(let k2=0;k2<P.length/3;k2++){ const ny=nr.getY(k2); C.push(...[ny>0?1:1-.22*(-ny),ny>0?1:1-.2*(-ny),ny>0?1:1-.16*(-ny)]); }
+      g.setAttribute('color',new T.Float32BufferAttribute(C,3)); g.setAttribute('aEdge',new T.Float32BufferAttribute(E,1)); return g; };
+    const mkMat=slab=>{ const m=patch(new T.MeshLambertMaterial({color:0xffffff,vertexColors:true})), ob=m.onBeforeCompile; if(slab) m.defines={SLAB:1};
+      m.onBeforeCompile=sh=>{ ob(sh); m.userData.sh=sh;
+        sh.vertexShader='attribute float aEdge;\nvarying float vEdge, vOY, vNy;\nvarying vec3 vRP;\n'+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n vEdge=aEdge; vOY=position.y; vRP=position;\n#ifdef USE_INSTANCING\n vRP=position*length(instanceMatrix[0].xyz); vNy=normalize(mat3(modelMatrix)*mat3(instanceMatrix)*normal).y;\n#else\n vNy=normal.y;\n#endif');
+        sh.fragmentShader='varying float vEdge, vOY, vNy;\nvarying vec3 vRP;\nfloat rh3(vec3 p){ p=fract(p*vec3(.1031,.1030,.0973)); p+=dot(p,p.yxz+33.33); return fract((p.x+p.y)*p.z); }\nfloat rn3(vec3 p){ vec3 i=floor(p), f=fract(p); f=f*f*(3.-2.*f); return mix(mix(mix(rh3(i),rh3(i+vec3(1,0,0)),f.x),mix(rh3(i+vec3(0,1,0)),rh3(i+vec3(1,1,0)),f.x),f.y),mix(mix(rh3(i+vec3(0,0,1)),rh3(i+vec3(1,0,1)),f.x),mix(rh3(i+vec3(0,1,1)),rh3(i+vec3(1,1,1)),f.x),f.y),f.z); }\n'
+          +sh.fragmentShader
+          .replace('#include <lights_lambert_pars_fragment>',T.ShaderChunk.lights_lambert_pars_fragment.replace('float dotNL = saturate( dot( geometryNormal, directLight.direction ) );','float ndl = dot( geometryNormal, directLight.direction ); float dotNL = smoothstep( -0.12, 0.45, ndl ) * 0.92 + 0.08 * saturate( ndl );'))
+          .replace('#include <color_fragment>',`#include <color_fragment>
+ { vec3 p=vRP; vec3 col=diffuseColor.rgb; float big=rn3(p*.22+7.);
+   col*=.82+.3*big*rn3(p*.5+2.)+.1*rn3(p*1.3); col=mix(col,col*vec3(1.08,1.,.88),smoothstep(.55,.75,big)); col=mix(col,col*vec3(.94,.97,1.04),smoothstep(.6,.85,rn3(p*.16+11.)));
+   col=mix(col,vec3(.55,.5,.4),smoothstep(.35,.9,vNy)*.18);
+   float cm=smoothstep(.4,.56,rn3(p*.18+9.)), c=abs(rn3(p*.42)+.5*rn3(p*.84+4.)-.75), cr=(1.-smoothstep(.0,.09,c))*cm*(1.-vEdge);
+   col=mix(col,col*vec3(.5,.46,.42),cr*.7);
+   col=mix(col,col*1.16+.03,vEdge*.7);
+#ifdef SLAB
+   col*=1.+.07*sin(vRP.y*5.+rn3(p*.3)*4.);
+#endif
+   float ms=smoothstep(.55,.85,vNy)*smoothstep(.45,.6,rn3(p*.3+3.)); col=mix(col,vec3(.16,.27,.05),ms*.85);
+   col=mix(col,vec3(.48,.48,.25),smoothstep(.86,.9,rn3(p*2.2+4.))*smoothstep(.0,.5,vNy)*.4);
+   float sk=1.-smoothstep(.0,.32,vOY+.3); col=mix(col,vec3(.26,.16,.07)*(.9+.2*rn3(p*.9)),sk*.7);
+   diffuseColor.rgb=col; }`)
+          .replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
+ { float h=rn3(vRP*.35)*.6+rn3(vRP*.7+3.)*.4; vec3 sx=dFdx(-vViewPosition), sy=dFdy(-vViewPosition), r1=cross(sy,normal), r2=cross(normal,sx); float dt=dot(sx,r1); vec3 gr=sign(dt)*(dFdx(h)*r1+dFdy(h)*r2); normal=normalize(abs(dt)*normal-gr*.15); }`)
+          .replace('#include <lights_fragment_end>',`irradiance=mix(irradiance,vec3(dot(irradiance,vec3(.333)))*vec3(.96,.98,1.1),.6);
+#include <lights_fragment_end>
+ { float rim=pow(1.-saturate(dot(normal,normalize(vViewPosition))),3.)*smoothstep(0.,.5,normal.y); reflectedLight.indirectDiffuse+=rim*.22*diffuseColor.rgb; }`); }; return m; };
+    const mB=mkMat(0), mS=mkMat(1), kinds=[[mkRock(1,3,1.0,0),mB,170],[mkRock(2,2,.95,0),mB,130],[mkRock(3,3,.55,3),mS,28],[mkRock(4,3,.92,0),mB,170]], im=kinds.map(([g,m,n])=>new T.InstancedMesh(g,m,n)), cnt=kinds.map(()=>0), rc=new T.Color(), tW=c3([184,172,152]), tC=c3([170,166,158]);
+    const ca=near.attributes.color.array;
+    const place=(kd,s2,x,y,rot,tilt)=>{ if(cnt[kd]>=kinds[kd][2]||x<XA||x>XB) return; if(Math.abs(x-rX(y))<8+s2*1.3) return; const e=Math.min(hAt(x,y),hAt(x+s2*.7,y),hAt(x-s2*.7,y),hAt(x,y+s2*.7),hAt(x,y-s2*.7)); if(e<1) return;
+      Q.setFromEuler(new T.Euler((rr0()-.5)*tilt,rot,(rr0()-.5)*tilt)); Sc.set(s2*(1+rr0()*.3),s2*(.85+rr0()*.3),s2*(1+rr0()*.3)); V.set(X(x),e-s2*(kd===2?.3:.16),Z(y)); M.compose(V,Q,Sc); im[kd].setMatrixAt(cnt[kd],M); RK.push([x,y,s2]);
+      const w=.92+rr0()*.14, t=rr0()<.25?tC:tW; im[kd].setColorAt(cnt[kd],rc.setRGB(t.r*w,t.g*w,t.b*w)); cnt[kd]++;
+      // 接地の暗がり：岩のまわりの地面を少し暗く
+      const R=s2*1.35, i0=Math.max(0,Math.floor((x-R-XA)/ST)), i1=Math.min(nx-1,Math.ceil((x+R-XA)/ST)), j0=Math.max(0,Math.floor((y-R-yA)/ST)), j1=Math.min(ny-1,Math.ceil((y+R-yA)/ST));
+      for(let j=j0;j<=j1;j++) for(let i=i0;i<=i1;i++){ const d=Math.hypot(XA+i*ST-x,yA+j*ST-y)/R; if(d<1){ const f=1-.32*(1-d*d), o=(j*nx+i)*3; ca[o]*=f; ca[o+1]*=f; ca[o+2]*=f; } } };
+    for(let a=0;a<70;a++){ const y=yA+rr0()*P, x=rX(y)+(rr0()<.5?-1:1)*(14+Math.pow(rr0(),1.3)*200), s=2.5+rr0()*4, n=1+Math.floor(rr0()*3), rot=rr0()*6.28; place(rr0()<.5?0:3,s,x,y,rot,.25);
+      for(let q=0;q<n;q++){ const an=rot+q*2.1+rr0(), sm=s*(.3+rr0()*.45), d=s*.9+sm*.6; place(sm<1.6?1:(rr0()<.5?0:3),sm,x+Math.cos(an)*d,y+Math.sin(an)*d,rot+(rr0()-.5)*1.2,.3); } }
+    for(let q=0;q<110;q++){ const y=yA+rr0()*P, x=rX(y)+(rr0()<.5?-1:1)*(10+Math.pow(rr0(),1.4)*210); place(1,1+rr0()*1.2,x,y,rr0()*6.28,.35); }
+    for(let q=0;q<26;q++){ const y=yA+rr0()*P, x=rX(y)+(rr0()<.5?-1:1)*(18+rr0()*190); place(2,4+rr0()*6,x,y,rr0()*6.28,.7); }
+    for(let q=0;q<5;q++){ const y=yA+rr0()*P, x=rX(y)+(rr0()<.5?-1:1)*(16+rr0()*30); place(rr0()<.5?0:3,6+rr0()*4,x,y,rr0()*6.28,.2); }
+    near.attributes.color.needsUpdate=true;
+    im.forEach((m,q)=>{ m.count=cnt[q]; m.castShadow=q!==1; m.receiveShadow=true; tileG.add(m); }); }
   // くり返しの区間を3つ並べ、馬の前後に置き直す
   const tiles=[tileG,tileG.clone(),tileG.clone()]; tiles.slice(1).forEach(t=>scene.add(t));
   const putTiles=py=>{ const kk=Math.floor((py-yA)/P); tiles.forEach((t,i)=>{ t.position.set((kk-1+i)*SL*P,0,-(kk-1+i)*P); }); farG.position.set(sh(py),0,-(py-y0)); };
