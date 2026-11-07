@@ -4858,9 +4858,10 @@ async function pLookOpen(){
   const HU={uHY:{value:0}};
   const hm=(c,kind=0)=>{ const m=patch(new T.MeshLambertMaterial({color:c3(c),side:T.DoubleSide})), ob=m.onBeforeCompile;
     m.onBeforeCompile=sh=>{ ob(sh); Object.assign(sh.uniforms,HU);
-      sh.fragmentShader='uniform float uHY;\n'+sh.fragmentShader
+      if(kind===3) sh.vertexShader='varying float vBH;\n'+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n vBH=position.z*100.;');
+      sh.fragmentShader=(kind===3?'varying float vBH;\n':'')+'uniform float uHY;\n'+sh.fragmentShader
         .replace('#include <lights_lambert_pars_fragment>',T.ShaderChunk.lights_lambert_pars_fragment.replace('float dotNL = saturate( dot( geometryNormal, directLight.direction ) );','float ndl = dot( geometryNormal, directLight.direction ); float dotNL = 0.62*smoothstep( -0.04, 0.10, ndl ) + 0.38*smoothstep( 0.12, 0.55, ndl );'))
-        .replace('#include <color_fragment>','#include <color_fragment>\n'+(kind===1?' { float hy=vWP.y-uHY; diffuseColor.rgb*=mix(.8,1.,smoothstep(.25,1.2,hy)); }':kind===2?' { float st=vn(vec2(dot(vWP.xz,vec2(.6,.8))*26.,vWP.y*1.6)); diffuseColor.rgb*=.88+.2*st; }':''))
+        .replace('#include <color_fragment>','#include <color_fragment>\n'+(kind===1?' { float hy=vWP.y-uHY; diffuseColor.rgb*=mix(.8,1.,smoothstep(.25,1.2,hy)); }':kind===2?' { float st=vn(vec2(dot(vWP.xz,vec2(.6,.8))*26.,vWP.y*1.6)); diffuseColor.rgb*=.88+.2*st; }':kind===3?' { float e=1.02+.14*vn(vec2(vWP.x*9.+vWP.z*7.,vWP.y*3.)); float k=1.-smoothstep(e-.06,e+.06,vBH); diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.93,.89,.8),k); }':''))
         .replace('#include <lights_fragment_end>','irradiance=mix(irradiance,vec3(dot(irradiance,vec3(.333)))*vec3(.94,.98,1.08),.5);\n#include <lights_fragment_end>\n { float rim=pow(1.-saturate(dot(normal,normalize(vViewPosition))),2.5); reflectedLight.indirectDiffuse+=rim*.12*diffuseColor.rgb; }'); }; return m; };
   const coat=hm([204,140,80],1), coatD=hm([132,84,48],1), muz=hm([180,118,70]), sock=hm([242,234,212]), sockH=hm([238,228,200],2), mane=hm([242,228,186],2), maneD=hm([220,198,150],2), hoof=hm([88,76,66]), eyeM=hm([20,14,10]), strap=hm([70,42,28]), metal=hm([206,190,140]),
     cloak=hm([74,98,84]), cloakD=hm([56,74,64]), skin=hm([232,192,160]), hair=hm([96,64,40]), boot=hm([70,50,36]), saddle=hm([108,62,36]), blanket=hm([42,92,104]), blanketE=hm([226,206,160]);
@@ -4941,19 +4942,57 @@ async function pLookOpen(){
     legs.push({hip,kn,fe,hind}); };
   mkLeg(.24,1.06,.72,0); mkLeg(-.24,1.06,.72,0); mkLeg(.26,1.12,-.86,1); mkLeg(-.26,1.12,-.86,1);
   // 乗り手：鞍と鞍下の布、マントの旅人
-  const rider=new T.Group(), RY=1.72; rider.position.set(0,RY,.2); bo.add(rider);
-  { const m=shad(new T.Mesh(new T.CylinderGeometry(.592,.592,.8,28,1,true,Math.PI-1.6,3.2),blanket)); m.rotation.x=Math.PI/2; m.position.set(0,-.6,0); rider.add(m);
-    { const e=shad(new T.Mesh(new T.CylinderGeometry(.585,.585,.86,28,1,true,Math.PI-1.66,3.32),blanketE)); e.rotation.x=Math.PI/2; e.position.set(0,-.6,0); rider.add(e); }
-    for(let fz=-.36;fz<=.37;fz+=.09) [-1,1].forEach(sg=>rider.add(seg2([sg*.593,-.62,fz],[sg*.6,-.76,fz],.014,.01,blanketE))); }
-  rider.add(tube([[0,-.02,-.3,.24,.06,.05],[0,.0,-.22,.25,.1,.06],[0,-.02,0,.24,.1,.06],[0,.0,.2,.22,.1,.06],[0,.06,.27,.08,.06,.04]],saddle,16,0,0,0,3)); rider.add(blob(0,.14,.3,.07,.12,.06,saddle)); rider.add(blob(0,.12,-.32,.12,.1,.06,saddle));
-  { const gi=new T.Mesh(new T.TorusGeometry(1,.022,6,36,Math.PI*1.4).rotateZ(Math.PI*.8),strap); gi.scale.set(.6,.66,1); gi.position.set(0,-.4,.1); rider.add(gi); }
-  [-1,1].forEach(sg=>{ const sl=seg2([sg*.42,-.1,.04],[sg*.53,-.66,.12],.03,.03,strap); sl.scale.x=.4; rider.add(sl); const s=new T.Mesh(new T.TorusGeometry(.055,.014,6,12),metal); s.position.set(sg*.53,-.7,.12); s.rotation.y=Math.PI/2; rider.add(s); });
-  rider.add(seg2([0,.04,0],[0,.6,.1],.17,.14,cloak));
-  { const c=shad(new T.Mesh(new T.ConeGeometry(.36,.66,14,1,true),cloakD)); c.position.set(0,.33,-.04); c.rotation.x=.12; rider.add(c); }
-  { const h=shad(new T.Mesh(new T.SphereGeometry(.125,14,12),skin)); h.position.set(0,.79,.13); rider.add(h); const hr=shad(new T.Mesh(new T.SphereGeometry(.135,14,12,0,6.3,0,1.75),hair)); hr.position.set(0,.81,.11); hr.rotation.x=-.3; rider.add(hr); }
-  [-1,1].forEach(sg=>{ rider.add(seg2([sg*.16,.05,.08],[sg*.5,-.22,.3],.09,.08,cloak)); rider.add(seg2([sg*.5,-.22,.3],[sg*.53,-.66,.12],.07,.058,boot));
-    rider.add(seg2([sg*.17,.52,.1],[sg*.21,.3,.3],.05,.045,cloak)); rider.add(seg2([sg*.21,.3,.3],[sg*.08,.3,.5],.045,.04,cloak)); });
+  const rider=new T.Group(), RY=1.72, tack=new T.Group(), person=new T.Group(); rider.add(tack,person); rider.position.set(0,RY,.2); bo.add(rider);
+  { const m=shad(new T.Mesh(new T.CylinderGeometry(.592,.592,.8,28,1,true,Math.PI-1.6,3.2),blanket)); m.rotation.x=Math.PI/2; m.position.set(0,-.6,0); tack.add(m);
+    { const e=shad(new T.Mesh(new T.CylinderGeometry(.585,.585,.86,28,1,true,Math.PI-1.66,3.32),blanketE)); e.rotation.x=Math.PI/2; e.position.set(0,-.6,0); tack.add(e); }
+    for(let fz=-.36;fz<=.37;fz+=.09) [-1,1].forEach(sg=>tack.add(seg2([sg*.593,-.62,fz],[sg*.6,-.76,fz],.014,.01,blanketE))); }
+  tack.add(tube([[0,-.02,-.3,.24,.06,.05],[0,.0,-.22,.25,.1,.06],[0,-.02,0,.24,.1,.06],[0,.0,.2,.22,.1,.06],[0,.06,.27,.08,.06,.04]],saddle,16,0,0,0,3)); tack.add(blob(0,.14,.3,.07,.12,.06,saddle)); tack.add(blob(0,.12,-.32,.12,.1,.06,saddle));
+  { const gi=new T.Mesh(new T.TorusGeometry(1,.022,6,36,Math.PI*1.4).rotateZ(Math.PI*.8),strap); gi.scale.set(.6,.66,1); gi.position.set(0,-.4,.1); tack.add(gi); }
+  [-1,1].forEach(sg=>{ const sl=seg2([sg*.42,-.1,.04],[sg*.64,-1.06,.2],.03,.03,strap); sl.scale.x=.4; tack.add(sl); const s=new T.Mesh(new T.TorusGeometry(.055,.014,6,12),metal); s.position.set(sg*.64,-1.1,.2); s.rotation.y=Math.PI/2; tack.add(s); });
+  person.add(seg2([0,.04,0],[0,.6,.1],.17,.14,cloak));
+  { const c=shad(new T.Mesh(new T.ConeGeometry(.36,.66,14,1,true),cloakD)); c.position.set(0,.33,-.04); c.rotation.x=.12; person.add(c); }
+  { const h=shad(new T.Mesh(new T.SphereGeometry(.125,14,12),skin)); h.position.set(0,.79,.13); person.add(h); const hr=shad(new T.Mesh(new T.SphereGeometry(.135,14,12,0,6.3,0,1.75),hair)); hr.position.set(0,.81,.11); hr.rotation.x=-.3; person.add(hr); }
+  [-1,1].forEach(sg=>{ person.add(seg2([sg*.16,.05,.08],[sg*.33,-.22,.3],.09,.08,cloak)); person.add(seg2([sg*.33,-.22,.3],[sg*.36,-.62,.12],.07,.058,boot));
+    person.add(seg2([sg*.17,.52,.1],[sg*.21,.3,.3],.05,.045,cloak)); person.add(seg2([sg*.21,.3,.3],[sg*.08,.3,.5],.045,.04,cloak)); });
   horse.scale.setScalar(1.75); scene.add(horse);
+  // ---- 本物の体つきの馬：Quaternius「Ultimate Animated Animal Pack」の Horse（CC0）を読み込み、
+  //      栗毛・白い靴下・クリーム色のたてがみと尾、ブレワイ風の塗りにする。駆け足と立ち姿の動きつき ----
+  let HM=null;
+  try{ const {GLTFLoader}=await import('./gltf-loader.min.js'); const gl=await new GLTFLoader().loadAsync('./horse.glb'); if(!L.alive) return;
+    const root=gl.scene, MM={Main:hm([204,140,80],3),Main_Dark:hm([204,140,80],3),Main_Light:hm([214,160,110]),Muzzle:hm([126,86,60]),Hooves:hm([96,84,72]),Eye_Black:hm([22,16,12]),Eye_White:hm([232,226,214])};
+    const body2=[]; let hairM=null;
+    root.traverse(o=>{ if(!o.isSkinnedMesh) return; o.castShadow=o.receiveShadow=true; o.frustumCulled=false; const nm=o.material.name; if(nm==='Hair'){ hairM=o; o.visible=false; return; } o.material=MM[nm]||MM.Main; if(!/Eye/.test(nm)) body2.push(o); });
+    // 角ばった面をなめらかに：同じ位置の頂点の法線をそろえる（部品の境目も）
+    { const acc=new Map(), key=(a,i)=>Math.round(a.getX(i)*2e5)+','+Math.round(a.getY(i)*2e5)+','+Math.round(a.getZ(i)*2e5);
+      body2.forEach(o=>{ const g=o.geometry; if(g.index){ o.geometry=g.toNonIndexed(); } o.geometry.computeVertexNormals(); });
+      body2.forEach(o=>{ const p=o.geometry.attributes.position, n=o.geometry.attributes.normal; for(let i=0;i<p.count;i++){ const kk=key(p,i); let v=acc.get(kk); if(!v){ v=[0,0,0]; acc.set(kk,v); } v[0]+=n.getX(i); v[1]+=n.getY(i); v[2]+=n.getZ(i); } });
+      body2.forEach(o=>{ const p=o.geometry.attributes.position, n=o.geometry.attributes.normal; for(let i=0;i<p.count;i++){ const v=acc.get(key(p,i)), l=Math.hypot(...v)||1; n.setXYZ(i,v[0]/l,v[1]/l,v[2]/l); } n.needsUpdate=true; }); }
+    // たてがみ・前髪・尾：形を作り、元の毛の骨の重みを近い点から写して、骨格といっしょに動かす
+    const skinTo=(meshes,mat)=>{ const hp=hairM.geometry.attributes.position, hi=hairM.geometry.attributes.skinIndex, hw=hairM.geometry.attributes.skinWeight;
+      meshes.forEach(ms=>{ const g=ms.geometry.index?ms.geometry.toNonIndexed():ms.geometry.clone(); const p=g.attributes.position, n=g.attributes.normal, SI=new Uint16Array(p.count*4), SW=new Float32Array(p.count*4);
+        for(let i=0;i<p.count;i++){ const X=p.getX(i), Y=p.getY(i), Z=p.getZ(i), lx=X/100, ly=-Z/100, lz=Y/100; let bd=1e9, bi=0; for(let k=0;k<hp.count;k++){ const d=(hp.getX(k)-lx)**2+(hp.getY(k)-ly)**2+(hp.getZ(k)-lz)**2; if(d<bd){ bd=d; bi=k; } }
+          for(let c=0;c<4;c++){ SI[i*4+c]=hi.getComponent(bi,c); SW[i*4+c]=hw.getComponent(bi,c); } p.setXYZ(i,lx,ly,lz); n.setXYZ(i,n.getX(i),-n.getZ(i),n.getY(i)); }
+        g.setAttribute('skinIndex',new T.Uint16BufferAttribute(SI,4)); g.setAttribute('skinWeight',new T.Float32BufferAttribute(SW,4));
+        const sm=new T.SkinnedMesh(g,ms.material); sm.castShadow=sm.receiveShadow=true; sm.frustumCulled=false; hairM.parent.add(sm); sm.bind(hairM.skeleton,hairM.bindMatrix); }); };
+    // 体の表面の横幅（たてがみを首の表面に沿わせるため）
+    const BP=[]; body2.forEach(m=>{ const p=m.geometry.attributes.position; for(let i=0;i<p.count;i+=2) BP.push(p.getX(i)*100,p.getZ(i)*100,-p.getY(i)*100); });
+    const surfX=(y,z)=>{ let w=.1; for(let i=0;i<BP.length;i+=3){ if(Math.abs(BP[i+1]-y)<.14&&Math.abs(BP[i+2]-z)<.14) w=Math.max(w,Math.abs(BP[i])); } return w; };
+    const hair=[], mn2=hm([242,228,186],2), mnD=hm([220,198,150],2), crest=[[0,3.6,1.12],[0,3.9,1.55],[0,4.2,1.95],[0,4.43,2.25],[0,4.55,2.55]];
+    hair.push(tube(crest.map(([x,y,z])=>[x,y+.04,z,.1,.13,.08]),mn2,12,0,0,0,4));
+    for(let q=0;q<26;q++){ const sd=q<18?-1:1, f=(q<18?q/17:(q-18)/7), c0=crest[Math.min(3,Math.floor(f*3.99))], c1=crest[Math.min(4,Math.floor(f*3.99)+1)], w=f*3.99%1, y=c0[1]+(c1[1]-c0[1])*w, z=c0[2]+(c1[2]-c0[2])*w;
+      const ln=(.95-f*.4+Math.sin(q*2.7)*.1)*(sd<0?1:.45), wd=.15+Math.sin(q*1.9)*.03, dz=-.14-.06*Math.sin(q*1.3), X1=surfX(y-.1,z-.02)+.05, X2=surfX(y-ln*.45,z+dz*.4)+.06, X3=surfX(y-ln*.8,z+dz*.8)+.07, X4=surfX(y-ln,z+dz)+.07;
+      hair.push(tube([[sd*.03,y+.05,z,.04,wd*.8,wd*.8],[sd*X1*.85,y-.06,z-.02,.035,wd,wd],[sd*X2,y-ln*.45,z+dz*.4,.03,wd,wd],[sd*X3,y-ln*.8,z+dz*.8,.025,wd*.6,wd*.6],[sd*X4,y-ln,z+dz,.008,.012,.012]],q%5===4?mnD:mn2,8,0,0,0,3)); }
+    hair.push(tube([[0,4.66,2.6,.12,.12,.12],[.02,4.58,2.78,.16,.12,.12],[.03,4.42,2.94,.13,.09,.09],[.04,4.26,3.02,.08,.05,.05],[.05,4.15,3.05,.01,.015,.015]],mn2,12,0,0,0,3));
+    hair.push(tube([[0,3.38,-1.82,.16,.16,.16],[0,3.05,-2.08,.22,.18,.18],[0,2.45,-2.2,.26,.16,.16],[0,1.85,-2.18,.3,.15,.15],[0,1.3,-2.1,.3,.12,.12],[0,1.02,-2.05,.04,.04,.04]],mnD,16,0,0,0,4));
+    for(let q=0;q<7;q++){ const ox=(q-3)*.07, ln=2.3+Math.sin(q*2.1)*.15; hair.push(tube([[ox*.4,3.3,-1.86,.09,.09,.09],[ox*.7,2.9,-2.14,.12,.1,.1],[ox,2.2,-2.24,.13,.1,.1],[ox*1.3,1.5,-2.2,.1,.08,.08],[ox*1.5,3.3-ln,-2.14,.015,.015,.015]],q%3?mn2:mnD,10,0,0,0,3)); }
+    skinTo(hair);
+    // 鞍と乗り手：胴の骨に付けて、駆け足の上下に合わせて動く
+    root.updateMatrixWorld(true); const bone=hairM.skeleton.getBoneByName('Torso')||hairM.skeleton.bones[2];
+    root.add(tack); tack.position.set(0,3.42,.15); tack.scale.set(1.08,1.18,1.1); root.add(person); person.position.set(0,3.46,.1); person.scale.setScalar(1.55); root.updateMatrixWorld(true); bone.attach(tack); bone.attach(person);
+    const mix=new T.AnimationMixer(root), clip=n=>gl.animations.find(a=>a.name.endsWith('|'+n)), aG=mix.clipAction(clip('Gallop')), aI=mix.clipAction(clip('Idle'));
+    aG.play(); aI.play(); body.visible=false; root.scale.setScalar(1/1.75); horse.add(root);
+    HM={mix,aG,aI,dur:clip('Gallop').duration}; L.HM=HM;
+  }catch(e){ console.warn('horse model',e); }
   // ---- 足もとの草：馬のまわりに生やし、進んだら植え直す ----
   const NG=16000, iG=(()=>{ const pl=new T.PlaneGeometry(2.6,1.6).translate(0,.8,0), Pg=[], Ug=[];
     // 表と裏を別の面として作り、どちらも法線は真上（裏から見ても暗くならず、草原が一様に明るい）
@@ -5113,11 +5152,12 @@ async function pLookOpen(){
     if(n-lastTouch>1800){ let e3=off-OFF; e3=Math.atan2(Math.sin(e3),Math.cos(e3)); off=OFF+e3*Math.pow(.25,dt); }
     ph+=dt*v*.21; const sw=Math.min(1,v/4);
     // 駆け足：4本の脚を少しずつずらして運ぶ。体は前後にゆれ、首はそれと逆にうなずく
-    const T0=ph*6.2832; [0,.12,.52,.64].forEach((of,q)=>{ const l=legs[q], th=T0+of*6.2832, sn=Math.sin(th), cs=Math.max(0,Math.cos(th));
+    if(HM){ HM.aG.setEffectiveWeight(sw); HM.aI.setEffectiveWeight(1-sw); HM.aG.timeScale=Math.max(.3,v*.21*HM.dur); HM.mix.update(dt); }
+    const T0=ph*6.2832; if(!HM) [0,.12,.52,.64].forEach((of,q)=>{ const l=legs[q], th=T0+of*6.2832, sn=Math.sin(th), cs=Math.max(0,Math.cos(th));
       if(!l.hind){ l.hip.rotation.x=-.55*sn*sw; l.kn.rotation.x=1.15*cs*sw; l.fe.rotation.x=.5*cs*sw-.25*Math.max(0,-sn)*sw; }
       else { l.hip.rotation.x=.3+(-.5*sn-.05)*sw; l.kn.rotation.x=-.3-.75*cs*sw; l.fe.rotation.x=.45*cs*sw; } });
     body.rotation.x=Math.sin(T0+.6)*.06*sw; body.position.y=1.3+Math.sin(T0*2)*.05*sw; neck.rotation.x=-Math.sin(T0+.6)*.12*sw+Math.sin(n/1600)*.03*(1-sw);
-    tail.rotation.x=.25*sw+Math.sin(n/600)*.06; tail.rotation.z=Math.sin(n/900)*.08; rider.position.y=RY+Math.max(0,Math.sin(T0*2))*.04*sw;
+    tail.rotation.x=.25*sw+Math.sin(n/600)*.06; tail.rotation.z=Math.sin(n/900)*.08; if(!HM) rider.position.y=RY+Math.max(0,Math.sin(T0*2))*.04*sw;
     if(gC&&Math.hypot(rX(py)-gC[0],py-gC[1])>45) plant(rX(py),py);
     if(isT||k){ const m=nowM+(py-y0)/KM; tEl.textContent=`${dLab}　${pfmt(Math.round(m))}`; }
     animDisc(n/1000,dt); animBirds(n/1000,dt); place(); clouds.forEach(s=>{ s.position.x+=dt*7; if(s.position.x>1600) s.position.x=-1600; if(s.position.z>cam.position.z+600) s.position.z-=3100; }); if(L.nt){ L.nt.offset.x+=dt*.004; L.nt.offset.y+=dt*.006; }
