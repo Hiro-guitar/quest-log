@@ -5116,7 +5116,7 @@ async function pLookOpen(){
     // 道をたどる：駆けているときは速く、手綱を引くと止まる。道の終わりで止まる
     const vt=go&&py<yEnd?9:0; v+=(vt-v)*Math.min(1,dt*1.6); py=Math.min(yEnd,py+v*dt); if(py>=yEnd&&go){ go=false; goB.textContent='駆ける'; }
     const ht=head0(); let dh=ht-hY; dh=Math.atan2(Math.sin(dh),Math.cos(dh)); hY+=dh*Math.min(1,dt*3);
-    if(n-lastTouch>1800){ let e3=off-OFF; e3=Math.atan2(Math.sin(e3),Math.cos(e3)); off=OFF+e3*Math.pow(.25,dt); }
+    // 見回した向きは、指を離してもそのまま（勝手に戻さない）
     ph+=dt*v*.21; const sw=Math.min(1,v/4);
     // 駆け足：4本の脚を少しずつずらして運ぶ。体は前後にゆれ、首はそれと逆にうなずく
     const T0=ph*6.2832; [0,.12,.52,.64].forEach((of,q)=>{ const l=legs[q], th=T0+of*6.2832, sn=Math.sin(th), cs=Math.max(0,Math.cos(th));
