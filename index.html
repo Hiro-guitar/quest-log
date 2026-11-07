@@ -4922,10 +4922,22 @@ async function pLookOpen(){
       const o=jW(y)*nx+Math.round((x-XA)/ST); if(nr[o*3+1]<.8) continue;
       Q.setFromAxisAngle(up,gr()*6.28); const s=(.7+gr()*.7)*(.45+.55*Math.min(1,r/50)); Sc.set(s,s*(.7+gr()*.5),s); V.set(X(x+sh(y)),e-.1,Z(y)); M.compose(V,Q,Sc); iG.setMatrixAt(n,M); { const vb=.84+.2*pNoise(x/9,y/9)+gr()*.06; cl.setRGB(Math.min(1,ca[o*3]*1.08*vb),Math.min(1,ca[o*3+1]*1.2*vb),ca[o*3+2]*.7*vb); } iG.setColorAt(n,cl); n++; }
     iG.count=/[?&]nograss/.test(location.search)?0:n; iG.instanceMatrix.needsUpdate=true; if(iG.instanceColor) iG.instanceColor.needsUpdate=true; };
-  // 岩：道の両側に灰紫の角ばった石を散らす
-  { const NR=700, iRk=new T.InstancedMesh(new T.DodecahedronGeometry(1,0),patch(new T.MeshToonMaterial({color:c3([150,142,140]),gradientMap:gmap})),NR); let m=0;
-    for(let q=0;q<NR*4&&m<NR;q++){ const s2=.8+Math.pow(rng(),3)*5, y=yA+rng()*P, x=rX(y)+(rng()<.5?-1:1)*(8+s2*1.7+Math.pow(rng(),1.4)*220), e=hAt(x,y); if(e<1||x<XA||x>XB) continue; Q.setFromEuler(new T.Euler(rng()*3,rng()*3,rng()*3)); Sc.set(s2*(1+rng()*.6),s2*(.5+rng()*.4),s2*(1+rng()*.5)); V.set(X(x),e-s2*.15,Z(y)); M.compose(V,Q,Sc); iRk.setMatrixAt(m++,M); }
-    iRk.count=m; iRk.castShadow=iRk.receiveShadow=true; tileG.add(iRk); }
+  // 岩：ブレワイのように、角の丸い大きな面の塊（温かい灰色・上は明るく苔がのる・下は暗い）と、地面から顔を出す層になった平たい岩盤
+  { const rh=(x,y,z,sd)=>{ const v=Math.sin(x*12.99+y*78.23+z*37.72+sd*5.1)*43758.55; return v-Math.floor(v); };
+    const mkRock=(sd,det,sy,layers)=>{ const g=new T.IcosahedronGeometry(1,det), p=g.attributes.position, v=new T.Vector3();
+      // 同じ場所の頂点は同じだけ動かす（割れ目ができないように）。大きなゆがみ＋面の平らさ
+      for(let k2=0;k2<p.count;k2++){ v.fromBufferAttribute(p,k2); const n=v.clone().normalize(), kx=Math.round(n.x*5), ky=Math.round(n.y*5), kz=Math.round(n.z*5); let r=.82+.3*rh(kx,ky,kz,sd)+.12*Math.sin(n.x*2.1+sd)*Math.cos(n.z*1.7);
+        v.copy(n).multiplyScalar(r); v.y*=sy; if(layers){ const yy=v.y; v.y=Math.round(yy*layers)/layers*.7+yy*.3; } if(v.y<-.25*sy) v.y=-.25*sy+(v.y+.25*sy)*.4; p.setXYZ(k2,v.x,v.y,v.z); }
+      g.computeVertexNormals(); const nr=g.attributes.normal, C=[];
+      // 法線は面の向きと丸みの間（角が丸く、面はくっきり）
+      for(let k2=0;k2<p.count;k2++){ v.fromBufferAttribute(p,k2); const rad=v.clone().normalize(), fn=new T.Vector3().fromBufferAttribute(nr,k2), n=fn.multiplyScalar(.75).add(rad.multiplyScalar(.25)).normalize(); nr.setXYZ(k2,n.x,n.y,n.z);
+        const top=Math.max(0,n.y), bot=Math.max(0,-n.y), moss=top>.55?Math.min(1,(top-.55)*3)*(.4+.6*rh(Math.round(v.x*3),Math.round(v.y*3),Math.round(v.z*3),sd+3)):0, crk=rh(Math.round(v.x*7),Math.round(v.y*7),Math.round(v.z*7),sd+7)>.86?.82:1;
+        const sd2=1-.18*(1-Math.abs(n.y)); let r=(.92+top*.12-bot*.35)*crk*sd2, g2=(.9+top*.12-bot*.35)*crk*sd2, b=(.84+top*.08-bot*.3)*crk*sd2; r=r*(1-moss)+.5*moss; g2=g2*(1-moss)+.72*moss; b=b*(1-moss)+.3*moss; C.push(r,g2,b); }
+      g.setAttribute('color',new T.Float32BufferAttribute(C,3)); return g; };
+    const rMat=patch(new T.MeshToonMaterial({color:0xffffff,gradientMap:gmap,vertexColors:true})), kinds=[mkRock(1,1,.82,0),mkRock(2,1,.9,0),mkRock(3,2,.42,4)], NR=[300,300,160], im=kinds.map((g,q)=>new T.InstancedMesh(g,rMat,NR[q])), cnt=[0,0,0], rc=new T.Color();
+    for(let q=0;q<2400&&cnt.reduce((a,b)=>a+b)<760;q++){ const kd=rng()<.2?2:rng()<.5?0:1; if(cnt[kd]>=NR[kd]) continue; const s2=kd===2?3+rng()*7:.7+Math.pow(rng(),3)*5.5, y=yA+rng()*P, x=rX(y)+(rng()<.5?-1:1)*(8+s2*1.7+Math.pow(rng(),1.4)*220), e=hAt(x,y); if(e<1||x<XA||x>XB) continue;
+      Q.setFromEuler(new T.Euler((rng()-.5)*.25,rng()*6.28,(rng()-.5)*.25)); Sc.set(s2*(1+rng()*.4),s2*(.8+rng()*.4),s2*(1+rng()*.4)); V.set(X(x),e-s2*(kd===2?.12:.22),Z(y)); M.compose(V,Q,Sc); im[kd].setMatrixAt(cnt[kd],M); const w=.9+rng()*.16; im[kd].setColorAt(cnt[kd],rc.setRGB(c3([168,160,144]).r*w,c3([168,160,144]).g*w,c3([168,160,144]).b*w)); cnt[kd]++; }
+    im.forEach((m,q)=>{ m.count=cnt[q]; m.castShadow=m.receiveShadow=true; tileG.add(m); }); }
   // くり返しの区間を3つ並べ、馬の前後に置き直す
   const tiles=[tileG,tileG.clone(),tileG.clone()]; tiles.slice(1).forEach(t=>scene.add(t));
   const putTiles=py=>{ const kk=Math.floor((py-yA)/P); tiles.forEach((t,i)=>{ t.position.set((kk-1+i)*SL*P,0,-(kk-1+i)*P); }); farG.position.set(sh(py),0,-(py-y0)); };
@@ -4935,7 +4947,7 @@ async function pLookOpen(){
     else if(o.isMesh){ const p=o.geometry.attributes.position, a=p.array; for(let q=0;q<p.count;q++) a[q*3]+=SL*(y0-a[q*3+2]-yA); p.needsUpdate=true; o.geometry.computeVertexNormals(); o.geometry.computeBoundingSphere(); } });
   tiles.slice(1).forEach(t=>scene.remove(t)); tiles[1]=tileG.clone(); tiles[2]=tileG.clone(); scene.add(tiles[1],tiles[2]);
   // ---- 見つけるもの：1分ほど走るごとに何かがある（遺跡・野営地・風車・鹿の群れ・宝箱…）。近づくと名前が出る ----
-  const mStone=tm([170,164,152]), mMoss=tm([104,138,66]), mWood=tm([128,88,54]), mWoodD=tm([88,62,40]), mCanvas=tm([222,208,176]), mRedC=tm([176,64,48]), mLeaf=tm([76,128,54]), mLeaf2=tm([58,104,46]), mApple=tm([210,44,40]),
+  const mStone=tm([190,182,164]), mMoss=tm([104,138,66]), mWood=tm([128,88,54]), mWoodD=tm([88,62,40]), mCanvas=tm([222,208,176]), mRedC=tm([176,64,48]), mLeaf=tm([76,128,54]), mLeaf2=tm([58,104,46]), mApple=tm([210,44,40]),
     mWhite=tm([236,230,216]), mRoof=tm([150,74,52]), mDeer=tm([160,106,62]), mDeerL=tm([232,214,188]), mGold=tm([226,182,72]), mFire=new T.MeshBasicMaterial({color:c3([255,170,60]).multiplyScalar(1.6)}),
     mWater=patch(new T.MeshStandardMaterial({color:c3([62,120,140]),roughness:.12,envMap:L.env||null,envMapIntensity:1.1}));
   const mk=(g,m,x=0,y=0,z=0)=>{ const o=shad(new T.Mesh(g,m)); o.position.set(x,y,z); return o; };
