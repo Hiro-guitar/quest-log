@@ -4924,21 +4924,21 @@ async function pLookOpen(){
   for(let q=0;q<8;q++){ const ox=(q-3.5)*.02, sp=(q-3.5)*.03, ln=1.15+Math.sin(q*2.1)*.08;
     tail.add(tube([[ox,0,-.04,.08,.08,.08],[ox+sp*.3,-.15,-.1,.11,.09,.09],[ox+sp*.6,-.5,-.16,.12,.09,.09],[ox+sp,-.85,-.2,.11,.08,.08],[ox+sp*1.5,-ln+.1,-.2,.07,.05,.05],[ox+sp*1.8,-ln,-.17,.015,.015,.015]],q%3?mane:maneD,10,0,0,0,3)); }
   // 脚：太い腕と腿、細い管、球節、ひづめ。肩（ひじ）・ひざ・球節で曲がる
-  const legs=[], mkLeg=(x,y,z,hind)=>{ const hip=new T.Group(); hip.position.set(x,y,z); bo.add(hip); const L1=hind?.62:.6, L2=hind?.52:.47, ys=L1/(hind?.46:.42), rs=.82;
+  const legs=[], mkLeg=(x,y,z,hind)=>{ const hip=new T.Group(); hip.position.set(x,y,z); bo.add(hip); const L1=hind?.62:.6, L2=hind?.52:.47, ys=L1/(hind?.46:.42), rs=.66;
     // 上は筋肉、下は骨ばって平たい。後ろ脚はひざ（スタイフル）が前、飛節が後ろに曲がる
     const LC=[0,-.15,0], thigh=hind?[[0,.03,-.02,.19,.22,.26],[0,-.14,.06,.17,.2,.2],[0,-.27,.09,.12,.13,.13],[0,-.38,.03,.09,.09,.11],[0,-L1,-.03,.075,.075,.11]]:[[0,.02,0,.15,.17,.16],[0,-.12,0,.14,.17,.15],[0,-.24,0,.1,.11,.1],[0,-.34,0,.078,.08,.08],[0,-L1,0,.072,.075,.085]];
     hip.add(softN(tube(thigh.map(([a,b,c,d,e,f])=>[a,b*ys,c,d*rs,e*rs,f*rs]),coat,20,0,0,0,4),LC,.3));
-    hip.add(softN(blob(0,hind?-.06:-.02,hind?-.06:.02,hind?.17:.13,hind?.42:.32,hind?.3:.18,coat,hind?-.25:0),LC,.3));
+    hip.add(softN(blob(0,hind?-.06:-.02,hind?-.06:.02,hind?.14:.1,hind?.4:.3,hind?.26:.15,coat,hind?-.25:0),LC,.3));
     
     const kn=new T.Group(); kn.position.set(0,-L1,hind?-.03:0); hip.add(kn);
-    kn.add(blob(0,0,0,.07,.08,.085,coat)); if(hind) kn.add(blob(0,.01,-.05,.06,.1,.07,coat));
-    kn.add(tube([[0,.02,0,.055,.06,.085],[0,-.1,hind?.01:0,.046,.055,.068],[0,-L2*.5,hind?.02:0,.046,.055,.068],[0,-L2,hind?.03:0,.055,.06,.072]],sock,18,0,0,0,3));
+    kn.add(blob(0,0,0,.055,.065,.07,coat)); if(hind) kn.add(blob(0,.01,-.045,.048,.085,.058,coat));
+    kn.add(tube([[0,.02,0,.045,.05,.07],[0,-.1,hind?.01:0,.037,.044,.056],[0,-L2*.5,hind?.02:0,.037,.044,.056],[0,-L2,hind?.03:0,.045,.05,.06]],sock,18,0,0,0,3));
     const fe=new T.Group(); fe.position.set(0,-L2,hind?.03:0); kn.add(fe);
-    fe.add(blob(0,0,.01,.08,.085,.1,sock));
-    fe.add(tube([[0,.0,.01,.085,.09,.09],[0,-.08,.03,.09,.095,.1],[0,-.14,.05,.1,.11,.11]],sock,18,0,0,0,3));
+    fe.add(blob(0,0,.01,.06,.065,.075,sock));
+    fe.add(tube([[0,.0,.01,.06,.065,.068],[0,-.08,.03,.064,.07,.074],[0,-.14,.05,.075,.08,.08]],sock,18,0,0,0,3));
     // 球節から蹄にかぶさる、ふさっとした毛
-    { const fz=shad(new T.Mesh(new T.CylinderGeometry(.1,.155,.17,16,1,true),sockH)); fz.position.set(0,-.13,.02); fe.add(fz); }
-    { const h=shad(new T.Mesh(new T.CylinderGeometry(.1,.135,.14,16),hoof)); h.position.set(0,-.215,.07); fe.add(h); }
+    { const fz=shad(new T.Mesh(new T.CylinderGeometry(.075,.11,.15,16,1,true),sockH)); fz.position.set(0,-.13,.02); fe.add(fz); }
+    { const h=shad(new T.Mesh(new T.CylinderGeometry(.078,.1,.13,16),hoof)); h.position.set(0,-.215,.07); fe.add(h); }
     legs.push({hip,kn,fe,hind}); };
   mkLeg(.2,1.35,.72,0); mkLeg(-.2,1.35,.72,0); mkLeg(.22,1.42,-.82,1); mkLeg(-.22,1.42,-.82,1);
   // 乗り手：鞍と鞍下の布、マントの旅人
