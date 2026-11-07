@@ -4695,7 +4695,7 @@ async function pLookOpen(){
   const jW=y=>Math.min(ny-1,Math.round(fr((y-yA)/P)*(ny-1))), bAt=(x,y)=>{ const i=Math.max(0,Math.min(nx-1,Math.round((x-XA)/ST))), j=jW(y), o=j*nx+i; return bio.subarray(o*4,o*4+4); };
   const X=x=>x-W/2, Z=y=>-(y-y0), lin=c=>c.map(v=>Math.pow(v/255,2.2));
   // 色（sRGB で決めて、線形に直す）
-  const C={g1:lin([118,158,62]),g2:lin([88,128,52]),dry:lin([150,150,80]),rock:lin([150,140,135]),rock2:lin([112,104,100]),sand:lin([214,200,160]),snow:lin([235,240,250]),desert:lin([222,186,124]),dune:lin([196,150,96]),vrock:lin([98,86,82]),vash:lin([64,58,58]),wet:lin([78,104,58]),mud:lin([96,88,60]),bed:lin([60,90,96])};
+  const C={g1:lin([128,170,64]),g2:lin([98,140,54]),dry:lin([150,150,80]),rock:lin([150,140,135]),rock2:lin([112,104,100]),sand:lin([214,200,160]),snow:lin([235,240,250]),desert:lin([222,186,124]),dune:lin([196,150,96]),vrock:lin([98,86,82]),vash:lin([64,58,58]),wet:lin([78,104,58]),mud:lin([96,88,60]),bed:lin([60,90,96])};
   const mix=(a,b,t)=>[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t];
   const colAt=(x,y,e,nyy,b)=>{ const n1=pn(x,y,46,3), n2=pn(x,y,6,7,2), slope=1-nyy, [bv,bd,bw,bs]=b;
     let c=mix(C.g1,C.g2,sm(.35,.7,n1)); c=mix(c,C.dry,sm(.62,.9,pn(x,y,90,1,5))*.45);
@@ -4796,8 +4796,10 @@ async function pLookOpen(){
     let a=0,c=0; sp.forEach(([x,y,e,con,s,r])=>{ Q.setFromAxisAngle(up,r); Sc.set(s,s,s); V.set(X(x),e-.4,Z(y)); M.compose(V,Q,Sc); if(con){ iC.setMatrixAt(c++,M); } else { iR.setMatrixAt(a,M); iT.setMatrixAt(a,M); iR.setColorAt(a,cc2.copy(cA).lerp(cB,rng())); a++; } });
     [iR,iT,iC].forEach(m=>{ m.castShadow=true; m.receiveShadow=true; tileG.add(m); }); }
   // ---- 足もとの草の板（カメラのまわり）----
-  const gcv=document.createElement('canvas'); gcv.width=64; gcv.height=64; { const x=gcv.getContext('2d'); x.fillStyle='#fff'; for(let q=0;q<9;q++){ const bx=6+q*6+rng()*3, h=34+rng()*28; x.beginPath(); x.moveTo(bx-2.5,64); x.quadraticCurveTo(bx+rng()*6-3,64-h*.6,bx+rng()*8-4,64-h); x.quadraticCurveTo(bx+1,64-h*.5,bx+2.5,64); x.fill(); } }
-  const gtx=new T.CanvasTexture(gcv);
+  // ブレワイの草：細く長い葉が同じ向きに寄り、根もとはやや濃く、先は明るい黄緑
+  const gcv=document.createElement('canvas'); gcv.width=128; gcv.height=128; { const x=gcv.getContext('2d'), gd=x.createLinearGradient(0,128,0,0); gd.addColorStop(0,'rgb(196,208,166)'); gd.addColorStop(.55,'rgb(238,244,214)'); gd.addColorStop(1,'rgb(255,252,222)'); x.fillStyle=gd;
+    for(let q=0;q<19;q++){ const bx=4+q*6.4+rng()*3, h=70+rng()*54, ln=10+rng()*18, w=1.6+rng()*1.2; x.beginPath(); x.moveTo(bx-w,128); x.quadraticCurveTo(bx-w+ln*.2,128-h*.6,bx+ln,128-h); x.quadraticCurveTo(bx+w+ln*.25,128-h*.55,bx+w,128); x.fill(); } }
+  const gtx=new T.CanvasTexture(gcv); gtx.colorSpace=T.SRGBColorSpace;
   // ---- 道：ブレワイの街道のような赤茶の土の道。轍はなく、まだらな色むらと小石。縁は草がまだらに食い込む ----
   const rcv=document.createElement('canvas'); rcv.width=128; rcv.height=256; { const x=rcv.getContext('2d'), im=x.createImageData(128,256), d=im.data;
     // 縦にくり返せる値ノイズ（格子を縦方向に巻く）
@@ -4905,13 +4907,20 @@ async function pLookOpen(){
     rider.add(seg2([sg*.17,.52,.1],[sg*.21,.3,.3],.05,.045,cloak)); rider.add(seg2([sg*.21,.3,.3],[sg*.08,.3,.5],.045,.04,cloak)); });
   horse.scale.setScalar(1.75); scene.add(horse);
   // ---- 足もとの草：馬のまわりに生やし、進んだら植え直す ----
-  const NG=16000, iG=(()=>{ const pl=new T.PlaneGeometry(2.4,2.1).translate(0,1.05,0), a=pl.toNonIndexed(), b=pl.clone().rotateY(Math.PI/2).toNonIndexed(), g=new T.BufferGeometry(); g.setAttribute('position',new T.Float32BufferAttribute([...a.attributes.position.array,...b.attributes.position.array],3)); g.setAttribute('normal',new T.Float32BufferAttribute([...a.attributes.normal.array,...b.attributes.normal.array],3)); g.setAttribute('uv',new T.Float32BufferAttribute([...a.attributes.uv.array,...b.attributes.uv.array],2));
-    const m=new T.InstancedMesh(g,patch(new T.MeshLambertMaterial({map:gtx,alphaTest:.5,side:T.DoubleSide,color:wet?0xd8e8d0:0xffffff,emissive:wet?0x1a2414:0x0c1406}),.25),NG); m.receiveShadow=true; m.frustumCulled=false; scene.add(m); return m; })();
+  const NG=16000, iG=(()=>{ const pl=new T.PlaneGeometry(2.6,1.6).translate(0,.8,0), Pg=[], Ug=[];
+    // 表と裏を別の面として作り、どちらも法線は真上（裏から見ても暗くならず、草原が一様に明るい）
+    for(const ry of [0,Math.PI/2]){ const q=pl.clone().rotateY(ry).toNonIndexed(), p=q.attributes.position.array, u=q.attributes.uv.array; for(let t=0;t<p.length/9;t++) for(const rev of [0,1]){ const ord=rev?[0,2,1]:[0,1,2]; for(const v of ord){ Pg.push(p[(t*3+v)*3],p[(t*3+v)*3+1],p[(t*3+v)*3+2]); Ug.push(u[(t*3+v)*2],u[(t*3+v)*2+1]); } } }
+    const g=new T.BufferGeometry(); g.setAttribute('position',new T.Float32BufferAttribute(Pg,3)); g.setAttribute('normal',new T.Float32BufferAttribute(Pg.map((_,i)=>i%3===1?1:0),3)); g.setAttribute('uv',new T.Float32BufferAttribute(Ug,2));
+    const gm=patch(new T.MeshLambertMaterial({map:gtx,alphaTest:.5,color:wet?0xd8e8d0:0xffffff,emissive:wet?0x1a2414:0x1c2a10}),.18), ob=gm.onBeforeCompile;
+    // 風の波：草原を明るい帯がゆっくり渡っていく（ブレワイの草原のように）
+    gm.onBeforeCompile=sh=>{ ob(sh); sh.vertexShader='varying float vGust;\n'+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n vGust=0.;\n#ifdef USE_INSTANCING\n { float gw=sin((instanceMatrix[3].x*.6+instanceMatrix[3].z*.8)*.03-uTime*1.5)*.5+.5; gw*=gw; vGust=gw; transformed.x+=gw*.6*max(0.,position.y); transformed.z+=gw*.3*max(0.,position.y); }\n#endif');
+      sh.fragmentShader='varying float vGust;\n'+sh.fragmentShader.replace('#include <opaque_fragment>','#include <opaque_fragment>\n gl_FragColor.rgb*=.94+.3*vGust;'); };
+    const m=new T.InstancedMesh(g,gm,NG); m.receiveShadow=true; m.frustumCulled=false; scene.add(m); return m; })();
   const M=new T.Matrix4(), Q=new T.Quaternion(), V=new T.Vector3(), Sc=new T.Vector3(), up=new T.Vector3(0,1,0), cl=new T.Color(), gr=pRng('lkg'+k,5);
   let gC=null; const plant=(cx,cy)=>{ gC=[cx,cy]; let n=0; const ex=[]; { const a=Math.max(0,Math.floor((cy-y0-260)/480)-1); for(let q=a;q<a+3;q++){ const s2=dSpot(q), R={'花畑':26,'小さな池':24,'鹿の群れ':14,'岩の上の宝箱':9}[s2.nm]||12; ex.push([s2.x,s2.yy,R]); } } const ca=near.attributes.color.array, nr=near.attributes.normal.array;
     for(let q=0;q<NG*3&&n<NG;q++){ const a=gr()*6.28, r=4+Math.pow(gr(),1.5)*130, x=cx+Math.cos(a)*r, y=cy+Math.sin(a)*r; if(x<XA||x>XB) continue; const e=hAt(x,y); if(e<1) continue; const b=bAt(x,y); if(b[0]>.2||b[1]>.25||b[3]>.3) continue; { const dr=Math.abs(x-rX(y)); if(dr<5.2||(dr<8&&gr()<(8-dr)/2.8)) continue; } if(ex.some(([ex2,ey,R])=>Math.hypot(x+sh(y)-ex2,y-ey)<R)) continue;
       const o=jW(y)*nx+Math.round((x-XA)/ST); if(nr[o*3+1]<.8) continue;
-      Q.setFromAxisAngle(up,gr()*6.28); const s=(.7+gr()*.7)*(.45+.55*Math.min(1,r/50)); Sc.set(s,s*(.7+gr()*.5),s); V.set(X(x+sh(y)),e-.1,Z(y)); M.compose(V,Q,Sc); iG.setMatrixAt(n,M); cl.setRGB(ca[o*3]*.95,ca[o*3+1]*1.12,ca[o*3+2]*.8); iG.setColorAt(n,cl); n++; }
+      Q.setFromAxisAngle(up,gr()*6.28); const s=(.7+gr()*.7)*(.45+.55*Math.min(1,r/50)); Sc.set(s,s*(.7+gr()*.5),s); V.set(X(x+sh(y)),e-.1,Z(y)); M.compose(V,Q,Sc); iG.setMatrixAt(n,M); { const vb=.84+.2*pNoise(x/9,y/9)+gr()*.06; cl.setRGB(Math.min(1,ca[o*3]*1.08*vb),Math.min(1,ca[o*3+1]*1.2*vb),ca[o*3+2]*.7*vb); } iG.setColorAt(n,cl); n++; }
     iG.count=/[?&]nograss/.test(location.search)?0:n; iG.instanceMatrix.needsUpdate=true; if(iG.instanceColor) iG.instanceColor.needsUpdate=true; };
   // 岩：道の両側に灰紫の角ばった石を散らす
   { const NR=700, iRk=new T.InstancedMesh(new T.DodecahedronGeometry(1,0),patch(new T.MeshToonMaterial({color:c3([150,142,140]),gradientMap:gmap})),NR); let m=0;
