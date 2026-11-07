@@ -4859,10 +4859,10 @@ async function pLookOpen(){
   const hm=(c,kind=0)=>{ const m=patch(new T.MeshLambertMaterial({color:c3(c),side:T.DoubleSide})), ob=m.onBeforeCompile;
     m.onBeforeCompile=sh=>{ ob(sh); Object.assign(sh.uniforms,HU);
       sh.fragmentShader='uniform float uHY;\n'+sh.fragmentShader
-        .replace('#include <lights_lambert_pars_fragment>',T.ShaderChunk.lights_lambert_pars_fragment.replace('float dotNL = saturate( dot( geometryNormal, directLight.direction ) );','float ndl = dot( geometryNormal, directLight.direction ); float dotNL = smoothstep( 0.0, 0.06, ndl ) * 0.97 + 0.03 * saturate( ndl );'))
+        .replace('#include <lights_lambert_pars_fragment>',T.ShaderChunk.lights_lambert_pars_fragment.replace('float dotNL = saturate( dot( geometryNormal, directLight.direction ) );','float ndl = dot( geometryNormal, directLight.direction ); float dotNL = 0.62*smoothstep( -0.04, 0.10, ndl ) + 0.38*smoothstep( 0.12, 0.55, ndl );'))
         .replace('#include <color_fragment>','#include <color_fragment>\n'+(kind===1?' { float hy=vWP.y-uHY; diffuseColor.rgb*=mix(.8,1.,smoothstep(.25,1.2,hy)); }':kind===2?' { float st=vn(vec2(dot(vWP.xz,vec2(.6,.8))*26.,vWP.y*1.6)); diffuseColor.rgb*=.88+.2*st; }':''))
-        .replace('#include <lights_fragment_end>','irradiance=mix(irradiance,vec3(dot(irradiance,vec3(.333)))*vec3(.94,.98,1.08),.5);\n#include <lights_fragment_end>\n { float rim=pow(1.-saturate(dot(normal,normalize(vViewPosition))),2.5); reflectedLight.indirectDiffuse+=rim*.05*diffuseColor.rgb; }'); }; return m; };
-  const coat=hm([204,140,80],1), coatD=hm([132,84,48],1), muz=hm([180,118,70]), sock=hm([242,234,212]), sockH=hm([238,228,200],2), mane=hm([242,228,186],2), maneD=hm([220,198,150],2), hoof=hm([58,52,48]), eyeM=hm([20,14,10]), strap=hm([70,42,28]), metal=hm([206,190,140]),
+        .replace('#include <lights_fragment_end>','irradiance=mix(irradiance,vec3(dot(irradiance,vec3(.333)))*vec3(.94,.98,1.08),.5);\n#include <lights_fragment_end>\n { float rim=pow(1.-saturate(dot(normal,normalize(vViewPosition))),2.5); reflectedLight.indirectDiffuse+=rim*.12*diffuseColor.rgb; }'); }; return m; };
+  const coat=hm([204,140,80],1), coatD=hm([132,84,48],1), muz=hm([180,118,70]), sock=hm([242,234,212]), sockH=hm([238,228,200],2), mane=hm([242,228,186],2), maneD=hm([220,198,150],2), hoof=hm([88,76,66]), eyeM=hm([20,14,10]), strap=hm([70,42,28]), metal=hm([206,190,140]),
     cloak=hm([74,98,84]), cloakD=hm([56,74,64]), skin=hm([232,192,160]), hair=hm([96,64,40]), boot=hm([70,50,36]), saddle=hm([108,62,36]), blanket=hm([42,92,104]), blanketE=hm([226,206,160]);
   const shad=o=>{ o.castShadow=true; o.receiveShadow=true; return o; };
   // pts: [x,y,z,横の半径,上側の半径,下側の半径]。点の間はなめらかに補う
@@ -4880,60 +4880,78 @@ async function pLookOpen(){
   const seg2=(a,b,r0,r1,mat)=>{ const A=new T.Vector3(...a), B=new T.Vector3(...b), dv=B.clone().sub(A), L=dv.length(), m=shad(new T.Mesh(new T.CylinderGeometry(r1,r0,L,16).translate(0,L/2,0),mat)); m.position.copy(A); m.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),dv.normalize()); return m; };
   const horse=new T.Group(), body=new T.Group(), bo=new T.Group(); body.position.set(0,1.3,0); bo.position.set(0,-1.3,0); body.add(bo); horse.add(body);
   // 胴：丸いお尻、深い胸、張った腹
-  bo.add(tube([[0,1.4,-1.36,.05,.05,.05],[0,1.44,-1.28,.3,.26,.34],[0,1.46,-1.1,.47,.33,.5],[0,1.44,-.82,.52,.33,.56],[0,1.38,-.46,.5,.3,.6],[0,1.37,-.06,.52,.3,.64],[0,1.41,.34,.5,.33,.64],[0,1.46,.66,.45,.4,.6],[0,1.42,.9,.36,.42,.52],[0,1.34,1.05,.24,.32,.36],[0,1.3,1.11,.05,.07,.07]],coat,30));
+  // 肉付き：法線を体のかたまりの中心へ少し寄せ、筒と筋肉のふくらみが一つの体として陰になるように
+  const softN=(m,c,k=.4)=>{ const g=m.geometry,p=g.attributes.position,n=g.attributes.normal,v=new T.Vector3(),w=new T.Vector3(),C=new T.Vector3(...c); m.updateMatrix(); const M=m.matrix, NI=new T.Matrix3().getNormalMatrix(M).invert();
+    for(let i=0;i<p.count;i++){ v.fromBufferAttribute(p,i).applyMatrix4(M).sub(C).normalize().applyMatrix3(NI); w.fromBufferAttribute(n,i).lerp(v,k).normalize(); n.setXYZ(i,w.x,w.y,w.z); } n.needsUpdate=true; return m; };
+  const BC=[0,1.37,-.1];
+  bo.add(softN(tube([[0,1.4,-1.36,.05,.05,.05],[0,1.44,-1.28,.34,.3,.36],[0,1.47,-1.1,.52,.38,.52],[0,1.45,-.82,.54,.34,.57],[0,1.38,-.46,.52,.3,.6],[0,1.37,-.06,.52,.3,.64],[0,1.41,.34,.5,.33,.64],[0,1.46,.66,.5,.42,.62],[0,1.42,.9,.4,.43,.54],[0,1.27,1.07,.27,.32,.36],[0,1.2,1.15,.05,.07,.07]],coat,30),BC,.3));
+  // 胸・胸筋・肩甲骨・お尻の丸み
+  bo.add(softN(blob(0,1.16,.9,.28,.22,.2,coat),BC,.3));
+  
   // 首と頭（首の付け根で動く）
   const NP=[0,1.5,.72], neck=new T.Group(); neck.position.set(...NP); bo.add(neck);
-  const nk=[[0,1.5,.68,.36,.4,.47],[0,1.84,.9,.3,.3,.39],[0,2.12,1.08,.235,.235,.3],[0,2.32,1.22,.175,.175,.2],[0,2.44,1.3,.14,.13,.15]];
-  neck.add(tube(nk,coat,22,...NP));
+  const nk=[[0,1.5,.68,.4,.42,.5],[0,1.84,.9,.34,.34,.45],[0,2.12,1.08,.28,.27,.36],[0,2.32,1.22,.23,.21,.29],[0,2.47,1.31,.2,.17,.25]];
+  const NC=[0-NP[0],2.0-NP[1],.95-NP[2]], HC=[0-NP[0],2.2-NP[1],1.55-NP[2]];
+  neck.add(softN(tube(nk,coat,22,...NP),NC,.3));
   // 頭：額は広く、頬（あご）はふっくら丸く、鼻すじはまっすぐ、鼻先は小さく丸い（参考画像の野生の馬のように）
-  neck.add(tube([[0,2.53,1.25,.12,.08,.12],[0,2.48,1.35,.165,.12,.2],[0,2.38,1.48,.17,.11,.22],[0,2.22,1.63,.145,.095,.17],[0,2.06,1.75,.125,.085,.13],[0,1.92,1.85,.118,.082,.11],[0,1.81,1.92,.112,.08,.1],[0,1.745,1.965,.07,.055,.065]],coat,26,...NP));
-  neck.add(blob(0-NP[0],2.27-NP[1],1.47-NP[2],.165,.16,.15,coat));
-  neck.add(tube([[0,1.92,1.85,.12,.084,.112],[0,1.81,1.92,.114,.082,.102],[0,1.745,1.966,.072,.057,.067]],muz,22,...NP));
-  [-1,1].forEach(sg=>{ const e=shad(new T.Mesh(new T.SphereGeometry(1,12,10),coat)); e.scale.set(.055,.13,.035); e.position.set(sg*.1-NP[0],2.66-NP[1],1.29-NP[2]); e.rotation.set(-.15,0,-sg*.22); neck.add(e);
-    const ey=new T.Mesh(new T.SphereGeometry(.042,12,10),eyeM); ey.position.set(sg*.158-NP[0],2.36-NP[1],1.5-NP[2]); ey.scale.set(.7,1,1.25); neck.add(ey); { const hl=new T.Mesh(new T.SphereGeometry(.011,6,6),new T.MeshBasicMaterial({color:0xffffff})); hl.position.set(sg*.18-NP[0],2.375-NP[1],1.52-NP[2]); neck.add(hl); }
-    { const ns=new T.Mesh(new T.SphereGeometry(.025,8,6),eyeM); ns.position.set(sg*.055-NP[0],1.79-NP[1],1.985-NP[2]); ns.scale.set(.8,1.3,.5); neck.add(ns); }
+  // 頭：額は広く平ら、頬（あご）は丸く大きく、鼻先は深く四角い
+  neck.add(softN(tube([[0,2.55,1.24,.17,.1,.22],[0,2.49,1.34,.2,.11,.3],[0,2.38,1.48,.205,.11,.32],[0,2.22,1.63,.17,.1,.22],[0,2.06,1.75,.145,.095,.16],[0,1.92,1.85,.135,.1,.13],[0,1.81,1.92,.125,.095,.12],[0,1.73,1.97,.09,.07,.085]],coat,26,...NP),HC,.5));
+  neck.add(softN(blob(0-NP[0],2.44-NP[1],1.4-NP[2],.21,.14,.17,coat),HC,.5));
+  [-1,1].forEach(sg=>neck.add(softN(blob(sg*.06-NP[0],2.25-NP[1],1.36-NP[2],.17,.17,.16,coat),HC,.5)));
+
+  neck.add(softN(tube([[0,1.92,1.85,.137,.102,.132],[0,1.8,1.93,.127,.097,.122],[0,1.725,1.972,.092,.072,.087]],muz,22,...NP),HC,.4));
+  [-1,1].forEach(sg=>{ const e=shad(new T.Mesh(new T.SphereGeometry(1,12,10),coat)); e.scale.set(.055,.13,.035); e.position.set(sg*.13-NP[0],2.68-NP[1],1.27-NP[2]); e.rotation.set(-.15,0,-sg*.22); neck.add(e);
+    const ey=new T.Mesh(new T.SphereGeometry(.042,12,10),eyeM); ey.position.set(sg*.19-NP[0],2.37-NP[1],1.49-NP[2]); ey.scale.set(.7,1,1.25); neck.add(ey); { const hl=new T.Mesh(new T.SphereGeometry(.011,6,6),new T.MeshBasicMaterial({color:0xffffff})); hl.position.set(sg*.215-NP[0],2.385-NP[1],1.51-NP[2]); neck.add(hl); }
+    { const ns=new T.Mesh(new T.SphereGeometry(.025,8,6),eyeM); ns.position.set(sg*.06-NP[0],1.79-NP[1],1.99-NP[2]); ns.scale.set(.8,1.3,.5); neck.add(ns); }
     // 頭絡と手綱
-    neck.add(seg2([sg*.115-NP[0],1.88-NP[1],1.84-NP[2]],[sg*.15-NP[0],2.38-NP[1],1.38-NP[2]],.016,.016,strap));
+    neck.add(seg2([sg*.135-NP[0],1.88-NP[1],1.86-NP[2]],[sg*.21-NP[0],2.36-NP[1],1.38-NP[2]],.022,.022,strap));
     { const r=new T.Mesh(new T.TorusGeometry(.03,.009,6,12),metal); r.position.set(sg*.12-NP[0],1.87-NP[1],1.86-NP[2]); r.rotation.y=Math.PI/2; neck.add(r); }
     neck.add(seg2([sg*.12-NP[0],1.86-NP[1],1.86-NP[2]],[sg*.1-NP[0],2.02-NP[1],.68-NP[2]],.011,.011,strap)); });
   neck.add(tube([[-.12,1.92,1.82,.012,.012,.012],[0,1.98,1.86,.012,.012,.012],[.12,1.92,1.82,.012,.012,.012]],strap,6,...NP,2));
   // たてがみ：首すじから右に長く垂れる房と、前髪
-  neck.add(tube(nk.map(q=>[.03,q[1]+q[4]*.92+.02,q[2]-q[4]*.42,.08,.09,.05]),mane,12,...NP));
-  for(let q=0;q<22;q++){ const f=q/21, i0=Math.min(3,Math.floor(f*3.99)), a=nk[i0], b=nk[i0+1], w=f*3.99-i0, y=a[1]+(b[1]-a[1])*w+(a[4]+(b[4]-a[4])*w)*.85, z=a[2]+(b[2]-a[2])*w-(a[4]+(b[4]-a[4])*w)*.4, rx=a[3]+(b[3]-a[3])*w;
-    const ln=.72-f*.2+Math.sin(q*2.7)*.07, wd=.1+Math.sin(q*1.9)*.015, dz=-.06-.04*Math.sin(q*1.3);
-    neck.add(tube([[rx*.55,y+.02,z,.03,wd,wd],[rx*.9,y-.1,z-.02,.03,wd,wd],[rx+.03,y-ln*.45,z+dz*.5,.028,wd*1.05,wd*1.05],[rx+.05,y-ln*.8,z+dz,.022,wd*.8,wd*.8],[rx+.07,y-ln,z+dz*1.2,.01,wd*.25,wd*.25]],q%3?mane:maneD,10,...NP,3)); }
-  neck.add(tube([[0,2.6,1.27,.05,.08,.08],[.02,2.57,1.4,.06,.09,.09],[.03,2.44,1.53,.05,.075,.075],[.04,2.3,1.6,.03,.05,.05],[.045,2.22,1.63,.008,.015,.015]],mane,12,...NP,3));
+  neck.add(tube(nk.map(q=>[.03,q[1]+q[4]*.92+.02,q[2]-q[4]*.42,.11,.13,.07]),mane,12,...NP));
+  for(let q=0;q<14;q++){ const sd=q<9?1:-1, qq=q<9?q:q-9, nq=q<9?8:4, f=qq/nq, i0=Math.min(3,Math.floor(f*3.99)), a=nk[i0], b=nk[i0+1], w=f*3.99-i0, y=a[1]+(b[1]-a[1])*w+(a[4]+(b[4]-a[4])*w)*.85, z=a[2]+(b[2]-a[2])*w-(a[4]+(b[4]-a[4])*w)*.4, rx=(a[3]+(b[3]-a[3])*w)*sd;
+    const ln=(.56-f*.18+Math.sin(q*2.7)*.05)*(sd>0?1:.7), wd=.14+Math.sin(q*1.9)*.025, dz=-.1-.04*Math.sin(q*1.3);
+    neck.add(tube([[rx*.4,y+.03,z,.05,wd,wd],[rx*.85,y-.08,z-.02,.05,wd,wd],[rx+.02*sd,y-ln*.45,z+dz*.5,.04,wd*1.05,wd*1.05],[rx+.04*sd,y-ln*.8,z+dz,.03,wd*.75,wd*.75],[rx+.06*sd,y-ln,z+dz*1.2,.01,wd*.15,wd*.15]],q%4===3?maneD:mane,10,...NP,3)); }
+  neck.add(tube([[0,2.64,1.25,.09,.1,.1],[.02,2.57,1.4,.13,.1,.1],[.03,2.43,1.54,.11,.08,.08],[.04,2.3,1.62,.07,.05,.05],[.05,2.22,1.65,.01,.015,.015]],mane,12,...NP,3));
+  [-1,1].forEach(sg=>neck.add(tube([[sg*.08,2.6,1.3,.03,.06,.06],[sg*.17,2.45,1.42,.03,.05,.05],[sg*.2,2.3,1.46,.01,.01,.01]],mane,8,...NP,3)));
   // 尾：根もとが太く、長く流れる
   const tail=new T.Group(); tail.position.set(0,1.52,-1.3); bo.add(tail);
-  tail.add(tube([[0,.04,.06,.08,.08,.08],[0,-.04,-.08,.09,.09,.09],[0,-.22,-.18,.07,.07,.07]],coat,12,0,0,0,3));
-  for(let q=0;q<6;q++){ const ox=(q-2.5)*.018, sp=(q-2.5)*.018, ln=1.12+Math.sin(q*2.1)*.1;
-    tail.add(tube([[ox,0,-.04,.07,.07,.07],[ox+sp*.3,-.12,-.18,.09,.08,.08],[ox+sp*.7,-.45,-.28,.1,.08,.08],[ox+sp,-.8,-.3,.09,.07,.07],[ox+sp*1.3,-ln+.12,-.26,.06,.05,.05],[ox+sp*1.4,-ln,-.22,.015,.015,.015]],q%2?mane:maneD,10,0,0,0,3)); }
+  tail.add(tube([[0,.04,.06,.1,.1,.1],[0,-.06,-.06,.11,.11,.11],[0,-.24,-.14,.09,.09,.09]],coat,12,0,0,0,3));
+  // 房のすき間を埋める芯（うしろから見ても一つの尾に見えるように）
+  tail.add(tube([[0,-.05,-.08,.1,.1,.1],[0,-.45,-.16,.15,.1,.1],[0,-.85,-.19,.17,.09,.09],[0,-1.05,-.19,.14,.06,.06],[0,-1.12,-.18,.02,.02,.02]],maneD,14,0,0,0,3));
+  for(let q=0;q<8;q++){ const ox=(q-3.5)*.02, sp=(q-3.5)*.03, ln=1.15+Math.sin(q*2.1)*.08;
+    tail.add(tube([[ox,0,-.04,.08,.08,.08],[ox+sp*.3,-.15,-.1,.11,.09,.09],[ox+sp*.6,-.5,-.16,.12,.09,.09],[ox+sp,-.85,-.2,.11,.08,.08],[ox+sp*1.5,-ln+.1,-.2,.07,.05,.05],[ox+sp*1.8,-ln,-.17,.015,.015,.015]],q%3?mane:maneD,10,0,0,0,3)); }
   // 脚：太い腕と腿、細い管、球節、ひづめ。肩（ひじ）・ひざ・球節で曲がる
   const legs=[], mkLeg=(x,y,z,hind)=>{ const hip=new T.Group(); hip.position.set(x,y,z); bo.add(hip); const L1=hind?.46:.42, L2=hind?.4:.33;
-    hip.add(blob(0,hind?.02:.0,hind?-.02:.02,hind?.2:.16,hind?.36:.3,hind?.3:.22,coat));
-    // 腕・すね：上が太く筋肉で、下へなめらかに細く
-    hip.add(tube(hind?[[0,.02,0,.17,.2,.22],[0,-.12,0,.16,.19,.2],[0,-.28,0,.11,.12,.14],[0,-.4,0,.085,.085,.1],[0,-L1,0,.08,.08,.09]]:[[0,.02,0,.15,.17,.16],[0,-.12,0,.15,.18,.16],[0,-.27,0,.11,.12,.11],[0,-.37,0,.085,.09,.085],[0,-L1,0,.08,.085,.08]],coat,20,0,0,0,4));
-    const kn=new T.Group(); kn.position.set(0,-L1,0); hip.add(kn);
-    kn.add(blob(0,0,0,.09,.1,.1,coat));
-    kn.add(tube([[0,.02,0,.08,.085,.085],[0,-.08,0,.075,.075,.08],[0,-L2*.5,0,.07,.07,.075],[0,-L2,0,.072,.075,.08]],sock,18,0,0,0,3));
-    const fe=new T.Group(); fe.position.set(0,-L2,0); kn.add(fe);
-    fe.add(blob(0,0,.01,.09,.09,.1,sock));
+    // 上は筋肉、下は骨ばって平たい。後ろ脚はひざ（スタイフル）が前、飛節が後ろに曲がる
+    const LC=[0,-.15,0], thigh=hind?[[0,.03,-.02,.19,.22,.26],[0,-.14,.06,.17,.2,.2],[0,-.27,.09,.12,.13,.13],[0,-.38,.03,.09,.09,.11],[0,-L1,-.03,.075,.075,.11]]:[[0,.02,0,.15,.17,.16],[0,-.12,0,.14,.17,.15],[0,-.24,0,.1,.11,.1],[0,-.34,0,.078,.08,.08],[0,-L1,0,.072,.075,.085]];
+    hip.add(softN(tube(thigh,coat,20,0,0,0,4),LC,.3));
+    hip.add(softN(blob(0,hind?-.04:0,hind?-.06:.02,hind?.19:.15,hind?.38:.28,hind?.33:.2,coat,hind?-.25:0),LC,.3));
+    
+    const kn=new T.Group(); kn.position.set(0,-L1,hind?-.03:0); hip.add(kn);
+    kn.add(blob(0,0,0,.08,.09,.1,coat)); if(hind) kn.add(blob(0,.01,-.06,.07,.11,.08,coat));
+    kn.add(tube([[0,.02,0,.06,.07,.1],[0,-.1,hind?.01:0,.055,.065,.08],[0,-L2*.5,hind?.02:0,.055,.065,.08],[0,-L2,hind?.03:0,.065,.07,.085]],sock,18,0,0,0,3));
+    const fe=new T.Group(); fe.position.set(0,-L2,hind?.03:0); kn.add(fe);
+    fe.add(blob(0,0,.01,.08,.085,.1,sock));
     fe.add(tube([[0,.0,.01,.085,.09,.09],[0,-.08,.03,.09,.095,.1],[0,-.14,.05,.1,.11,.11]],sock,18,0,0,0,3));
     // 球節から蹄にかぶさる、ふさっとした毛
-    { const fz=shad(new T.Mesh(new T.CylinderGeometry(.1,.155,.17,16,1,true),sockH)); fz.position.set(0,-.13,.04); fe.add(fz); }
-    { const h=shad(new T.Mesh(new T.CylinderGeometry(.095,.118,.13,16),hoof)); h.position.set(0,-.215,.05); fe.add(h); }
+    { const fz=shad(new T.Mesh(new T.CylinderGeometry(.1,.155,.17,16,1,true),sockH)); fz.position.set(0,-.13,.02); fe.add(fz); }
+    { const h=shad(new T.Mesh(new T.CylinderGeometry(.1,.135,.14,16),hoof)); h.position.set(0,-.215,.07); fe.add(h); }
     legs.push({hip,kn,fe,hind}); };
   mkLeg(.24,1.06,.72,0); mkLeg(-.24,1.06,.72,0); mkLeg(.26,1.12,-.86,1); mkLeg(-.26,1.12,-.86,1);
   // 乗り手：鞍と鞍下の布、マントの旅人
-  const rider=new T.Group(), RY=1.72; rider.position.set(0,RY,.12); bo.add(rider);
-  { const m=shad(new T.Mesh(new T.CylinderGeometry(.592,.592,.8,24,1,true,Math.PI-1.15,2.3),blanket)); m.rotation.x=Math.PI/2; m.position.set(0,-.6,0); rider.add(m);
-    { const e=shad(new T.Mesh(new T.CylinderGeometry(.585,.585,.86,24,1,true,Math.PI-1.2,2.4),blanketE)); e.rotation.x=Math.PI/2; e.position.set(0,-.6,0); rider.add(e); } }
-  rider.add(tube([[0,-.02,-.3,.24,.05,.05],[0,.0,-.22,.25,.1,.06],[0,-.02,0,.24,.05,.06],[0,.0,.2,.22,.08,.06],[0,.06,.27,.08,.06,.04]],saddle,16,0,0,0,3));
-  [-1,1].forEach(sg=>{ rider.add(seg2([sg*.42,-.1,.02],[sg*.5,-.66,.06],.015,.015,strap)); const s=new T.Mesh(new T.TorusGeometry(.05,.012,6,12),metal); s.position.set(sg*.5,-.7,.06); rider.add(s); });
+  const rider=new T.Group(), RY=1.72; rider.position.set(0,RY,.2); bo.add(rider);
+  { const m=shad(new T.Mesh(new T.CylinderGeometry(.592,.592,.8,28,1,true,Math.PI-1.6,3.2),blanket)); m.rotation.x=Math.PI/2; m.position.set(0,-.6,0); rider.add(m);
+    { const e=shad(new T.Mesh(new T.CylinderGeometry(.585,.585,.86,28,1,true,Math.PI-1.66,3.32),blanketE)); e.rotation.x=Math.PI/2; e.position.set(0,-.6,0); rider.add(e); }
+    for(let fz=-.36;fz<=.37;fz+=.09) [-1,1].forEach(sg=>rider.add(seg2([sg*.593,-.62,fz],[sg*.6,-.76,fz],.014,.01,blanketE))); }
+  rider.add(tube([[0,-.02,-.3,.24,.06,.05],[0,.0,-.22,.25,.1,.06],[0,-.02,0,.24,.1,.06],[0,.0,.2,.22,.1,.06],[0,.06,.27,.08,.06,.04]],saddle,16,0,0,0,3)); rider.add(blob(0,.14,.3,.07,.12,.06,saddle)); rider.add(blob(0,.12,-.32,.12,.1,.06,saddle));
+  { const gi=new T.Mesh(new T.TorusGeometry(1,.022,6,36,Math.PI*1.4).rotateZ(Math.PI*.8),strap); gi.scale.set(.6,.66,1); gi.position.set(0,-.4,.1); rider.add(gi); }
+  [-1,1].forEach(sg=>{ const sl=seg2([sg*.42,-.1,.04],[sg*.53,-.66,.12],.03,.03,strap); sl.scale.x=.4; rider.add(sl); const s=new T.Mesh(new T.TorusGeometry(.055,.014,6,12),metal); s.position.set(sg*.53,-.7,.12); s.rotation.y=Math.PI/2; rider.add(s); });
   rider.add(seg2([0,.04,0],[0,.6,.1],.17,.14,cloak));
-  { const c=shad(new T.Mesh(new T.ConeGeometry(.34,.66,14,1,true),cloakD)); c.position.set(0,.33,-.04); c.rotation.x=.12; rider.add(c); }
-  { const h=shad(new T.Mesh(new T.SphereGeometry(.11,14,12),skin)); h.position.set(0,.78,.13); rider.add(h); const hr=shad(new T.Mesh(new T.SphereGeometry(.12,14,12,0,6.3,0,1.75),hair)); hr.position.set(0,.8,.11); hr.rotation.x=-.3; rider.add(hr); }
-  [-1,1].forEach(sg=>{ rider.add(seg2([sg*.16,.05,.05],[sg*.5,-.26,.2],.075,.07,cloak)); rider.add(seg2([sg*.5,-.26,.2],[sg*.5,-.68,.06],.065,.055,boot));
+  { const c=shad(new T.Mesh(new T.ConeGeometry(.36,.66,14,1,true),cloakD)); c.position.set(0,.33,-.04); c.rotation.x=.12; rider.add(c); }
+  { const h=shad(new T.Mesh(new T.SphereGeometry(.125,14,12),skin)); h.position.set(0,.79,.13); rider.add(h); const hr=shad(new T.Mesh(new T.SphereGeometry(.135,14,12,0,6.3,0,1.75),hair)); hr.position.set(0,.81,.11); hr.rotation.x=-.3; rider.add(hr); }
+  [-1,1].forEach(sg=>{ rider.add(seg2([sg*.16,.05,.08],[sg*.5,-.22,.3],.09,.08,cloak)); rider.add(seg2([sg*.5,-.22,.3],[sg*.53,-.66,.12],.07,.058,boot));
     rider.add(seg2([sg*.17,.52,.1],[sg*.21,.3,.3],.05,.045,cloak)); rider.add(seg2([sg*.21,.3,.3],[sg*.08,.3,.5],.045,.04,cloak)); });
   horse.scale.setScalar(1.75); scene.add(horse);
   // ---- 足もとの草：馬のまわりに生やし、進んだら植え直す ----
