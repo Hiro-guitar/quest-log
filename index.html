@@ -5329,7 +5329,7 @@ function pMapOpen(o0){
   // 旅程の地形の絵（今のズーム）と川：寄りはじめはこの絵のまま。旅程の座標（横はピクセル、縦は分×ズーム）→ 世界の座標
   const Hp=pm2y(PATH_H1)+10, terK=pTerKey(k), terU=pTerCache[terK]; let terImg=null, TD=null, TW=0, TH=0; const loadTer=u=>{ terImg=new Image(); terImg.onload=()=>{ const c=document.createElement('canvas'); TW=c.width=terImg.width; TH=c.height=terImg.height; const g=c.getContext('2d'); g.drawImage(terImg,0,0); try{ TD=g.getImageData(0,0,TW,TH).data; }catch(e){} tiles.clear(); dirty=true; plan(); }; terImg.src=u; };
   if(terU) loadTer(terU); else { pTerAsk(k,Hp,true); const iv=setInterval(()=>{ if(!M.alive){ clearInterval(iv); return; } const u=pTerCache[terK]; if(u){ clearInterval(iv); loadTer(u); } },400); }
-  const tY=py=>py/PX0*KM, terAt=(x,y)=>{ if(!TD) return null; const fx=Math.max(0,Math.min(TW-1.001,x/XW*TW-.5)), fy=Math.max(0,Math.min(TH-1.001,(y-tY(-900))/(tY(Hp+900)-tY(-900))*TH-.5)), i=fx|0, j=fy|0, a=fx-i, b=fy-j, o=(j*TW+i)*4, r=[0,0,0]; for(let c=0;c<3;c++) r[c]=((TD[o+c]*(1-a)+TD[o+4+c]*a)*(1-b)+(TD[o+TW*4+c]*(1-a)+TD[o+TW*4+4+c]*a)*b)/255; return r; }, RIV=(()=>{ try{ return pRivers(Hp).filter(R=>!R.lava); }catch(e){ return []; } })();
+  const tY=py=>py/PX0*KM, terAt=(x,y)=>{ if(!TD) return null; x=w.mir(x/KM)*KM; const fx=Math.max(0,Math.min(TW-1.001,x/XW*TW-.5)), fy=Math.max(0,Math.min(TH-1.001,(y-tY(-900))/(tY(Hp+900)-tY(-900))*TH-.5)), i=fx|0, j=fy|0, a=fx-i, b=fy-j, o=(j*TW+i)*4, r=[0,0,0]; for(let c=0;c<3;c++) r[c]=((TD[o+c]*(1-a)+TD[o+4+c]*a)*(1-b)+(TD[o+TW*4+c]*(1-a)+TD[o+TW*4+4+c]*a)*b)/255; return r; }, RIV=(()=>{ try{ return pRivers(Hp).filter(R=>!R.lava); }catch(e){ return []; } })();
   // ---- 地形の板（256ピクセル四方）。寄り具合ごとに作って覚えておく ----
   const TS=256, B0=.5, tiles=new Map(), queue=[]; let busy=null;
   const lvOf=s2=>Math.max(0,Math.min(13,Math.ceil(Math.log2(s2/DPR/B0)-.15)));
@@ -5352,7 +5352,7 @@ function pMapOpen(o0){
   const tileKey=(L,i,j)=>L+':'+i+':'+j;
   const want=new Set(); let wantL=0;
   const plan=()=>{ if(s>210){ queue.length=0; want.clear(); return; } const L=lvOf(s), size=TS*B0*Math.pow(2,L), x0=vx-VW/2*s, x1=vx+VW/2*s, y0=vy-VH/2*s, y1=vy+VH/2*s; wantL=L; want.clear(); const list=[];
-    for(let j=Math.floor(Math.max(-size,y0)/size);j<=Math.floor(Math.min(Y1+size,y1)/size);j++) for(let i=Math.floor(Math.max(-XW*.6,x0)/size);i<=Math.floor(Math.min(XW*1.6,x1)/size);i++){ const kk=tileKey(L,i,j); want.add(kk); if(!tiles.has(kk)) list.push([L,i,j,Math.hypot((i+.5)*size-vx,(j+.5)*size-vy)]); }
+    for(let j=Math.floor(Math.max(-size,y0)/size);j<=Math.floor(Math.min(Y1+size,y1)/size);j++) for(let i=Math.floor(Math.max(-XW*2,x0)/size);i<=Math.floor(Math.min(XW*3,x1)/size);i++){ const kk=tileKey(L,i,j); want.add(kk); if(!tiles.has(kk)) list.push([L,i,j,Math.hypot((i+.5)*size-vx,(j+.5)*size-vy)]); }
     list.sort((a,b)=>a[3]-b[3]); queue.length=0; list.forEach(t=>queue.push(t)); if(busy&&!want.has(busy.kk)) busy=null; };
   const work=ms=>{ const t=performance.now(); while(performance.now()-t<ms){ if(!busy){ const n=queue.shift(); if(!n) return; const kk=tileKey(n[0],n[1],n[2]); if(tiles.has(kk)) continue; busy={kk,it:tileGen(n[0],n[1],n[2])}; }
       const r=busy.it.next(); if(r.done){ tiles.set(busy.kk,r.value); busy=null; dirty=true; if(tiles.size>260){ for(const kk of tiles.keys()){ if(!want.has(kk)){ tiles.delete(kk); if(tiles.size<220) break; } } } } } };
@@ -5364,30 +5364,36 @@ function pMapOpen(o0){
     cx.imageSmoothingEnabled=true; const L=wantL;
     const drawLv=(L2,only)=>{ const size=TS*B0*Math.pow(2,L2), x0=vx-VW/2*s, x1=vx+VW/2*s, y0=vy-VH/2*s, y1=vy+VH/2*s;
       for(let j=Math.floor(y0/size);j<=Math.floor(y1/size);j++) for(let i=Math.floor(x0/size);i<=Math.floor(x1/size);i++){ const t=tiles.get(tileKey(L2,i,j)); if(!t) continue; if(only&&tiles.has(tileKey(L,i*Math.pow(2,L2-L)|0,j*Math.pow(2,L2-L)|0))&&L2!==L) continue; const a=sx(i*size), b=sy(j*size), z=size/s; cx.drawImage(t,a,b,z+.6,z+.6); } };
-    if(terImg&&terImg.complete){ const a=sx(0), b=sy(tY(-900)), ww=XW/s, hh=(tY(Hp+900)-tY(-900))/s; cx.drawImage(terImg,a,b,ww,hh); }
+    if(terImg&&terImg.complete){ const a=sx(0), b=sy(tY(-900)), ww=XW/s, hh=(tY(Hp+900)-tY(-900))/s; const i0=Math.floor((vx-VW/2*s)/XW), i1=Math.floor((vx+VW/2*s)/XW); for(let i=i0;i<=i1;i++){ const ax=sx(i*XW); if(i&1){ cx.save(); cx.translate(ax+ww,b); cx.scale(-1,1); cx.drawImage(terImg,0,0,ww+.5,hh); cx.restore(); } else cx.drawImage(terImg,ax-(i?.25:0),b,ww+.5,hh); } }
     const ta=sm(200,90,s); if(ta>0){ cx.globalAlpha=ta; for(let L2=Math.min(13,L+4);L2>L;L2--) drawLv(L2,false); drawLv(L,false); cx.globalAlpha=1; }
     // 川（旅程の地図と同じ流れ）を寄った地形の上にも描く
     if(ta>0&&RIV.length){ cx.globalAlpha=ta; cx.strokeStyle='#3f7f93'; cx.lineCap=cx.lineJoin='round'; RIV.forEach(R=>{ const P=R.P; for(let i=1;i<P.length;i++){ const y0=tY(P[i-1][1]), y1=tY(P[i][1]); if(Math.max(y0,y1)<vy-VH/2*s-500||Math.min(y0,y1)>vy+VH/2*s+500) continue; cx.lineWidth=Math.max(1,R.ws[i]*KM/s*.8); cx.beginPath(); cx.moveTo(sx(P[i-1][0]*KM),sy(y0)); cx.lineTo(sx(P[i][0]*KM),sy(y1)); cx.stroke(); } }); cx.globalAlpha=1; }
+    // 旅の幅の外は、まだ行かない土地として霞ませる
+    { const L0=sx(0), R0=sx(XW), fw=Math.max(30,Math.min(120,(R0-L0)*.12)); cx.fillStyle='rgba(24,20,13,.6)';
+      if(L0>0){ cx.fillRect(0,0,L0,VH); const g=cx.createLinearGradient(L0,0,L0+fw,0); g.addColorStop(0,'rgba(24,20,13,.6)'); g.addColorStop(1,'rgba(24,20,13,0)'); cx.fillStyle=g; cx.fillRect(L0,0,fw,VH); }
+      if(R0<VW){ cx.fillStyle='rgba(24,20,13,.6)'; cx.fillRect(R0,0,VW-R0,VH); const g=cx.createLinearGradient(R0,0,R0-fw,0); g.addColorStop(0,'rgba(24,20,13,.6)'); g.addColorStop(1,'rgba(24,20,13,0)'); cx.fillStyle=g; cx.fillRect(R0-fw,0,fw,VH); } }
     // 道
     const yA=Math.max(0,vy-VH/2*s-200), yB=Math.min(Y1,vy+VH/2*s+200), stp=Math.max(6,s*3); cx.lineJoin=cx.lineCap='round';
     const path=()=>{ cx.beginPath(); for(let y=yA;y<=yB;y+=stp){ const X=sx(w.rX(y)), Y=sy(y); y===yA?cx.moveTo(X,Y):cx.lineTo(X,Y); } };
     path(); cx.strokeStyle='rgba(60,36,16,.75)'; cx.lineWidth=Math.max(2.4,15/s); cx.stroke(); path(); cx.strokeStyle='#c8955c'; cx.lineWidth=Math.max(1.4,11/s); cx.stroke();
+    const occ=[], hit=r=>occ.some(o=>r[0]<o[0]+o[2]&&o[0]<r[0]+r[2]&&r[1]<o[1]+o[3]&&o[1]<r[1]+r[3]);
+    if(isT){ const X=sx(w.rX(nowY)), Y=sy(nowY); occ.push([X-16,Y-16,32,32]); }
+    // 予定の柱
+    bl.forEach(b=>{ const y=(b.s-PATH_H0)*KM, X=sx(w.rX(y)), Y=sy(y); if(Y<-30||Y>VH+30) return; const dn=pDone(b); cx.fillStyle=dn?'#8a8a7a':'#f0a640'; cx.beginPath(); cx.moveTo(X,Y); cx.lineTo(X-6,Y-14); cx.lineTo(X+6,Y-14); cx.closePath(); cx.fill(); cx.beginPath(); cx.arc(X,Y-17,6,0,7); cx.fill();
+      cx.font='600 12px "Hiragino Sans",sans-serif'; const t=pfmt(b.s)+'　'+(pTitle(b)||''), tw=cx.measureText(t).width, lx=X>VW/2?X-14-tw:X+14; cx.fillStyle='rgba(16,22,24,.78)'; cx.fillRect(lx-6,Y-27,tw+12,20); occ.push([lx-8,Y-29,tw+16,24]); cx.fillStyle='#f2ecd6'; cx.textAlign='left'; cx.fillText(t,lx,Y-17); cx.textAlign='center'; });
     // 土地の名前（引いているとき）
     cx.textAlign='center'; cx.textBaseline='middle';
-    if(s>18) regs.forEach(([y,n])=>{ const Y=sy(y+3000); if(Y<-40||Y>VH+40) return; const X=sx(w.rX(y+3000))+(sx(w.rX(y+3000))>VW/2?-90:90); cx.font='600 15px "Hiragino Mincho ProN","Yu Mincho",serif'; cx.fillStyle='rgba(20,14,6,.55)'; cx.fillText(n,X+1,Y+1); cx.fillStyle='#f3e7c6'; cx.fillText(n,X,Y); });
+    if(s>18) regs.forEach(([y,n])=>{ let Y=sy(y+3000); if(Y<-40||Y>VH+40) return; cx.font='600 15px "Hiragino Mincho ProN","Yu Mincho",serif'; const rx=sx(w.rX(y+3000)), tw=cx.measureText(n).width; let X=null; for(const dx of [rx>VW/2?-90:90,rx>VW/2?90:-90]) for(const dy of [0,-30,30]){ if(X!=null) break; const r=[rx+dx-tw/2-4,Y+dy-11,tw+8,22]; if(r[0]<4||r[0]+r[2]>VW-4) continue; if(!hit(r)){ X=rx+dx; Y+=dy; occ.push(r); } } if(X==null) return; cx.fillStyle='rgba(20,14,6,.55)'; cx.fillText(n,X+1,Y+1); cx.fillStyle='#f3e7c6'; cx.fillText(n,X,Y); });
     // 見つけるもの
     if(s<14){ const n0=Math.floor((vy-VH/2*s)/w.LG)-1, n1=Math.floor((vy+VH/2*s)/w.LG)+1; for(let n=Math.max(0,n0);n<=n1;n++){ const sp=w.dSpot(n), X=sx(sp.x), Y=sy(sp.yy); if(X<-30||X>VW+30) continue;
         cx.fillStyle='rgba(20,14,6,.7)'; cx.beginPath(); cx.arc(X,Y,6.5,0,7); cx.fill(); cx.strokeStyle='#e9d9a8'; cx.lineWidth=1.4; cx.beginPath(); cx.moveTo(X,Y-4); cx.lineTo(X+4,Y); cx.lineTo(X,Y+4); cx.lineTo(X-4,Y); cx.closePath(); cx.stroke();
         if(s<4.5){ cx.font='500 11.5px "Hiragino Sans",sans-serif'; cx.fillStyle='rgba(20,14,6,.65)'; const tw=cx.measureText(sp.nm).width; cx.fillRect(X-tw/2-5,Y+10,tw+10,17); cx.fillStyle='#f3e7c6'; cx.fillText(sp.nm,X,Y+18.5); } } }
-    // 予定の柱
-    bl.forEach(b=>{ const y=(b.s-PATH_H0)*KM, X=sx(w.rX(y)), Y=sy(y); if(Y<-30||Y>VH+30) return; const dn=pDone(b); cx.fillStyle=dn?'#8a8a7a':'#f0a640'; cx.beginPath(); cx.moveTo(X,Y); cx.lineTo(X-6,Y-14); cx.lineTo(X+6,Y-14); cx.closePath(); cx.fill(); cx.beginPath(); cx.arc(X,Y-17,6,0,7); cx.fill();
-      cx.font='600 12px "Hiragino Sans",sans-serif'; const t=pfmt(b.s)+'　'+(pTitle(b)||''), tw=cx.measureText(t).width, lx=X>VW/2?X-14-tw:X+14; cx.fillStyle='rgba(16,22,24,.78)'; cx.fillRect(lx-6,Y-27,tw+12,20); cx.fillStyle='#f2ecd6'; cx.textAlign='left'; cx.fillText(t,lx,Y-17); cx.textAlign='center'; });
     // 今いる所
     if(isT){ const X=sx(w.rX(nowY)), Y=sy(nowY), r=7+2*Math.sin(performance.now()/300); cx.fillStyle='rgba(111,224,255,.25)'; cx.beginPath(); cx.arc(X,Y,r+7,0,7); cx.fill(); cx.fillStyle='#6fe0ff'; cx.beginPath(); cx.arc(X,Y,6,0,7); cx.fill(); cx.strokeStyle='#073040'; cx.lineWidth=2; cx.stroke(); }
     // 縮尺：馬で何分
     const mins=[.25,.5,1,2,5,10,30,60,120,240], target=VW*.28*s/KM; let mm=mins[0]; mins.forEach(m=>{ if(m<=target) mm=m; }); scBar.style.width=(mm*KM/s)+'px'; scEl.textContent=mm<1?`馬で${Math.round(mm*60)}秒`:mm<60?`馬で${mm}分`:`馬で${mm/60}時間`; };
   // ---- さわる ----
-  const clampV=()=>{ s=Math.max(S_MIN,Math.min(S_MAX,s)); vy=Math.max(-2000,Math.min(Y1+2000,vy)); vx=Math.max(-XW*.5,Math.min(XW*1.5,vx)); };
+  const clampV=()=>{ s=Math.max(S_MIN,Math.min(S_MAX,s)); vy=Math.max(-2000,Math.min(Y1+2000,vy)); vx=Math.max(-XW*1.5,Math.min(XW*2.5,vx)); };
   const back=()=>{ const m=PATH_H0+vy/KM; pMapClose(); const sv=$('slView'); if(sv){ sv.scrollTop=pm2y(m); pRetUpdate&&pRetUpdate(); } };
   const zoomAt=(f,px,py)=>{ if(f>1&&s<S_BACK&&s*f>=S_BACK){ back(); return; } const wx=vx+(px-VW/2)*s, wy=vy+(py-VH/2)*s; s*=f; clampV(); vx=wx-(px-VW/2)*s; vy=wy-(py-VH/2)*s; clampV(); dirty=true; plan(); };
   let tp=null, pin=null, lastTap=0;
