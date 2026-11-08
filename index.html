@@ -4726,7 +4726,7 @@ function pLookClose(){ const L=pLookSt; if(!L) return; pLookSt=null; L.alive=fal
   L.ov.classList.remove('show'); setTimeout(()=>L.ov.remove(),400); window.removeEventListener('resize',L.rs); }
 async function pLookOpen(){
   if(pLookSt) return; const k=dayView, H=pm2y(PATH_H1)+10, W=pW, isT=k===pJDay(), bl=pBlocks(k);
-  const svv=$('slView'), retM=svv?Math.max(PATH_H0,Math.min(PATH_H1,PATH_H0+svv.scrollTop/PX)):8*60, nowM=isT?Math.max(PATH_H0,Math.min(PATH_H1,pJNow()+new Date().getSeconds()/60+new Date().getMilliseconds()/60000)):retM, y0=(nowM-PATH_H0)*540;
+  const svv=$('slView'), retM=svv?Math.max(PATH_H0,Math.min(PATH_H1,PATH_H0+svv.scrollTop/PX)):8*60, nowM=isT?Math.max(PATH_H0,Math.min(PATH_H1,pJNow()+new Date().getSeconds()/60+new Date().getMilliseconds()/60000)):retM, y0=(nowM-PATH_H0)*P_KM;
   const ov=document.createElement('div'); ov.className='look'; const d=new Date(k+'T00:00:00');
   ov.innerHTML=`<canvas class="lk-cv"></canvas><div class="lk-ui"><div class="lk-k">見渡す</div><div class="lk-t">${d.getMonth()+1}月${d.getDate()}日（${'日月火水木金土'[d.getDay()]}）${isT?`　${pfmt(Math.floor(nowM))}`:''}</div><button class="lk-x" data-act="lookx"><i>B</i>もどる</button><div class="lk-load"><i></i><span>景色を見ています…</span></div><div class="lk-hint">指でなぞって見回す・ふたつの指で近く／遠く</div><button class="lk-go">手綱を引く</button><div class="lk-find"></div></div>`;
   document.body.appendChild(ov); requestAnimationFrame(()=>ov.classList.add('show'));
@@ -4829,21 +4829,24 @@ async function pLookOpen(){
     if(fb){ fb.split(',').forEach((n,i)=>out[n]={dm:120+i*180,side:i%2?1:-1}); return out; }
     for(let m=nowM+38;m<=PATH_H1;m+=10){ const y=pm2y(m), rx=pRX(y); for(const sd of [0,-1,1]){ const w=pBiomeW(mir(rx+sd*16),vOf(y)); ['volc','desert','wet','snow'].forEach((n,i)=>{ if(n!=='wet'&&n!==BIO&&w[i]>.45&&!out[n]) out[n]={dm:m-nowM,side:sd}; }); } }
     return out; })(); L.AHEAD=AHEAD;
-  { const farMat=c=>{ const m=patch(new T.MeshLambertMaterial({vertexColors:true})), ob=m.onBeforeCompile; m.onBeforeCompile=sh=>{ ob(sh); sh.fragmentShader=sh.fragmentShader.replace('float f=1.-exp(-d*uFogD);','float f=1.-exp(-d*uFogD*.16);'); }; return m; };
-    const peak=(h,r,seed,cols)=>{ const g=new T.ConeGeometry(r,h,40,18), p=g.attributes.position, C=[]; const rr=pRng('pk'+seed,3);
-      for(let i=0;i<p.count;i++){ const x=p.getX(i), y=p.getY(i)+h/2, z=p.getZ(i), a=Math.atan2(z,x), t=y/h, n=1+.22*Math.sin(a*5+seed)+.12*Math.sin(a*11+seed*2)+.08*Math.sin(a*23); const k=t<.98?n*(1-.15*Math.sin(t*9+a*3)):1; p.setXYZ(i,x*k,y*(1+.08*Math.sin(a*7+seed)),z*k); C.push(...cols(t,a)); }
-      g.computeVertexNormals(); g.setAttribute('color',new T.Float32BufferAttribute(C,3)); return g; };
-    const lc=a=>a.map(v=>Math.pow(v/255,2.2)), mixC=(a,b,t)=>a.map((v,i)=>v+(b[i]-v)*t);
-    const place=(g,info,lat)=>{ const t=Math.min(1,info.dm/480), D=22000+t*12000, sc=(.85-.3*t)*13, x=X(mx0)+(info.side||lat)*(240+t*320)*9+lat*700; g.position.set(x,-140*sc,-D); g.scale.setScalar(sc); farG.add(g); };
-    let lat=-1;
-    if(AHEAD.snow){ const g=new T.Group(), mt=farMat(); [[0,0,620,420,1],[-380,140,470,330,2],[330,90,420,300,3]].forEach(([x,z,h,r,sd])=>{ const m=new T.Mesh(peak(h,r,sd,(t,a)=>{ const sn=t>.42+.08*Math.sin(a*6+sd)?1:0; return sn?lc([238,242,250]):mixC(lc([96,104,120]),lc([132,140,156]),t); }),mt); m.position.set(x,h/2,z); g.add(m); }); place(g,AHEAD.snow,lat); lat=-lat; }
-    if(AHEAD.volc){ const g=new T.Group(), mt=farMat(); const m=new T.Mesh(peak(560,520,7,(t,a)=>t>.9?lc([255,120,50]):mixC(lc([70,58,58]),lc([104,84,80]),t)),mt); m.position.y=280; m.scale.set(1,1,1); g.add(m);
-      const top=new T.Mesh(new T.CylinderGeometry(70,110,30,24),new T.MeshBasicMaterial({color:c3([255,120,40]).multiplyScalar(1.6),fog:false})); top.position.y=560; g.add(top);
-      const sc2=document.createElement('canvas'); sc2.width=sc2.height=64; { const x=sc2.getContext('2d'), gd=x.createRadialGradient(32,32,2,32,32,30); gd.addColorStop(0,'rgba(255,255,255,.85)'); gd.addColorStop(1,'rgba(255,255,255,0)'); x.fillStyle=gd; x.fillRect(0,0,64,64); }
-      const st=new T.CanvasTexture(sc2); for(let q=0;q<6;q++){ const sp=new T.Sprite(new T.SpriteMaterial({map:st,color:c3([110,100,100]),transparent:true,opacity:.5-q*.06,depthWrite:false,fog:false})); sp.position.set(q*40,620+q*110,0); sp.scale.setScalar(160+q*90); g.add(sp); }
-      place(g,AHEAD.volc,lat); lat=-lat; }
-    if(AHEAD.desert){ const g=new T.Group(), mt=farMat(); [[0,0,260,360,4],[-460,80,200,260,5],[420,-60,230,300,6]].forEach(([x,z,h,r,sd])=>{ const ge=new T.CylinderGeometry(r*.82,r,h,28,6), p=ge.attributes.position, C=[]; for(let i=0;i<p.count;i++){ const y=p.getY(i)+h/2, a=Math.atan2(p.getZ(i),p.getX(i)), k=1+.12*Math.sin(a*6+sd)+.06*Math.sin(a*15); p.setX(i,p.getX(i)*k); p.setZ(i,p.getZ(i)*k); const t=y/h, band=.5+.5*Math.sin(t*22); C.push(...mixC(lc([196,124,78]),lc([226,170,112]),band*.6+t*.3)); } ge.computeVertexNormals(); ge.setAttribute('color',new T.Float32BufferAttribute(C,3)); const m=new T.Mesh(ge,mt); m.position.set(x,h/2,z); g.add(m); }); place(g,AHEAD.desert,lat); lat=-lat; }
-  }
+  // ---- 遠くの山なみ：地図の何時間も先・何時間も横の本物の土地を、地平線のまわりにぐるりと見せる。
+  //      遠い土地ほど詰めて置き、高さは少し強めて（ブレワイで遠くの山が大きく見えるように）。すそは霞に溶かし、上ほどはっきり ----
+  const farMat=()=>{ const m=patch(new T.MeshLambertMaterial({vertexColors:true})), ob=m.onBeforeCompile; m.onBeforeCompile=sh=>{ ob(sh); sh.fragmentShader=sh.fragmentShader.replace('float f=1.-exp(-d*uFogD);','float f=1.-exp(-d*uFogD*mix(1.,.16,smoothstep(-200.,2400.,vWP.y)));'); }; return m; };
+  const RG={NA:200,NR:36,R0:11500,R1:460000,r0:11500,r1:36500}, ringMat=farMat(); let ringMesh=null, ringJob=null, ringC=-1e9;
+  const hTrue=(x,y)=>{ const sv=pOff; pOff=vAt(0); const h=pHgtC(x/KM,(y/KM)*PX,true); pOff=sv; return h; };
+  const ringGen=function*(cy){ const cx=rX(cy), NA=RG.NA, NR=RG.NR, nv=NA*NR, pos=new Float32Array(nv*3), eT=new Float32Array(nv), BB=new Array(nv), lr=Math.log(RG.R1/RG.R0);
+    const fx0=cx-12000, fx1=cx+12000, fy0=cy-6000, fy1=cy+20000; let n=0;
+    for(let j=0;j<NR;j++){ const t=j/(NR-1), R=RG.R0*Math.exp(lr*t), r=RG.r0+(RG.r1-RG.r0)*t, E=1+6*sm(14000,90000,R);
+      for(let i=0;i<NA;i++){ const a=i/NA*6.2832, ca=Math.cos(a), sa=Math.sin(a), x=cx+ca*R, y=cy+sa*R, h=hTrue(x,y), o=j*NA+i;
+        let e=elevM(h); if(e>0) e+=Math.max(0,h-.48)*1800*Math.pow(1-Math.abs(nz(x,y,9000,11)),3)+Math.max(0,h-.42)*500*nz(x,y,3800,5);
+        const b=pBiomeW(x/KM,vAt(y)); eT[o]=e; BB[o]=b; const rx=cx+ca*r, ry=cy+sa*r; let yy=e>0?E*e*r/R:-3;
+        if(rx>fx0-400&&rx<fx1+400&&ry>fy0-400&&ry<fy1+400) yy=Math.min(yy,-400);
+        pos[o*3]=X(rx); pos[o*3+1]=yy; pos[o*3+2]=Z(ry); if(++n%60===0) yield; } }
+    const idx=[]; for(let j=0;j<NR-1;j++) for(let i=0;i<NA;i++){ const a=j*NA+i, b=j*NA+(i+1)%NA, c=a+NA, d=b+NA; idx.push(a,c,b,b,c,d); }
+    const g=new T.BufferGeometry(); g.setAttribute('position',new T.BufferAttribute(pos,3)); g.setIndex(idx); g.computeVertexNormals(); yield;
+    const nr=g.attributes.normal.array, col=new Float32Array(nv*3); for(let o=0;o<nv;o++){ const x=cx, y=cy; col.set(eT[o]<-.3?lin([60,92,104]):colAt(pos[o*3]+OX,y0-pos[o*3+2],eT[o],Math.max(.2,nr[o*3+1]),BB[o]),o*3); if(o%400===399) yield; }
+    g.setAttribute('color',new T.BufferAttribute(col,3)); const m=new T.Mesh(g,ringMat); m.frustumCulled=false; return [m,cy]; };
+  const setRing=([m,cy])=>{ if(ringMesh){ farG.remove(ringMesh); ringMesh.geometry.dispose(); } ringMesh=m; ringC=cy; farG.add(m); L.ring=m; };
   if(!(await tick(.86))) return;
   let cx=mx0, cy=y0+40, best=-1e9; for(let q=0;q<160;q++){ const a=rng()*6.28, r=Math.sqrt(rng())*60, x=mx0+Math.cos(a)*r, y=y0+40+Math.sin(a)*r*.6; const e=hAt(x,y); if(e>best&&e>-.2){ best=e; cx=x; cy=y; } }
   // ---- 木：ブレワイの広葉樹のように、灰緑の幹が途中で3〜4本の太い枝に分かれ、その上に横に広い房の傘。
@@ -4870,12 +4873,24 @@ async function pLookOpen(){
   const canopy=mergeG(LOBES.map(a=>lobe(...a)),true);
   const br=(x0,y0,z0,x1,y1,z1,r0,r1)=>{ const A=new T.Vector3(x0,y0,z0), B=new T.Vector3(x1,y1,z1), d=B.clone().sub(A), L=d.length(), g=new T.CylinderGeometry(r1,r0,L,6).translate(0,L/2,0); g.applyQuaternion(new T.Quaternion().setFromUnitVectors(new T.Vector3(0,1,0),d.normalize())); g.translate(x0,y0,z0); return g; };
   const trunk=mergeG([new T.CylinderGeometry(.5,.8,5.2,7).translate(0,2.6,0),new T.CylinderGeometry(.85,1.05,.6,7).translate(0,.3,0),br(0,4.6,0,2.4,7.4,.5,.44,.2),br(0,4.4,0,-2.3,7.5,-.6,.44,.2),br(0,4.8,0,.4,7.5,2.3,.38,.18),br(0,5,0,-.3,7.8,-2.4,.36,.17),br(0,5,0,.1,8.4,.1,.42,.25),br(2.4,7.4,.5,3.4,8.6,1.2,.2,.1),br(-2.3,7.5,-.6,-3.2,8.5,-1.4,.2,.1)]);
-  const cone=mergeG([new T.ConeGeometry(2.8,4.5,8).translate(0,4.6,0),new T.ConeGeometry(2.3,4,8).translate(0,6.8,0),new T.ConeGeometry(1.7,3.5,8).translate(0,9,0),new T.ConeGeometry(1.0,2.6,8).translate(0,11,0),new T.CylinderGeometry(.35,.55,3,6).translate(0,1.5,0)]);
-  const mR=patch(new T.MeshToonMaterial({color:0xffffff,gradientMap:gmap,vertexColors:true}),.15), mL=patch(new T.MeshToonMaterial({color:0xffffff,gradientMap:gmap,vertexColors:true,map:ltx,alphaTest:.4}),.15), mT=patch(new T.MeshToonMaterial({color:c3([116,110,82]),gradientMap:gmap})), mC=patch(new T.MeshToonMaterial({color:c3([40,74,58]),gradientMap:gmap}),.08); if(BIO==='snow'){ const ob=mC.onBeforeCompile; mC.onBeforeCompile=sh=>{ ob(sh); sh.vertexShader='varying float vUp;\n'+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n vUp=normal.y;'); sh.fragmentShader='varying float vUp;\n'+sh.fragmentShader.replace('#include <color_fragment>','#include <color_fragment>\n diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.93,.96,1.),smoothstep(.15,.45,vUp));'); }; }
+  // 針葉樹（ブレワイのトウヒのように）：細い幹に、垂れ下がった枝の房が段々に重なる。房は外の先ほど明るい黄緑がかった色、内と下は濃い青緑。
+  //   輪郭は房のでこぼこでぎざぎざに。陰影は房の向きと木全体の丸みの間にして、やわらかく
+  const cone=(()=>{ const gs=[], rr=pRng('fir',5), TI=7, TOP=12.6, P=[], N=[], C=[], v=new T.Vector3(), n=new T.Vector3(), m=new T.Vector3();
+    for(let t=0;t<TI;t++){ const ht=t/(TI-1), y=2.5+ht*(TOP-3.2), R=3.1*Math.pow(1-ht,.9)+.45, k=Math.max(3,Math.round(7-ht*4));
+      for(let q=0;q<k;q++){ const a=(q+rr()*.6+t*.41)/k*6.2832, L=R*(.78+rr()*.4), g=new T.IcosahedronGeometry(1,0);
+        g.scale(L*.56,.42+.3*(1-ht),Math.max(.5,L*.34)); g.rotateZ(-.28-.22*rr()); g.translate(L*.5,y+(rr()-.5)*.4,0); g.rotateY(-a); gs.push([g,0]); } }
+    gs.push([new T.ConeGeometry(.55,2.4,5).translate(0,TOP,0),0]); gs.push([new T.CylinderGeometry(.16,.42,TOP-1,6).translate(0,(TOP-1)/2,0),1]);
+    gs.forEach(([g,isT])=>{ const q=g.index?g.toNonIndexed():g; q.computeVertexNormals(); const p=q.attributes.position, nn=q.attributes.normal;
+      for(let i=0;i<p.count;i++){ v.fromBufferAttribute(p,i); n.fromBufferAttribute(nn,i); const ht=Math.max(0,Math.min(1,(v.y-2)/(TOP-2))), rmax=3.1*Math.pow(1-ht,.9)+.5, rr2=Math.hypot(v.x,v.z)/rmax;
+        if(!isT){ m.set(v.x,(rmax*.55),v.z).normalize(); n.multiplyScalar(.45).add(m.multiplyScalar(.55)).normalize(); }
+        P.push(v.x,v.y,v.z); N.push(n.x,n.y,n.z);
+        if(isT) C.push(.36,.31,.26); else { const lt=Math.min(1,.15+.55*rr2+.35*Math.max(0,n.y)+.15*ht); C.push(.13+.2*lt,.25+.27*lt,.22+.14*lt); } } });
+    const g=new T.BufferGeometry(); g.setAttribute('position',new T.Float32BufferAttribute(P,3)); g.setAttribute('normal',new T.Float32BufferAttribute(N,3)); g.setAttribute('color',new T.Float32BufferAttribute(C,3)); return g; })();
+  const mR=patch(new T.MeshToonMaterial({color:0xffffff,gradientMap:gmap,vertexColors:true}),.15), mL=patch(new T.MeshToonMaterial({color:0xffffff,gradientMap:gmap,vertexColors:true,map:ltx,alphaTest:.4}),.15), mT=patch(new T.MeshToonMaterial({color:c3([116,110,82]),gradientMap:gmap})), mC=patch(new T.MeshToonMaterial({color:0xffffff,gradientMap:gmap,vertexColors:true}),.1); if(BIO==='snow'){ const ob=mC.onBeforeCompile; mC.onBeforeCompile=sh=>{ ob(sh); sh.vertexShader='varying float vUp;\n'+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n vUp=normal.y;'); sh.fragmentShader='varying float vUp;\n'+sh.fragmentShader.replace('#include <color_fragment>','#include <color_fragment>\n diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.93,.96,1.),smoothstep(.15,.45,vUp));'); }; }
   const treesFor=(tileG,yA,P,XA,XB,near,nx,fz,tR)=>{ const sp=[]; for(let q=0;q<26000*fz&&sp.length<3200*fz;q++){ const x=XA+tR()*(XB-XA), y=yA+tR()*P, f=pn(x,y,70,11,4); if(f<.55) continue; const e=hAt(x,y); if(e<1.5) continue; if(Math.abs(x-rX(y))<19) continue;
       const b=bAt(x,y); if(b[0]>.25||b[1]>.3) continue; if(BIO==='wet'&&tR()<.65) continue; const i=Math.round((x-XA)/ST), j=Math.round((y-yA)/ST); if(near.attributes.normal.array[(j*nx+i)*3+1]<.82) continue; const con=b[3]>.2||e>480; if(b[3]>.3&&e>900) continue; sp.push([x,y,e,con,(.85+tR()*.5)*(9+tR()*4)/10*1.4,tR()*6.28]); }
     const nR=sp.filter(s=>!s[3]).length, iR=new T.InstancedMesh(canopy,mR,nR), iL=new T.InstancedMesh(leafCards,mL,nR), iT=new T.InstancedMesh(trunk,mT,nR), iC=new T.InstancedMesh(cone,mC,sp.length-nR), M=new T.Matrix4(), Q=new T.Quaternion(), V=new T.Vector3(), Sc=new T.Vector3(), up=new T.Vector3(0,1,0), cA=c3([128,172,60]), cB=c3([150,190,72]), cc2=new T.Color();
-    let a=0,c=0; sp.forEach(([x,y,e,con,s,r])=>{ Q.setFromAxisAngle(up,r); Sc.set(s,s,s); V.set(X(x),e-.4,Z(y)); M.compose(V,Q,Sc); if(con){ iC.setMatrixAt(c++,M); } else { iR.setMatrixAt(a,M); iL.setMatrixAt(a,M); iT.setMatrixAt(a,M); iR.setColorAt(a,cc2.copy(cA).lerp(cB,tR())); iL.setColorAt(a,cc2); a++; } });
+    let a=0,c=0; sp.forEach(([x,y,e,con,s,r])=>{ Q.setFromAxisAngle(up,r); Sc.set(s,s,s); V.set(X(x),e-.4,Z(y)); M.compose(V,Q,Sc); if(con){ iC.setMatrixAt(c,M); iC.setColorAt(c++,cc2.setRGB(.9+tR()*.2,.92+tR()*.16,.9+tR()*.14)); } else { iR.setMatrixAt(a,M); iL.setMatrixAt(a,M); iT.setMatrixAt(a,M); iR.setColorAt(a,cc2.copy(cA).lerp(cB,tR())); iL.setColorAt(a,cc2); a++; } });
     [iR,iL,iT,iC].forEach(m=>{ m.castShadow=true; m.receiveShadow=true; tileG.add(m); }); };
   // ---- 足もとの草の板（カメラのまわり）----
   // ブレワイの草：細く長い葉が同じ向きに寄り、根もとはやや濃く、先は明るい黄緑
@@ -5170,8 +5185,8 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
     g.setAttribute('color',new T.BufferAttribute(col,3)); const m=new T.Mesh(g,gMat); m.receiveShadow=true; return [m,cy]; };
   const setFar=([m,cy])=>{ if(farMesh){ farG.remove(farMesh); farMesh.geometry.dispose(); } farMesh=m; farC=cy; farG.add(m); };
   const updFar=(py,sync)=>{ if(sync){ const it=farGen(py); let r; while(!(r=it.next()).done); setFar(r.value); return; } if(!fJob&&Math.abs(py-farC)>2500) fJob=farGen(py+600); };
-  const farStep=ms=>{ if(!fJob) return; const t=performance.now(); while(performance.now()-t<ms){ const r=fJob.next(); if(r.done){ setFar(r.value); fJob=null; return; } } };
-  updFar(y0,true); if(!(await tick(.9))) return;
+  const farStep=ms=>{ if(!fJob){ if(!ringJob&&Math.abs(farC-ringC)>5000) ringJob=ringGen(farC); if(ringJob){ const t=performance.now(); while(performance.now()-t<ms){ const r=ringJob.next(); if(r.done){ setRing(r.value); ringJob=null; break; } } } return; } const t=performance.now(); while(performance.now()-t<ms){ const r=fJob.next(); if(r.done){ setFar(r.value); fJob=null; return; } } };
+  updFar(y0,true); { const it=ringGen(farC); let r; while(!(r=it.next()).done); setRing(r.value); } if(!(await tick(.9))) return;
   updChunks(y0,true); if(!(await tick(.95))) return;
   // ---- 見つけるもの：1分ほど走るごとに何かがある（遺跡・野営地・風車・鹿の群れ・宝箱…）。近づくと名前が出る ----
   const mPondE=tm([120,108,80]), mFlower=tm([255,255,255]), mFlower2=tm([240,190,214]), mLava=new T.MeshBasicMaterial({color:c3([255,110,30]).multiplyScalar(1.8)}), mDark=tm([70,62,62]), mIce=tm([176,220,240]), mSnow=tm([236,242,250]), mSand2=tm([206,170,120]), mSandG=tm([222,186,124]), mBone=tm([236,226,204]), mStone=tm([190,182,164]), mMoss=tm([104,138,66]), mWood=tm([128,88,54]), mWoodD=tm([88,62,40]), mCanvas=tm([222,208,176]), mRedC=tm([176,64,48]), mLeaf=tm([76,128,54]), mLeaf2=tm([58,104,46]), mApple=tm([210,44,40]),
@@ -5310,7 +5325,7 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
     if(isT||k){ const m=nowM+(py-y0)/KM; tEl.textContent=`${dLab}　${pfmt(Math.floor(m))}`; }
     animDisc(n/1000,dt); animBirds(n/1000,dt); animSmoke(n/1000,dt); place(); L.started=1; clouds.forEach(s=>{ s.position.x+=dt*7; if(s.position.x>1600) s.position.x=-1600; if(s.position.z>cam.position.z+600) s.position.z-=3100; }); if(L.nt){ L.nt.offset.x+=dt*.004; L.nt.offset.y+=dt*.006; }
     if(rain){ rain.position.set(cam.position.x,cam.position.y-40,cam.position.z); const P=rain.geometry.attributes.position.array; if(snowFx){ for(let q=1;q<P.length;q+=3){ P[q]-=10*dt; P[q-1]+=Math.sin(n/900+q)*dt*2; if(P[q]<0) P[q]+=120; } } else { for(let q=1;q<P.length;q+=6){ P[q]-=110*dt; P[q+3]-=110*dt; if(P[q+3]<0){ P[q]+=120; P[q+3]+=120; } } } rain.geometry.attributes.position.needsUpdate=true; }
-    ren.render(scene,cam); if(L.shot&&n-tIn>(+(new URLSearchParams(location.search).get('lkrun'))||1200)){ L.shot(); return; } L.raf=requestAnimationFrame(loop); };
+    if(/lknochunk/.test(location.search)) chunkRoot.visible=false; ren.render(scene,cam); if(L.shot&&n-tIn>(+(new URLSearchParams(location.search).get('lkrun'))||1200)){ L.shot(); return; } L.raf=requestAnimationFrame(loop); };
   L.raf=requestAnimationFrame(loop);
 }
 /* ---------- 旅程を寄せる（今日の旅程の地図を指でつまむと、そのまま足もとの細かさまで寄っていける）---------- */
