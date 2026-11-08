@@ -5312,13 +5312,17 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
   { const tmp=new T.Group(); perm.forEach(q=>{ const g=new T.Group(); DK[q][1](g); bake(g); tmp.add(g); }); tmp.position.set(0,-5000,0); scene.add(tmp); try{ ren.compile(scene,cam); }catch(e){} scene.remove(tmp); tmp.traverse(m=>{ if(m.geometry) m.geometry.dispose(); }); }
   await tick(1); plant(rX(py),py); ov.querySelector('.lk-load').classList.add('done');
   const tgt=new T.Vector3();
-  const place=()=>{ updChunks(py); updFar(py); putBeams(py); putDisc(py); const x=rXw(py), g=gnd(x,py); horse.position.set(X(x),g-.42,Z(py)); HU.uHY.value=g-.42; horse.rotation.y=hY;
+  let slS=0; const place=()=>{ updChunks(py); updFar(py); putBeams(py); putDisc(py); const x=rXw(py), g=gnd(x,py); horse.position.set(X(x),g-.42,Z(py)); HU.uHY.value=g-.42; horse.rotation.y=hY;
     const fa=L.focus?0:5; tgt.set(horse.position.x+Math.sin(hY)*fa,horse.position.y+(L.focus?3:3.6),horse.position.z+Math.cos(hY)*fa);
-    const cy2=hY+off; cam.position.set(tgt.x-Math.sin(cy2)*Math.cos(cp)*dist,tgt.y+Math.sin(cp)*dist,tgt.z-Math.cos(cy2)*Math.cos(cp)*dist);
-    const gc2=Math.max(0,hW(cam.position.x+OX,y0-cam.position.z))+1.6; if(cam.position.y<gc2) cam.position.y=gc2; cam.lookAt(tgt);
+    // カメラ：坂では坂に沿って角度を変え（上り坂なら低く、前を見上げる）、地面にぶつかるときは持ち上げずに近づく（見上げられるように）
+    { const ga=gnd(rXw(py+24),py+24), gb=gnd(rXw(py-24),py-24), sl=Math.atan2(ga-gb,48); slS+=(sl-slS)*.06; }
+    // 見上げるとき：カメラは地面すれすれの低さで止め、そこから顔だけ上へ向ける（馬に寄りすぎず、空や坂の上が見える）
+    const cy2=hY+off, cpE=cp-.85*slS, cpP=Math.max(cpE,3*rad); let dd=dist;
+    for(let it=0;it<10;it++){ cam.position.set(tgt.x-Math.sin(cy2)*Math.cos(cpP)*dd,tgt.y+Math.sin(cpP)*dd,tgt.z-Math.cos(cy2)*Math.cos(cpP)*dd); const gc=Math.max(0,hW(cam.position.x+OX,y0-cam.position.z))+1.2; if(cam.position.y>=gc) break; if(dd*.85<Math.min(dist,9)){ cam.position.y=gc; break; } dd*=.85; }
+    cam.lookAt(tgt); if(cpE<cpP) cam.rotateX(Math.min(cpP-cpE,40*rad)*.9);
     U.uFogH.value=g-5; sun.target.position.set(tgt.x+Math.sin(cy2)*200,0,tgt.z+Math.cos(cy2)*200); sun.position.copy(sun.target.position).addScaledVector(sd,900); sky.position.copy(cam.position); seaP.position.set(cam.position.x,-1.2,cam.position.z); };
   // 指でなぞって見回す・ふたつの指で近く／遠く
-  let tp=null, pin=null; const look=(dx,dy)=>{ off+=dx*.006; cp=Math.max(2*rad,Math.min(55*rad,cp+dy*.004)); lastTouch=performance.now(); };
+  let tp=null, pin=null; const look=(dx,dy)=>{ off+=dx*.006; cp=Math.max(-32*rad,Math.min(55*rad,cp+dy*.004)); lastTouch=performance.now(); };
   cv.addEventListener('touchstart',e=>{ intro=false; if(e.touches.length===1) tp={x:e.touches[0].clientX,y:e.touches[0].clientY}; else if(e.touches.length===2){ tp=null; pin={d:Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY)}; } },{passive:true});
   cv.addEventListener('touchmove',e=>{ e.preventDefault(); if(e.touches.length===1&&tp){ const t=e.touches[0]; look(t.clientX-tp.x,t.clientY-tp.y); tp={x:t.clientX,y:t.clientY}; }
     else if(e.touches.length===2&&pin){ const dd=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY); dist=Math.max(7,Math.min(40,dist*pin.d/dd)); pin.d=dd; lastTouch=performance.now(); } },{passive:false});
