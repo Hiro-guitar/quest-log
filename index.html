@@ -4668,9 +4668,9 @@ function pLookClose(){ const L=pLookSt; if(!L) return; pLookSt=null; L.alive=fal
   L.ov.classList.remove('show'); setTimeout(()=>L.ov.remove(),400); window.removeEventListener('resize',L.rs); }
 async function pLookOpen(){
   if(pLookSt) return; const k=dayView, H=pm2y(PATH_H1)+10, W=pW, isT=k===pJDay(), bl=pBlocks(k);
-  const svv=$('slView'), retM=svv?Math.max(PATH_H0,Math.min(PATH_H1,PATH_H0+svv.scrollTop/PX)):8*60, nowM=isT?Math.max(PATH_H0,Math.min(PATH_H1,pJNow())):retM, y0=(nowM-PATH_H0)*540;
+  const svv=$('slView'), retM=svv?Math.max(PATH_H0,Math.min(PATH_H1,PATH_H0+svv.scrollTop/PX)):8*60, nowM=isT?Math.max(PATH_H0,Math.min(PATH_H1,pJNow()+new Date().getSeconds()/60+new Date().getMilliseconds()/60000)):retM, y0=(nowM-PATH_H0)*540;
   const ov=document.createElement('div'); ov.className='look'; const d=new Date(k+'T00:00:00');
-  ov.innerHTML=`<canvas class="lk-cv"></canvas><div class="lk-ui"><div class="lk-k">見渡す</div><div class="lk-t">${d.getMonth()+1}月${d.getDate()}日（${'日月火水木金土'[d.getDay()]}）${isT?`　${pfmt(nowM)}`:''}</div><button class="lk-x" data-act="lookx"><i>B</i>もどる</button><div class="lk-load"><i></i><span>景色を見ています…</span></div><div class="lk-hint">指でなぞって見回す・ふたつの指で近く／遠く</div><button class="lk-go">手綱を引く</button><div class="lk-find"></div></div>`;
+  ov.innerHTML=`<canvas class="lk-cv"></canvas><div class="lk-ui"><div class="lk-k">見渡す</div><div class="lk-t">${d.getMonth()+1}月${d.getDate()}日（${'日月火水木金土'[d.getDay()]}）${isT?`　${pfmt(Math.floor(nowM))}`:''}</div><button class="lk-x" data-act="lookx"><i>B</i>もどる</button><div class="lk-load"><i></i><span>景色を見ています…</span></div><div class="lk-hint">指でなぞって見回す・ふたつの指で近く／遠く</div><button class="lk-go">手綱を引く</button><div class="lk-find"></div></div>`;
   document.body.appendChild(ov); requestAnimationFrame(()=>ov.classList.add('show'));
   const L=pLookSt={ov,alive:true,raf:0}; const cv=ov.querySelector('.lk-cv'), loadEl=ov.querySelector('.lk-load span'), tick=async p=>{ loadEl.textContent=`景色を見ています… ${Math.round(p*100)}%`; await new Promise(r=>setTimeout(r,0)); return L.alive; };
   let T; try{ T=await import('./three.module.min.js'); }catch(e){ loadEl.textContent='景色を読み込めなかった'; return; }
@@ -5289,7 +5289,7 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
     tail.rotation.x=.25*sw+Math.sin(n/600)*.06; tail.rotation.z=Math.sin(n/900)*.08; { const t=n/1000, gb=Math.sin(T0*2); TB.value.set(Math.sin(t*1.6)*.07+Math.sin(t*3.7)*.03+Math.sin(T0)*.05*sw,-.22*sw-.06*sw*gb+Math.sin(t*2.1)*.04);
       MANE.forEach(g=>{ const u=g.userData; g.rotation.x=(.32*sw+.1*sw*Math.sin(T0*2+u.ph*.3)+.05*Math.sin(t*1.8+u.ph))*u.k; g.rotation.z=u.sd*(-.12*sw*Math.max(0,gb)+.04*Math.sin(t*1.3+u.ph))*u.k; }); } rider.position.y=RY+Math.max(0,Math.sin(T0*2))*.04*sw;
     if(gC&&!gJob&&Math.hypot(rX(py)-gC[0],py-gC[1])>35) gJob=plantGen(rX(py+12),py+12); plantStep(3); chunkStep(4); farStep(3);
-    if(isT||k){ const m=nowM+(py-y0)/KM; tEl.textContent=`${dLab}　${pfmt(Math.round(m))}`; }
+    if(isT||k){ const m=nowM+(py-y0)/KM; tEl.textContent=`${dLab}　${pfmt(Math.floor(m))}`; }
     animDisc(n/1000,dt); animBirds(n/1000,dt); animSmoke(n/1000,dt); place(); L.started=1; clouds.forEach(s=>{ s.position.x+=dt*7; if(s.position.x>1600) s.position.x=-1600; if(s.position.z>cam.position.z+600) s.position.z-=3100; }); if(L.nt){ L.nt.offset.x+=dt*.004; L.nt.offset.y+=dt*.006; }
     if(rain){ rain.position.set(cam.position.x,cam.position.y-40,cam.position.z); const P=rain.geometry.attributes.position.array; if(snowFx){ for(let q=1;q<P.length;q+=3){ P[q]-=10*dt; P[q-1]+=Math.sin(n/900+q)*dt*2; if(P[q]<0) P[q]+=120; } } else { for(let q=1;q<P.length;q+=6){ P[q]-=110*dt; P[q+3]-=110*dt; if(P[q+3]<0){ P[q]+=120; P[q+3]+=120; } } } rain.geometry.attributes.position.needsUpdate=true; }
     ren.render(scene,cam); if(L.shot&&n-tIn>(+(new URLSearchParams(location.search).get('lkrun'))||1200)){ L.shot(); return; } L.raf=requestAnimationFrame(loop); };
