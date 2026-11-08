@@ -840,6 +840,14 @@ body{background:#050607}
 .lk-find.on{animation:lkFind 4.2s ease forwards}
 .lk-find::before,.lk-find::after{content:'';display:block;width:140px;height:1px;margin:8px auto;background:linear-gradient(90deg,transparent,rgba(246,240,220,.8),transparent)}
 @keyframes lkFind{0%{opacity:0}15%{opacity:1}75%{opacity:1}100%{opacity:0}}
+.sl-btns{position:absolute;right:10px;top:10px;z-index:4;display:flex;gap:6px}.sl-btns .sl-look{position:static}
+.mp-ico{width:14px;height:14px;border:1.6px solid #6fe0ff;border-radius:2px;background:linear-gradient(135deg,transparent 45%,#6fe0ff 45%,#6fe0ff 55%,transparent 55%);filter:drop-shadow(0 0 3px rgba(111,224,255,.6))}
+.wmap{position:fixed;inset:0;z-index:70;opacity:0;transition:opacity .3s;background:#16130c;overflow:hidden;touch-action:none}.wmap.show{opacity:1}
+.wm-cv{position:absolute;inset:0;width:100%;height:100%;display:block}
+.wm-ui{position:absolute;inset:0;pointer-events:none;color:#f2ecd6;text-shadow:0 1px 6px rgba(0,0,0,.8)}
+.wm-sc{position:absolute;right:16px;top:calc(env(safe-area-inset-top,0px) + 22px);display:flex;flex-direction:column;align-items:flex-end;gap:4px;font-size:11px;letter-spacing:.08em}
+.wm-sc i{display:block;height:5px;border:1.5px solid #f2ecd6;border-top:0;box-shadow:0 1px 3px rgba(0,0,0,.6)}
+.wm-now{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 62px);pointer-events:auto;font-size:14px;color:#bff3ff;background:rgba(6,20,28,.72);border:1px solid rgba(111,224,255,.55);padding:7px 18px;border-radius:18px}
 .lk-go{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 62px);pointer-events:auto;font-size:14px;color:#f2ecd6;background:rgba(0,0,0,.4);border:1px solid rgba(242,236,214,.35);padding:7px 18px;border-radius:18px}
 .lk-hint{position:absolute;left:18px;bottom:calc(env(safe-area-inset-bottom,0px) + 22px);font-size:11px;color:rgba(242,236,214,.7)}
 .lk-load{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:12px;font-size:13px;letter-spacing:.15em;transition:opacity .6s}.lk-load.done{opacity:0}
@@ -2023,6 +2031,8 @@ document.addEventListener('click',e=>{
   if(a.startsWith('path')&&pathAct(a,b)) return;
   if(a.startsWith('wk')){ wakeAct(a,b); return; }
   if(a==='lookx'){ pLookClose(); return; }
+  if(a==='mapx'){ pMapClose(); return; }
+  if(a==='mapnow'){ pMapSt&&pMapSt.goNow(); return; }
   switch(a){
     case 'tab': if(!draftLeave()) break; if(editing){cleanupEmpty();editing=false} goTab(b.dataset.v); break;
     case 'openq': { const t=findQ(b.dataset.id); if(!t) break; tab='list'; listCat=t.type; selId=t.id; pouchSel=null; editing=false; render(); window.scrollTo({top:0}); break; }
@@ -3568,7 +3578,7 @@ function pathList(){
   const hud=`<div class="sl-hud">${nb.length?`<b>${nd}/${nb.length}</b><i></i>`:''}${isT?`<b>${now>=6*60&&now<18*60?'<i class="ck-sun"></i>':'<i class="ck-moon"></i>'}${now<12*60?'AM':'PM'} ${String(Math.floor(now/60)%12||12).padStart(2,'0')}:${String(now%60).padStart(2,'0')}</b><i></i>`:''}${isT&&wx&&wx.temp!=null?`<b>${wx.temp>0?'+':''}${Math.round(wx.temp)}℃</b><i></i>`:''}</div>`;
   h+=`<div class="slate z${pZoom} ${pathBoot?'boot':''}">${SL_DEFS}<i class="sl-cn c1">${slCorner(0,0)}</i><i class="sl-cn c2">${slCorner(1,0)}</i><i class="sl-cn c3">${slCorner(0,1)}</i><i class="sl-cn c4">${slCorner(1,1)}</i>
     ${slBand('t')}<div class="sl-top"><button class="sl-tab" data-act="pathday" data-v="-1">${md(-1)} <i>L</i></button><div class="sl-title"><b>${isT?'今日の旅程':'旅程'}</b><small>${d.getMonth()+1}/${d.getDate()}（${'日月火水木金土'[d.getDay()]}）${holiday(k)?' '+holiday(k):''}</small></div><button class="sl-tab" data-act="pathday" data-v="1"><i>R</i> ${md(1)}</button></div>
-    <div class="sl-body">${pSunFx(isT)}${P_LOOK?`<button class="sl-look" data-act="pathlook"><i class="lk-ico"></i>見渡す</button>`:''}<div class="sl-view" id="slView"><div class="tl road" id="tl" style="height:${H}px"><svg class="rd-svg" width="100%" height="${H}" aria-hidden="true">${svg}</svg>${pFxHtml(k,H)}${regs}${hrs}${mtags}${cards}${nowM}</div></div><div class="sl-fx" aria-hidden="true"></div>${hud}${pathSheet&&unH?`<div class="sl-sheet">${unH}</div>`:''}<div class="sl-ret" id="slRet" aria-hidden="true"><i class="rt-c"></i><span class="rt-l" id="slRetL"></span></div></div>
+    <div class="sl-body">${pSunFx(isT)}${P_LOOK?`<div class="sl-btns"><button class="sl-look" data-act="pathmap"><i class="mp-ico"></i>地図</button><button class="sl-look" data-act="pathlook"><i class="lk-ico"></i>見渡す</button></div>`:''}<div class="sl-view" id="slView"><div class="tl road" id="tl" style="height:${H}px"><svg class="rd-svg" width="100%" height="${H}" aria-hidden="true">${svg}</svg>${pFxHtml(k,H)}${regs}${hrs}${mtags}${cards}${nowM}</div></div><div class="sl-fx" aria-hidden="true"></div>${hud}${pathSheet&&unH?`<div class="sl-sheet">${unH}</div>`:''}<div class="sl-ret" id="slRet" aria-hidden="true"><i class="rt-c"></i><span class="rt-l" id="slRetL"></span></div></div>
     <div class="sl-bot"><button class="sl-p sl-close" data-act="pathclose"><i>B</i>とじる</button><button class="sl-p sl-list ${pathSheet?'on':''}" data-act="pathsheet"><i>X</i>${un.length?`道しるべのない冒険<b class="sl-n">${un.length}</b>`:'冒険を選ぶ'}</button><span class="sl-zoom"><button data-act="pathzoom" data-v="-1" aria-label="ひろく見る" ${pZoom===0?'disabled':''}>−</button>ズーム<button data-act="pathzoom" data-v="1" aria-label="くわしく見る" ${pZoom===2?'disabled':''}>＋</button></span>${isT?'<button class="sl-p" data-act="pathhere">現在地<i>Y</i></button>':''}<button class="sl-p sl-a" data-act="pathA" id="slA"><span id="slAt">立てる</span><i>A</i></button></div>${slBand('b')}</div>`;
   pathBoot=false;
   return h;
@@ -4600,6 +4610,7 @@ function pathAct(a,b){
     case 'pathclose': pDropEmpty(); pathSel=null; pathSheet=false; listCat='today'; dayView=ymd(); render(); return true;
     case 'pathzoom': pZoomBy(+b.dataset.v); return true;
     case 'pathlook': pLookOpen(); return true;
+    case 'pathmap': pMapOpen(); return true;
     case 'pathhere': { const sv=$('slView'); if(sv) sv.scrollTo({top:pm2y(pJNow()),behavior:'smooth'}); return true; }
     case 'pathA': { const r=$('slRet'); if(!r) return true; pDropEmpty(); if(r.dataset.id){ pathSel=r.dataset.id; render(); if(window.innerWidth<=820) pScroll(0); return true; }
       const s0=Math.max(PATH_H0,Math.min(PATH_H1-SNAP,+r.dataset.m)), bl=pBlocks(k), nx=bl.filter(x=>x.s>=s0+SNAP).map(x=>x.s)[0]||PATH_H1, id=uid();
@@ -4753,7 +4764,7 @@ async function pLookOpen(){
   const ridge=(x,y)=>{ const n=1-Math.abs(pNoise(x/300+9,y/300+4)*2-1); return n*n; };
   // ---- 描く道具 ----
   const ren=new T.WebGLRenderer({canvas:cv,antialias:true,powerPreference:'high-performance'}); L.ren=ren; ren.setPixelRatio(Math.min(1.6,window.devicePixelRatio||1)); ren.shadowMap.enabled=true; ren.shadowMap.type=T.PCFSoftShadowMap; ren.outputColorSpace=T.SRGBColorSpace; ren.toneMapping=T.ACESFilmicToneMapping; ren.toneMappingExposure=.9;
-  const scene=new T.Scene(); L.scene=scene; const cam=new T.PerspectiveCamera(48,1,1,40000); L.cam=cam; L.T=T; if(/lkshot/.test(location.search)) window.__lk=L;
+  const scene=new T.Scene(); L.scene=scene; const cam=new T.PerspectiveCamera(48,1,1,40000); L.cam=cam; L.T=T; if(/lkshot/.test(location.search)){ window.__lk=L; L.pWorld=pWorld; L.pHgtC=pHgtC; }
   const rs=()=>{ const w=ov.clientWidth, h=ov.clientHeight; ren.setSize(w,h,false); cam.aspect=w/h; cam.updateProjectionMatrix(); }; L.rs=rs; window.addEventListener('resize',rs); rs();
   // ---- 太陽と空の色（今の時刻・天気）----
   let wx=null; try{ wx=JSON.parse(localStorage.getItem(WX_KEY)||'null'); }catch(e){} const wc=isT&&wx&&Date.now()-wx.at<3*3600e3?(+(new URLSearchParams(location.search).get('wx'))||wx.code):1, cc=isT&&wx&&wx.cc!=null?wx.cc:35, rl=WXFX.rain[wc]||0, sl=WXFX.snow[wc]||0, wet=rl||sl;
@@ -5302,6 +5313,87 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
     if(rain){ rain.position.set(cam.position.x,cam.position.y-40,cam.position.z); const P=rain.geometry.attributes.position.array; if(snowFx){ for(let q=1;q<P.length;q+=3){ P[q]-=10*dt; P[q-1]+=Math.sin(n/900+q)*dt*2; if(P[q]<0) P[q]+=120; } } else { for(let q=1;q<P.length;q+=6){ P[q]-=110*dt; P[q+3]-=110*dt; if(P[q+3]<0){ P[q]+=120; P[q+3]+=120; } } } rain.geometry.attributes.position.needsUpdate=true; }
     ren.render(scene,cam); if(L.shot&&n-tIn>(+(new URLSearchParams(location.search).get('lkrun'))||1200)){ L.shot(); return; } L.raf=requestAnimationFrame(loop); };
   L.raf=requestAnimationFrame(loop);
+}
+/* ---------- 地図（ブレワイの地図のように、1日全体から足もとの細かさまで、なめらかに寄せて見る）---------- */
+// 見渡すと同じ世界を上から見る。寄るほど丘・池・道の細かな曲がり・見つけるものの印と名前が現れる
+let pMapSt=null;
+function pMapClose(){ const M=pMapSt; if(!M) return; pMapSt=null; M.alive=false; cancelAnimationFrame(M.raf); M.ov.classList.remove('show'); setTimeout(()=>M.ov.remove(),350); window.removeEventListener('resize',M.rs); }
+function pMapOpen(){
+  if(pMapSt) return; const k=dayView, isT=k===pJDay(), bl=pBlocks(k), w=pWorld(k), KM=w.KM, Y1=(PATH_H1-PATH_H0)*KM, XW=pW*KM;
+  const svv=$('slView'), retM=svv?Math.max(PATH_H0,Math.min(PATH_H1,PATH_H0+svv.scrollTop/PX)):8*60, nowM=isT?Math.max(PATH_H0,Math.min(PATH_H1,pJNow()+new Date().getSeconds()/60)):retM;
+  const ov=document.createElement('div'); ov.className='wmap'; const d=new Date(k+'T00:00:00');
+  ov.innerHTML=`<canvas class="wm-cv"></canvas><div class="wm-ui"><div class="lk-k">地図</div><div class="lk-t">${d.getMonth()+1}月${d.getDate()}日（${'日月火水木金土'[d.getDay()]}）</div><div class="wm-sc"><i></i><span></span></div><button class="wm-now" data-act="mapnow">今いる所</button><button class="lk-x" data-act="mapx"><i>B</i>もどる</button><div class="lk-hint">指で動かす・ふたつの指で寄る／引く</div></div>`;
+  document.body.appendChild(ov); requestAnimationFrame(()=>ov.classList.add('show'));
+  const cv=ov.querySelector('.wm-cv'), cx=cv.getContext('2d'), M=pMapSt={ov,alive:true,raf:0}, DPR=Math.min(2,window.devicePixelRatio||1), scEl=ov.querySelector('.wm-sc span'), scBar=ov.querySelector('.wm-sc i');
+  let VW=1, VH=1; const rs=()=>{ VW=ov.clientWidth; VH=ov.clientHeight; cv.width=VW*DPR; cv.height=VH*DPR; dirty=true; }; M.rs=rs; window.addEventListener('resize',rs);
+  // 見ている場所：中心（世界の座標）と、1ピクセルあたりの長さ
+  const S_MIN=.35, S_MAX=Math.max(Y1,XW)/300;
+  const nowY=(nowM-PATH_H0)*KM; let vx=w.rX(nowY), vy=nowY, s=24, dirty=true;
+  // ---- 地形の板（256ピクセル四方）。寄り具合ごとに作って覚えておく ----
+  const TS=256, B0=.5, tiles=new Map(), queue=[]; let busy=null;
+  const lvOf=s2=>Math.max(0,Math.min(13,Math.ceil(Math.log2(s2/DPR/B0)-.15)));
+  const SEA=P_SEA, sm=w.sm;
+  const hCoarse=(x,y,st)=>{ const u=w.uOf(x), v=w.vAt(y); const sv=[PX,pOff]; PX=1; pOff=w.vAt(0); const h=pHgtC(w.mir(u),(v-pOff),true); PX=sv[0]; pOff=sv[1]; const b=pBiomeW(w.mir(u),v), e0=w.elevM(h), dry=sm(-30,10,e0), rough=(.55+.9*sm(SEA+.05,.6,h))*(1+.6*b[0]+.4*b[3]-.6*b[2]-.4*b[1]);
+    const a1=sm(2300,1100,st), a2=sm(560,280,st), a3=sm(2600,1300,st); return [e0+rough*dry*(42*a1*w.nz(x,y,2300,3)+18*a2*w.nz(x,y,560,9))+Math.max(0,h-.48)*1800*(a3*Math.pow(1-Math.abs(w.nz(x,y,2600,11)),3)+(1-a3)*.25)*dry, b]; };
+  const tileGen=function*(L,i,j){ const u=B0*Math.pow(2,L), size=TS*u, x0=i*size, y0=j*size, N=TS/2, st=size/N, G=N+1, H=new Float32Array(G*G), BI=new Array(G*G), coarse=st>=40, cf=Math.min(1,2.5/st);
+    for(let q=0;q<G;q++){ for(let p=0;p<G;p++){ const x=x0+p*st, y=y0+q*st; if(coarse){ const [e,b]=hCoarse(x,y,st); H[q*G+p]=e; BI[q*G+p]=b; } else { H[q*G+p]=w.hFn(x,y); BI[q*G+p]=w.bAt(x,y); } } if(q%8===7) yield; }
+    const c=document.createElement('canvas'); c.width=c.height=N; const g=c.getContext('2d'), im=g.createImageData(N,N), D=im.data, tg=v=>Math.round(255*Math.pow(Math.max(0,Math.min(1,v)),1/2.2));
+    const ex=Math.max(4,Math.min(26,st/3)); // 寄るほど起伏の陰を強く
+    for(let q=0;q<N;q++) for(let p=0;p<N;p++){ const o=q*G+p, e=(H[o]+H[o+1]+H[o+G]+H[o+G+1])/4, dx=(H[o+1]+H[o+G+1]-H[o]-H[o+G])/(2*st), dy=(H[o+G]+H[o+G+1]-H[o]-H[o+1])/(2*st), nl=Math.hypot(dx,dy,1), nyy=1/nl;
+        const x=x0+(p+.5)*st, y=y0+(q+.5)*st; let col;
+        if(e<-.3){ const dp=sm(-.3,-60,e); col=[.09-.05*dp,.24-.1*dp,.34-.12*dp]; const b=BI[o]; if(b[0]>.4) col=[1.2,.32,.05]; }
+        else col=w.colAt(x*cf,y*cf,e,nyy,BI[o]);
+        let sh=(-dx*-.6+-dy*-.8)*ex*.9/nl; sh=Math.max(-.55,Math.min(.45,sh)); const f=1+sh+ (e>0?Math.min(.12,e/6000):0);
+        const k2=(q*N+p)*4; D[k2]=tg(col[0]*f); D[k2+1]=tg(col[1]*f); D[k2+2]=tg(col[2]*f); D[k2+3]=255; }
+    g.putImageData(im,0,0); return c; };
+  const tileKey=(L,i,j)=>L+':'+i+':'+j;
+  const want=new Set(); let wantL=0;
+  const plan=()=>{ const L=lvOf(s), size=TS*B0*Math.pow(2,L), x0=vx-VW/2*s, x1=vx+VW/2*s, y0=vy-VH/2*s, y1=vy+VH/2*s; wantL=L; want.clear(); const list=[];
+    for(let j=Math.floor(Math.max(-size,y0)/size);j<=Math.floor(Math.min(Y1+size,y1)/size);j++) for(let i=Math.floor(Math.max(-XW*.6,x0)/size);i<=Math.floor(Math.min(XW*1.6,x1)/size);i++){ const kk=tileKey(L,i,j); want.add(kk); if(!tiles.has(kk)) list.push([L,i,j,Math.hypot((i+.5)*size-vx,(j+.5)*size-vy)]); }
+    list.sort((a,b)=>a[3]-b[3]); queue.length=0; list.forEach(t=>queue.push(t)); if(busy&&!want.has(busy.kk)) busy=null; };
+  const work=ms=>{ const t=performance.now(); while(performance.now()-t<ms){ if(!busy){ const n=queue.shift(); if(!n) return; const kk=tileKey(n[0],n[1],n[2]); if(tiles.has(kk)) continue; busy={kk,it:tileGen(n[0],n[1],n[2])}; }
+      const r=busy.it.next(); if(r.done){ tiles.set(busy.kk,r.value); busy=null; dirty=true; if(tiles.size>260){ for(const kk of tiles.keys()){ if(!want.has(kk)){ tiles.delete(kk); if(tiles.size<220) break; } } } } } };
+  // ---- 印：道・今いる所・予定の柱・見つけるもの・土地の名前 ----
+  const regs=pRegions(k).map(([m,n])=>[(m-PATH_H0)*KM,n]);
+  const sx=x=>(x-vx)/s+VW/2, sy=y=>(y-vy)/s+VH/2;
+  const draw=()=>{ cx.setTransform(DPR,0,0,DPR,0,0); cx.fillStyle='#16130c'; cx.fillRect(0,0,VW,VH);
+    // 地形：今の寄り具合の板。まだのところは粗い板を拡げて見せる
+    cx.imageSmoothingEnabled=true; const L=wantL;
+    const drawLv=(L2,only)=>{ const size=TS*B0*Math.pow(2,L2), x0=vx-VW/2*s, x1=vx+VW/2*s, y0=vy-VH/2*s, y1=vy+VH/2*s;
+      for(let j=Math.floor(y0/size);j<=Math.floor(y1/size);j++) for(let i=Math.floor(x0/size);i<=Math.floor(x1/size);i++){ const t=tiles.get(tileKey(L2,i,j)); if(!t) continue; if(only&&tiles.has(tileKey(L,i*Math.pow(2,L2-L)|0,j*Math.pow(2,L2-L)|0))&&L2!==L) continue; const a=sx(i*size), b=sy(j*size), z=size/s; cx.drawImage(t,a,b,z+.6,z+.6); } };
+    for(let L2=Math.min(13,L+4);L2>L;L2--) drawLv(L2,false); drawLv(L,false);
+    // 道
+    const yA=Math.max(0,vy-VH/2*s-200), yB=Math.min(Y1,vy+VH/2*s+200), stp=Math.max(6,s*3); cx.lineJoin=cx.lineCap='round';
+    const path=()=>{ cx.beginPath(); for(let y=yA;y<=yB;y+=stp){ const X=sx(w.rX(y)), Y=sy(y); y===yA?cx.moveTo(X,Y):cx.lineTo(X,Y); } };
+    path(); cx.strokeStyle='rgba(60,36,16,.75)'; cx.lineWidth=Math.max(2.4,15/s); cx.stroke(); path(); cx.strokeStyle='#c8955c'; cx.lineWidth=Math.max(1.4,11/s); cx.stroke();
+    // 土地の名前（引いているとき）
+    cx.textAlign='center'; cx.textBaseline='middle';
+    if(s>18) regs.forEach(([y,n])=>{ const Y=sy(y+3000); if(Y<-40||Y>VH+40) return; const X=sx(w.rX(y+3000))+(sx(w.rX(y+3000))>VW/2?-90:90); cx.font='600 15px "Hiragino Mincho ProN","Yu Mincho",serif'; cx.fillStyle='rgba(20,14,6,.55)'; cx.fillText(n,X+1,Y+1); cx.fillStyle='#f3e7c6'; cx.fillText(n,X,Y); });
+    // 見つけるもの
+    if(s<14){ const n0=Math.floor((vy-VH/2*s)/w.LG)-1, n1=Math.floor((vy+VH/2*s)/w.LG)+1; for(let n=Math.max(0,n0);n<=n1;n++){ const sp=w.dSpot(n), X=sx(sp.x), Y=sy(sp.yy); if(X<-30||X>VW+30) continue;
+        cx.fillStyle='rgba(20,14,6,.7)'; cx.beginPath(); cx.arc(X,Y,6.5,0,7); cx.fill(); cx.strokeStyle='#e9d9a8'; cx.lineWidth=1.4; cx.beginPath(); cx.moveTo(X,Y-4); cx.lineTo(X+4,Y); cx.lineTo(X,Y+4); cx.lineTo(X-4,Y); cx.closePath(); cx.stroke();
+        if(s<4.5){ cx.font='500 11.5px "Hiragino Sans",sans-serif'; cx.fillStyle='rgba(20,14,6,.65)'; const tw=cx.measureText(sp.nm).width; cx.fillRect(X-tw/2-5,Y+10,tw+10,17); cx.fillStyle='#f3e7c6'; cx.fillText(sp.nm,X,Y+18.5); } } }
+    // 予定の柱
+    bl.forEach(b=>{ const y=(b.s-PATH_H0)*KM, X=sx(w.rX(y)), Y=sy(y); if(Y<-30||Y>VH+30) return; const dn=pDone(b); cx.fillStyle=dn?'#8a8a7a':'#f0a640'; cx.beginPath(); cx.moveTo(X,Y); cx.lineTo(X-6,Y-14); cx.lineTo(X+6,Y-14); cx.closePath(); cx.fill(); cx.beginPath(); cx.arc(X,Y-17,6,0,7); cx.fill();
+      cx.font='600 12px "Hiragino Sans",sans-serif'; const t=pfmt(b.s)+'　'+(pTitle(b)||''), tw=cx.measureText(t).width, lx=X>VW/2?X-14-tw:X+14; cx.fillStyle='rgba(16,22,24,.78)'; cx.fillRect(lx-6,Y-27,tw+12,20); cx.fillStyle='#f2ecd6'; cx.textAlign='left'; cx.fillText(t,lx,Y-17); cx.textAlign='center'; });
+    // 今いる所
+    if(isT){ const X=sx(w.rX(nowY)), Y=sy(nowY), r=7+2*Math.sin(performance.now()/300); cx.fillStyle='rgba(111,224,255,.25)'; cx.beginPath(); cx.arc(X,Y,r+7,0,7); cx.fill(); cx.fillStyle='#6fe0ff'; cx.beginPath(); cx.arc(X,Y,6,0,7); cx.fill(); cx.strokeStyle='#073040'; cx.lineWidth=2; cx.stroke(); }
+    // 縮尺：馬で何分
+    const mins=[.25,.5,1,2,5,10,30,60,120,240], target=VW*.28*s/KM; let mm=mins[0]; mins.forEach(m=>{ if(m<=target) mm=m; }); scBar.style.width=(mm*KM/s)+'px'; scEl.textContent=mm<1?`馬で${Math.round(mm*60)}秒`:mm<60?`馬で${mm}分`:`馬で${mm/60}時間`; };
+  // ---- さわる ----
+  const clampV=()=>{ s=Math.max(S_MIN,Math.min(S_MAX,s)); vy=Math.max(-2000,Math.min(Y1+2000,vy)); vx=Math.max(-XW*.5,Math.min(XW*1.5,vx)); };
+  const zoomAt=(f,px,py)=>{ const wx=vx+(px-VW/2)*s, wy=vy+(py-VH/2)*s; s*=f; clampV(); vx=wx-(px-VW/2)*s; vy=wy-(py-VH/2)*s; clampV(); dirty=true; plan(); };
+  let tp=null, pin=null, lastTap=0;
+  cv.addEventListener('touchstart',e=>{ e.preventDefault(); if(e.touches.length===1){ const t=e.touches[0]; tp={x:t.clientX,y:t.clientY}; const now=performance.now(); if(now-lastTap<300) zoomAt(.5,t.clientX,t.clientY); lastTap=now; pin=null; } else if(e.touches.length===2){ const [a,b]=e.touches; pin={d:Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY),x:(a.clientX+b.clientX)/2,y:(a.clientY+b.clientY)/2}; tp=null; } },{passive:false});
+  cv.addEventListener('touchmove',e=>{ e.preventDefault(); if(e.touches.length===1&&tp){ const t=e.touches[0]; vx-=(t.clientX-tp.x)*s; vy-=(t.clientY-tp.y)*s; tp={x:t.clientX,y:t.clientY}; clampV(); dirty=true; plan(); }
+    else if(e.touches.length===2&&pin){ const [a,b]=e.touches, dd=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY), mx=(a.clientX+b.clientX)/2, my=(a.clientY+b.clientY)/2; vx-=(mx-pin.x)*s; vy-=(my-pin.y)*s; zoomAt(pin.d/dd,mx,my); pin={d:dd,x:mx,y:my}; } },{passive:false});
+  cv.addEventListener('touchend',e=>{ if(!e.touches.length){ tp=null; pin=null; } else if(e.touches.length===1){ const t=e.touches[0]; tp={x:t.clientX,y:t.clientY}; pin=null; } });
+  cv.addEventListener('wheel',e=>{ e.preventDefault(); zoomAt(Math.exp(e.deltaY*.0018),e.clientX,e.clientY); },{passive:false});
+  let md=null; cv.addEventListener('mousedown',e=>{ md={x:e.clientX,y:e.clientY}; }); window.addEventListener('mouseup',()=>{ md=null; }); cv.addEventListener('mousemove',e=>{ if(!md) return; vx-=(e.clientX-md.x)*s; vy-=(e.clientY-md.y)*s; md={x:e.clientX,y:e.clientY}; clampV(); dirty=true; plan(); });
+  M.goNow=()=>{ vx=w.rX(nowY); vy=nowY; s=Math.min(s,24); dirty=true; plan(); };
+  const q=new URLSearchParams(location.search); if(q.get('mps')){ s=+q.get('mps'); vy=nowY+(+q.get('mpy')||0); vx=w.rX(vy)+(+q.get('mpx')||0); }
+  rs(); plan();
+  const loop=()=>{ if(!M.alive) return; work(10); if(dirty||isT){ draw(); dirty=false; } if(!queue.length&&!busy) document.body.dataset.mapdone='1'; else delete document.body.dataset.mapdone; M.raf=requestAnimationFrame(loop); }; M.raf=requestAnimationFrame(loop);
 }
 
 /* ---------- PCとスマホのデータ同期 ---------- */
