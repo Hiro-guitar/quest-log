@@ -4767,7 +4767,7 @@ async function pLookOpen(){
   if(!(await tick(.3))) return;
   const ridge=(x,y)=>{ const n=1-Math.abs(pNoise(x/300+9,y/300+4)*2-1); return n*n; };
   // ---- 描く道具 ----
-  const ren=new T.WebGLRenderer({canvas:cv,antialias:true,powerPreference:'high-performance'}); L.ren=ren; ren.setPixelRatio(Math.min(1.6,window.devicePixelRatio||1)); ren.shadowMap.enabled=true; ren.shadowMap.type=T.PCFSoftShadowMap; ren.outputColorSpace=T.SRGBColorSpace; ren.toneMapping=T.ACESFilmicToneMapping; ren.toneMappingExposure=.9;
+  const ren=new T.WebGLRenderer({canvas:cv,antialias:true,powerPreference:'high-performance'}); L.ren=ren; ren.setPixelRatio(Math.min(1.35,window.devicePixelRatio||1)); ren.shadowMap.enabled=true; ren.shadowMap.type=T.PCFSoftShadowMap; ren.outputColorSpace=T.SRGBColorSpace; ren.toneMapping=T.ACESFilmicToneMapping; ren.toneMappingExposure=.9;
   const scene=new T.Scene(); L.scene=scene; const cam=new T.PerspectiveCamera(48,1,1,40000); L.cam=cam; L.T=T; if(/lkshot/.test(location.search)){ window.__lk=L; L.pWorld=pWorld; L.pHgtC=pHgtC; }
   const rs=()=>{ const w=ov.clientWidth, h=ov.clientHeight; ren.setSize(w,h,false); cam.aspect=w/h; cam.updateProjectionMatrix(); }; L.rs=rs; window.addEventListener('resize',rs); rs();
   // ---- 太陽と空の色（今の時刻・天気）----
@@ -5057,25 +5057,26 @@ async function pLookOpen(){
   horse.scale.setScalar(1.75); scene.add(horse);
   // ---- 草原の草：世界に固定した小さなマスごとに、草の場所を一度だけ決めて覚えておく（走っても草は動かず、植え直しで入れ替わらない）。
   //      遠くまで生やし、遠いほど本数を減らして1本を大きく。本数の増減は「その草の順番」と距離でなめらかに決め、境目は細かく点を抜いて溶かす（伸びたりぱっと出たりしない）----
-  const GCS=24, GPC=720, GR=1100, GSPLIT=170, gF='min(1.,pow(16./(dd+4.),1.1))*(1.-.94*smoothstep(130.,430.,dd))*(1.-.65*smoothstep(430.,1000.,dd))', gFj=d=>Math.min(1,Math.pow(16/(d+4),1.1))*(1-.94*sm(130,430,d))*(1-.65*sm(430,1000,d));
+  const GCS=24, GPC=720, GR=1100, GSPLIT=170, gF='min(1.,pow(40./(dd+4.),1.25))*(1.-.97*smoothstep(170.,450.,dd))', gFj=d=>Math.min(1,Math.pow(40/(d+4),1.25))*(1-.97*sm(170,450,d));
   const M=new T.Matrix4(), Q=new T.Quaternion(), V=new T.Vector3(), Sc=new T.Vector3(), up=new T.Vector3(0,1,0), cl=new T.Color();
-  const GG=(()=>{ const pl=new T.PlaneGeometry(2.6,1.6).translate(0,.8,0), Pg=[], Ug=[];
+  const mkGG=revs=>{ const pl=new T.PlaneGeometry(2.6,1.6).translate(0,.8,0), Pg=[], Ug=[];
     // 表と裏を別の面として作り、どちらも法線は真上（裏から見ても暗くならず、草原が一様に明るい）
-    for(const ry of [0,Math.PI/2]){ const q=pl.clone().rotateY(ry).toNonIndexed(), p=q.attributes.position.array, u=q.attributes.uv.array; for(let t=0;t<p.length/9;t++) for(const rev of [0,1]){ const ord=rev?[0,2,1]:[0,1,2]; for(const v of ord){ Pg.push(p[(t*3+v)*3],p[(t*3+v)*3+1],p[(t*3+v)*3+2]); Ug.push(u[(t*3+v)*2],u[(t*3+v)*2+1]); } } }
-    const g=new T.BufferGeometry(); g.setAttribute('position',new T.Float32BufferAttribute(Pg,3)); g.setAttribute('normal',new T.Float32BufferAttribute(Pg.map((_,i)=>i%3===1?1:0),3)); g.setAttribute('uv',new T.Float32BufferAttribute(Ug,2)); return g; })();
+    for(const ry of [0,Math.PI/2]){ const q=pl.clone().rotateY(ry).toNonIndexed(), p=q.attributes.position.array, u=q.attributes.uv.array; for(let t=0;t<p.length/9;t++) for(const rev of revs){ const ord=rev?[0,2,1]:[0,1,2]; for(const v of ord){ Pg.push(p[(t*3+v)*3],p[(t*3+v)*3+1],p[(t*3+v)*3+2]); Ug.push(u[(t*3+v)*2],u[(t*3+v)*2+1]); } } }
+    const g=new T.BufferGeometry(); g.setAttribute('position',new T.Float32BufferAttribute(Pg,3)); g.setAttribute('normal',new T.Float32BufferAttribute(Pg.map((_,i)=>i%3===1?1:0),3)); g.setAttribute('uv',new T.Float32BufferAttribute(Ug,2)); return g; }, GG=mkGG([0,1]), GG1=mkGG([0]); // 遠くは表だけの板（両面描き）で軽く
   const mkGM=near=>{ const gm=patch(new T.MeshLambertMaterial({map:gtx,alphaTest:.5,color:wet?0xd8e8d0:0xffffff,emissive:new T.Color(wet?0x1a2414:0x1c2a10).multiplyScalar(1-.85*nf)}),.18), ob=gm.onBeforeCompile;
     gm.onBeforeCompile=sh=>{ ob(sh);
       // 風の波：草原を明るい帯がゆっくり渡っていく（ブレワイの草原のように）／距離で大きさと見える本数を決める
       sh.vertexShader='attribute float aRk;\nvarying float vGust, vVis;\n'+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n vGust=0.; vVis=1.;\n#ifdef USE_INSTANCING\n { float dd=distance(instanceMatrix[3].xz,cameraPosition.xz), fd='+gF+'; vVis=clamp((fd-aRk)/(fd*.3+.002),0.,1.)*'+(near?'step(dd,'+GSPLIT+'.)':'step('+GSPLIT+'.,dd)')+'*smoothstep('+GR+'.,'+(GR-130)+'.,dd); { float nb=mix(.5,1.,smoothstep(0.,50.,dd)), fdc=max(fd,.004); transformed.xz*=nb*min(9.,max(1.,inversesqrt(fdc)*.55)); transformed.y*=nb*min(3.,max(1.,pow(fdc,-.25)*.75)); } /* 本数が減るぶん株を広げ、遠くも近くと同じくらい地面が草で埋まって見える */\n float gw=sin((instanceMatrix[3].x*.6+instanceMatrix[3].z*.8)*.03-uTime*1.5)*.5+.5; gw*=gw; vGust=gw; transformed.x+=gw*.6*max(0.,position.y); transformed.z+=gw*.3*max(0.,position.y); if(vVis<=0.) transformed*=0.; }\n#endif');
       sh.fragmentShader='varying float vGust, vVis;\n'+sh.fragmentShader.replace('void main() {','void main() {\n if(vVis<fract(sin(dot(floor(gl_FragCoord.xy),vec2(12.9898,78.233)))*43758.5453)) discard;').replace('#include <opaque_fragment>','#include <opaque_fragment>\n gl_FragColor.rgb*=.94+.3*vGust;'); }; return gm; };
-  const gLay=(near,N)=>{ const g=GG.clone(), rk=new T.InstancedBufferAttribute(new Float32Array(N),1); g.setAttribute('aRk',rk); const m=new T.InstancedMesh(g,mkGM(near),N); m.receiveShadow=near; m.frustumCulled=false; m.count=0; scene.add(m); return {m,rk,N,Ma:new Float32Array(N*16),Ca:new Float32Array(N*3),Ra:new Float32Array(N),at:null,job:null}; };
-  const gNear=gLay(true,40000), gFar=gLay(false,40000), gCells=new Map(); L.gl=[gNear,gFar];
+  const gLay=(near,N)=>{ const g=(near?GG:GG1).clone(), rk=new T.InstancedBufferAttribute(new Float32Array(N),1); g.setAttribute('aRk',rk); const gmat=mkGM(near); if(!near) gmat.side=T.DoubleSide; const m=new T.InstancedMesh(g,gmat,N); m.receiveShadow=near; m.frustumCulled=false; m.count=0; scene.add(m); return {m,rk,N,Ma:new Float32Array(N*16),Ca:new Float32Array(N*3),Ra:new Float32Array(N),at:null,job:null}; };
+  const gNear=gLay(true,52000), gFar=gLay(false,60000), gCells=new Map(); L.gl=[gNear,gFar];
   // マスの草：順番どおりに必要な数だけ作り足す（同じマスは何度作っても同じ場所・同じ順番）
   const gCell=(ix,iy,need)=>{ const key=ix+'_'+iy; let c=gCells.get(key); if(!c){ c={r:pRng('g'+k+'_'+key,5),q:0,P:[],C:[],R:[],ex:null}; gCells.set(key,c); }
     if(c.q>=need||c.q>=GPC) return c; if(!c.ex){ const cy=(iy+.5)*GCS, a=Math.max(0,Math.floor((cy-60)/LG)-1); c.ex=[]; for(let q=a;q<a+3;q++){ const s2=dSpot(q), R={'花畑':26,'小さな池':24,'鹿の群れ':14,'岩の上の宝箱':9}[s2.nm]||12; c.ex.push([s2.x,s2.yy,R]); } }
     while(c.q<need&&c.q<GPC){ const r=c.r, rank=c.q/GPC, x=(ix+r())*GCS, y=(iy+r())*GCS, rot=r()*6.28, s0=r(), v0=r(), v1=r(); c.q++;
-      const e=hAt(x,y); if(e<1) continue; const b=bAt(x,y); if(b[0]>.2||b[1]>.25||b[3]>.3) continue; { const dr=Math.abs(x-rX(y)); if(dr<5.2||(dr<8&&v1<(8-dr)/2.8)) continue; } if(c.ex.some(([ex2,ey,R])=>Math.hypot(x-ex2,y-ey)<R)) continue; if(RK.some(([rx2,ry2,rs])=>Math.abs(ry2-y)<rs*1.1&&Math.hypot(rx2-x,ry2-y)<rs*1.05)) continue;
-      const gx=hAt(x+3,y)-hAt(x-3,y), gy=hAt(x,y+3)-hAt(x,y-3), nyy=6/Math.hypot(gx,gy,6); if(nyy<.8) continue; const cc=colAt(x,y,e,nyy,b);
+      if(!c.G){ c.G=[]; for(let gj=0;gj<5;gj++) for(let gi=0;gi<5;gi++){ const gx2=(ix+gi/4)*GCS, gy2=(iy+gj/4)*GCS, e2=hAt(gx2,gy2), b2=bAt(gx2,gy2), sx2=hAt(gx2+3,gy2)-hAt(gx2-3,gy2), sy2=hAt(gx2,gy2+3)-hAt(gx2,gy2-3), ny2=6/Math.hypot(sx2,sy2,6); c.G.push({b:b2,ny:ny2,ok:!(b2[0]>.2||b2[1]>.25||b2[3]>.3)&&ny2>=.8,col:colAt(gx2,gy2,e2,ny2,b2)}); } }
+      const gp=c.G[Math.round((y/GCS-iy)*4)*5+Math.round((x/GCS-ix)*4)]; if(!gp.ok) continue; const e=hAt(x,y); if(e<1) continue; const b=gp.b; { const dr=Math.abs(x-rX(y)); if(dr<5.2||(dr<8&&v1<(8-dr)/2.8)) continue; } if(c.ex.some(([ex2,ey,R])=>Math.hypot(x-ex2,y-ey)<R)) continue; if(RK.some(([rx2,ry2,rs])=>Math.abs(ry2-y)<rs*1.1&&Math.hypot(rx2-x,ry2-y)<rs*1.05)) continue;
+      const cc=gp.col;
       Q.setFromAxisAngle(up,rot); const s=.7+s0*.7; Sc.set(s,s*(.7+v0*.5),s); V.set(X(x),e-.1,Z(y)); M.compose(V,Q,Sc); for(const v of M.elements) c.P.push(v); const vb=.84+.2*pNoise(x/9,y/9)+v0*.06; c.C.push(Math.min(1,cc[0]*1.08*vb),Math.min(1,cc[1]*1.2*vb),cc[2]*.7*vb); c.R.push(rank); }
     return c; };
   // 並べ直し：near＝近いマス（よく作り直す）、far＝遠いマス（ときどき）。どちらも見える本数より少し多めに入れておき、細かい出し入れはシェーダーで
