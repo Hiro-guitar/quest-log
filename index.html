@@ -4750,11 +4750,13 @@ async function pLookOpen(){
   const BIO=bName(b0); L.BIO=BIO;
   const X=x=>x-OX, Z=y=>-(y-y0), lin=c=>c.map(v=>Math.pow(v/255,2.2));
   const {C,mix,colAt}=WD;
+  // 草の生える地面は、草と同じ色に塗っておく（遠くで草の本数が減っても、草原の色のまま。近づいても色が変わらず「生えてくる」ように見えない）
+  const colG=(x,y,e,ny,b)=>{ const c=colAt(x,y,e,ny,b); if(e<1||b[0]>.2||b[1]>.25||b[3]>.3) return c; const g=.85*sm(.78,.86,ny)*sm(5,9,Math.abs(x-rX(y))); if(g<=0) return c; return [c[0]*(1-.1*g),c[1]*(1-.02*g),c[2]*(1-.25*g)]; };
   const mkGround=(XA2,XB2,YA2,YB2,st,hf,bf,skirt)=>{ const mx=Math.ceil((XB2-XA2)/st)+1, my=Math.ceil((YB2-YA2)/st)+1, pos=new Float32Array(mx*my*3), idx=[];
     for(let j=0;j<my;j++) for(let i=0;i<mx;i++){ const o=j*mx+i, x=XA2+i*st, y=YA2+j*st; pos[o*3]=X(x); pos[o*3+1]=hf(x,y,i,j); pos[o*3+2]=Z(y); }
     for(let j=0;j<my-1;j++) for(let i=0;i<mx-1;i++){ const a=j*mx+i, b=a+1, c=a+mx, e=c+1; idx.push(a,b,c,b,e,c); }
     const g=new T.BufferGeometry(); g.setAttribute('position',new T.BufferAttribute(pos,3)); g.setIndex(idx); g.computeVertexNormals();
-    const nr=g.attributes.normal.array, col=new Float32Array(mx*my*3); for(let j=0;j<my;j++) for(let i=0;i<mx;i++){ const o=j*mx+i, x=XA2+i*st, y=YA2+j*st; col.set(colAt(x,y,pos[o*3+1],nr[o*3+1],bf(x,y,i,j)),o*3); }
+    const nr=g.attributes.normal.array, col=new Float32Array(mx*my*3); for(let j=0;j<my;j++) for(let i=0;i<mx;i++){ const o=j*mx+i, x=XA2+i*st, y=YA2+j*st; col.set(colG(x,y,pos[o*3+1],nr[o*3+1],bf(x,y,i,j)),o*3); }
     g.setAttribute('color',new T.BufferAttribute(col,3));
     if(skirt){ // 区画の左右のふちを下へ垂らして、遠くの地面とのすき間を隠す
       const P2=Array.from(pos), N2=Array.from(nr), C2=Array.from(col); let n=mx*my; const sk=i=>{ const s=n++; P2.push(pos[i*3],pos[i*3+1]-300,pos[i*3+2]); N2.push(nr[i*3],nr[i*3+1],nr[i*3+2]); C2.push(col[i*3],col[i*3+1],col[i*3+2]); return s; };
@@ -5054,7 +5056,7 @@ async function pLookOpen(){
   horse.scale.setScalar(1.75); scene.add(horse);
   // ---- 草原の草：世界に固定した小さなマスごとに、草の場所を一度だけ決めて覚えておく（走っても草は動かず、植え直しで入れ替わらない）。
   //      遠くまで生やし、遠いほど本数を減らして1本を大きく。本数の増減は「その草の順番」と距離でなめらかに決め、境目は細かく点を抜いて溶かす（伸びたりぱっと出たりしない）----
-  const GCS=24, GPC=720, GR=820, GSPLIT=170, gF='min(1.,pow(16./(dd+4.),1.1))*(1.-.96*smoothstep(130.,450.,dd))', gFj=d=>Math.min(1,Math.pow(16/(d+4),1.1))*(1-.96*sm(130,450,d));
+  const GCS=24, GPC=720, GR=430, GSPLIT=170, gF='min(1.,pow(16./(dd+4.),1.1))*(1.-.88*smoothstep(130.,430.,dd))', gFj=d=>Math.min(1,Math.pow(16/(d+4),1.1))*(1-.88*sm(130,430,d));
   const M=new T.Matrix4(), Q=new T.Quaternion(), V=new T.Vector3(), Sc=new T.Vector3(), up=new T.Vector3(0,1,0), cl=new T.Color();
   const GG=(()=>{ const pl=new T.PlaneGeometry(2.6,1.6).translate(0,.8,0), Pg=[], Ug=[];
     // 表と裏を別の面として作り、どちらも法線は真上（裏から見ても暗くならず、草原が一様に明るい）
@@ -5063,10 +5065,10 @@ async function pLookOpen(){
   const mkGM=near=>{ const gm=patch(new T.MeshLambertMaterial({map:gtx,alphaTest:.5,color:wet?0xd8e8d0:0xffffff,emissive:new T.Color(wet?0x1a2414:0x1c2a10).multiplyScalar(1-.85*nf)}),.18), ob=gm.onBeforeCompile;
     gm.onBeforeCompile=sh=>{ ob(sh);
       // 風の波：草原を明るい帯がゆっくり渡っていく（ブレワイの草原のように）／距離で大きさと見える本数を決める
-      sh.vertexShader='attribute float aRk;\nvarying float vGust, vVis;\n'+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n vGust=0.; vVis=1.;\n#ifdef USE_INSTANCING\n { float dd=distance(instanceMatrix[3].xz,cameraPosition.xz), fd='+gF+'; vVis=clamp((fd-aRk)/(fd*.3+.002),0.,1.)*'+(near?'step(dd,'+GSPLIT+'.)':'step('+GSPLIT+'.,dd)')+'*smoothstep('+GR+'.,'+(GR-90)+'.,dd); transformed*=mix(.5,1.,smoothstep(0.,50.,dd))*(1.+4.2*smoothstep(50.,700.,dd));\n float gw=sin((instanceMatrix[3].x*.6+instanceMatrix[3].z*.8)*.03-uTime*1.5)*.5+.5; gw*=gw; vGust=gw; transformed.x+=gw*.6*max(0.,position.y); transformed.z+=gw*.3*max(0.,position.y); if(vVis<=0.) transformed*=0.; }\n#endif');
+      sh.vertexShader='attribute float aRk;\nvarying float vGust, vVis;\n'+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n vGust=0.; vVis=1.;\n#ifdef USE_INSTANCING\n { float dd=distance(instanceMatrix[3].xz,cameraPosition.xz), fd='+gF+'; vVis=clamp((fd-aRk)/(fd*.3+.002),0.,1.)*'+(near?'step(dd,'+GSPLIT+'.)':'step('+GSPLIT+'.,dd)')+'*smoothstep('+GR+'.,'+(GR-130)+'.,dd); transformed*=mix(.5,1.,smoothstep(0.,50.,dd))*(1.+2.6*smoothstep(50.,420.,dd));\n float gw=sin((instanceMatrix[3].x*.6+instanceMatrix[3].z*.8)*.03-uTime*1.5)*.5+.5; gw*=gw; vGust=gw; transformed.x+=gw*.6*max(0.,position.y); transformed.z+=gw*.3*max(0.,position.y); if(vVis<=0.) transformed*=0.; }\n#endif');
       sh.fragmentShader='varying float vGust, vVis;\n'+sh.fragmentShader.replace('void main() {','void main() {\n if(vVis<fract(sin(dot(floor(gl_FragCoord.xy),vec2(12.9898,78.233)))*43758.5453)) discard;').replace('#include <opaque_fragment>','#include <opaque_fragment>\n gl_FragColor.rgb*=.94+.3*vGust;'); }; return gm; };
   const gLay=(near,N)=>{ const g=GG.clone(), rk=new T.InstancedBufferAttribute(new Float32Array(N),1); g.setAttribute('aRk',rk); const m=new T.InstancedMesh(g,mkGM(near),N); m.receiveShadow=near; m.frustumCulled=false; m.count=0; scene.add(m); return {m,rk,N,Ma:new Float32Array(N*16),Ca:new Float32Array(N*3),Ra:new Float32Array(N),at:null,job:null}; };
-  const gNear=gLay(true,26000), gFar=gLay(false,30000), gCells=new Map(); L.gl=[gNear,gFar];
+  const gNear=gLay(true,40000), gFar=gLay(false,40000), gCells=new Map(); L.gl=[gNear,gFar];
   // マスの草：順番どおりに必要な数だけ作り足す（同じマスは何度作っても同じ場所・同じ順番）
   const gCell=(ix,iy,need)=>{ const key=ix+'_'+iy; let c=gCells.get(key); if(!c){ c={r:pRng('g'+k+'_'+key,5),q:0,P:[],C:[],R:[],ex:null}; gCells.set(key,c); }
     if(c.q>=need||c.q>=GPC) return c; if(!c.ex){ const cy=(iy+.5)*GCS, a=Math.max(0,Math.floor((cy-60)/LG)-1); c.ex=[]; for(let q=a;q<a+3;q++){ const s2=dSpot(q), R={'花畑':26,'小さな池':24,'鹿の群れ':14,'岩の上の宝箱':9}[s2.nm]||12; c.ex.push([s2.x,s2.yy,R]); } }
@@ -5080,11 +5082,11 @@ async function pLookOpen(){
     for(let j=j0;j<=j1;j++) for(let i=i0;i<=i1;i++){ const dc=Math.hypot((i+.5)*GCS-cx,(j+.5)*GCS-cy), dmin=Math.max(0,dc-GCS*.71-mg), dmax=dc+GCS*.71+mg; if(dmin>R1||dmax<R0) continue; cl2.push([dc,i,j,dmin]); } cl2.sort((a,b)=>a[0]-b[0]);
     for(const [,i,j,dmin] of cl2){ if(n>=L.N) break;
       const need=Math.ceil(Math.min(1,gFj(dmin)*1.25)*GPC), c0=gCells.get(i+'_'+j), q0=c0?c0.q:0, c=gCell(i,j,need); work+=c.q-q0; if(work>350){ work=0; yield; }
-      for(let t=0;t<c.R.length&&n<L.N;t++){ if(c.R[t]*GPC>=need) break; const bd=Math.hypot(c.P[t*16+12]-SX,c.P[t*16+14]-SZ); if(bd>R1||bd<R0||c.R[t]>Math.min(1,gFj(Math.max(0,bd-mg))*1.15)) continue; L.Ma.set(c.P.slice(t*16,t*16+16),n*16); L.Ca[n*3]=c.C[t*3]; L.Ca[n*3+1]=c.C[t*3+1]; L.Ca[n*3+2]=c.C[t*3+2]; L.Ra[n]=c.R[t]; n++; } }
+      for(let t=0;t<c.R.length&&n<L.N;t++){ if(c.R[t]*GPC>=need) break; const bd=Math.hypot(c.P[t*16+12]-SX,c.P[t*16+14]-SZ); if(bd>R1||bd<R0||c.R[t]>Math.min(1,gFj(Math.max(0,bd-mg))*1.15)) continue; for(let u=0;u<16;u++) L.Ma[n*16+u]=c.P[t*16+u]; L.Ca[n*3]=c.C[t*3]; L.Ca[n*3+1]=c.C[t*3+1]; L.Ca[n*3+2]=c.C[t*3+2]; L.Ra[n]=c.R[t]; n++; } }
     const m=L.m; if(!m.instanceColor) m.setColorAt(0,cl); m.instanceMatrix.array.set(L.Ma.subarray(0,n*16)); m.instanceColor.array.set(L.Ca.subarray(0,n*3)); L.rk.array.set(L.Ra.subarray(0,n)); m.count=/[?&]nograss/.test(location.search)?0:n; m.instanceMatrix.needsUpdate=true; m.instanceColor.needsUpdate=true; L.rk.needsUpdate=true; L.at=[cx,cy];
     if(gCells.size>5200) for(const kk of [...gCells.keys()]){ const [a,b2]=kk.split('_').map(Number); if(Math.hypot((a+.5)*GCS-cx,(b2+.5)*GCS-cy)>GR*1.4) gCells.delete(kk); } };
-  const plant=(cx,cy)=>{ for(const _ of gGen(gNear,cx,cy,14)); for(const _ of gGen(gFar,cx,cy,40)); };
-  const plantStep=ms=>{ const t=performance.now(); for(const [L,mg,mv,ah] of [[gNear,14,10,6],[gFar,40,32,24]]){ if(!L.job&&L.at&&Math.hypot(rX(py)-L.at[0],py-L.at[1])>mv) L.job=gGen(L,rX(py+ah),py+ah,mg); while(L.job&&performance.now()-t<ms){ if(L.job.next().done) L.job=null; } } };
+  const plant=(cx,cy)=>{ for(const _ of gGen(gNear,cx,cy,9)); for(const _ of gGen(gFar,cx,cy,22)); };
+  const plantStep=ms=>{ const t=performance.now(); for(const [L,mg,mv,ah] of [[gNear,9,15,7.5],[gFar,22,40,20]]){ if(!L.job&&L.at&&Math.hypot(rX(py)-L.at[0],py-L.at[1])>mv) L.job=gGen(L,rX(py+ah),py+ah,mg); while(L.job&&performance.now()-t<ms){ if(L.job.next().done) L.job=null; } } };
   // 岩：Fableと相談して、ブレワイの岩に寄せた作り
   //  ・形：上を平らに削り、4〜5枚の大きな面と、はっきり丸い角（縁は明るく擦れた色）
   //  ・色：日なたは草より明るい温かいベージュ、影は青みの灰色。光は2段にやわらかく分かれる
@@ -5202,7 +5204,7 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
     for(let j=0;j<myn;j++){ const y=ya+j*st, rxy=rX(y); for(let i=0;i<mxn;i++){ const x=xa+i*st, o=j*mxn+i; let e=raw(x,y); if(Math.abs(x-rxy)<LAT+80) e=Math.min(e,hFn(x,y))-16; pos[o*3]=X(x); pos[o*3+1]=e; pos[o*3+2]=Z(y); } if(j%8===7) yield; }
     for(let j=0;j<myn-1;j++) for(let i=0;i<mxn-1;i++){ const a=j*mxn+i, b=a+1, c=a+mxn, e=c+1; idx.push(a,b,c,b,e,c); }
     const g=new T.BufferGeometry(); g.setAttribute('position',new T.BufferAttribute(pos,3)); g.setIndex(idx); g.computeVertexNormals(); yield;
-    const nr=g.attributes.normal.array, col=new Float32Array(mxn*myn*3); for(let j=0;j<myn;j++){ for(let i=0;i<mxn;i++){ const o=j*mxn+i; col.set(colAt(xa+i*st,ya+j*st,pos[o*3+1]+16*(Math.abs(xa+i*st-rX(ya+j*st))<LAT+80),nr[o*3+1],bAt(xa+i*st,ya+j*st)),o*3); } if(j%16===15) yield; }
+    const nr=g.attributes.normal.array, col=new Float32Array(mxn*myn*3); for(let j=0;j<myn;j++){ for(let i=0;i<mxn;i++){ const o=j*mxn+i; col.set(colG(xa+i*st,ya+j*st,pos[o*3+1]+16*(Math.abs(xa+i*st-rX(ya+j*st))<LAT+80),nr[o*3+1],bAt(xa+i*st,ya+j*st)),o*3); } if(j%16===15) yield; }
     g.setAttribute('color',new T.BufferAttribute(col,3)); const m=new T.Mesh(g,gMat); m.receiveShadow=true; return [m,cy]; };
   const setFar=([m,cy])=>{ if(farMesh){ farG.remove(farMesh); farMesh.geometry.dispose(); } farMesh=m; farC=cy; farG.add(m); };
   const updFar=(py,sync)=>{ if(sync){ const it=farGen(py); let r; while(!(r=it.next()).done); setFar(r.value); return; } if(!fJob&&Math.abs(py-farC)>2500) fJob=farGen(py+600); };
@@ -5375,7 +5377,7 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
     body.rotation.x=rk*(.06+.09*gl)*sw; body.position.y=1.3+(Math.sin(T0*2)*.05*(1-gl)+(bo*.15-.05)*gl)*sw; neck.rotation.x=-rk*(.12+.16*gl)*sw+Math.sin(n/1600)*.03*(1-sw);
     tail.rotation.x=.25*sw+Math.sin(n/600)*.06; tail.rotation.z=Math.sin(n/900)*.08; { const t=n/1000, gb=Math.sin(T0*2); TB.value.set(Math.sin(t*1.6)*.07+Math.sin(t*3.7)*.03+Math.sin(T0)*.05*sw,-.22*sw-.06*sw*gb+Math.sin(t*2.1)*.04);
       MANE.forEach(g=>{ const u=g.userData; g.rotation.x=(.32*sw+.1*sw*Math.sin(T0*2+u.ph*.3)+.05*Math.sin(t*1.8+u.ph))*u.k; g.rotation.z=u.sd*(-.12*sw*Math.max(0,gb)+.04*Math.sin(t*1.3+u.ph))*u.k; }); } rider.position.y=RY+Math.max(0,Math.sin(T0*2))*.04*sw*(1-gl)+bo*.05*gl*sw; rider.rotation.x=-rk*.05*gl*sw;
-    plantStep(5); chunkStep(4); farStep(3);
+    plantStep(3); chunkStep(3); farStep(2);
     if(isT||k){ const m=nowM+(py-y0)/KM; tEl.textContent=`${dLab}　${pfmt(Math.floor(m))}`; }
     animDisc(n/1000,dt); animBirds(n/1000,dt); animSmoke(n/1000,dt); place(); L.started=1; clouds.forEach(s=>{ s.position.x+=dt*7; if(s.position.x>1600) s.position.x=-1600; if(s.position.z>cam.position.z+600) s.position.z-=3100; }); if(L.nt){ L.nt.offset.x+=dt*.004; L.nt.offset.y+=dt*.006; }
     if(rain){ rain.position.set(cam.position.x,cam.position.y-40,cam.position.z); const P=rain.geometry.attributes.position.array; if(snowFx){ for(let q=1;q<P.length;q+=3){ P[q]-=10*dt; P[q-1]+=Math.sin(n/900+q)*dt*2; if(P[q]<0) P[q]+=120; } } else { for(let q=1;q<P.length;q+=6){ P[q]-=110*dt; P[q+3]-=110*dt; if(P[q+3]<0){ P[q]+=120; P[q+3]+=120; } } } rain.geometry.attributes.position.needsUpdate=true; }
