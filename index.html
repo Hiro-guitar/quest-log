@@ -3181,6 +3181,7 @@ function renderMoon(){
   const M=$('moon'); if(!M) return;
   const wk=Date.now()-7*DAY;
   const done=state.quests.filter(q=>q.done&&(q.doneAt||0)>=wk).sort((a,b)=>(b.doneAt||0)-(a.doneAt||0));
+  const doneSt=[]; state.quests.forEach(q=>(q.steps||[]).forEach(st=>{ if(!st.qref&&st.done&&(st.doneAt||0)>=wk) doneSt.push({q,st}); })); doneSt.sort((a,b)=>(b.st.doneAt||0)-(a.st.doneAt||0));
   const stuck=[];
   state.quests.forEach(q=>{ if(q.done) return;
     if(!(q.steps&&q.steps.length)&&(q.carry||0)>=2) stuck.push({q,o:q,label:q.title||'(無題)'});
@@ -3192,6 +3193,8 @@ function renderMoon(){
     <img class="moon-orb" src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/46/Lunar_eclipse_04-15-2014_by_R_Jay_GaBany.jpg/500px-Lunar_eclipse_04-15-2014_by_R_Jay_GaBany.jpg" alt="皆既月食の月" onerror="this.style.display=\'none\'"><div class="moon-k">RED MOON</div><h2>赤い月の夜</h2><p class="moon-lead">今週の冒険をふり返って、持ち越しを見直そう</p>
     <div class="sec-h"><span>今週クリアしたもの</span><span>${done.length}件</span></div>
     ${done.length?`<div class="kids">${done.slice(0,10).map(q=>`<div class="kid"><span>${ico(q.type,true)} ${esc(q.title||'(無題)')}</span></div>`).join('')}</div>`:'<p class="hint">今週はまだクリアがありません。来週はひとつだけでも進めよう</p>'}
+    <div class="sec-h"><span>今週クリアした工程</span><span>${doneSt.length}件</span></div>
+    ${doneSt.length?`<div class="kids">${doneSt.slice(0,20).map(({q,st})=>`<div class="kid"><span>✓ ${esc(st.text||'(無題)')}${q.title?`<br><small class="hint">${esc(q.title)}</small>`:''}</span></div>`).join('')}${doneSt.length>20?`<p class="hint">ほか${doneSt.length-20}件</p>`:''}</div>`:'<p class="hint">今週クリアした工程はまだありません。</p>'}
     <div class="sec-h"><span>何度も持ち越しているもの</span><span>${stuck.length}件</span></div>
     ${stuck.length?`<p class="hint">工程を小さく分けるか、日付を外して「いつかやる」に戻すのもひとつの手です</p><div class="kids">${stuck.map(x=>`<div class="kid"><span>${esc(x.label)}<span class="carry">↻${x.o.carry}</span>${x.sub?`<br><small class="hint">${esc(x.sub)}</small>`:''}</span><span style="display:flex;gap:6px"><button class="btn small ghost" data-act="moonundate" data-q="${x.q.id}"${x.s?` data-s="${x.s}"`:''}>日付を外す</button><button class="btn small" data-act="moonopen" data-q="${x.q.id}">開く</button></span></div>`).join('')}</div>`:'<p class="hint">何度も持ち越しているものはありません</p>'}
     ${nodate?`<div class="sec-h"><span>日付のない工程</span><span>${nodate}件</span></div><p class="hint">来週やりたいものがあれば、日付を入れておこう</p>`:''}
@@ -4771,6 +4774,9 @@ async function pLookOpen(){
   // 夜は月明かり（ブレワイの夜：全体が青く沈み、色は抜けて、月の当たる面と輪郭だけが銀青に浮かぶ。暗くても形は読める）
   const nf=day<.3?1-day/.3:0, mr=48*rad, ma=ar+Math.PI*.8;
   // 赤い月の夜（ブレワイのブラッドムーン）：見直しの赤い月が出る日曜18時〜月曜の夜は、空も光も赤く染まり、赤い火の粉が地面から立ちのぼる
+  const MPH=/[?&]lkmp=/.test(location.search)?+new URLSearchParams(location.search).get('lkmp'):(((Date.now()/864e5+2440587.5-2451550.1)/29.530588853)%1+1)%1; // 月齢（0＝新月、.5＝満月）
+  // 月の見える向き：開いたときの行く先の方角の少し右、空の低め（道がどちらへ曲がっていても、前を見れば月が見える）
+  const MD=(()=>{ const hx=rX(y0+90)-rX(y0), a=Math.atan2(hx,90)-.13; return new T.Vector3(Math.sin(a)*.96,.26,-Math.cos(a)*.96).normalize(); })();
   const RED=isT&&nf>.5&&(typeof moonKey==='function'&&moonKey()!=null||/[?&]lkred/.test(location.search));
   const sd=new T.Vector3(Math.sin(ar)*Math.cos(er),Math.sin(er),-Math.cos(ar)*Math.cos(er)).normalize();
   if(day<.1) sd.set(Math.sin(ma)*Math.cos(mr),Math.sin(mr),-Math.cos(ma)*Math.cos(mr)).normalize();
@@ -4778,7 +4784,7 @@ async function pLookOpen(){
   let hz=[214,222,226], md=[140,182,230], zn=[78,128,210], fA=[235,225,205], fB=[190,205,220];
   if(eve>0){ hz=lerpA(hz,[250,200,150],eve); md=lerpA(md,[200,170,175],eve*.8); zn=lerpA(zn,[80,95,150],eve*.6); fA=lerpA(fA,[240,190,140],eve); fB=lerpA(fB,[170,165,185],eve); }
   if(nf){ const n=nf; hz=lerpA(hz,[52,72,110],n); md=lerpA(md,[22,34,68],n); zn=lerpA(zn,[6,11,30],n); fA=lerpA(fA,[50,68,102],n); fB=lerpA(fB,[36,50,82],n); }
-  if(RED){ hz=[118,32,30]; md=[50,12,16]; zn=[14,3,7]; fA=[62,26,30]; fB=[40,16,22]; sd.set(.1,.14,-.98).normalize(); }
+  if(RED){ hz=[118,32,30]; md=[50,12,16]; zn=[14,3,7]; fA=[62,26,30]; fB=[40,16,22]; sd.copy(MD); }
   if(wet){ const gry=v=>{ const m=(v[0]+v[1]+v[2])/3; return v.map(x=>x*.45+m*.45); }; hz=gry(hz); md=gry(md); zn=gry(zn); fA=gry(fA); fB=gry(fB); }
   // 空：大きな球の内側に3色のグラデーションと太陽のにじみ
   if(BIO==='wet'){ fA=lerpA(fA,[178,192,176],.7); fB=lerpA(fB,[150,168,160],.7); hz=lerpA(hz,[190,200,190],.5); }
@@ -4786,9 +4792,9 @@ async function pLookOpen(){
   if(BIO==='snow'){ hz=lerpA(hz,[224,232,242],.6); fA=lerpA(fA,[230,236,246],.8); fB=lerpA(fB,[198,212,230],.8); }
   if(BIO==='desert'){ hz=lerpA(hz,[238,222,192],.7); md=lerpA(md,[170,196,228],.4); fA=lerpA(fA,[242,216,170],.8); fB=lerpA(fB,[222,202,170],.8); }
   const U={uSun:{value:sd},uFogA:{value:c3(fA)},uFogB:{value:c3(fB)},uFogD:{value:(wet?.0021:{wet:.0014,volc:.0017,snow:.0013,desert:.0012}[BIO]||.0009)*.13},uFogH:{value:0},uFogHk:{value:wet?.45:BIO==='wet'?.75:.35},uTime:{value:0},uTint:{value:RED?new T.Vector3(1.04,.74,.76):new T.Vector3(.7,.86,1.2)},uSat:{value:(wet?.85:{wet:1.0,volc:1.0,snow:.92,desert:1.1}[BIO]||1.22)*(1-.5*nf)},uNtT:{value:nf},uCloud:{value:cc/100}};
-  const sky=new T.Mesh(new T.SphereGeometry(38000,32,16),new T.ShaderMaterial({side:T.BackSide,depthWrite:false,fog:false,uniforms:{uHz:{value:c3(hz)},uMd:{value:c3(md)},uZn:{value:c3(zn)},uSun:U.uSun,uDay:{value:day},uNt:{value:wet?0:nf},uTime:U.uTime,uCov:{value:Math.min(.95,Math.max(.12,(wet?Math.max(cc,80):cc)/100))},uClA:{value:c3(wet?[196,200,210]:RED?[96,30,30]:nf>.5?[64,78,110]:lerpA([255,255,255],[255,212,176],eve))},uClB:{value:c3(wet?[120,126,140]:nf>.5?[60,72,104]:lerpA([178,188,210],[176,128,132],eve))}},
+  const sky=new T.Mesh(new T.SphereGeometry(38000,32,16),new T.ShaderMaterial({side:T.BackSide,depthWrite:false,fog:false,uniforms:{uHz:{value:c3(hz)},uMd:{value:c3(md)},uZn:{value:c3(zn)},uSun:U.uSun,uDay:{value:day},uNt:{value:wet?0:nf},uMD:{value:MD},uMP:{value:MPH*6.2832},uMR:{value:Math.cos(.034)},uMC:{value:RED?new T.Vector3(1.25,.36,.26):new T.Vector3(1.,1.,.96)},uMI:{value:RED?1.6:.4+.6*Math.sin(MPH*3.1416)},uTime:U.uTime,uCov:{value:Math.min(.95,Math.max(nf>.5?.5:.12,(wet?Math.max(cc,80):cc)/100))},uClA:{value:c3(wet?[196,200,210]:RED?[96,30,30]:nf>.5?[46,44,74]:lerpA([255,255,255],[255,212,176],eve))},uClB:{value:c3(wet?[120,126,140]:RED?[60,72,104]:nf>.5?[100,114,152]:lerpA([178,188,210],[176,128,132],eve))}},
     vertexShader:'varying vec3 vD; void main(){ vD=normalize(position); vec4 p=modelViewMatrix*vec4(position,1.); gl_Position=projectionMatrix*p; }',
-    fragmentShader:`uniform vec3 uHz,uMd,uZn,uSun,uClA,uClB; uniform float uDay,uNt,uTime,uCov; varying vec3 vD; float h3(vec3 p){ return fract(sin(dot(p,vec3(127.1,311.7,74.7)))*43758.5453); } float hn(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); } float vn(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.-2.*f); return mix(mix(hn(i),hn(i+vec2(1.,0.)),f.x),mix(hn(i+vec2(0.,1.)),hn(i+vec2(1.,1.)),f.x),f.y); } float fbm(vec2 p){ float a=.5, s=0.; for(int i=0;i<5;i++){ s+=a*vn(p); p=p*2.03+vec2(1.7,9.2); a*=.5; } return s; } void main(){ float h=max(vD.y,0.); vec3 c=mix(uHz,uMd,pow(min(h*3.,1.),1.6)); c=mix(c,uZn,smoothstep(.3,1.,h)); float s=max(dot(vD,uSun),0.); c+=vec3(1.,.9,.7)*(pow(s,600.)*3.+pow(s,24.)*.35)*uDay; if(uNt>0.){ vec3 q=vD*220.; vec3 cl=floor(q); float st=step(.985,h3(cl)); float dd=length(fract(q)-.5); c+=vec3(.85,.9,1.)*st*smoothstep(.35,.0,dd)*(.5+.5*h3(cl+1.))*smoothstep(.02,.25,h)*uNt; float ms=max(dot(vD,uSun),0.); c+=vec3(.95,.97,1.)*smoothstep(.9994,.9996,ms)*uNt+vec3(.35,.45,.7)*pow(ms,40.)*.5*uNt; } if(vD.y>0.){ vec2 p=vD.xz/(vD.y+.15)*1.3+vec2(uTime*.006,uTime*.0025); float n=fbm(p); float d=smoothstep(.5,.66,n+uCov*.42-.2); float sh=fbm(p+uSun.xz*.18+.3); vec3 cc=mix(uClA,uClB,clamp((sh-n)*3.+.3,0.,1.)); c=mix(c,cc,d*smoothstep(.0,.14,vD.y)*.95); } if(vD.y<0.) c=uHz; gl_FragColor=vec4(c,1.);
+    fragmentShader:`uniform vec3 uHz,uMd,uZn,uSun,uClA,uClB,uMD,uMC; uniform float uDay,uNt,uTime,uCov,uMP,uMR,uMI; varying vec3 vD; float h3(vec3 p){ return fract(sin(dot(p,vec3(127.1,311.7,74.7)))*43758.5453); } float hn(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); } float vn(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.-2.*f); return mix(mix(hn(i),hn(i+vec2(1.,0.)),f.x),mix(hn(i+vec2(0.,1.)),hn(i+vec2(1.,1.)),f.x),f.y); } float fbm(vec2 p){ float a=.5, s=0.; for(int i=0;i<5;i++){ s+=a*vn(p); p=p*2.03+vec2(1.7,9.2); a*=.5; } return s; } void main(){ vec3 MC=vec3(0.); float MA=0., CD=0.; float h=max(vD.y,0.); vec3 c=mix(uHz,uMd,pow(min(h*3.,1.),1.6)); c=mix(c,uZn,smoothstep(.3,1.,h)); float s=max(dot(vD,uSun),0.); c+=vec3(1.,.9,.7)*(pow(s,600.)*3.+pow(s,24.)*.35)*uDay; if(uNt>0.){ vec3 q=vD*220.; vec3 cl=floor(q); float st=step(.985,h3(cl)); float dd=length(fract(q)-.5); c+=vec3(.85,.9,1.)*st*smoothstep(.35,.0,dd)*(.5+.5*h3(cl+1.))*smoothstep(.02,.25,h)*uNt; } if(vD.y>0.){ vec2 p=vD.xz/(vD.y+.15)*1.3+vec2(uTime*.006,uTime*.0025); float n=fbm(p); float d=smoothstep(.5,.66,n+uCov*.42-.2); float sh=fbm(p+uSun.xz*.18+.3); vec3 cc=mix(uClA,uClB,clamp((sh-n)*3.+.3,0.,1.)); CD=d*smoothstep(.0,.14,vD.y)*.95; c=mix(c,cc,CD); } c=mix(c,MC,MA*(1.-.75*CD)); if(vD.y<0.) c=uHz; gl_FragColor=vec4(c,1.);
       #include <tonemapping_fragment>
       #include <colorspace_fragment>
     }`}));
@@ -5321,16 +5327,40 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
   let last=performance.now(); const t00=performance.now();
   // 別のアプリに切り替えて描画が止まっていた間も、馬は進んでいたことにする（時計とずれないように）
   let wall=Date.now(); const LKPH=/[?&]lkph=/.test(location.search)?+new URLSearchParams(location.search).get('lkph'):null;
-  let redFx=null; if(RED){ const glow=(sz,f)=>{ const c=document.createElement('canvas'); c.width=c.height=sz; const g=c.getContext('2d'); f(g,sz); const t=new T.CanvasTexture(c); t.colorSpace=T.SRGBColorSpace; return t; };
-    const mt=glow(256,(g,z)=>{ const r=z/2, gr=g.createRadialGradient(r,r,0,r,r,r); gr.addColorStop(0,'rgba(255,120,90,1)'); gr.addColorStop(.17,'rgba(235,60,40,1)'); gr.addColorStop(.2,'rgba(200,30,24,.75)'); gr.addColorStop(.4,'rgba(170,20,20,.25)'); gr.addColorStop(1,'rgba(120,10,10,0)'); g.fillStyle=gr; g.fillRect(0,0,z,z); g.globalAlpha=.25; g.fillStyle='#5a0a0a'; for(let q=0;q<9;q++){ g.beginPath(); g.arc(r+(Math.sin(q*2.3)*.1)*z,r+(Math.cos(q*1.7)*.1)*z,z*(.015+.02*((q*7)%3)/2),0,6.3); g.fill(); } });
-    const moon=new T.Sprite(new T.SpriteMaterial({map:mt,fog:false,depthWrite:false,transparent:true,blending:T.AdditiveBlending})); moon.scale.set(1700,1700,1); moon.renderOrder=-1; scene.add(moon);
-    const et=glow(64,(g,z)=>{ const r=z/2, gr=g.createRadialGradient(r,r,0,r,r,r); gr.addColorStop(0,'rgba(255,170,120,1)'); gr.addColorStop(.3,'rgba(255,60,40,.8)'); gr.addColorStop(1,'rgba(160,0,0,0)'); g.fillStyle=gr; g.fillRect(0,0,z,z); });
-    const NE=420, ep=new Float32Array(NE*3), es=new Float32Array(NE*4), eg=new T.BufferGeometry(); for(let q=0;q<NE;q++){ es[q*4]=Math.random(); es[q*4+1]=Math.random(); es[q*4+2]=Math.random(); es[q*4+3]=.4+Math.random()*.8; }
-    eg.setAttribute('position',new T.BufferAttribute(ep,3)); const em=new T.Points(eg,new T.PointsMaterial({map:et,size:2.2,transparent:true,depthWrite:false,blending:T.AdditiveBlending,color:0xff5a40,fog:false})); em.frustumCulled=false; scene.add(em);
-    redFx=t=>{ moon.position.copy(cam.position).addScaledVector(sd,9500); const c=cam.position, hx=c.x, hz2=c.z; for(let q=0;q<NE;q++){ const a=es[q*4], b=es[q*4+1], sp=es[q*4+3], R=8+a*150, an=b*6.283+t*.03*(q%2?1:-1), ph=(es[q*4+2]+t*.05*sp)%1, x=hx+Math.cos(an)*R, z=hz2+Math.sin(an)*R, g0=hAt(x+OX,y0-z)??0;
-      ep[q*3]=x; ep[q*3+1]=g0+ph*26+Math.sin(t*1.3+q)*.6; ep[q*3+2]=z; } eg.attributes.position.needsUpdate=true; em.material.opacity=.6+.25*Math.sin(t*2.2); };
-    setTimeout(()=>{ if(!L.alive) return; findEl.textContent='赤い月が昇った'; findEl.classList.remove('on'); void findEl.offsetWidth; findEl.classList.add('on'); },1600); }
-  const loop=n=>{ if(!L.alive) return; const dt=Math.min(.05,(n-last)/1000); last=n; U.uTime.value=(n-t00)/1000; if(redFx) redFx(U.uTime.value);
+  // ---- 夜のしかけ：月（今夜の本当の満ち欠けの形）、赤い月の夜の火の粉、ホタルの群れる野 ----
+  const pts=(N,col,size)=>{ const c=document.createElement('canvas'); c.width=c.height=64; const g=c.getContext('2d'), gr=g.createRadialGradient(32,32,0,32,32,32); gr.addColorStop(0,'rgba(255,255,255,1)'); gr.addColorStop(.25,'rgba(255,255,255,.7)'); gr.addColorStop(1,'rgba(255,255,255,0)'); g.fillStyle=gr; g.fillRect(0,0,64,64);
+    const t=new T.CanvasTexture(c), P=new Float32Array(N*3), C=new Float32Array(N*3), geo=new T.BufferGeometry(); geo.setAttribute('position',new T.BufferAttribute(P,3)); geo.setAttribute('color',new T.BufferAttribute(C,3));
+    const m=new T.Points(geo,new T.PointsMaterial({map:t,size,transparent:true,depthWrite:false,blending:T.AdditiveBlending,vertexColors:true,color:col,fog:false})); m.frustumCulled=false; scene.add(m);
+    const A=new Float32Array(N*6); for(let q=0;q<N;q++) A[q*6+5]=-1; return {m,P,C,A,N,geo}; };
+  // 世界に置いた粒：離れすぎたら、行く先のまわりに置き直す（走っても粒がついてこない）
+  const respawn=(S,q,R0,R1)=>{ const a=Math.random()*6.283, r=R0+Math.random()*(R1-R0), x=cam.position.x+Math.cos(a)*r, z=cam.position.z+Math.sin(a)*r-R1*.35, g0=hAt(x+OX,y0-z)??0; S.A.set([x,z,g0,Math.random(),Math.random()*100,0],q*6); };
+  let nightFx=null; if(isT&&nf>.5){ const fx=[];
+    if(RED){ const E=pts(420,0xff5a40,2.2); fx.push(t=>{ for(let q=0;q<E.N;q++){ const o=q*6; if(E.A[o+5]<0||Math.hypot(E.A[o]-cam.position.x,E.A[o+1]-cam.position.z)>170) respawn(E,q,8,160); const ph=(E.A[o+3]+t*.04*(.5+((q*37)%10)/10))%1;
+        E.P[q*3]=E.A[o]+Math.sin(t*.7+q)*1.2; E.P[q*3+1]=E.A[o+2]+ph*28; E.P[q*3+2]=E.A[o+1]+Math.cos(t*.6+q*1.3)*1.2; const b=Math.sin(ph*3.1416); E.C.set([b,b,b],q*3); } E.geo.attributes.position.needsUpdate=true; E.geo.attributes.color.needsUpdate=true; });
+      setTimeout(()=>{ if(!L.alive) return; findEl.textContent='赤い月が昇った'; findEl.classList.remove('on'); void findEl.offsetWidth; findEl.classList.add('on'); },1600); }
+    else { // ホタル：水辺や森のところどころに、群れる野がある（場所は世界で決まっていて、毎晩同じ所に出る）
+      const F=pts(520,0xd8ff80,1.7); let zs=0, zt=0, told=false; const zone=(x,y)=>{ const b=bAt(x,y); return sm(.6,.7,pn(x,y,1500,31.7,5.3))*Math.max(0,1-b[0]-b[1]-b[3])*(1+.6*b[2]); };
+      fx.push((t,dt)=>{ zt-=dt; if(zt<=0){ zt=.5; zs=/[?&]lkff/.test(location.search)?1:Math.min(1,zone(cam.position.x+OX,y0-cam.position.z)); if(zs>.5&&!told){ told=true; findEl.textContent='ホタルの舞う野'; findEl.classList.remove('on'); void findEl.offsetWidth; findEl.classList.add('on'); } }
+        for(let q=0;q<F.N;q++){ const o=q*6; if(F.A[o+5]<0||Math.hypot(F.A[o]-cam.position.x,F.A[o+1]-cam.position.z)>95) { respawn(F,q,4,90); F.A[o+5]=1; } const s=F.A[o+3], w=F.A[o+4], on=s<zs?1:0;
+          F.P[q*3]=F.A[o]+Math.sin(t*.35+w)*2.2; F.P[q*3+1]=F.A[o+2]+.6+s*3.2+Math.sin(t*.9+w*1.7)*.5; F.P[q*3+2]=F.A[o+1]+Math.cos(t*.3+w*.7)*2.2; const bl=on*Math.pow(Math.max(0,Math.sin(t*(1.3+s)+w)),3); F.C.set([bl,bl,bl],q*3); }
+        F.geo.attributes.position.needsUpdate=true; F.geo.attributes.color.needsUpdate=true; }); }
+    nightFx=(t,dt)=>fx.forEach(f=>f(t,dt)); }
+  // 月：今夜の本当の満ち欠けの形（板に描き、いつもカメラの方を向ける）。まわりにやわらかい光のにじみ
+  let moonFx=null; if(isT&&nf>.3&&!wet){ const lf=(1-Math.cos(MPH*6.2832))/2; if(lf>.02||RED){
+    const mm=new T.Mesh(new T.PlaneGeometry(1,1),new T.ShaderMaterial({transparent:true,depthWrite:false,fog:false,uniforms:{uP:{value:MPH*6.2832},uC:{value:RED?new T.Vector3(1.05,.2,.13):new T.Vector3(1.,.99,.94)},uA:{value:Math.min(1,nf*1.4)}},
+      vertexShader:'varying vec2 vU; void main(){ vU=uv*2.-1.; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }',
+      fragmentShader:`uniform float uP,uA; uniform vec3 uC; varying vec2 vU; float hn(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); } float vn(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.-2.*f); return mix(mix(hn(i),hn(i+vec2(1.,0.)),f.x),mix(hn(i+vec2(0.,1.)),hn(i+vec2(1.,1.)),f.x),f.y); }
+        void main(){ vec2 q=vU*1.03; float l2=dot(q,q); if(l2>1.) discard; vec3 nn=vec3(q,sqrt(1.-l2)); vec3 Ld=vec3(-sin(uP),0.,-cos(uP)); float lit=smoothstep(-.04,.06,dot(nn,Ld));
+          float alb=.88-.26*smoothstep(.48,.7,vn(q*2.4+7.))-.1*smoothstep(.55,.8,vn(q*7.+3.)); float edge=smoothstep(1.,.94,l2); gl_FragColor=vec4(uC*alb*(lit+.05),edge*uA*max(lit,.12));
+          #include <tonemapping_fragment>
+          #include <colorspace_fragment>
+        }`}));
+    mm.renderOrder=2; mm.frustumCulled=false; scene.add(mm);
+    const hc=document.createElement('canvas'); hc.width=hc.height=128; { const g=hc.getContext('2d'), gr=g.createRadialGradient(64,64,0,64,64,64); gr.addColorStop(0,'rgba(255,255,255,.55)'); gr.addColorStop(.25,'rgba(255,255,255,.2)'); gr.addColorStop(1,'rgba(255,255,255,0)'); g.fillStyle=gr; g.fillRect(0,0,128,128); }
+    const halo=new T.Sprite(new T.SpriteMaterial({map:new T.CanvasTexture(hc),color:RED?0xff3a24:0x9fb6ff,transparent:true,depthWrite:false,blending:T.AdditiveBlending,fog:false,opacity:RED?1:.35+.65*lf})); halo.renderOrder=1; scene.add(halo);
+    const D=9000, R=D*.034; mm.scale.set(R*2,R*2,1); halo.scale.set(R*(RED?16:11),R*(RED?16:11),1);
+    moonFx=()=>{ mm.position.copy(cam.position).addScaledVector(MD,D); mm.lookAt(cam.position); halo.position.copy(mm.position); }; } }
+  const loop=n=>{ if(!L.alive) return; const dt=Math.min(.05,(n-last)/1000); last=n; U.uTime.value=(n-t00)/1000; if(nightFx) nightFx(U.uTime.value,dt); if(moonFx) moonFx();
     { const w=Date.now(), gap=(w-wall)/1000; wall=w; if(gap>.5&&go&&!L.shot){ py=Math.min(yEnd,py+(gap-dt)*Math.max(v,KM/60)); v=KM/60; } }
     if(intro){ const kq=Math.min(1,(n-tIn)/2600), e2=1-Math.pow(1-kq,3); dist=50-29*e2; cp=(34-23*e2)*rad; if(kq>=1) intro=false; }
     // 道をたどる：駆けているときは速く、手綱を引くと止まる。道の終わりで止まる
