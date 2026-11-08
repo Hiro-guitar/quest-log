@@ -5325,11 +5325,11 @@ function pMapOpen(o0){
   let VW=1, VH=1; const rs=()=>{ VW=ov.clientWidth; VH=ov.clientHeight; cv.width=VW*DPR; cv.height=VH*DPR; dirty=true; }; M.rs=rs; window.addEventListener('resize',rs);
   // 見ている場所：中心（世界の座標）と、1ピクセルあたりの長さ
   const S_MIN=.35, S_MAX=540/PX*3.2;
-  const nowY=(nowM-PATH_H0)*KM, PX0=PX, S_BACK=KM/PX0*1.12; let vx=o0.x??w.rX(nowY), vy=o0.y??nowY, s=o0.s||24, dirty=true;
+  let nowY=(nowM-PATH_H0)*KM; const PX0=PX, S_BACK=KM/PX0*1.12; let vx=o0.x??w.rX(nowY), vy=o0.y??nowY, s=o0.s||24, dirty=true;
   // 旅程の地形の絵（今のズーム）と川：寄りはじめはこの絵のまま。旅程の座標（横はピクセル、縦は分×ズーム）→ 世界の座標
   const Hp=pm2y(PATH_H1)+10, terK=pTerKey(k), terU=pTerCache[terK]; let terImg=null, TD=null, TW=0, TH=0; const loadTer=u=>{ terImg=new Image(); terImg.onload=()=>{ const c=document.createElement('canvas'); TW=c.width=terImg.width; TH=c.height=terImg.height; const g=c.getContext('2d'); g.drawImage(terImg,0,0); try{ TD=g.getImageData(0,0,TW,TH).data; }catch(e){} tiles.clear(); dirty=true; plan(); }; terImg.src=u; };
   if(terU) loadTer(terU); else { pTerAsk(k,Hp,true); const iv=setInterval(()=>{ if(!M.alive){ clearInterval(iv); return; } const u=pTerCache[terK]; if(u){ clearInterval(iv); loadTer(u); } },400); }
-  const tY=py=>py/PX0*KM, terAt=(x,y)=>{ if(!TD) return null; x=w.mir(x/KM)*KM; const fx=Math.max(0,Math.min(TW-1.001,x/XW*TW-.5)), fy=Math.max(0,Math.min(TH-1.001,(y-tY(-900))/(tY(Hp+900)-tY(-900))*TH-.5)), i=fx|0, j=fy|0, a=fx-i, b=fy-j, o=(j*TW+i)*4, r=[0,0,0]; for(let c=0;c<3;c++) r[c]=((TD[o+c]*(1-a)+TD[o+4+c]*a)*(1-b)+(TD[o+TW*4+c]*(1-a)+TD[o+TW*4+4+c]*a)*b)/255; return r; }, RIV=(()=>{ try{ return pRivers(Hp).filter(R=>!R.lava); }catch(e){ return []; } })();
+  const tY=py=>py/PX0*KM, terAt=(x,y)=>{ if(!TD) return null; const fx=Math.max(0,Math.min(TW-1.001,x/XW*TW-.5)), fy=Math.max(0,Math.min(TH-1.001,(y-tY(-900))/(tY(Hp+900)-tY(-900))*TH-.5)), i=fx|0, j=fy|0, a=fx-i, b=fy-j, o=(j*TW+i)*4, r=[0,0,0]; for(let c=0;c<3;c++) r[c]=((TD[o+c]*(1-a)+TD[o+4+c]*a)*(1-b)+(TD[o+TW*4+c]*(1-a)+TD[o+TW*4+4+c]*a)*b)/255; return r; }, RIV=(()=>{ try{ return pRivers(Hp).filter(R=>!R.lava); }catch(e){ return []; } })();
   // ---- 地形の板（256ピクセル四方）。寄り具合ごとに作って覚えておく ----
   const TS=256, B0=.5, tiles=new Map(), queue=[]; let busy=null;
   const lvOf=s2=>Math.max(0,Math.min(13,Math.ceil(Math.log2(s2/DPR/B0)-.15)));
@@ -5352,7 +5352,7 @@ function pMapOpen(o0){
   const tileKey=(L,i,j)=>L+':'+i+':'+j;
   const want=new Set(); let wantL=0;
   const plan=()=>{ if(s>210){ queue.length=0; want.clear(); return; } const L=lvOf(s), size=TS*B0*Math.pow(2,L), x0=vx-VW/2*s, x1=vx+VW/2*s, y0=vy-VH/2*s, y1=vy+VH/2*s; wantL=L; want.clear(); const list=[];
-    for(let j=Math.floor(Math.max(-size,y0)/size);j<=Math.floor(Math.min(Y1+size,y1)/size);j++) for(let i=Math.floor(Math.max(-XW*2,x0)/size);i<=Math.floor(Math.min(XW*3,x1)/size);i++){ const kk=tileKey(L,i,j); want.add(kk); if(!tiles.has(kk)) list.push([L,i,j,Math.hypot((i+.5)*size-vx,(j+.5)*size-vy)]); }
+    for(let j=Math.floor(Math.max(-size,y0)/size);j<=Math.floor(Math.min(Y1+size,y1)/size);j++) for(let i=Math.floor(Math.max(0,x0)/size);i<=Math.floor(Math.min(XW,x1)/size);i++){ const kk=tileKey(L,i,j); want.add(kk); if(!tiles.has(kk)) list.push([L,i,j,Math.hypot((i+.5)*size-vx,(j+.5)*size-vy)]); }
     list.sort((a,b)=>a[3]-b[3]); queue.length=0; list.forEach(t=>queue.push(t)); if(busy&&!want.has(busy.kk)) busy=null; };
   const work=ms=>{ const t=performance.now(); while(performance.now()-t<ms){ if(!busy){ const n=queue.shift(); if(!n) return; const kk=tileKey(n[0],n[1],n[2]); if(tiles.has(kk)) continue; busy={kk,it:tileGen(n[0],n[1],n[2])}; }
       const r=busy.it.next(); if(r.done){ tiles.set(busy.kk,r.value); busy=null; dirty=true; if(tiles.size>260){ for(const kk of tiles.keys()){ if(!want.has(kk)){ tiles.delete(kk); if(tiles.size<220) break; } } } } } };
@@ -5364,14 +5364,14 @@ function pMapOpen(o0){
     cx.imageSmoothingEnabled=true; const L=wantL;
     const drawLv=(L2,only)=>{ const size=TS*B0*Math.pow(2,L2), x0=vx-VW/2*s, x1=vx+VW/2*s, y0=vy-VH/2*s, y1=vy+VH/2*s;
       for(let j=Math.floor(y0/size);j<=Math.floor(y1/size);j++) for(let i=Math.floor(x0/size);i<=Math.floor(x1/size);i++){ const t=tiles.get(tileKey(L2,i,j)); if(!t) continue; if(only&&tiles.has(tileKey(L,i*Math.pow(2,L2-L)|0,j*Math.pow(2,L2-L)|0))&&L2!==L) continue; const a=sx(i*size), b=sy(j*size), z=size/s; cx.drawImage(t,a,b,z+.6,z+.6); } };
-    if(terImg&&terImg.complete){ const a=sx(0), b=sy(tY(-900)), ww=XW/s, hh=(tY(Hp+900)-tY(-900))/s; const i0=Math.floor((vx-VW/2*s)/XW), i1=Math.floor((vx+VW/2*s)/XW); for(let i=i0;i<=i1;i++){ const ax=sx(i*XW); if(i&1){ cx.save(); cx.translate(ax+ww,b); cx.scale(-1,1); cx.drawImage(terImg,0,0,ww+.5,hh); cx.restore(); } else cx.drawImage(terImg,ax-(i?.25:0),b,ww+.5,hh); } }
-    const ta=sm(200,90,s); if(ta>0){ cx.globalAlpha=ta; for(let L2=Math.min(13,L+4);L2>L;L2--) drawLv(L2,false); drawLv(L,false); cx.globalAlpha=1; }
+    if(terImg&&terImg.complete){ const a=sx(0), b=sy(tY(-900)), ww=XW/s, hh=(tY(Hp+900)-tY(-900))/s; cx.drawImage(terImg,sx(0),b,ww,hh); }
+    const ta=sm(200,90,s); if(ta>0){ cx.save(); cx.beginPath(); cx.rect(sx(0),-10,XW/s,VH+20); cx.clip(); cx.globalAlpha=ta; for(let L2=Math.min(13,L+4);L2>L;L2--) drawLv(L2,false); drawLv(L,false); cx.globalAlpha=1; cx.restore(); }
     // 川（旅程の地図と同じ流れ）を寄った地形の上にも描く
     if(ta>0&&RIV.length){ cx.globalAlpha=ta; cx.strokeStyle='#3f7f93'; cx.lineCap=cx.lineJoin='round'; RIV.forEach(R=>{ const P=R.P; for(let i=1;i<P.length;i++){ const y0=tY(P[i-1][1]), y1=tY(P[i][1]); if(Math.max(y0,y1)<vy-VH/2*s-500||Math.min(y0,y1)>vy+VH/2*s+500) continue; cx.lineWidth=Math.max(1,R.ws[i]*KM/s*.8); cx.beginPath(); cx.moveTo(sx(P[i-1][0]*KM),sy(y0)); cx.lineTo(sx(P[i][0]*KM),sy(y1)); cx.stroke(); } }); cx.globalAlpha=1; }
-    // 旅の幅の外は、まだ行かない土地として霞ませる
-    { const L0=sx(0), R0=sx(XW), fw=Math.max(30,Math.min(120,(R0-L0)*.12)); cx.fillStyle='rgba(24,20,13,.6)';
-      if(L0>0){ cx.fillRect(0,0,L0,VH); const g=cx.createLinearGradient(L0,0,L0+fw,0); g.addColorStop(0,'rgba(24,20,13,.6)'); g.addColorStop(1,'rgba(24,20,13,0)'); cx.fillStyle=g; cx.fillRect(L0,0,fw,VH); }
-      if(R0<VW){ cx.fillStyle='rgba(24,20,13,.6)'; cx.fillRect(R0,0,VW-R0,VH); const g=cx.createLinearGradient(R0,0,R0-fw,0); g.addColorStop(0,'rgba(24,20,13,.6)'); g.addColorStop(1,'rgba(24,20,13,0)'); cx.fillStyle=g; cx.fillRect(R0-fw,0,fw,VH); } }
+    // 旅の幅の外は、まだ見ていない土地：地形は描かず、霧で閉じる
+    { const L0=sx(0), R0=sx(XW), fw=Math.max(24,Math.min(90,(R0-L0)*.1)), C='rgb(26,24,19)', C0='rgba(26,24,19,0)'; cx.fillStyle=C;
+      if(L0>-fw){ cx.fillRect(0,0,Math.max(0,L0),VH); const g=cx.createLinearGradient(L0,0,L0+fw,0); g.addColorStop(0,C); g.addColorStop(1,C0); cx.fillStyle=g; cx.fillRect(L0,0,fw,VH); }
+      if(R0<VW+fw){ cx.fillStyle=C; cx.fillRect(R0,0,VW-R0,VH); const g=cx.createLinearGradient(R0,0,R0-fw,0); g.addColorStop(0,C); g.addColorStop(1,C0); cx.fillStyle=g; cx.fillRect(R0-fw,0,fw,VH); } }
     // 道
     const yA=Math.max(0,vy-VH/2*s-200), yB=Math.min(Y1,vy+VH/2*s+200), stp=Math.max(6,s*3); cx.lineJoin=cx.lineCap='round';
     const path=()=>{ cx.beginPath(); for(let y=yA;y<=yB;y+=stp){ const X=sx(w.rX(y)), Y=sy(y); y===yA?cx.moveTo(X,Y):cx.lineTo(X,Y); } };
@@ -5407,7 +5407,7 @@ function pMapOpen(o0){
   const q=new URLSearchParams(location.search); if(q.get('mps')){ s=+q.get('mps'); vy=nowY+(+q.get('mpy')||0); vx=w.rX(vy)+(+q.get('mpx')||0); }
   if(o0.pin) pin=o0.pin;
   rs(); plan();
-  const loop=()=>{ if(!M.alive) return; work(10); if(dirty||isT){ draw(); dirty=false; } if(!queue.length&&!busy) document.body.dataset.mapdone='1'; else delete document.body.dataset.mapdone; M.raf=requestAnimationFrame(loop); }; M.raf=requestAnimationFrame(loop);
+  const loop=()=>{ if(!M.alive) return; work(10); if(isT){ const t=new Date(); nowY=(Math.max(PATH_H0,Math.min(PATH_H1,pJNow()+t.getSeconds()/60+t.getMilliseconds()/60000))-PATH_H0)*KM; } if(dirty||isT){ draw(); dirty=false; } if(!queue.length&&!busy) document.body.dataset.mapdone='1'; else delete document.body.dataset.mapdone; M.raf=requestAnimationFrame(loop); }; M.raf=requestAnimationFrame(loop);
 }
 // 旅程の地図をふたつの指でつまんで広げると、その場所からそのまま寄っていく
 function pPinchInit(){ const sv=$('slView'), tl=$('tl'); if(!sv||!tl||sv.__pz) return; sv.__pz=1; let st=null;
