@@ -4668,7 +4668,7 @@ function pLookClose(){ const L=pLookSt; if(!L) return; pLookSt=null; L.alive=fal
   L.ov.classList.remove('show'); setTimeout(()=>L.ov.remove(),400); window.removeEventListener('resize',L.rs); }
 async function pLookOpen(){
   if(pLookSt) return; const k=dayView, H=pm2y(PATH_H1)+10, W=pW, isT=k===pJDay(), bl=pBlocks(k);
-  const svv=$('slView'), retM=svv?Math.max(PATH_H0,Math.min(PATH_H1,PATH_H0+svv.scrollTop/PX)):8*60, nowM=isT?Math.max(PATH_H0,Math.min(PATH_H1,pJNow())):retM, y0=pm2y(nowM);
+  const svv=$('slView'), retM=svv?Math.max(PATH_H0,Math.min(PATH_H1,PATH_H0+svv.scrollTop/PX)):8*60, nowM=isT?Math.max(PATH_H0,Math.min(PATH_H1,pJNow())):retM, y0=(nowM-PATH_H0)*540;
   const ov=document.createElement('div'); ov.className='look'; const d=new Date(k+'T00:00:00');
   ov.innerHTML=`<canvas class="lk-cv"></canvas><div class="lk-ui"><div class="lk-k">見渡す</div><div class="lk-t">${d.getMonth()+1}月${d.getDate()}日（${'日月火水木金土'[d.getDay()]}）${isT?`　${pfmt(nowM)}`:''}</div><button class="lk-x" data-act="lookx"><i>B</i>もどる</button><div class="lk-load"><i></i><span>景色を見ています…</span></div><div class="lk-hint">指でなぞって見回す・ふたつの指で近く／遠く</div><button class="lk-go">手綱を引く</button><div class="lk-find"></div></div>`;
   document.body.appendChild(ov); requestAnimationFrame(()=>ov.classList.add('show'));
@@ -4681,7 +4681,8 @@ async function pLookOpen(){
   // 大きな地形（山・湖・雪山・火山・砂漠・湿原）は地図と同じ計算、そこへ足もとの起伏・岩山の尾根・砂丘・道の細かな曲がりを足す。
   // 近くは細かい区画を馬の前後に作っては捨て、遠くは粗い地形で地平線まで描く
   const KM=540, ST=6, CL=540, LAT=900, HS=118, EH=1100;
-  const v0=vOf(y0), u0=pRX(y0), uOf=x=>u0+(x-W/2)/KM, vAt=y=>v0+(y-y0)/KM;
+  // 座標は地図の場所そのもの（横・縦とも「分×540」）。開いた時刻にかかわらず、同じ場所は同じ景色になる
+  const vAt=y=>pOff+y/KM, uOf=x=>x/KM, u0=pRX(pm2y(nowM)), OX=u0*KM;
   const pn=(x,y,s,ox=0,oy=0)=>pNoise(x/s+ox,y/s+oy), nz=(x,y,s,o)=>(pNoise(x/s+o,y/s+o*1.7)-.5)*2;
   // 大きな地形（0〜1）：地図の計算を0.1分ごとに覚えておいて、間はなめらかにつなぐ
   const MG=.1, mCh=new Map(), mAt=(i,j)=>{ const kk=i*100003+j; let h=mCh.get(kk); if(h===undefined){ h=pHgtC(mir(i*MG),(j*MG-pOff)*PX,true); mCh.set(kk,h); } return h; };
@@ -4694,7 +4695,7 @@ async function pLookOpen(){
   const elevM=h=>h>=P_SEA?(h-P_SEA)*EH:(h-P_SEA)*EH*.5;
   // 道：地図の道（分）に、地図では見えない細かな曲がりを足す（これも地図を寄せると見えるようにする）
   const roadU=v=>pRX((v-pOff)*PX), rMean=y=>46*Math.sin(y/1700*6.2832+.7)+17*Math.sin(y/590*6.2832+2.1)+5*Math.sin(y/210*6.2832+.3);
-  const rX=y=>W/2+(roadU(vAt(y))-u0)*KM+rMean(y);
+  const rX=y=>roadU(vAt(y))*KM+rMean(y);
   // 足もとの高さ（見渡すの単位）
   const raw=(x,y)=>{ const u=uOf(x), v=vAt(y), h=macro(u,v), b=bAt(x,y), [bv,bd,bw,bs]=b, e0=elevM(h);
     const rough=(.55+.9*sm(P_SEA+.05,.6,h))*(1+.6*bv+.4*bs-.6*bw-.4*bd)*(FBI!=null?1:1), dry=sm(-30,10,e0);
@@ -4710,9 +4711,9 @@ async function pLookOpen(){
   const hAt=(x,y)=>{ const ti=Math.floor(x/TL), tj=Math.floor(y/TL), t=hTile(ti,tj), n=TL/ST+1, fx=(x-ti*TL)/ST, fy=(y-tj*TL)/ST, i=Math.min(n-2,fx|0), j=Math.min(n-2,fy|0), a=fx-i, b=fy-j, o=j*n+i; return (t[o]*(1-a)+t[o+1]*a)*(1-b)+(t[o+n]*(1-a)+t[o+n+1]*a)*b; };
   const elev=e=>e; // 高さはもう見渡すの単位
   const mx0=rX(y0), b0=bAt(mx0,y0);
-  L.dbg={bAt,rX,raw,hFn,y0,KM};
+  L.dbg={bAt,rX,raw,hFn,y0,KM,nowM,isT,k,jd:pJDay(),retM};
   const BIO=bName(b0); L.BIO=BIO;
-  const X=x=>x-W/2, Z=y=>-(y-y0), lin=c=>c.map(v=>Math.pow(v/255,2.2));
+  const X=x=>x-OX, Z=y=>-(y-y0), lin=c=>c.map(v=>Math.pow(v/255,2.2));
   // 色（sRGB で決めて、線形に直す）
   const C={g1:lin([128,170,64]),g2:lin([98,140,54]),dry:lin([150,150,80]),rock:lin([150,140,135]),rock2:lin([112,104,100]),sand:lin([214,200,160]),snow:lin([235,240,250]),desert:lin([222,186,124]),dune:lin([196,150,96]),vrock:lin([122,106,98]),vash:lin([86,78,78]),wet:lin([78,104,58]),mud:lin([96,88,60]),bed:lin([60,90,96])};
   const mix=(a,b,t)=>[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t];
@@ -4851,10 +4852,10 @@ async function pLookOpen(){
   const trunk=mergeG([new T.CylinderGeometry(.5,.8,5.2,7).translate(0,2.6,0),new T.CylinderGeometry(.85,1.05,.6,7).translate(0,.3,0),br(0,4.6,0,2.4,7.4,.5,.44,.2),br(0,4.4,0,-2.3,7.5,-.6,.44,.2),br(0,4.8,0,.4,7.5,2.3,.38,.18),br(0,5,0,-.3,7.8,-2.4,.36,.17),br(0,5,0,.1,8.4,.1,.42,.25),br(2.4,7.4,.5,3.4,8.6,1.2,.2,.1),br(-2.3,7.5,-.6,-3.2,8.5,-1.4,.2,.1)]);
   const cone=mergeG([new T.ConeGeometry(2.8,4.5,8).translate(0,4.6,0),new T.ConeGeometry(2.3,4,8).translate(0,6.8,0),new T.ConeGeometry(1.7,3.5,8).translate(0,9,0),new T.ConeGeometry(1.0,2.6,8).translate(0,11,0),new T.CylinderGeometry(.35,.55,3,6).translate(0,1.5,0)]);
   const mR=patch(new T.MeshToonMaterial({color:0xffffff,gradientMap:gmap,vertexColors:true}),.15), mL=patch(new T.MeshToonMaterial({color:0xffffff,gradientMap:gmap,vertexColors:true,map:ltx,alphaTest:.4}),.15), mT=patch(new T.MeshToonMaterial({color:c3([116,110,82]),gradientMap:gmap})), mC=patch(new T.MeshToonMaterial({color:c3([40,74,58]),gradientMap:gmap}),.08); if(BIO==='snow'){ const ob=mC.onBeforeCompile; mC.onBeforeCompile=sh=>{ ob(sh); sh.vertexShader='varying float vUp;\n'+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n vUp=normal.y;'); sh.fragmentShader='varying float vUp;\n'+sh.fragmentShader.replace('#include <color_fragment>','#include <color_fragment>\n diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.93,.96,1.),smoothstep(.15,.45,vUp));'); }; }
-  const treesFor=(tileG,yA,P,XA,XB,near,nx,fz)=>{ const sp=[]; for(let q=0;q<26000*fz&&sp.length<3200*fz;q++){ const x=XA+rng()*(XB-XA), y=yA+rng()*P, f=pn(x,y,70,11,4); if(f<.55) continue; const e=hAt(x,y); if(e<1.5) continue; if(Math.abs(x-rX(y))<19) continue; if(Math.hypot(x-cx,y-cy)<34) continue;
-      const b=bAt(x,y); if(b[0]>.25||b[1]>.3) continue; if(BIO==='wet'&&rng()<.65) continue; const i=Math.round((x-XA)/ST), j=Math.round((y-yA)/ST); if(near.attributes.normal.array[(j*nx+i)*3+1]<.82) continue; const con=b[3]>.2||e>480; if(b[3]>.3&&e>900) continue; sp.push([x,y,e,con,(.85+rng()*.5)*(9+rng()*4)/10*1.4,rng()*6.28]); }
+  const treesFor=(tileG,yA,P,XA,XB,near,nx,fz,tR)=>{ const sp=[]; for(let q=0;q<26000*fz&&sp.length<3200*fz;q++){ const x=XA+tR()*(XB-XA), y=yA+tR()*P, f=pn(x,y,70,11,4); if(f<.55) continue; const e=hAt(x,y); if(e<1.5) continue; if(Math.abs(x-rX(y))<19) continue;
+      const b=bAt(x,y); if(b[0]>.25||b[1]>.3) continue; if(BIO==='wet'&&tR()<.65) continue; const i=Math.round((x-XA)/ST), j=Math.round((y-yA)/ST); if(near.attributes.normal.array[(j*nx+i)*3+1]<.82) continue; const con=b[3]>.2||e>480; if(b[3]>.3&&e>900) continue; sp.push([x,y,e,con,(.85+tR()*.5)*(9+tR()*4)/10*1.4,tR()*6.28]); }
     const nR=sp.filter(s=>!s[3]).length, iR=new T.InstancedMesh(canopy,mR,nR), iL=new T.InstancedMesh(leafCards,mL,nR), iT=new T.InstancedMesh(trunk,mT,nR), iC=new T.InstancedMesh(cone,mC,sp.length-nR), M=new T.Matrix4(), Q=new T.Quaternion(), V=new T.Vector3(), Sc=new T.Vector3(), up=new T.Vector3(0,1,0), cA=c3([128,172,60]), cB=c3([150,190,72]), cc2=new T.Color();
-    let a=0,c=0; sp.forEach(([x,y,e,con,s,r])=>{ Q.setFromAxisAngle(up,r); Sc.set(s,s,s); V.set(X(x),e-.4,Z(y)); M.compose(V,Q,Sc); if(con){ iC.setMatrixAt(c++,M); } else { iR.setMatrixAt(a,M); iL.setMatrixAt(a,M); iT.setMatrixAt(a,M); iR.setColorAt(a,cc2.copy(cA).lerp(cB,rng())); iL.setColorAt(a,cc2); a++; } });
+    let a=0,c=0; sp.forEach(([x,y,e,con,s,r])=>{ Q.setFromAxisAngle(up,r); Sc.set(s,s,s); V.set(X(x),e-.4,Z(y)); M.compose(V,Q,Sc); if(con){ iC.setMatrixAt(c++,M); } else { iR.setMatrixAt(a,M); iL.setMatrixAt(a,M); iT.setMatrixAt(a,M); iR.setColorAt(a,cc2.copy(cA).lerp(cB,tR())); iL.setColorAt(a,cc2); a++; } });
     [iR,iL,iT,iC].forEach(m=>{ m.castShadow=true; m.receiveShadow=true; tileG.add(m); }); };
   // ---- 足もとの草の板（カメラのまわり）----
   // ブレワイの草：細く長い葉が同じ向きに寄り、根もとはやや濃く、先は明るい黄緑
@@ -5021,7 +5022,7 @@ async function pLookOpen(){
   const M=new T.Matrix4(), Q=new T.Quaternion(), V=new T.Vector3(), Sc=new T.Vector3(), up=new T.Vector3(0,1,0), cl=new T.Color(), gr=pRng('lkg'+k,5);
   // 草の植え直しは数フレームに分けて計算し、できあがってから一度に差し替える（走っている途中で引っかからないように）
   const TMa=new Float32Array(NG*16), TCa=new Float32Array(NG*3); let gC=null, gJob=null;
-  const plantGen=function*(cx,cy){ let n=0; const ex=[]; { const a=Math.max(0,Math.floor((cy-y0-260)/LG)-1); for(let q=a;q<a+5;q++){ const s2=dSpot(q), R={'花畑':26,'小さな池':24,'鹿の群れ':14,'岩の上の宝箱':9}[s2.nm]||12; ex.push([s2.x,s2.yy,R]); } } 
+  const plantGen=function*(cx,cy){ let n=0; const ex=[]; { const a=Math.max(0,Math.floor((cy-260)/LG)-1); for(let q=a;q<a+5;q++){ const s2=dSpot(q), R={'花畑':26,'小さな池':24,'鹿の群れ':14,'岩の上の宝箱':9}[s2.nm]||12; ex.push([s2.x,s2.yy,R]); } } 
     for(let q=0;q<NG*3&&n<NG;q++){ if(q%600===599) yield; const a=gr()*6.28, r=4+Math.pow(gr(),1.5)*130, x=cx+Math.cos(a)*r, y=cy+Math.sin(a)*r; const e=hAt(x,y); if(e<1) continue; const b=bAt(x,y); if(b[0]>.2||b[1]>.25||b[3]>.3) continue; { const dr=Math.abs(x-rX(y)); if(dr<5.2||(dr<8&&gr()<(8-dr)/2.8)) continue; } if(ex.some(([ex2,ey,R])=>Math.hypot(x+sh(y)-ex2,y-ey)<R)) continue; if(RK.some(([rx2,ry2,rs])=>Math.abs(ry2-y)<rs*1.1&&Math.hypot(rx2-x,ry2-y)<rs*1.05)) continue;
       const gx=hAt(x+3,y)-hAt(x-3,y), gy=hAt(x,y+3)-hAt(x,y-3), nyy=6/Math.hypot(gx,gy,6); if(nyy<.8) continue; const cc=colAt(x,y,e,nyy,b);
       Q.setFromAxisAngle(up,gr()*6.28); const s=(.7+gr()*.7)*(.45+.55*Math.min(1,r/50)); Sc.set(s,s*(.7+gr()*.5),s); V.set(X(x+sh(y)),e-.1,Z(y)); M.compose(V,Q,Sc); M.toArray(TMa,n*16); { const vb=.84+.2*pNoise(x/9,y/9)+gr()*.06; TCa[n*3]=Math.min(1,cc[0]*1.08*vb); TCa[n*3+1]=Math.min(1,cc[1]*1.2*vb); TCa[n*3+2]=cc[2]*.7*vb; } n++; }
@@ -5074,19 +5075,19 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
 #include <lights_fragment_end>
  { float rim=pow(1.-saturate(dot(normal,normalize(vViewPosition))),3.)*smoothstep(0.,.5,normal.y); reflectedLight.indirectDiffuse+=rim*.22*diffuseColor.rgb; }`); }; return m; };
     const mB=mkMat(0), mS=mkMat(1), kinds=[[mkRock(1,3,1.0,0),mB,170],[mkRock(2,2,.95,0),mB,130],[mkRock(3,3,.55,3),mS,28],[mkRock(4,3,.92,0),mB,170]], rc=new T.Color(), tW=c3({volc:[86,78,76],desert:[206,164,116]}[BIO]||[184,172,152]), tC=c3({volc:[70,64,66],desert:[190,148,104]}[BIO]||[170,166,158]);
-    rocksFor=(tileG,yA,P,XA,XB,near,nx,ny,fz)=>{ const im=kinds.map(([g,m,n])=>new T.InstancedMesh(g,m,Math.ceil(n*fz))), cnt=kinds.map(()=>0), NK=kinds.map(([g,m,n])=>Math.ceil(n*fz));
+    rocksFor=(tileG,yA,P,XA,XB,near,nx,ny,fz,rR)=>{ const im=kinds.map(([g,m,n])=>new T.InstancedMesh(g,m,Math.ceil(n*fz))), cnt=kinds.map(()=>0), NK=kinds.map(([g,m,n])=>Math.ceil(n*fz));
     const ca=near.attributes.color.array;
     const place=(kd,s2,x,y,rot,tilt)=>{ if(cnt[kd]>=NK[kd]||x<XA||x>XB||y<yA||y>yA+P) return; if(Math.abs(x-rX(y))<8+s2*1.3) return; const e=Math.min(hAt(x,y),hAt(x+s2*.7,y),hAt(x-s2*.7,y),hAt(x,y+s2*.7),hAt(x,y-s2*.7)); if(e<1) return;
-      Q.setFromEuler(new T.Euler((rr0()-.5)*tilt,rot,(rr0()-.5)*tilt)); Sc.set(s2*(1+rr0()*.3),s2*(.85+rr0()*.3),s2*(1+rr0()*.3)); V.set(X(x),e-s2*(kd===2?.3:.16),Z(y)); M.compose(V,Q,Sc); im[kd].setMatrixAt(cnt[kd],M); RK.push([x,y,s2]);
-      const w=.92+rr0()*.14, t=rr0()<.25?tC:tW; im[kd].setColorAt(cnt[kd],rc.setRGB(t.r*w,t.g*w,t.b*w)); cnt[kd]++;
+      Q.setFromEuler(new T.Euler((rR()-.5)*tilt,rot,(rR()-.5)*tilt)); Sc.set(s2*(1+rR()*.3),s2*(.85+rR()*.3),s2*(1+rR()*.3)); V.set(X(x),e-s2*(kd===2?.3:.16),Z(y)); M.compose(V,Q,Sc); im[kd].setMatrixAt(cnt[kd],M); RK.push([x,y,s2]);
+      const w=.92+rR()*.14, t=rR()<.25?tC:tW; im[kd].setColorAt(cnt[kd],rc.setRGB(t.r*w,t.g*w,t.b*w)); cnt[kd]++;
       // 接地の暗がり：岩のまわりの地面を少し暗く
       const R=s2*1.35, i0=Math.max(0,Math.floor((x-R-XA)/ST)), i1=Math.min(nx-1,Math.ceil((x+R-XA)/ST)), j0=Math.max(0,Math.floor((y-R-yA)/ST)), j1=Math.min(ny-1,Math.ceil((y+R-yA)/ST));
       for(let j=j0;j<=j1;j++) for(let i=i0;i<=i1;i++){ const d=Math.hypot(XA+i*ST-x,yA+j*ST-y)/R; if(d<1){ const f=1-.32*(1-d*d), o=(j*nx+i)*3; ca[o]*=f; ca[o+1]*=f; ca[o+2]*=f; } } };
-    for(let a=0;a<70*fz;a++){ const y=yA+rr0()*P, x=rX(y)+(rr0()<.5?-1:1)*(14+Math.pow(rr0(),1.3)*200), s=2.5+rr0()*4, n=1+Math.floor(rr0()*3), rot=rr0()*6.28; place(rr0()<.5?0:3,s,x,y,rot,.25);
-      for(let q=0;q<n;q++){ const an=rot+q*2.1+rr0(), sm=s*(.3+rr0()*.45), d=s*.9+sm*.6; place(sm<1.6?1:(rr0()<.5?0:3),sm,x+Math.cos(an)*d,y+Math.sin(an)*d,rot+(rr0()-.5)*1.2,.3); } }
-    for(let q=0;q<110*fz;q++){ const y=yA+rr0()*P, x=rX(y)+(rr0()<.5?-1:1)*(10+Math.pow(rr0(),1.4)*210); place(1,1+rr0()*1.2,x,y,rr0()*6.28,.35); }
-    for(let q=0;q<26*fz;q++){ const y=yA+rr0()*P, x=rX(y)+(rr0()<.5?-1:1)*(18+rr0()*190); place(2,4+rr0()*6,x,y,rr0()*6.28,.7); }
-    for(let q=0;q<5*fz;q++){ const y=yA+rr0()*P, x=rX(y)+(rr0()<.5?-1:1)*(16+rr0()*30); place(rr0()<.5?0:3,6+rr0()*4,x,y,rr0()*6.28,.2); }
+    for(let a=0;a<70*fz;a++){ const y=yA+rR()*P, x=rX(y)+(rR()<.5?-1:1)*(14+Math.pow(rR(),1.3)*200), s=2.5+rR()*4, n=1+Math.floor(rR()*3), rot=rR()*6.28; place(rR()<.5?0:3,s,x,y,rot,.25);
+      for(let q=0;q<n;q++){ const an=rot+q*2.1+rR(), sm=s*(.3+rR()*.45), d=s*.9+sm*.6; place(sm<1.6?1:(rR()<.5?0:3),sm,x+Math.cos(an)*d,y+Math.sin(an)*d,rot+(rR()-.5)*1.2,.3); } }
+    for(let q=0;q<110*fz;q++){ const y=yA+rR()*P, x=rX(y)+(rR()<.5?-1:1)*(10+Math.pow(rR(),1.4)*210); place(1,1+rR()*1.2,x,y,rR()*6.28,.35); }
+    for(let q=0;q<26*fz;q++){ const y=yA+rR()*P, x=rX(y)+(rR()<.5?-1:1)*(18+rR()*190); place(2,4+rR()*6,x,y,rR()*6.28,.7); }
+    for(let q=0;q<5*fz;q++){ const y=yA+rR()*P, x=rX(y)+(rR()<.5?-1:1)*(16+rR()*30); place(rR()<.5?0:3,6+rR()*4,x,y,rR()*6.28,.2); }
     near.attributes.color.needsUpdate=true;
     im.forEach((m,q)=>{ m.count=cnt[q]; m.castShadow=q!==1; m.receiveShadow=true; tileG.add(m); }); }; }
   // ---- 土地ごとの置きもの ----
@@ -5124,13 +5125,13 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
   // ---- 区画：馬の前後に、1分ぶんずつの細かい地面と、そこに乗る道・木・岩・水を作っては捨てる ----
   const SL=0, sh=()=>0, rXw=rX, hW=hAt;
   const chunks=new Map(); let cJob=null;
-  const chunkGen=function*(ci){ const yA=ci*CL, yB=yA+CL, P=CL, rc=rX(yA+CL/2), XA=Math.round((rc-LAT)/ST)*ST, XB=XA+2*LAT, nx=(XB-XA)/ST+1, ny=P/ST+1, G=new T.Group(), br0=pRng('ch'+k+'_'+ci,8);
+  const chunkGen=function*(ci){ const yA=ci*CL, yB=yA+CL, P=CL, rc=rX(yA+CL/2), XA=Math.round((rc-LAT)/ST)*ST, XB=XA+2*LAT, nx=(XB-XA)/ST+1, ny=P/ST+1, G=new T.Group(), br0=pRng('ch'+ci,8);
     for(let tj=Math.floor(yA/TL);tj<=Math.floor(yB/TL);tj++){ for(let ti=Math.floor(XA/TL);ti<=Math.floor(XB/TL);ti++) hTile(ti,tj); yield; }
     const near=mkGround(XA,XB,yA,yB,ST,(x,y)=>hAt(x,y),(x,y)=>bAt(x,y),true); yield;
     const gN=new T.Mesh(near,gMat); gN.receiveShadow=true; gN.castShadow=true; G.add(gN);
     waterFor(G,yA,yB,XA,XB); roadFor(G,yA,yB,P); yield;
-    treesFor(G,yA,P,XA,XB,near,nx,.16); yield;
-    rocksFor(G,yA,P,XA,XB,near,nx,ny,.42); near.attributes.color.needsUpdate=true; yield;
+    treesFor(G,yA,P,XA,XB,near,nx,.16,pRng('tr'+ci,4)); yield;
+    rocksFor(G,yA,P,XA,XB,near,nx,ny,.42,pRng('rk'+ci,6)); near.attributes.color.needsUpdate=true; yield;
     propsFor(G,yA,P,XA,XB,FBI!=null?BIO:bName(bAt(rc,yA+CL/2)),.42,br0);
     return G; };
   const addChunk=(ci,G)=>{ chunks.set(ci,G); chunkRoot.add(G); };
@@ -5225,14 +5226,14 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
   // その場所の土地に合うものから、順番を混ぜて選ぶ
   const PERM=new Map(), permFor=bn=>{ if(!PERM.has(bn)){ const r=pRng('lkd'+k+bn,7), NOT=NOTM[bn]||[]; PERM.set(bn,DK.map((_,q)=>q).filter(q=>(DK[q][2]&&DK[q][2]!=='grass'?DK[q][2]===bn:true)&&!NOT.includes(DK[q][0])).sort(()=>r()-.5)); } return PERM.get(bn); };
   const dRng=pRng('lkd'+k,7), perm=DK.map((_,q)=>q), LG=260, disc=L.disc=new Map(), findEl=ov.querySelector('.lk-find'); let findT=0;
-  const dSpot=n=>{ const r=pRng('lkd'+k+'_'+n,9), yy=y0+260+n*LG+(r()-.5)*160, pl=permFor(FBI!=null?BIO:bName(bAt(rX(yy),yy))), tp=pl[((n%pl.length)+pl.length)%pl.length], nm=DK[tp][0], road2=nm==='道しるべ', sg=r()<.5?-1:1, big=nm==='丘の大樹'||nm==='丘の風車'||nm==='見張り台', SC={'鹿の群れ':1.6,'花畑':1.8,'道しるべ':1.5,'岩の上の宝箱':1.8,'小さな池':1.8,'石積み':1.8}[nm]||2.4, FR={'古い柱の遺跡':12,'崩れた石の門':8,'旅人の野営地':10,'丘の大樹':10,'りんごの木立':12,'丘の風車':5,'見張り台':4,'苔むした石像':3.5,'壊れた荷車':6,'小さな池':11,'鹿の群れ':9,'花畑':14,'岩の上の宝箱':4,'石積み':2,'沈みかけた柱':11,'古い木道':8,'大きな睡蓮':10,'溶岩をまたぐ石橋':9,'焼け落ちた砦':7,'噴気孔':4,'氷の柱':5,'凍った池':10,'雪をかぶった石塔':2,'砂に埋もれた巨像':4,'オアシス':12,'大きな獣の骨':7,'石の環':10,'古い井戸':3,'崩れた塔':5,'地面に刺さった大剣':3,'大きな切り株':6,'キノコの輪':6,'倒れた巨人像の手':5,'のろし台':3,'羊飼いの小屋':8,'苔むしたアーチ':6,'旅人の墓標':3,'巨大な一枚岩':5,'倒木のトンネル':9,'崩れた城壁の門':11,'鳥の巣の枯れ木':3}[nm]||4, off=road2?8:12+FR*SC+r()*(big?70:25); return {tp,yy,nm,x:rXw(yy)+sg*off,sg,SC}; };
+  const dSpot=n=>{ const r=pRng('lkd'+k+'_'+n,9), yy=n*LG+(r()-.5)*160, pl=permFor(FBI!=null?BIO:bName(bAt(rX(yy),yy))), tp=pl[((n%pl.length)+pl.length)%pl.length], nm=DK[tp][0], road2=nm==='道しるべ', sg=r()<.5?-1:1, big=nm==='丘の大樹'||nm==='丘の風車'||nm==='見張り台', SC={'鹿の群れ':1.6,'花畑':1.8,'道しるべ':1.5,'岩の上の宝箱':1.8,'小さな池':1.8,'石積み':1.8}[nm]||2.4, FR={'古い柱の遺跡':12,'崩れた石の門':8,'旅人の野営地':10,'丘の大樹':10,'りんごの木立':12,'丘の風車':5,'見張り台':4,'苔むした石像':3.5,'壊れた荷車':6,'小さな池':11,'鹿の群れ':9,'花畑':14,'岩の上の宝箱':4,'石積み':2,'沈みかけた柱':11,'古い木道':8,'大きな睡蓮':10,'溶岩をまたぐ石橋':9,'焼け落ちた砦':7,'噴気孔':4,'氷の柱':5,'凍った池':10,'雪をかぶった石塔':2,'砂に埋もれた巨像':4,'オアシス':12,'大きな獣の骨':7,'石の環':10,'古い井戸':3,'崩れた塔':5,'地面に刺さった大剣':3,'大きな切り株':6,'キノコの輪':6,'倒れた巨人像の手':5,'のろし台':3,'羊飼いの小屋':8,'苔むしたアーチ':6,'旅人の墓標':3,'巨大な一枚岩':5,'倒木のトンネル':9,'崩れた城壁の門':11,'鳥の巣の枯れ木':3}[nm]||4, off=road2?8:12+FR*SC+r()*(big?70:25); return {tp,yy,nm,x:rXw(yy)+sg*off,sg,SC}; };
   // 見つけるものの部品を、色ごとに1つの形にまとめる（描く回数を減らして軽くする）。動く部品はそのまま
   const bake=g=>{ const u=g.userData; if(u.mill||u.deer) return; const keep=new Set([u.fire].filter(Boolean)); g.updateMatrixWorld(true); const inv=new T.Matrix4().copy(g.matrixWorld).invert(), by=new Map(), rm=[];
     g.traverse(o=>{ if(!o.isMesh||o.isInstancedMesh||keep.has(o)) return; const k=o.material.uuid; if(!by.has(k)) by.set(k,{m:o.material,gs:[]}); const ge=(o.geometry.index?o.geometry.toNonIndexed():o.geometry.clone()); ge.applyMatrix4(new T.Matrix4().multiplyMatrices(inv,o.matrixWorld)); by.get(k).gs.push(ge); rm.push(o); });
     rm.forEach(o=>{ o.parent.remove(o); o.geometry.dispose(); });
     for(const {m,gs} of by.values()){ let n=0; gs.forEach(x=>n+=x.attributes.position.count); const P=new Float32Array(n*3), N=new Float32Array(n*3); let o2=0; gs.forEach(x=>{ P.set(x.attributes.position.array,o2*3); N.set(x.attributes.normal.array,o2*3); o2+=x.attributes.position.count; x.dispose(); });
       const ge=new T.BufferGeometry(); ge.setAttribute('position',new T.BufferAttribute(P,3)); ge.setAttribute('normal',new T.BufferAttribute(N,3)); const me=new T.Mesh(ge,m); me.castShadow=me.receiveShadow=true; g.add(me); } };
-  const putDisc=py=>{ const n0=Math.max(0,Math.floor((py-y0-260)/LG)-1), n1=Math.floor((py-y0+1500)/LG); let built=0;
+  const putDisc=py=>{ const n0=Math.max(0,Math.floor((py-260)/LG)-1), n1=Math.floor((py+1500)/LG); let built=0;
     for(const [n,o] of disc) if(n<n0||n>n1){ scene.remove(o.g); o.g.traverse(m=>{ if(m.geometry) m.geometry.dispose(); }); disc.delete(n); }
     for(let n=n0;n<=n1;n++){ if(disc.has(n)) continue; if(built++&&L.started) break; const s=dSpot(n), g=new T.Group(); DK[s.tp][1](g); bake(g); g.scale.setScalar(s.SC); let e=hW(s.x,s.yy); if(s.nm==='小さな池') e=Math.min(e,hW(s.x+12,s.yy),hW(s.x-12,s.yy),hW(s.x,s.yy+12),hW(s.x,s.yy-12))+.3; g.position.set(X(s.x),Math.max(-.2,e)-.15,Z(s.yy)); g.rotation.y=s.nm==='道しるべ'?(s.sg>0?-1.5708:1.5708):s.sg*.3; scene.add(g); disc.set(n,{g,s,seen:false}); }
     for(const [n,o] of disc){ if(!o.seen&&o.s.yy-py<110&&o.s.yy-py>-20&&(()=>{ const v=o.g.position.clone(); v.y+=8; v.project(cam); return Math.abs(v.x)<.85&&v.z<1&&o.g.position.distanceTo(cam.position)<150; })()){ o.seen=true; findEl.textContent=o.s.nm; findEl.classList.remove('on'); void findEl.offsetWidth; findEl.classList.add('on'); } } };
@@ -5258,7 +5259,7 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
   const place=()=>{ updChunks(py); updFar(py); putBeams(py); putDisc(py); const x=rXw(py), g=gnd(x,py); horse.position.set(X(x),g-.42,Z(py)); HU.uHY.value=g-.42; horse.rotation.y=hY;
     const fa=L.focus?0:5; tgt.set(horse.position.x+Math.sin(hY)*fa,horse.position.y+(L.focus?3:3.6),horse.position.z+Math.cos(hY)*fa);
     const cy2=hY+off; cam.position.set(tgt.x-Math.sin(cy2)*Math.cos(cp)*dist,tgt.y+Math.sin(cp)*dist,tgt.z-Math.cos(cy2)*Math.cos(cp)*dist);
-    const gc2=Math.max(0,hW(cam.position.x+W/2,y0-cam.position.z))+1.6; if(cam.position.y<gc2) cam.position.y=gc2; cam.lookAt(tgt);
+    const gc2=Math.max(0,hW(cam.position.x+OX,y0-cam.position.z))+1.6; if(cam.position.y<gc2) cam.position.y=gc2; cam.lookAt(tgt);
     U.uFogH.value=g-5; sun.target.position.set(tgt.x+Math.sin(cy2)*200,0,tgt.z+Math.cos(cy2)*200); sun.position.copy(sun.target.position).addScaledVector(sd,900); sky.position.copy(cam.position); seaP.position.set(cam.position.x,-1.2,cam.position.z); };
   // 指でなぞって見回す・ふたつの指で近く／遠く
   let tp=null, pin=null; const look=(dx,dy)=>{ off-=dx*.006; cp=Math.max(2*rad,Math.min(55*rad,cp+dy*.004)); lastTouch=performance.now(); };
