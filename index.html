@@ -4784,6 +4784,27 @@ async function pLookOpen(){
       L.water=new T.Mesh(g,patch(new T.MeshStandardMaterial({color:c3([62,120,140]),roughness:.12,metalness:.0,envMap:env,envMapIntensity:1.1,normalMap:nt,normalScale:new T.Vector2(.25,.25),transparent:true,opacity:.9}))); tileG.add(L.water); }
     if(nl){ const g=new T.BufferGeometry(); g.setAttribute('position',new T.Float32BufferAttribute(Pl,3)); g.setIndex(Il); tileG.add(new T.Mesh(g,new T.MeshBasicMaterial({color:c3([255,120,20]).multiplyScalar(2)}))); } }
   { const fw=new T.Mesh(new T.PlaneGeometry(FB-FA,FyB-FyA),patch(new T.MeshStandardMaterial({color:c3([60,110,130]),roughness:.2,envMap:L.env}))); fw.rotation.x=-Math.PI/2; fw.position.set(X((FA+FB)/2),-1.5,Z((FyA+FyB)/2)); farG.add(fw); }
+  // ---- 遠くに見える目じるし：この先の道で出会う土地（雪山・火山・砂漠の台地）を、地平線に大きな山として見せる。
+  //      何時間も先ほど小さくかすみ、近づくほど大きくはっきりする（ブレワイで遠くの山を目指すように）----
+  const AHEAD=(()=>{ const out={}, fb=new URLSearchParams(location.search).get('lkfar');
+    if(fb){ fb.split(',').forEach((n,i)=>out[n]={dm:120+i*180,side:i%2?1:-1}); return out; }
+    for(let m=nowM+20;m<=PATH_H1;m+=10){ const y=pm2y(m), rx=pRX(y); for(const sd of [0,-1,1]){ const w=pBiomeW(mir(rx+sd*160),vOf(y)); ['volc','desert','wet','snow'].forEach((n,i)=>{ if(n!=='wet'&&n!==BIO&&w[i]>.45&&!out[n]) out[n]={dm:m-nowM,side:sd}; }); } }
+    return out; })(); L.AHEAD=AHEAD;
+  { const farMat=c=>{ const m=patch(new T.MeshLambertMaterial({vertexColors:true})), ob=m.onBeforeCompile; m.onBeforeCompile=sh=>{ ob(sh); sh.fragmentShader=sh.fragmentShader.replace('float f=1.-exp(-d*uFogD);','float f=1.-exp(-d*uFogD*.5);'); }; return m; };
+    const peak=(h,r,seed,cols)=>{ const g=new T.ConeGeometry(r,h,40,18), p=g.attributes.position, C=[]; const rr=pRng('pk'+seed,3);
+      for(let i=0;i<p.count;i++){ const x=p.getX(i), y=p.getY(i)+h/2, z=p.getZ(i), a=Math.atan2(z,x), t=y/h, n=1+.22*Math.sin(a*5+seed)+.12*Math.sin(a*11+seed*2)+.08*Math.sin(a*23); const k=t<.98?n*(1-.15*Math.sin(t*9+a*3)):1; p.setXYZ(i,x*k,y*(1+.08*Math.sin(a*7+seed)),z*k); C.push(...cols(t,a)); }
+      g.computeVertexNormals(); g.setAttribute('color',new T.Float32BufferAttribute(C,3)); return g; };
+    const lc=a=>a.map(v=>Math.pow(v/255,2.2)), mixC=(a,b,t)=>a.map((v,i)=>v+(b[i]-v)*t);
+    const place=(g,info,lat)=>{ const t=Math.min(1,info.dm/480), D=2250+t*600, sc=.85-.3*t, x=X(mx0)+(info.side||lat)*(240+t*320)+lat*80; g.position.set(x,-140,-D); g.scale.setScalar(sc); farG.add(g); };
+    let lat=-1;
+    if(AHEAD.snow){ const g=new T.Group(), mt=farMat(); [[0,0,620,420,1],[-380,140,470,330,2],[330,90,420,300,3]].forEach(([x,z,h,r,sd])=>{ const m=new T.Mesh(peak(h,r,sd,(t,a)=>{ const sn=t>.42+.08*Math.sin(a*6+sd)?1:0; return sn?lc([238,242,250]):mixC(lc([96,104,120]),lc([132,140,156]),t); }),mt); m.position.set(x,h/2,z); g.add(m); }); place(g,AHEAD.snow,lat); lat=-lat; }
+    if(AHEAD.volc){ const g=new T.Group(), mt=farMat(); const m=new T.Mesh(peak(560,520,7,(t,a)=>t>.9?lc([255,120,50]):mixC(lc([70,58,58]),lc([104,84,80]),t)),mt); m.position.y=280; m.scale.set(1,1,1); g.add(m);
+      const top=new T.Mesh(new T.CylinderGeometry(70,110,30,24),new T.MeshBasicMaterial({color:c3([255,120,40]).multiplyScalar(1.6),fog:false})); top.position.y=560; g.add(top);
+      const sc2=document.createElement('canvas'); sc2.width=sc2.height=64; { const x=sc2.getContext('2d'), gd=x.createRadialGradient(32,32,2,32,32,30); gd.addColorStop(0,'rgba(255,255,255,.85)'); gd.addColorStop(1,'rgba(255,255,255,0)'); x.fillStyle=gd; x.fillRect(0,0,64,64); }
+      const st=new T.CanvasTexture(sc2); for(let q=0;q<6;q++){ const sp=new T.Sprite(new T.SpriteMaterial({map:st,color:c3([110,100,100]),transparent:true,opacity:.5-q*.06,depthWrite:false,fog:false})); sp.position.set(q*40,620+q*110,0); sp.scale.setScalar(160+q*90); g.add(sp); }
+      place(g,AHEAD.volc,lat); lat=-lat; }
+    if(AHEAD.desert){ const g=new T.Group(), mt=farMat(); [[0,0,260,360,4],[-460,80,200,260,5],[420,-60,230,300,6]].forEach(([x,z,h,r,sd])=>{ const ge=new T.CylinderGeometry(r*.82,r,h,28,6), p=ge.attributes.position, C=[]; for(let i=0;i<p.count;i++){ const y=p.getY(i)+h/2, a=Math.atan2(p.getZ(i),p.getX(i)), k=1+.12*Math.sin(a*6+sd)+.06*Math.sin(a*15); p.setX(i,p.getX(i)*k); p.setZ(i,p.getZ(i)*k); const t=y/h, band=.5+.5*Math.sin(t*22); C.push(...mixC(lc([196,124,78]),lc([226,170,112]),band*.6+t*.3)); } ge.computeVertexNormals(); ge.setAttribute('color',new T.Float32BufferAttribute(C,3)); const m=new T.Mesh(ge,mt); m.position.set(x,h/2,z); g.add(m); }); place(g,AHEAD.desert,lat); lat=-lat; }
+  }
   if(!(await tick(.86))) return;
   let cx=mx0, cy=y0+40, best=-1e9; for(let q=0;q<160;q++){ const a=rng()*6.28, r=Math.sqrt(rng())*60, x=mx0+Math.cos(a)*r, y=y0+40+Math.sin(a)*r*.6; const e=hAt(x,y); if(e>best&&e>-.2){ best=e; cx=x; cy=y; } }
   // ---- 木：ブレワイの広葉樹のように、灰緑の幹が途中で3〜4本の太い枝に分かれ、その上に横に広い房の傘。
