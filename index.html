@@ -830,7 +830,7 @@ body{background:#050607}
 .sl-look{position:absolute;right:10px;top:10px;z-index:4;display:flex;align-items:center;gap:6px;padding:6px 12px 6px 9px;border:1px solid rgba(111,224,255,.55);background:rgba(6,20,28,.72);color:#bff3ff;font-size:12.5px;letter-spacing:.12em;border-radius:2px;box-shadow:0 0 10px rgba(111,224,255,.25)}
 .lk-ico{width:14px;height:16px;background:linear-gradient(#6fe0ff,#6fe0ff) 50% 100%/2px 12px no-repeat,linear-gradient(#6fe0ff,#6fe0ff) 50% 2px/10px 2px no-repeat,linear-gradient(#6fe0ff,#6fe0ff) 50% 7px/7px 2px no-repeat;filter:drop-shadow(0 0 3px rgba(111,224,255,.8))}
 .look{position:fixed;inset:0;z-index:70;opacity:0;transition:opacity .4s;background:#0b1020;overflow:hidden;touch-action:none}.look.show{opacity:1}
-.lk-sky{position:absolute;inset:0}.lk-cv{position:absolute;inset:0;width:100%;height:100%;display:block}
+.lk-sky{position:absolute;inset:0}.lk-cv{position:absolute;inset:0;width:100%;height:100%;display:block;transform:scaleX(-1)}/* 地図は下へ進むので、進む向きの右手は地図の左。景色を左右に返して地図と合わせる */
 .lk-ui{position:absolute;inset:0;pointer-events:none;color:#f2ecd6;text-shadow:0 1px 6px rgba(0,0,0,.7)}
 .lk-k{position:absolute;left:18px;top:calc(env(safe-area-inset-top,0px) + 16px);font-size:12px;letter-spacing:.5em;color:#7fe6ff}
 .lk-t{position:absolute;left:18px;top:calc(env(safe-area-inset-top,0px) + 34px);font-size:20px;letter-spacing:.18em}
@@ -4905,7 +4905,7 @@ async function pLookOpen(){
     const m=new T.Mesh(g,roadMat); m.receiveShadow=true; m.renderOrder=1; tileG.add(m); };
   // ---- 道しるべ：光の柱と名前の札。今いる所は青い光 ----
   const beam=(x,y,col,h2,w)=>{ const e=Math.max(0,hAt(x,y)), m=new T.Mesh(new T.CylinderGeometry(w*.6,w,h2,10,1,true),new T.MeshBasicMaterial({color:col,transparent:true,opacity:.5,depthWrite:false,blending:T.AdditiveBlending,fog:false})); m.position.set(X(x),e+h2/2,Z(y)); scene.add(m); return e; };
-  const label=(txt,sub,col)=>{ const c=document.createElement('canvas'), x=c.getContext('2d'), F='600 30px "Hiragino Sans","Noto Sans JP",sans-serif'; x.font=F; const w=Math.max(x.measureText(txt).width,sub?x.measureText(sub).width*.8:0)+36; c.width=Math.ceil(w); c.height=sub?92:58;
+  const label=(txt,sub,col)=>{ const c=document.createElement('canvas'), x=c.getContext('2d'), F='600 30px "Hiragino Sans","Noto Sans JP",sans-serif'; x.font=F; const w=Math.max(x.measureText(txt).width,sub?x.measureText(sub).width*.8:0)+36; c.width=Math.ceil(w); c.height=sub?92:58; x.translate(c.width,0); x.scale(-1,1); // 画面ごと左右を返すので、文字は先に裏返しておく
     x.fillStyle='rgba(16,22,24,.78)'; x.fillRect(0,0,c.width,c.height); x.fillStyle=col; x.fillRect(0,0,5,c.height); if(sub){ x.font='500 22px "Hiragino Sans",sans-serif'; x.fillStyle='#7fd8ef'; x.fillText(sub,18,30); } x.font=F; x.fillStyle='#f2ecd6'; x.fillText(txt,18,sub?72:40);
     const t=new T.CanvasTexture(c); t.colorSpace=T.SRGBColorSpace; const s=new T.Sprite(new T.SpriteMaterial({map:t,depthTest:false,fog:false,sizeAttenuation:false})); s.scale.set(c.width/1400,c.height/1400,1); s.center.set(0,0); s.renderOrder=10; return s; };
   const beams=[]; bl.filter(b=>b.s>nowM).slice(0,12).forEach((b,q)=>{ const yw=y0+(b.s-nowM)*KM, dn=pDone(b), m=beam(0,y0,dn?0x9a9a8a:0xffa63a,dn?20:90,1.4);
@@ -5277,7 +5277,7 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
     const gc2=Math.max(0,hW(cam.position.x+OX,y0-cam.position.z))+1.6; if(cam.position.y<gc2) cam.position.y=gc2; cam.lookAt(tgt);
     U.uFogH.value=g-5; sun.target.position.set(tgt.x+Math.sin(cy2)*200,0,tgt.z+Math.cos(cy2)*200); sun.position.copy(sun.target.position).addScaledVector(sd,900); sky.position.copy(cam.position); seaP.position.set(cam.position.x,-1.2,cam.position.z); };
   // 指でなぞって見回す・ふたつの指で近く／遠く
-  let tp=null, pin=null; const look=(dx,dy)=>{ off-=dx*.006; cp=Math.max(2*rad,Math.min(55*rad,cp+dy*.004)); lastTouch=performance.now(); };
+  let tp=null, pin=null; const look=(dx,dy)=>{ off+=dx*.006; cp=Math.max(2*rad,Math.min(55*rad,cp+dy*.004)); lastTouch=performance.now(); };
   cv.addEventListener('touchstart',e=>{ intro=false; if(e.touches.length===1) tp={x:e.touches[0].clientX,y:e.touches[0].clientY}; else if(e.touches.length===2){ tp=null; pin={d:Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY)}; } },{passive:true});
   cv.addEventListener('touchmove',e=>{ e.preventDefault(); if(e.touches.length===1&&tp){ const t=e.touches[0]; look(t.clientX-tp.x,t.clientY-tp.y); tp={x:t.clientX,y:t.clientY}; }
     else if(e.touches.length===2&&pin){ const dd=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY); dist=Math.max(7,Math.min(40,dist*pin.d/dd)); pin.d=dd; lastTouch=performance.now(); } },{passive:false});
