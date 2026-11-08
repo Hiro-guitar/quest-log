@@ -5289,22 +5289,23 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
   if(/[?&]lkshot/.test(location.search)){ intro=false; off=OFF+(+(new URLSearchParams(location.search).get('lkth'))||0); py+=+(new URLSearchParams(location.search).get('lkpy'))||0; dist=+(new URLSearchParams(location.search).get('lkdist'))||dist; L.focus=/lkfocus/.test(location.search); cp=(+(new URLSearchParams(location.search).get('lkcp'))||12)*rad; updChunks(py,true); plant(rX(py),py); hY=head0(); lastTouch=1e12; L.shot=()=>{ document.body.dataset.lkshot='1'; }; }
   let last=performance.now(); const t00=performance.now();
   // 別のアプリに切り替えて描画が止まっていた間も、馬は進んでいたことにする（時計とずれないように）
-  let wall=Date.now();
+  let wall=Date.now(); const LKPH=/[?&]lkph=/.test(location.search)?+new URLSearchParams(location.search).get('lkph'):null;
   const loop=n=>{ if(!L.alive) return; const dt=Math.min(.05,(n-last)/1000); last=n; U.uTime.value=(n-t00)/1000;
-    { const w=Date.now(), gap=(w-wall)/1000; wall=w; if(gap>.5&&go&&!L.shot){ py=Math.min(yEnd,py+(gap-dt)*Math.max(v,9)); v=9; } }
+    { const w=Date.now(), gap=(w-wall)/1000; wall=w; if(gap>.5&&go&&!L.shot){ py=Math.min(yEnd,py+(gap-dt)*Math.max(v,KM/60)); v=KM/60; } }
     if(intro){ const kq=Math.min(1,(n-tIn)/2600), e2=1-Math.pow(1-kq,3); dist=50-29*e2; cp=(34-23*e2)*rad; if(kq>=1) intro=false; }
     // 道をたどる：駆けているときは速く、手綱を引くと止まる。道の終わりで止まる
     const vt=go&&py<yEnd?KM/60*(+(new URLSearchParams(location.search).get('lkspd'))||1):0; v+=(vt-v)*Math.min(1,dt*1.6); py=Math.min(yEnd,py+v*dt); if(py>=yEnd&&go){ go=false; goB.textContent='駆ける'; }
     const ht=head0(); let dh=ht-hY; dh=Math.atan2(Math.sin(dh),Math.cos(dh)); hY+=dh*Math.min(1,dt*3);
     // 見回した向きは、指を離してもそのまま（勝手に戻さない）
-    ph+=dt*v*.21; const sw=Math.min(1,v/4);
-    // 駆け足：4本の脚を少しずつずらして運ぶ。体は前後にゆれ、首はそれと逆にうなずく
-    const T0=ph*6.2832; [0,.12,.52,.64].forEach((of,q)=>{ const l=legs[q], th=T0+of*6.2832, sn=Math.sin(th), cs=Math.max(0,Math.cos(th));
-      if(!l.hind){ l.hip.rotation.x=-.55*sn*sw; l.kn.rotation.x=1.15*cs*sw; l.fe.rotation.x=.5*cs*sw-.25*Math.max(0,-sn)*sw; }
-      else { l.hip.rotation.x=.3+(-.5*sn-.05)*sw; l.kn.rotation.x=-.3-.75*cs*sw; l.fe.rotation.x=.45*cs*sw; } });
-    body.rotation.x=Math.sin(T0+.6)*.06*sw; body.position.y=1.3+Math.sin(T0*2)*.05*sw; neck.rotation.x=-Math.sin(T0+.6)*.12*sw+Math.sin(n/1600)*.03*(1-sw);
+    ph+=dt*Math.min(v*.21,1.25+v*.05); if(LKPH!=null){ ph=LKPH; v=KM/60; } const sw=Math.min(1,v/4), gl=sm(6,13,v); // 駆けるほど歩数は増やさず、一歩を大きく（1秒に約2歩）
+    // 襲歩（ギャロップ）：後ろ脚2本→前脚2本の順に地面をけり、そのあと4本とも宙に浮く。体は1歩ごとに大きく前後へ揺れて弾み、首はそれに合わせて大きくうなずく
+    const T0=ph*6.2832, A=1+.55*gl; let fi=0, hi=0; legs.forEach((l,q)=>{ const ga=l.hind?[0,.1][hi++]:[.32,.42][fi++], of=[0,.12,.52,.64][q]*(1-gl)+ga*gl, th=T0+of*6.2832, sn=Math.sin(th), cs=Math.max(0,Math.cos(th));
+      if(!l.hind){ l.hip.rotation.x=-.55*A*sn*sw; l.kn.rotation.x=1.15*(1+.35*gl)*cs*sw; l.fe.rotation.x=(.5+.25*gl)*cs*sw-.25*Math.max(0,-sn)*sw; }
+      else { l.hip.rotation.x=.3+(-.5*A*sn-.05)*sw; l.kn.rotation.x=-.3-.75*(1+.4*gl)*cs*sw; l.fe.rotation.x=(.45+.2*gl)*cs*sw; } });
+    const rk=Math.sin(T0+.9), bo=Math.max(0,Math.sin(T0+2.2));
+    body.rotation.x=rk*(.06+.09*gl)*sw; body.position.y=1.3+(Math.sin(T0*2)*.05*(1-gl)+(bo*.15-.05)*gl)*sw; neck.rotation.x=-rk*(.12+.16*gl)*sw+Math.sin(n/1600)*.03*(1-sw);
     tail.rotation.x=.25*sw+Math.sin(n/600)*.06; tail.rotation.z=Math.sin(n/900)*.08; { const t=n/1000, gb=Math.sin(T0*2); TB.value.set(Math.sin(t*1.6)*.07+Math.sin(t*3.7)*.03+Math.sin(T0)*.05*sw,-.22*sw-.06*sw*gb+Math.sin(t*2.1)*.04);
-      MANE.forEach(g=>{ const u=g.userData; g.rotation.x=(.32*sw+.1*sw*Math.sin(T0*2+u.ph*.3)+.05*Math.sin(t*1.8+u.ph))*u.k; g.rotation.z=u.sd*(-.12*sw*Math.max(0,gb)+.04*Math.sin(t*1.3+u.ph))*u.k; }); } rider.position.y=RY+Math.max(0,Math.sin(T0*2))*.04*sw;
+      MANE.forEach(g=>{ const u=g.userData; g.rotation.x=(.32*sw+.1*sw*Math.sin(T0*2+u.ph*.3)+.05*Math.sin(t*1.8+u.ph))*u.k; g.rotation.z=u.sd*(-.12*sw*Math.max(0,gb)+.04*Math.sin(t*1.3+u.ph))*u.k; }); } rider.position.y=RY+Math.max(0,Math.sin(T0*2))*.04*sw*(1-gl)+bo*.05*gl*sw; rider.rotation.x=-rk*.05*gl*sw;
     if(gC&&!gJob&&Math.hypot(rX(py)-gC[0],py-gC[1])>35) gJob=plantGen(rX(py+12),py+12); plantStep(3); chunkStep(4); farStep(3);
     if(isT||k){ const m=nowM+(py-y0)/KM; tEl.textContent=`${dLab}　${pfmt(Math.floor(m))}`; }
     animDisc(n/1000,dt); animBirds(n/1000,dt); animSmoke(n/1000,dt); place(); L.started=1; clouds.forEach(s=>{ s.position.x+=dt*7; if(s.position.x>1600) s.position.x=-1600; if(s.position.z>cam.position.z+600) s.position.z-=3100; }); if(L.nt){ L.nt.offset.x+=dt*.004; L.nt.offset.y+=dt*.006; }
