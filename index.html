@@ -4773,11 +4773,10 @@ async function pLookOpen(){
   const day=Math.max(0,Math.min(1,(el+4)/14)), eve=Math.max(0,Math.min(1,1-(el-2)/16))*day;
   // 夜は月明かり（ブレワイの夜：全体が青く沈み、色は抜けて、月の当たる面と輪郭だけが銀青に浮かぶ。暗くても形は読める）
   const nf=day<.3?1-day/.3:0, mr=48*rad, ma=ar+Math.PI*.8;
-  // 赤い月の夜（ブレワイのブラッドムーン）：見直しの赤い月が出る日曜18時〜月曜の夜は、空も光も赤く染まり、赤い火の粉が地面から立ちのぼる
   const MPH=/[?&]lkmp=/.test(location.search)?+new URLSearchParams(location.search).get('lkmp'):(((Date.now()/864e5+2440587.5-2451550.1)/29.530588853)%1+1)%1; // 月齢（0＝新月、.5＝満月）
   // 月の見える向き：開いたときの行く先の方角の少し右、空の低め（道がどちらへ曲がっていても、前を見れば月が見える）
   const MD=(()=>{ const hx=rX(y0+90)-rX(y0), a=Math.atan2(hx,90)-.13; return new T.Vector3(Math.sin(a)*.96,.26,-Math.cos(a)*.96).normalize(); })();
-  const RED=isT&&nf>.5&&(typeof moonKey==='function'&&moonKey()!=null||/[?&]lkred/.test(location.search));
+  const RED=false; // 赤い月の夜の景色は使わない（赤い月は見直しの画面だけ）
   const sd=new T.Vector3(Math.sin(ar)*Math.cos(er),Math.sin(er),-Math.cos(ar)*Math.cos(er)).normalize();
   if(day<.1) sd.set(Math.sin(ma)*Math.cos(mr),Math.sin(mr),-Math.cos(ma)*Math.cos(mr)).normalize();
   const c3=a=>new T.Color().setRGB(a[0]/255,a[1]/255,a[2]/255,T.SRGBColorSpace), lerpA=(a,b,t)=>a.map((v,i)=>v+(b[i]-v)*t);
