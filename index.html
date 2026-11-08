@@ -4513,7 +4513,7 @@ function pathAfter(){
   const sv=$('slView'); if(!sv) return;
   pLayout(); pPad();
   if(!sv.__ret){ sv.__ret=1; sv.addEventListener('scroll',()=>requestAnimationFrame(()=>{ pTiltO(); pRetUpdate(); }),{passive:true});
-    sv.addEventListener('wheel',e=>{ if(!e.ctrlKey) return; e.preventDefault(); const KM=540; pMapOpen({x:e.offsetX*KM,y:(sv.scrollTop+e.clientY-sv.getBoundingClientRect().top-pRetY(sv))/PX*KM,s:e.deltaY<0?KM/PX/1.15:KM/PX*1.25}); },{passive:false}); }
+    sv.addEventListener('wheel',e=>{ if(!e.ctrlKey) return; e.preventDefault(); const KM=P_KM; pMapOpen({x:e.offsetX*KM,y:(sv.scrollTop+e.clientY-sv.getBoundingClientRect().top-pRetY(sv))/PX*KM,s:e.deltaY<0?KM/PX/1.15:KM/PX*1.25}); },{passive:false}); }
   const key=dayView; try{ localStorage.setItem('ql-pw',pW); }catch(e){} setTimeout(()=>{ if(listCat==='path') pTerPrefetch(key); },60);
   if(P_25D&&!pTiltDone){ pTiltDone=true; sv.classList.add('tin'); setTimeout(()=>sv.classList.remove('tin'),1500); }
   if(pathScrolled!==key){ pathScrolled=key; const bl=pBlocks(key), m=pathFocus!=null?pathFocus:key===pJDay()?pJNow():(bl[0]?bl[0].s:8*60); pathFocus=null; sv.scrollTop=pm2y(Math.max(PATH_H0,m)); }
@@ -4668,12 +4668,13 @@ function pathInput(e){
 })();
 
 /* ---------- 世界（地図と見渡すで共有する、ひとつの世界の計算）---------- */
-// 座標は「分×540」（馬で1分走る距離が540）。横は地図のピクセル×540、縦は4時からの分×540。
+const P_KM=900; // 馬で1分走る距離（世界の長さの単位で）。1単位≒1m、秒速15≒時速54km
+// 座標は「分×P_KM」（馬で1分走る距離。駆け足らしい速さ＝秒速15）。横は地図のピクセル×540、縦は4時からの分×540。
 // 大きな地形と土地の種類は地図の計算そのもの、そこに足もとの起伏・尾根・砂丘・道の細かな曲がりを足す
 const P_DKN=[["古い柱の遺跡", ""], ["崩れた石の門", ""], ["旅人の野営地", ""], ["丘の大樹", ""], ["りんごの木立", ""], ["丘の風車", ""], ["見張り台", ""], ["苔むした石像", ""], ["壊れた荷車", ""], ["小さな池", ""], ["鹿の群れ", ""], ["花畑", ""], ["岩の上の宝箱", ""], ["道しるべ", ""], ["石積み", ""], ["石の環", ""], ["古い井戸", ""], ["崩れた塔", ""], ["地面に刺さった大剣", ""], ["大きな切り株", ""], ["キノコの輪", "grass"], ["倒れた巨人像の手", ""], ["のろし台", ""], ["羊飼いの小屋", "grass"], ["苔むしたアーチ", ""], ["旅人の墓標", ""], ["巨大な一枚岩", ""], ["倒木のトンネル", ""], ["崩れた城壁の門", ""], ["鳥の巣の枯れ木", ""], ["沈みかけた柱", "wet"], ["古い木道", "wet"], ["大きな睡蓮", "wet"], ["溶岩をまたぐ石橋", "volc"], ["焼け落ちた砦", "volc"], ["噴気孔", "volc"], ["氷の柱", "snow"], ["凍った池", "snow"], ["雪をかぶった石塔", "snow"], ["砂に埋もれた巨像", "desert"], ["オアシス", "desert"], ["大きな獣の骨", "desert"]]; // 見つけるもの（名前と土地）
 const pWorldMemo=new Map();
 function pWorld(k){ pSeedRoad(k); const key=k+'|'+pOff.toFixed(4); if(pWorldMemo.has(key)) return pWorldMemo.get(key); if(pWorldMemo.size>3) pWorldMemo.clear();
-  const W=pW, KM=540, ST=6, EH=1100, sm=(a,b,x)=>{ const t=Math.max(0,Math.min(1,(x-a)/(b-a))); return t*t*(3-2*t); }, mir=x=>x /* 旅の幅の外も折り返さず、地図と同じ土地をそのまま続ける */;
+  const W=pW, KM=P_KM, ST=6, EH=1100, sm=(a,b,x)=>{ const t=Math.max(0,Math.min(1,(x-a)/(b-a))); return t*t*(3-2*t); }, mir=x=>x /* 旅の幅の外も折り返さず、地図と同じ土地をそのまま続ける */;
   const off=pOff, PX0=PX, vAt=y=>off+y/KM, uOf=x=>x/KM;
   const pn=(x,y,s,ox=0,oy=0)=>pNoise(x/s+ox,y/s+oy), nz=(x,y,s,o)=>(pNoise(x/s+o,y/s+o*1.7)-.5)*2;
   const MG=.1, mCh=new Map(), mAt=(i,j)=>{ const kk=i*100003+j; let h=mCh.get(kk); if(h===undefined){ const sv=[PX,pOff]; PX=PX0; pOff=off; h=pHgtC(mir(i*MG),(j*MG-off)*PX0,true); PX=sv[0]; pOff=sv[1]; mCh.set(kk,h); } return h; };
@@ -4713,7 +4714,7 @@ function pWorld(k){ pSeedRoad(k); const key=k+'|'+pOff.toFixed(4); if(pWorldMemo
   // 見つけるもの：約260ごとに1つ。場所と種類は地図の場所で決まる
   const NOT0=['キノコの輪','羊飼いの小屋','倒木のトンネル','大きな切り株','鳥の巣の枯れ木']; const NOTM={volc:[...NOT0,'りんごの木立','花畑','鹿の群れ','小さな池','丘の大樹','丘の風車','苔むした石像'],desert:[...NOT0,'りんごの木立','花畑','鹿の群れ','小さな池','丘の大樹','丘の風車','苔むした石像'],snow:['キノコの輪','倒木のトンネル','りんごの木立','花畑','鹿の群れ','小さな池','丘の風車'],wet:['りんごの木立','丘の風車','花畑']};
   const PERM=new Map(), permFor=bn=>{ if(!PERM.has(bn)){ const r=pRng('lkd'+k+bn,7), NOT=NOTM[bn]||[]; PERM.set(bn,P_DKN.map((_,q)=>q).filter(q=>(P_DKN[q][1]&&P_DKN[q][1]!=='grass'?P_DKN[q][1]===bn:true)&&!NOT.includes(P_DKN[q][0])).sort(()=>r()-.5)); } return PERM.get(bn); };
-  const LG=260, spotC=new Map(), dSpot=n=>{ if(spotC.has(n)) return spotC.get(n); const r=pRng('lkd'+k+'_'+n,9), yy=n*LG+(r()-.5)*160, bn=FBI!=null?['volc','desert','wet','snow'][FBI]:bName(bAt(rX(yy),yy)), pl=permFor(bn), tp=pl[((n%pl.length)+pl.length)%pl.length], nm=P_DKN[tp][0], road2=nm==='道しるべ', sg=r()<.5?-1:1, big=nm==='丘の大樹'||nm==='丘の風車'||nm==='見張り台', SC={'鹿の群れ':1.6,'花畑':1.8,'道しるべ':1.5,'岩の上の宝箱':1.8,'小さな池':1.8,'石積み':1.8}[nm]||2.4, FR={'古い柱の遺跡':12,'崩れた石の門':8,'旅人の野営地':10,'丘の大樹':10,'りんごの木立':12,'丘の風車':5,'見張り台':4,'苔むした石像':3.5,'壊れた荷車':6,'小さな池':11,'鹿の群れ':9,'花畑':14,'岩の上の宝箱':4,'石積み':2,'沈みかけた柱':11,'古い木道':8,'大きな睡蓮':10,'溶岩をまたぐ石橋':9,'焼け落ちた砦':7,'噴気孔':4,'氷の柱':5,'凍った池':10,'雪をかぶった石塔':2,'砂に埋もれた巨像':4,'オアシス':12,'大きな獣の骨':7,'石の環':10,'古い井戸':3,'崩れた塔':5,'地面に刺さった大剣':3,'大きな切り株':6,'キノコの輪':6,'倒れた巨人像の手':5,'のろし台':3,'羊飼いの小屋':8,'苔むしたアーチ':6,'旅人の墓標':3,'巨大な一枚岩':5,'倒木のトンネル':9,'崩れた城壁の門':11,'鳥の巣の枯れ木':3}[nm]||4, o2=road2?8:12+FR*SC+r()*(big?70:25), o={tp,yy,nm,x:rX(yy)+sg*o2,sg,SC}; spotC.set(n,o); return o; };
+  const LG=Math.round(260*KM/540*.75), spotC=new Map(), dSpot=n=>{ if(spotC.has(n)) return spotC.get(n); const r=pRng('lkd'+k+'_'+n,9), yy=n*LG+(r()-.5)*160, bn=FBI!=null?['volc','desert','wet','snow'][FBI]:bName(bAt(rX(yy),yy)), pl=permFor(bn), tp=pl[((n%pl.length)+pl.length)%pl.length], nm=P_DKN[tp][0], road2=nm==='道しるべ', sg=r()<.5?-1:1, big=nm==='丘の大樹'||nm==='丘の風車'||nm==='見張り台', SC={'鹿の群れ':1.6,'花畑':1.8,'道しるべ':1.5,'岩の上の宝箱':1.8,'小さな池':1.8,'石積み':1.8}[nm]||2.4, FR={'古い柱の遺跡':12,'崩れた石の門':8,'旅人の野営地':10,'丘の大樹':10,'りんごの木立':12,'丘の風車':5,'見張り台':4,'苔むした石像':3.5,'壊れた荷車':6,'小さな池':11,'鹿の群れ':9,'花畑':14,'岩の上の宝箱':4,'石積み':2,'沈みかけた柱':11,'古い木道':8,'大きな睡蓮':10,'溶岩をまたぐ石橋':9,'焼け落ちた砦':7,'噴気孔':4,'氷の柱':5,'凍った池':10,'雪をかぶった石塔':2,'砂に埋もれた巨像':4,'オアシス':12,'大きな獣の骨':7,'石の環':10,'古い井戸':3,'崩れた塔':5,'地面に刺さった大剣':3,'大きな切り株':6,'キノコの輪':6,'倒れた巨人像の手':5,'のろし台':3,'羊飼いの小屋':8,'苔むしたアーチ':6,'旅人の墓標':3,'巨大な一枚岩':5,'倒木のトンネル':9,'崩れた城壁の門':11,'鳥の巣の枯れ木':3}[nm]||4, o2=road2?8:12+FR*SC+r()*(big?70:25), o={tp,yy,nm,x:rX(yy)+sg*o2,sg,SC}; spotC.set(n,o); return o; };
   const w={k,KM,ST,W,vAt,uOf,pn,nz,sm,mir,macro,bAt,bName,elevM,roadU,rMean,rX,raw,roadH,hFn,hTile,hAt,TL,colAt,lin,mix,C,LG,dSpot,FBI};
   pWorldMemo.set(key,w); return w; }
 /* ---------- 見渡す：今いる場所に立って、道の先の世界を眺める（WebGL） ---------- */
@@ -5293,7 +5294,7 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
     { const w=Date.now(), gap=(w-wall)/1000; wall=w; if(gap>.5&&go&&!L.shot){ py=Math.min(yEnd,py+(gap-dt)*Math.max(v,9)); v=9; } }
     if(intro){ const kq=Math.min(1,(n-tIn)/2600), e2=1-Math.pow(1-kq,3); dist=50-29*e2; cp=(34-23*e2)*rad; if(kq>=1) intro=false; }
     // 道をたどる：駆けているときは速く、手綱を引くと止まる。道の終わりで止まる
-    const vt=go&&py<yEnd?9*(+(new URLSearchParams(location.search).get('lkspd'))||1):0; v+=(vt-v)*Math.min(1,dt*1.6); py=Math.min(yEnd,py+v*dt); if(py>=yEnd&&go){ go=false; goB.textContent='駆ける'; }
+    const vt=go&&py<yEnd?KM/60*(+(new URLSearchParams(location.search).get('lkspd'))||1):0; v+=(vt-v)*Math.min(1,dt*1.6); py=Math.min(yEnd,py+v*dt); if(py>=yEnd&&go){ go=false; goB.textContent='駆ける'; }
     const ht=head0(); let dh=ht-hY; dh=Math.atan2(Math.sin(dh),Math.cos(dh)); hY+=dh*Math.min(1,dt*3);
     // 見回した向きは、指を離してもそのまま（勝手に戻さない）
     ph+=dt*v*.21; const sw=Math.min(1,v/4);
@@ -5325,7 +5326,7 @@ function pMapOpen(o0){
   const cv=ov.querySelector('.wm-cv'), cx=cv.getContext('2d'), M=pMapSt={ov,alive:true,raf:0}, DPR=Math.min(2,window.devicePixelRatio||1), scEl=ov.querySelector('.wm-sc span'), scBar=ov.querySelector('.wm-sc i');
   let VW=1, VH=1; const rs=()=>{ VW=ov.clientWidth; VH=ov.clientHeight; cv.width=VW*DPR; cv.height=VH*DPR; dirty=true; }; M.rs=rs; window.addEventListener('resize',rs);
   // 見ている場所：中心（世界の座標）と、1ピクセルあたりの長さ
-  const S_MIN=.35, S_MAX=540/PX*3.2;
+  const S_MIN=.35, S_MAX=P_KM/PX*3.2;
   let nowY=(nowM-PATH_H0)*KM; const PX0=PX, S_BACK=KM/PX0*1.12; let vx=o0.x??w.rX(nowY), vy=o0.y??nowY, s=o0.s||24, dirty=true;
   // 旅程の地形の絵（今のズーム）と川：寄りはじめはこの絵のまま。旅程の座標（横はピクセル、縦は分×ズーム）→ 世界の座標
   // 旅程の地形の絵：まん中（旅の幅）と、その左右の同じ幅の土地。左右も同じ描き方で描くので、地図はどこまでも続いて見える
@@ -5413,7 +5414,7 @@ function pPinchInit(){ const sv=$('slView'), tl=$('tl'); if(!sv||!tl||sv.__pz) r
   sv.addEventListener('touchstart',e=>{ if(e.touches.length===2){ const [a,b]=e.touches; st={d:Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY)}; } else st=null; },{passive:true});
   sv.addEventListener('touchmove',e=>{ if(!st||e.touches.length!==2||pMapSt) return; const [a,b]=e.touches, d=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY); const out=d<st.d*.88; if(d<st.d*1.12&&!out) return; e.preventDefault();
     const mx=(a.clientX+b.clientX)/2, my=(a.clientY+b.clientY)/2, r=tl.getBoundingClientRect(), px=(mx-r.left)*pW/r.width, py=(my-r.top), ov=document.body;
-    const KM=540, s0=out?KM/PX*1.25:KM/PX/1.15, wx=px*KM, wy=py/PX*KM, VW=window.innerWidth, VH=window.innerHeight; st=null;
+    const KM=P_KM, s0=out?KM/PX*1.25:KM/PX/1.15, wx=px*KM, wy=py/PX*KM, VW=window.innerWidth, VH=window.innerHeight; st=null;
     pMapOpen({x:wx-(mx-VW/2)*s0,y:wy-(my-VH/2)*s0,s:s0,pin:{d,x:mx,y:my}}); },{passive:false}); }
 
 /* ---------- PCとスマホのデータ同期 ---------- */
