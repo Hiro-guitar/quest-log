@@ -4659,6 +4659,55 @@ function pathInput(e){
   setInterval(()=>{ if(listCat==='path'&&tab==='list'&&!pend&&dayView===pJDay()&&!document.hidden&&!(document.activeElement&&/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))) renderList(); },60000);
 })();
 
+/* ---------- 世界（地図と見渡すで共有する、ひとつの世界の計算）---------- */
+// 座標は「分×540」（馬で1分走る距離が540）。横は地図のピクセル×540、縦は4時からの分×540。
+// 大きな地形と土地の種類は地図の計算そのもの、そこに足もとの起伏・尾根・砂丘・道の細かな曲がりを足す
+const P_DKN=[["古い柱の遺跡", ""], ["崩れた石の門", ""], ["旅人の野営地", ""], ["丘の大樹", ""], ["りんごの木立", ""], ["丘の風車", ""], ["見張り台", ""], ["苔むした石像", ""], ["壊れた荷車", ""], ["小さな池", ""], ["鹿の群れ", ""], ["花畑", ""], ["岩の上の宝箱", ""], ["道しるべ", ""], ["石積み", ""], ["石の環", ""], ["古い井戸", ""], ["崩れた塔", ""], ["地面に刺さった大剣", ""], ["大きな切り株", ""], ["キノコの輪", "grass"], ["倒れた巨人像の手", ""], ["のろし台", ""], ["羊飼いの小屋", "grass"], ["苔むしたアーチ", ""], ["旅人の墓標", ""], ["巨大な一枚岩", ""], ["倒木のトンネル", ""], ["崩れた城壁の門", ""], ["鳥の巣の枯れ木", ""], ["沈みかけた柱", "wet"], ["古い木道", "wet"], ["大きな睡蓮", "wet"], ["溶岩をまたぐ石橋", "volc"], ["焼け落ちた砦", "volc"], ["噴気孔", "volc"], ["氷の柱", "snow"], ["凍った池", "snow"], ["雪をかぶった石塔", "snow"], ["砂に埋もれた巨像", "desert"], ["オアシス", "desert"], ["大きな獣の骨", "desert"]]; // 見つけるもの（名前と土地）
+const pWorldMemo=new Map();
+function pWorld(k){ pSeedRoad(k); const key=k+'|'+pOff.toFixed(4); if(pWorldMemo.has(key)) return pWorldMemo.get(key); if(pWorldMemo.size>3) pWorldMemo.clear();
+  const W=pW, KM=540, ST=6, EH=1100, sm=(a,b,x)=>{ const t=Math.max(0,Math.min(1,(x-a)/(b-a))); return t*t*(3-2*t); }, mir=x=>{ const p=2*W; x=((x%p)+p)%p; return x>W?p-x:x; };
+  const off=pOff, PX0=PX, vAt=y=>off+y/KM, uOf=x=>x/KM;
+  const pn=(x,y,s,ox=0,oy=0)=>pNoise(x/s+ox,y/s+oy), nz=(x,y,s,o)=>(pNoise(x/s+o,y/s+o*1.7)-.5)*2;
+  const MG=.1, mCh=new Map(), mAt=(i,j)=>{ const kk=i*100003+j; let h=mCh.get(kk); if(h===undefined){ const sv=[PX,pOff]; PX=PX0; pOff=off; h=pHgtC(mir(i*MG),(j*MG-off)*PX0,true); PX=sv[0]; pOff=sv[1]; mCh.set(kk,h); } return h; };
+  const macro=(u,v)=>{ const fx=u/MG, fy=v/MG, i=Math.floor(fx), j=Math.floor(fy), a=fx-i, b=fy-j; return (mAt(i,j)*(1-a)+mAt(i+1,j)*a)*(1-b)+(mAt(i,j+1)*(1-a)+mAt(i+1,j+1)*a)*b; };
+  const BG=.2, bC=new Map(), bG=(i,j)=>{ const kk=i*100003+j; let w=bC.get(kk); if(!w){ w=Float32Array.from(pBiomeW(mir(i*BG),j*BG)); bC.set(kk,w); } return w; };
+  const bUV=(u,v)=>{ const fx=u/BG, fy=v/BG, i=Math.floor(fx), j=Math.floor(fy), a=fx-i, b=fy-j, A=bG(i,j), B=bG(i+1,j), C2=bG(i,j+1), D=bG(i+1,j+1), o=new Float32Array(4); for(let c=0;c<4;c++) o[c]=(A[c]*(1-a)+B[c]*a)*(1-b)+(C2[c]*(1-a)+D[c]*a)*b; return o; };
+  const FBI={volc:0,desert:1,wet:2,snow:3}[new URLSearchParams(location.search).get('lkbio')];
+  const bAt=(x,y)=>{ if(FBI!=null){ const o=new Float32Array(4); o[FBI]=1; return o; } return bUV(uOf(x),vAt(y)); };
+  const bName=b=>{ let m=.35, r=''; ['volc','desert','wet','snow'].forEach((n,i)=>{ if(b[i]>m){ m=b[i]; r=n; } }); return r; };
+  const elevM=h=>h>=P_SEA?(h-P_SEA)*EH:(h-P_SEA)*EH*.5;
+  const roadU=v=>{ const sv=[PX,pOff]; PX=PX0; pOff=off; const r=pRX((v-off)*PX0); PX=sv[0]; pOff=sv[1]; return r; };
+  const rMean=y=>46*Math.sin(y/1700*6.2832+.7)+17*Math.sin(y/590*6.2832+2.1)+5*Math.sin(y/210*6.2832+.3);
+  const rX=y=>roadU(vAt(y))*KM+rMean(y);
+  const raw=(x,y)=>{ const u=uOf(x), v=vAt(y), h=macro(u,v), b=bAt(x,y), [bv,bd,bw,bs]=b, e0=elevM(h);
+    const rough=(.55+.9*sm(P_SEA+.05,.6,h))*(1+.6*bv+.4*bs-.6*bw-.4*bd), dry=sm(-30,10,e0);
+    let e=e0+rough*dry*(42*nz(x,y,2300,3)+18*nz(x,y,560,9)+5*nz(x,y,140,4)+1.3*nz(x,y,34,7));
+    e+=Math.max(0,h-.48)*1800*Math.pow(1-Math.abs(nz(x,y,2600,11)),3)*dry;
+    e+=bd*dry*16*Math.pow(.5+.5*Math.sin(x*.012+Math.sin(y*.004)*2.2+pn(x,y,300,4,4)*3),2);
+    return e; };
+  const rhC=new Map(), roadH=y=>{ const j=Math.round(y/12); let r=rhC.get(j); if(r===undefined){ let a=0,c=0; for(let q=-8;q<=8;q++){ const yy=j*12+q*18, w=1-Math.abs(q)/9; a+=raw(rX(yy),yy)*w; c+=w; } r=Math.max(2.5,a/c); rhC.set(j,r); } return r; };
+  const hFn=(x,y)=>{ const d=Math.abs(x-rX(y)); let e=raw(x,y); if(d<60){ e+=(roadH(y)-e)*sm(60,12,d); } return e; };
+  const TL=96, hT=new Map(), hTile=(ti,tj)=>{ const kk=ti*100003+tj; let t=hT.get(kk); if(!t){ const n=TL/ST+1; t=new Float32Array(n*n); for(let j=0;j<n;j++) for(let i=0;i<n;i++) t[j*n+i]=hFn(ti*TL+i*ST,tj*TL+j*ST); hT.set(kk,t); if(hT.size>4000) hT.delete(hT.keys().next().value); } return t; };
+  const hAt=(x,y)=>{ const ti=Math.floor(x/TL), tj=Math.floor(y/TL), t=hTile(ti,tj), n=TL/ST+1, fx=(x-ti*TL)/ST, fy=(y-tj*TL)/ST, i=Math.min(n-2,fx|0), j=Math.min(n-2,fy|0), a=fx-i, b=fy-j, o=j*n+i; return (t[o]*(1-a)+t[o+1]*a)*(1-b)+(t[o+n]*(1-a)+t[o+n+1]*a)*b; };
+  const lin=c=>c.map(v=>Math.pow(v/255,2.2));
+  const C={g1:lin([128,170,64]),g2:lin([98,140,54]),dry:lin([150,150,80]),rock:lin([150,140,135]),rock2:lin([112,104,100]),sand:lin([214,200,160]),snow:lin([235,240,250]),desert:lin([222,186,124]),dune:lin([196,150,96]),vrock:lin([122,106,98]),vash:lin([86,78,78]),wet:lin([78,104,58]),mud:lin([96,88,60]),bed:lin([60,90,96])};
+  const mix=(a,b,t)=>[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t];
+  const colAt=(x,y,e,nyy,b)=>{ const n1=pn(x,y,46,3), n2=pn(x,y,6,7,2), slope=1-nyy, [bv,bd,bw,bs]=b;
+    let c=mix(C.g1,C.g2,sm(.35,.7,n1)); c=mix(c,C.dry,sm(.62,.9,pn(x,y,90,1,5))*.45);
+    if(bw>.05) c=mix(c,mix(C.wet,C.mud,n2*.6),bw);
+    if(bd>.05) c=mix(c,mix(C.desert,C.dune,sm(.3,.8,n1)),bd);
+    if(bv>.05) c=mix(c,mix(C.vrock,C.vash,n2),bv);
+    if(e<2.4&&e>-1) c=mix(c,C.sand,(1-bv)*sm(2.4,.5,e)*.85);
+    c=mix(c,mix(C.rock,C.rock2,n2),sm(.3,.52,slope)*(1-bv*.5));
+    { const sn=Math.max(bs*.9,sm(520,760,e+n1*60))*(1-sm(.55,.8,slope)*.5); if(sn>.02) c=mix(c,C.snow,Math.min(1,sn*1.2)); }
+    if(e<-.3) c=mix(c,C.bed,sm(-.3,-4,e));
+    const v=.92+.16*n2; return [c[0]*v,c[1]*v,c[2]*v]; };
+  // 見つけるもの：約260ごとに1つ。場所と種類は地図の場所で決まる
+  const NOT0=['キノコの輪','羊飼いの小屋','倒木のトンネル','大きな切り株','鳥の巣の枯れ木']; const NOTM={volc:[...NOT0,'りんごの木立','花畑','鹿の群れ','小さな池','丘の大樹','丘の風車','苔むした石像'],desert:[...NOT0,'りんごの木立','花畑','鹿の群れ','小さな池','丘の大樹','丘の風車','苔むした石像'],snow:['キノコの輪','倒木のトンネル','りんごの木立','花畑','鹿の群れ','小さな池','丘の風車'],wet:['りんごの木立','丘の風車','花畑']};
+  const PERM=new Map(), permFor=bn=>{ if(!PERM.has(bn)){ const r=pRng('lkd'+k+bn,7), NOT=NOTM[bn]||[]; PERM.set(bn,P_DKN.map((_,q)=>q).filter(q=>(P_DKN[q][1]&&P_DKN[q][1]!=='grass'?P_DKN[q][1]===bn:true)&&!NOT.includes(P_DKN[q][0])).sort(()=>r()-.5)); } return PERM.get(bn); };
+  const LG=260, spotC=new Map(), dSpot=n=>{ if(spotC.has(n)) return spotC.get(n); const r=pRng('lkd'+k+'_'+n,9), yy=n*LG+(r()-.5)*160, bn=FBI!=null?['volc','desert','wet','snow'][FBI]:bName(bAt(rX(yy),yy)), pl=permFor(bn), tp=pl[((n%pl.length)+pl.length)%pl.length], nm=P_DKN[tp][0], road2=nm==='道しるべ', sg=r()<.5?-1:1, big=nm==='丘の大樹'||nm==='丘の風車'||nm==='見張り台', SC={'鹿の群れ':1.6,'花畑':1.8,'道しるべ':1.5,'岩の上の宝箱':1.8,'小さな池':1.8,'石積み':1.8}[nm]||2.4, FR={'古い柱の遺跡':12,'崩れた石の門':8,'旅人の野営地':10,'丘の大樹':10,'りんごの木立':12,'丘の風車':5,'見張り台':4,'苔むした石像':3.5,'壊れた荷車':6,'小さな池':11,'鹿の群れ':9,'花畑':14,'岩の上の宝箱':4,'石積み':2,'沈みかけた柱':11,'古い木道':8,'大きな睡蓮':10,'溶岩をまたぐ石橋':9,'焼け落ちた砦':7,'噴気孔':4,'氷の柱':5,'凍った池':10,'雪をかぶった石塔':2,'砂に埋もれた巨像':4,'オアシス':12,'大きな獣の骨':7,'石の環':10,'古い井戸':3,'崩れた塔':5,'地面に刺さった大剣':3,'大きな切り株':6,'キノコの輪':6,'倒れた巨人像の手':5,'のろし台':3,'羊飼いの小屋':8,'苔むしたアーチ':6,'旅人の墓標':3,'巨大な一枚岩':5,'倒木のトンネル':9,'崩れた城壁の門':11,'鳥の巣の枯れ木':3}[nm]||4, o2=road2?8:12+FR*SC+r()*(big?70:25), o={tp,yy,nm,x:rX(yy)+sg*o2,sg,SC}; spotC.set(n,o); return o; };
+  const w={k,KM,ST,W,vAt,uOf,pn,nz,sm,mir,macro,bAt,bName,elevM,roadU,rMean,rX,raw,roadH,hFn,hTile,hAt,TL,colAt,lin,mix,C,LG,dSpot,FBI};
+  pWorldMemo.set(key,w); return w; }
 /* ---------- 見渡す：今いる場所に立って、道の先の世界を眺める（WebGL） ---------- */
 // ブレワイの景色に寄せて：地上の目の高さから水平に近く見る。遠くは青白くかすみ（太陽の側は明るく）、谷には低い霧。
 // 草は濃淡の斑、岩は灰紫、陰影は3段。幹のある丸い広葉樹が群れて揺れ、足もとには草の板。遠くには尖った山なみ。光は今の太陽、空と雨雪は今の天気
@@ -4680,53 +4729,15 @@ async function pLookOpen(){
   // 地図の座標は「横＝分、縦＝分」（ズーム1で1分＝1ピクセル）。見渡すでは1分＝540（馬で1分走る距離）。
   // 大きな地形（山・湖・雪山・火山・砂漠・湿原）は地図と同じ計算、そこへ足もとの起伏・岩山の尾根・砂丘・道の細かな曲がりを足す。
   // 近くは細かい区画を馬の前後に作っては捨て、遠くは粗い地形で地平線まで描く
-  const KM=540, ST=6, CL=540, LAT=900, HS=118, EH=1100;
-  // 座標は地図の場所そのもの（横・縦とも「分×540」）。開いた時刻にかかわらず、同じ場所は同じ景色になる
-  const vAt=y=>pOff+y/KM, uOf=x=>x/KM, u0=pRX(pm2y(nowM)), OX=u0*KM;
-  const pn=(x,y,s,ox=0,oy=0)=>pNoise(x/s+ox,y/s+oy), nz=(x,y,s,o)=>(pNoise(x/s+o,y/s+o*1.7)-.5)*2;
-  // 大きな地形（0〜1）：地図の計算を0.1分ごとに覚えておいて、間はなめらかにつなぐ
-  const MG=.1, mCh=new Map(), mAt=(i,j)=>{ const kk=i*100003+j; let h=mCh.get(kk); if(h===undefined){ h=pHgtC(mir(i*MG),(j*MG-pOff)*PX,true); mCh.set(kk,h); } return h; };
-  const macro=(u,v)=>{ const fx=u/MG, fy=v/MG, i=Math.floor(fx), j=Math.floor(fy), a=fx-i, b=fy-j; return (mAt(i,j)*(1-a)+mAt(i+1,j)*a)*(1-b)+(mAt(i,j+1)*(1-a)+mAt(i+1,j+1)*a)*b; };
-  const BG=.2, bC=new Map(), bG=(i,j)=>{ const kk=i*100003+j; let w=bC.get(kk); if(!w){ w=Float32Array.from(pBiomeW(mir(i*BG),j*BG)); bC.set(kk,w); } return w; };
-  const bUV=(u,v)=>{ const fx=u/BG, fy=v/BG, i=Math.floor(fx), j=Math.floor(fy), a=fx-i, b=fy-j, A=bG(i,j), B=bG(i+1,j), C2=bG(i,j+1), D=bG(i+1,j+1), o=new Float32Array(4); for(let c=0;c<4;c++) o[c]=(A[c]*(1-a)+B[c]*a)*(1-b)+(C2[c]*(1-a)+D[c]*a)*b; return o; };
-  const FB=new URLSearchParams(location.search).get('lkbio'), FBI={volc:0,desert:1,wet:2,snow:3}[FB];
-  const bAt=(x,y)=>{ if(FBI!=null){ const o=new Float32Array(4); o[FBI]=1; return o; } return bUV(uOf(x),vAt(y)); };
-  const bName=b=>{ let m=.35, r=''; ['volc','desert','wet','snow'].forEach((n,i)=>{ if(b[i]>m){ m=b[i]; r=n; } }); return r; };
-  const elevM=h=>h>=P_SEA?(h-P_SEA)*EH:(h-P_SEA)*EH*.5;
-  // 道：地図の道（分）に、地図では見えない細かな曲がりを足す（これも地図を寄せると見えるようにする）
-  const roadU=v=>pRX((v-pOff)*PX), rMean=y=>46*Math.sin(y/1700*6.2832+.7)+17*Math.sin(y/590*6.2832+2.1)+5*Math.sin(y/210*6.2832+.3);
-  const rX=y=>roadU(vAt(y))*KM+rMean(y);
-  // 足もとの高さ（見渡すの単位）
-  const raw=(x,y)=>{ const u=uOf(x), v=vAt(y), h=macro(u,v), b=bAt(x,y), [bv,bd,bw,bs]=b, e0=elevM(h);
-    const rough=(.55+.9*sm(P_SEA+.05,.6,h))*(1+.6*bv+.4*bs-.6*bw-.4*bd)*(FBI!=null?1:1), dry=sm(-30,10,e0);
-    let e=e0+rough*dry*(42*nz(x,y,2300,3)+18*nz(x,y,560,9)+5*nz(x,y,140,4)+1.3*nz(x,y,34,7));
-    e+=Math.max(0,h-.48)*1800*Math.pow(1-Math.abs(nz(x,y,2600,11)),3)*dry; // 高い所は尾根の険しい山に
-    e+=bd*dry*16*Math.pow(.5+.5*Math.sin(x*.012+Math.sin(y*.004)*2.2+pn(x,y,300,4,4)*3),2); // 砂丘
-    return e; };
-  // 道の高さ：前後をならした高さ（山は切り通し、谷は土手）。水の上には出さない
-  const rhC=new Map(), roadH=y=>{ const j=Math.round(y/12); let r=rhC.get(j); if(r===undefined){ let a=0,c=0; for(let q=-8;q<=8;q++){ const yy=j*12+q*18, w=1-Math.abs(q)/9; a+=raw(rX(yy),yy)*w; c+=w; } r=Math.max(2.5,a/c); rhC.set(j,r); } return r; };
-  const hFn=(x,y)=>{ const d=Math.abs(x-rX(y)); let e=raw(x,y); if(d<60){ e+=(roadH(y)-e)*sm(60,12,d); } return e; };
-  // 高さは格子ごとに覚えておく（区画の地面・草・木・岩が同じ高さに乗るように）
-  const TL=96, hT=new Map(), hTile=(ti,tj)=>{ const kk=ti*100003+tj; let t=hT.get(kk); if(!t){ const n=TL/ST+1; t=new Float32Array(n*n); for(let j=0;j<n;j++) for(let i=0;i<n;i++) t[j*n+i]=hFn(ti*TL+i*ST,tj*TL+j*ST); hT.set(kk,t); } return t; };
-  const hAt=(x,y)=>{ const ti=Math.floor(x/TL), tj=Math.floor(y/TL), t=hTile(ti,tj), n=TL/ST+1, fx=(x-ti*TL)/ST, fy=(y-tj*TL)/ST, i=Math.min(n-2,fx|0), j=Math.min(n-2,fy|0), a=fx-i, b=fy-j, o=j*n+i; return (t[o]*(1-a)+t[o+1]*a)*(1-b)+(t[o+n]*(1-a)+t[o+n+1]*a)*b; };
+  const CL=540, LAT=900, HS=118;
+  const WD=pWorld(k), {KM,ST,vAt,uOf,pn,nz,macro,bAt,bName,elevM,roadU,rMean,rX,raw,roadH,hFn,hTile,hAt,TL,FBI,dSpot,LG}=WD;
+  const u0=pRX(pm2y(nowM)), OX=u0*KM;
   const elev=e=>e; // 高さはもう見渡すの単位
   const mx0=rX(y0), b0=bAt(mx0,y0);
   L.dbg={bAt,rX,raw,hFn,y0,KM,nowM,isT,k,jd:pJDay(),retM};
   const BIO=bName(b0); L.BIO=BIO;
   const X=x=>x-OX, Z=y=>-(y-y0), lin=c=>c.map(v=>Math.pow(v/255,2.2));
-  // 色（sRGB で決めて、線形に直す）
-  const C={g1:lin([128,170,64]),g2:lin([98,140,54]),dry:lin([150,150,80]),rock:lin([150,140,135]),rock2:lin([112,104,100]),sand:lin([214,200,160]),snow:lin([235,240,250]),desert:lin([222,186,124]),dune:lin([196,150,96]),vrock:lin([122,106,98]),vash:lin([86,78,78]),wet:lin([78,104,58]),mud:lin([96,88,60]),bed:lin([60,90,96])};
-  const mix=(a,b,t)=>[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t];
-  const colAt=(x,y,e,nyy,b)=>{ const n1=pn(x,y,46,3), n2=pn(x,y,6,7,2), slope=1-nyy, [bv,bd,bw,bs]=b;
-    let c=mix(C.g1,C.g2,sm(.35,.7,n1)); c=mix(c,C.dry,sm(.62,.9,pn(x,y,90,1,5))*.45);
-    if(bw>.05) c=mix(c,mix(C.wet,C.mud,n2*.6),bw);
-    if(bd>.05) c=mix(c,mix(C.desert,C.dune,sm(.3,.8,n1)),bd);
-    if(bv>.05) c=mix(c,mix(C.vrock,C.vash,n2),bv);
-    if(e<2.4&&e>-1) c=mix(c,C.sand,(1-bv)*sm(2.4,.5,e)*.85);
-    c=mix(c,mix(C.rock,C.rock2,n2),sm(.3,.52,slope)*(1-bv*.5));
-    { const sn=Math.max(bs*.9,sm(520,760,e+n1*60))*(1-sm(.55,.8,slope)*.5); if(sn>.02) c=mix(c,C.snow,Math.min(1,sn*1.2)); }
-    if(e<-.3) c=mix(c,C.bed,sm(-.3,-4,e));
-    const v=.92+.16*n2; return [c[0]*v,c[1]*v,c[2]*v]; };
+  const {C,mix,colAt}=WD;
   const mkGround=(XA2,XB2,YA2,YB2,st,hf,bf,skirt)=>{ const mx=Math.ceil((XB2-XA2)/st)+1, my=Math.ceil((YB2-YA2)/st)+1, pos=new Float32Array(mx*my*3), idx=[];
     for(let j=0;j<my;j++) for(let i=0;i<mx;i++){ const o=j*mx+i, x=XA2+i*st, y=YA2+j*st; pos[o*3]=X(x); pos[o*3+1]=hf(x,y,i,j); pos[o*3+2]=Z(y); }
     for(let j=0;j<my-1;j++) for(let i=0;i<mx-1;i++){ const a=j*mx+i, b=a+1, c=a+mx, e=c+1; idx.push(a,b,c,b,e,c); }
@@ -5221,12 +5232,9 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
     ['オアシス',g=>{ g.add(mk(new T.CylinderGeometry(8,8,.3,24),mWater,0,.1,0)); for(let q=0;q<5;q++){ const a=q/5*6.28+.4, x=Math.cos(a)*9.5, z=Math.sin(a)*9.5, tr=Cy(.35,.5,8,mWood,x,4,z,6); tr.rotation.z=.15; g.add(tr); for(let k2=0;k2<6;k2++){ const l=Bx(4,.12,1.1,mLeaf,x+.6+Math.cos(k2)*1.6,8.2,z+Math.sin(k2)*1.6); l.rotation.set(0,k2,-.35); g.add(l); } } },'desert'],
     ['大きな獣の骨',g=>{ for(let q=0;q<7;q++){ const t=mk(new T.TorusGeometry(3.2-q*.25,.25,6,16,Math.PI),mBone,0,0,q*1.4-4); g.add(t); } { const sp2=Cy(.4,.4,11,mBone,0,3,0,6); sp2.rotation.x=1.5708; g.add(sp2); } g.add(Sp(1.6,mBone,0,1.5,6.5,1)); },'desert']];
   // 土地に合わないものは出さない
-  const NOT0=['キノコの輪','羊飼いの小屋','倒木のトンネル','大きな切り株','鳥の巣の枯れ木'];
-  const NOTM={volc:[...NOT0,'りんごの木立','花畑','鹿の群れ','小さな池','丘の大樹','丘の風車','苔むした石像'],desert:[...NOT0,'りんごの木立','花畑','鹿の群れ','小さな池','丘の大樹','丘の風車','苔むした石像'],snow:['キノコの輪','倒木のトンネル','りんごの木立','花畑','鹿の群れ','小さな池','丘の風車'],wet:['りんごの木立','丘の風車','花畑']};
   // その場所の土地に合うものから、順番を混ぜて選ぶ
-  const PERM=new Map(), permFor=bn=>{ if(!PERM.has(bn)){ const r=pRng('lkd'+k+bn,7), NOT=NOTM[bn]||[]; PERM.set(bn,DK.map((_,q)=>q).filter(q=>(DK[q][2]&&DK[q][2]!=='grass'?DK[q][2]===bn:true)&&!NOT.includes(DK[q][0])).sort(()=>r()-.5)); } return PERM.get(bn); };
-  const dRng=pRng('lkd'+k,7), perm=DK.map((_,q)=>q), LG=260, disc=L.disc=new Map(), findEl=ov.querySelector('.lk-find'); let findT=0;
-  const dSpot=n=>{ const r=pRng('lkd'+k+'_'+n,9), yy=n*LG+(r()-.5)*160, pl=permFor(FBI!=null?BIO:bName(bAt(rX(yy),yy))), tp=pl[((n%pl.length)+pl.length)%pl.length], nm=DK[tp][0], road2=nm==='道しるべ', sg=r()<.5?-1:1, big=nm==='丘の大樹'||nm==='丘の風車'||nm==='見張り台', SC={'鹿の群れ':1.6,'花畑':1.8,'道しるべ':1.5,'岩の上の宝箱':1.8,'小さな池':1.8,'石積み':1.8}[nm]||2.4, FR={'古い柱の遺跡':12,'崩れた石の門':8,'旅人の野営地':10,'丘の大樹':10,'りんごの木立':12,'丘の風車':5,'見張り台':4,'苔むした石像':3.5,'壊れた荷車':6,'小さな池':11,'鹿の群れ':9,'花畑':14,'岩の上の宝箱':4,'石積み':2,'沈みかけた柱':11,'古い木道':8,'大きな睡蓮':10,'溶岩をまたぐ石橋':9,'焼け落ちた砦':7,'噴気孔':4,'氷の柱':5,'凍った池':10,'雪をかぶった石塔':2,'砂に埋もれた巨像':4,'オアシス':12,'大きな獣の骨':7,'石の環':10,'古い井戸':3,'崩れた塔':5,'地面に刺さった大剣':3,'大きな切り株':6,'キノコの輪':6,'倒れた巨人像の手':5,'のろし台':3,'羊飼いの小屋':8,'苔むしたアーチ':6,'旅人の墓標':3,'巨大な一枚岩':5,'倒木のトンネル':9,'崩れた城壁の門':11,'鳥の巣の枯れ木':3}[nm]||4, off=road2?8:12+FR*SC+r()*(big?70:25); return {tp,yy,nm,x:rXw(yy)+sg*off,sg,SC}; };
+  if(DK.length!==P_DKN.length||DK.some((d,q)=>d[0]!==P_DKN[q][0])) console.warn('DK mismatch');
+  const dRng=pRng('lkd'+k,7), perm=DK.map((_,q)=>q), disc=L.disc=new Map(), findEl=ov.querySelector('.lk-find'); let findT=0;
   // 見つけるものの部品を、色ごとに1つの形にまとめる（描く回数を減らして軽くする）。動く部品はそのまま
   const bake=g=>{ const u=g.userData; if(u.mill||u.deer) return; const keep=new Set([u.fire].filter(Boolean)); g.updateMatrixWorld(true); const inv=new T.Matrix4().copy(g.matrixWorld).invert(), by=new Map(), rm=[];
     g.traverse(o=>{ if(!o.isMesh||o.isInstancedMesh||keep.has(o)) return; const k=o.material.uuid; if(!by.has(k)) by.set(k,{m:o.material,gs:[]}); const ge=(o.geometry.index?o.geometry.toNonIndexed():o.geometry.clone()); ge.applyMatrix4(new T.Matrix4().multiplyMatrices(inv,o.matrixWorld)); by.get(k).gs.push(ge); rm.push(o); });
