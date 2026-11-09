@@ -5503,7 +5503,7 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
     hawk.b.visible=!BIO&&!nearSea(); if(hawk.b.visible){ const r=160, an=t*.07; hawk.b.position.set(cam.position.x+Math.cos(an)*r+60,cam.position.y+120+Math.sin(t*.13)*10,cam.position.z+Math.sin(an)*r+220); hawk.b.rotation.set(0,an+Math.PI,-.28); flap(hawk,BSP.hawk,t); } };
   // ---- 進む・見る ----
   const yEnd=y0+(PATH_H1-nowM)*KM, gnd=(x,y)=>Math.max(-.2,hW(x,y))+.42, tEl=ov.querySelector('.lk-t'), dLab=`${d.getMonth()+1}月${d.getDate()}日（${'日月火水木金土'[d.getDay()]}）`, goB=ov.querySelector('.lk-go');
-  const OFF=.2; let py=y0, v=0, go=true, ph=0, hY=0, off=OFF, cp=12*rad, dist=21, lastTouch=-1e9, tIn=performance.now(), intro=true;
+  const OFF=.2; let py=y0, v=KM/60 /* 開いた瞬間から駆けている（ずっと走っているので） */, go=true, ph=0, hY=0, off=OFF, cp=12*rad, dist=21, lastTouch=-1e9, tIn=performance.now(), intro=true;
   const head0=()=>{ const a=rXw(py-3), b=rXw(py+3); return Math.atan2(X(b)-X(a),Z(py+3)-Z(py-3)); }; hY=head0();
   goB.addEventListener('click',()=>{ go=!go; if(go&&py>=yEnd-1) py=y0; goB.textContent=go?'手綱を引く':'駆ける'; });
   // 見つけるもの全種類の色（シェーダー）を先に用意しておく（近づいた瞬間に準備が走って引っかからないように）
