@@ -4917,8 +4917,10 @@ async function pLookOpen(){
     [iR,iL,iT,iC].forEach(m=>{ m.castShadow=true; m.receiveShadow=true; tileG.add(m); }); };
   // ---- 足もとの草の板（カメラのまわり）----
   // ブレワイの草：細く長い葉が同じ向きに寄り、根もとはやや濃く、先は明るい黄緑
-  const gcv=document.createElement('canvas'); gcv.width=128; gcv.height=128; { const x=gcv.getContext('2d'), gd=x.createLinearGradient(0,128,0,0); gd.addColorStop(0,'rgb(196,208,166)'); gd.addColorStop(.55,'rgb(238,244,214)'); gd.addColorStop(1,'rgb(255,252,222)'); x.fillStyle=gd;
-    for(let q=0;q<19;q++){ const bx=4+q*6.4+rng()*3, h=70+rng()*54, ln=10+rng()*18, w=1.6+rng()*1.2; x.beginPath(); x.moveTo(bx-w,128); x.quadraticCurveTo(bx-w+ln*.2,128-h*.6,bx+ln,128-h); x.quadraticCurveTo(bx+w+ln*.25,128-h*.55,bx+w,128); x.fill(); } }
+  // 草の絵：ブレワイの草原のように、細く長い葉をびっしり。どの葉も同じ向きに少し反る（色はつけず、形と透けだけ）
+  for(let q=0;q<76;q++) rng(); // ほかの物の並びが変わらないよう、前と同じだけ乱数を進めておく
+  const gcv=document.createElement('canvas'); gcv.width=256; gcv.height=128; { const x=gcv.getContext('2d'), gr=pRng('gtx2',1); x.fillStyle='#fff';
+    for(let q=0;q<34;q++){ const bx=3+q*7.4+gr()*4, h=84+gr()*42, ln=14+gr()*16, w=1.4+gr()*.8; x.beginPath(); x.moveTo(bx-w,128); x.quadraticCurveTo(bx-w+ln*.15,128-h*.6,bx+ln,128-h); x.quadraticCurveTo(bx+w+ln*.2,128-h*.55,bx+w,128); x.fill(); } }
   const gtx=new T.CanvasTexture(gcv); gtx.colorSpace=T.SRGBColorSpace;
   // ---- 道：ブレワイの街道のような赤茶の土の道。轍はなく、まだらな色むらと小石。縁は草がまだらに食い込む ----
   const rcv=document.createElement('canvas'); rcv.width=128; rcv.height=256; { const x=rcv.getContext('2d'), im=x.createImageData(128,256), d=im.data;
@@ -5072,19 +5074,19 @@ async function pLookOpen(){
   //      近く・中・遠くの受け渡しは、草の葉が1ピクセルより細かくなる距離で、細かく点を入れ替えて溶かす ----
   const GCS=24, GPC=720, GR=520, M=new T.Matrix4(), Q=new T.Quaternion(), V=new T.Vector3(), Sc=new T.Vector3(), up=new T.Vector3(0,1,0), cl=new T.Color();
   gtx.wrapS=T.RepeatWrapping; gtx.needsUpdate=true;
-  const GG=(()=>{ const pl=new T.PlaneGeometry(2.6,1.6).translate(0,.8,0), Pg=[], Ug=[];
+  const GG=(()=>{ const pl=new T.PlaneGeometry(2.4,1.9).translate(0,.95,0), Pg=[], Ug=[];
     // 表と裏を別の面として作り、どちらも法線は真上（裏から見ても暗くならず、草原が一様に明るい）
     for(const ry of [0,Math.PI/2]){ const q=pl.clone().rotateY(ry).toNonIndexed(), p=q.attributes.position.array, u=q.attributes.uv.array; for(let t=0;t<p.length/9;t++) for(const rev of [0,1]){ const ord=rev?[0,2,1]:[0,1,2]; for(const v of ord){ Pg.push(p[(t*3+v)*3],p[(t*3+v)*3+1],p[(t*3+v)*3+2]); Ug.push(u[(t*3+v)*2],u[(t*3+v)*2+1]); } } }
     const g=new T.BufferGeometry(); g.setAttribute('position',new T.Float32BufferAttribute(Pg,3)); g.setAttribute('normal',new T.Float32BufferAttribute(Pg.map((_,i)=>i%3===1?1:0),3)); g.setAttribute('uv',new T.Float32BufferAttribute(Ug,2)); return g; })();
-  const GB=(()=>{ const g=new T.PlaneGeometry(2.6,1.6).translate(0,.8,0); const n=g.attributes.normal.array; for(let i=0;i<n.length;i+=3){ n[i]=0; n[i+1]=1; n[i+2]=0; } return g; })();
+  const GB=(()=>{ const g=new T.PlaneGeometry(2.4,1.9).translate(0,.95,0); const n=g.attributes.normal.array; for(let i=0;i<n.length;i+=3){ n[i]=0; n[i+1]=1; n[i+2]=0; } return g; })();
   // 層：f＝草の順番のうち何割を使うか（遠くほど少なく、そのぶん板を K 倍に横長に）、a〜b＝受け持つ距離、fi/fo＝受け渡しの幅
-  const GLAY=[{nm:'near',f:.32,K:1,a:0,b:84,N:12000,mv:12,mg:8},{nm:'mid',f:.1,K:4,a:56,b:250,N:26000,mv:24,mg:14},{nm:'far',f:.04,K:8,a:236,b:GR,N:46000,mv:50,mg:28}];
+  const GLAY=[{nm:'near',f:.7,K:1,a:0,b:55,N:14000,mv:10,mg:8},{nm:'mid',f:.1,K:4,a:40,b:200,N:26000,mv:24,mg:14},{nm:'far',f:.04,K:8,a:190,b:GR,N:46000,mv:50,mg:28}];
   const mkGM=Ly=>{ const gm=patch(new T.MeshToonMaterial({map:gtx,alphaTest:.5,gradientMap:gmapG,color:wet?0xd8e8d0:0xffffff}),Ly.K===1?.18:0,1), ob=gm.onBeforeCompile, K=Ly.K.toFixed(1), fa=Ly.a.toFixed(1), fb=Ly.b.toFixed(1);
     gm.onBeforeCompile=sh=>{ ob(sh);
       const band=(Ly.a>0?'smoothstep('+fa+','+(Ly.a+12).toFixed(1)+',dd)':'1.')+'*(1.-smoothstep('+(Ly.b-12).toFixed(1)+','+fb+',dd))';
       sh.vertexShader='attribute float aRk;\nvarying float vVis, vDd;\n'+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n vVis=1.; vDd=0.;\n#ifdef USE_INSTANCING\n { vec3 ip=instanceMatrix[3].xyz; float dd=distance(ip.xz,cameraPosition.xz); vDd=dd; vVis=step(aRk,'+Ly.f.toFixed(3)+')*'+band+';\n'
-        +(Ly.K===1?' float ph=fract(sin(dot(ip.xz,vec2(12.9898,78.233)))*43758.5453)*6.283; transformed.x+=sin(uTime*1.4+ph)*.08*max(0.,position.y); transformed.z+=cos(uTime*1.1+ph)*.05*max(0.,position.y);\n'
-        :' float s=length(instanceMatrix[0].xyz), hs=length(instanceMatrix[1].xyz); vec2 tc=normalize(cameraPosition.xz-ip.xz+vec2(.001)); vec3 rt=vec3(tc.y,0.,-tc.x); vec3 w=rt*position.x*'+K+'*s+vec3(0.,position.y*hs-.1*'+K+',0.); transformed=inverse(mat3(instanceMatrix))*w;\n')
+        +(Ly.K===1?' float ph=fract(sin(dot(ip.xz,vec2(12.9898,78.233)))*43758.5453)*6.283; transformed.x+=sin(uTime*1.4+ph)*.08*max(0.,position.y); transformed.z+=cos(uTime*1.1+ph)*.05*max(0.,position.y); transformed+=inverse(mat3(instanceMatrix))*vec3(.22,0.,.1)*position.y;\n'
+        :' float s=length(instanceMatrix[0].xyz), hs=length(instanceMatrix[1].xyz); vec2 tc=normalize(cameraPosition.xz-ip.xz+vec2(.001)); vec3 rt=vec3(tc.y,0.,-tc.x); vec3 w=rt*position.x*'+K+'*s+vec3(0.,position.y*hs-.1*'+K+',0.)+vec3(.22,0.,.1)*position.y*hs; transformed=inverse(mat3(instanceMatrix))*w;\n')
         +' if(vVis<=0.) transformed*=0.; }\n#endif')+'';
       if(Ly.K>1) sh.vertexShader=sh.vertexShader.replace('#include <uv_vertex>','#include <uv_vertex>\n#ifdef USE_MAP\n vMapUv.x*='+K+';\n#endif');
       sh.fragmentShader='varying float vVis, vDd;\n'+sh.fragmentShader.replace('void main() {','void main() {\n float gTip=0.;\n if(vVis<fract(sin(dot(floor(gl_FragCoord.xy),vec2(12.9898,78.233)))*43758.5453)) discard;')
@@ -5101,7 +5103,7 @@ async function pLookOpen(){
     while(c.q<need&&c.q<GPC){ const r=c.r, rank=c.q/GPC, x=(ix+r())*GCS, y=(iy+r())*GCS, rot=r()*6.28, s0=r(), v0=r(), v1=r(); c.q++;
       if(!c.G){ c.G=[]; for(let gj=0;gj<5;gj++) for(let gi=0;gi<5;gi++){ const gx2=(ix+gi/4)*GCS, gy2=(iy+gj/4)*GCS, e2=hAt(gx2,gy2), b2=bAt(gx2,gy2), sx2=hAt(gx2+3,gy2)-hAt(gx2-3,gy2), sy2=hAt(gx2,gy2+3)-hAt(gx2,gy2-3), ny2=6/Math.hypot(sx2,sy2,6); c.G.push({b:b2,ny:ny2,ok:!(b2[0]>.2||b2[1]>.25||b2[3]>.3)&&ny2>=.8,col:colAt(gx2,gy2,e2,ny2,b2)}); } }
       const gp=c.G[Math.round((y/GCS-iy)*4)*5+Math.round((x/GCS-ix)*4)]; if(!gp.ok) continue; const e=hAt(x,y); if(e<1) continue; { const dr=Math.abs(x-rX(y)); if(dr<5.2||(dr<8&&v1<(8-dr)/2.8)) continue; } if(c.ex.some(([ex2,ey,R])=>Math.hypot(x-ex2,y-ey)<R)) continue; if(RK.some(([rx2,ry2,rs])=>Math.abs(ry2-y)<rs*1.1&&Math.hypot(rx2-x,ry2-y)<rs*1.05)) continue;
-      const cc=gp.col; Q.setFromAxisAngle(up,rot); const s=.7+s0*.7; Sc.set(s,s*(.7+v0*.5),s); V.set(X(x),e-.1,Z(y)); M.compose(V,Q,Sc); for(const v of M.elements) c.P.push(v); const vb=.95+v0*.1; c.C.push(cc[0]*vb,cc[1]*vb,cc[2]*vb); c.R.push(rank); }
+      const cc=gp.col; Q.setFromAxisAngle(up,rot); const s=.8+s0*.4; Sc.set(s,s*(.9+v0*.25),s); V.set(X(x),e-.1,Z(y)); M.compose(V,Q,Sc); for(const v of M.elements) c.P.push(v); const vb=.95+v0*.1; c.C.push(cc[0]*vb,cc[1]*vb,cc[2]*vb); c.R.push(rank); }
     return c; };
   // 並べ直し：層ごとに、受け持つ距離の草だけを入れる（少し余裕をもって。細かい出し入れはシェーダーで）
   const gGen=function*(Ly,cx,cy){ const mg=Ly.mg, R0=Math.max(0,Ly.a-mg), R1=Ly.b+mg, i0=Math.floor((cx-R1)/GCS), i1=Math.floor((cx+R1)/GCS), j0=Math.floor((cy-R1)/GCS), j1=Math.floor((cy+R1)/GCS), need=Math.ceil(Ly.f*GPC); let n=0, work=0; const cl2=[], SX=X(cx), SZ=Z(cy);
