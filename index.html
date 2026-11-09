@@ -5080,7 +5080,7 @@ async function pLookOpen(){
     const g=new T.BufferGeometry(); g.setAttribute('position',new T.Float32BufferAttribute(Pg,3)); g.setAttribute('normal',new T.Float32BufferAttribute(Pg.map((_,i)=>i%3===1?1:0),3)); g.setAttribute('uv',new T.Float32BufferAttribute(Ug,2)); return g; })();
   const GB=(()=>{ const g=new T.PlaneGeometry(2.4,2.7).translate(0,1.35,0); const n=g.attributes.normal.array; for(let i=0;i<n.length;i+=3){ n[i]=0; n[i+1]=1; n[i+2]=0; } return g; })();
   // 層：f＝草の順番のうち何割を使うか（遠くほど少なく、そのぶん板を K 倍に横長に）、a〜b＝受け持つ距離、fi/fo＝受け渡しの幅
-  const GLAY=[{nm:'near',f:.7,K:1,a:0,b:55,N:20000,mv:10,mg:8},{nm:'mid',f:.1,K:4,a:43,b:200,N:26000,mv:24,mg:14},{nm:'far',f:.04,K:8,a:188,b:GR,N:46000,mv:50,mg:28}];
+  const GLAY=[{nm:'near',f:.7,K:1,a:0,b:55,N:26000,mv:10,mg:22,ah:20},{nm:'mid',f:.1,K:4,a:43,b:200,N:30000,mv:24,mg:30,ah:30},{nm:'far',f:.04,K:8,a:188,b:GR,N:50000,mv:50,mg:40,ah:40}]; // ah＝並べ直しの中心を馬のどれだけ前に置くか（走っていても、作り直しが追いつく前に前方の草が切れないように）
   const mkGM=Ly=>{ const gm=patch(new T.MeshToonMaterial({map:gtx,alphaTest:.5,gradientMap:gmapG,color:wet?0xd8e8d0:0xffffff}),Ly.K===1?.18:0,1), ob=gm.onBeforeCompile, K=Ly.K.toFixed(1), fa=Ly.a.toFixed(1), fb=Ly.b.toFixed(1);
     gm.onBeforeCompile=sh=>{ ob(sh);
       const band=(Ly.a>0?'smoothstep('+fa+','+(Ly.a+12).toFixed(1)+',dd)':'1.')+'*(1.-smoothstep('+(Ly.b-12).toFixed(1)+','+fb+',dd))';
@@ -5113,8 +5113,10 @@ async function pLookOpen(){
         for(let u=0;u<16;u++) Ly.Ma[n*16+u]=c.P[t*16+u]*(u<3?wf:1); Ly.Ca[n*3]=c.C[t*3]; Ly.Ca[n*3+1]=c.C[t*3+1]; Ly.Ca[n*3+2]=c.C[t*3+2]; Ly.Ra[n]=rk; n++; } }
     const m=Ly.m; if(!m.instanceColor) m.setColorAt(0,cl); m.instanceMatrix.array.set(Ly.Ma.subarray(0,n*16)); m.instanceColor.array.set(Ly.Ca.subarray(0,n*3)); Ly.rk.array.set(Ly.Ra.subarray(0,n)); m.count=/[?&]nograss/.test(location.search)?0:n; m.instanceMatrix.needsUpdate=true; m.instanceColor.needsUpdate=true; Ly.rk.needsUpdate=true; Ly.at=[cx,cy];
     if(Ly.nm==='far'&&gCells.size>3000) for(const kk of [...gCells.keys()]){ const [a,b2]=kk.split('_').map(Number); if(Math.hypot((a+.5)*GCS-cx,(b2+.5)*GCS-cy)>GR*1.3) gCells.delete(kk); } };
-  const plant=(cx,cy)=>{ for(const Ly of GL) for(const _ of gGen(Ly,cx,cy)); };
-  const plantStep=ms=>{ const t=performance.now(); for(const Ly of GL){ if(!Ly.job&&Ly.at&&Math.hypot(rX(py)-Ly.at[0],py-Ly.at[1])>Ly.mv) Ly.job=gGen(Ly,rX(py+Ly.mv/2),py+Ly.mv/2); while(Ly.job&&performance.now()-t<ms){ if(Ly.job.next().done) Ly.job=null; } } };
+  const plant=(cx,cy)=>{ for(const Ly of GL) for(const _ of gGen(Ly,rX(cy+Ly.ah),cy+Ly.ah)); };
+  let preY=-1e9; const plantStep=ms=>{ const t=performance.now(); for(const Ly of GL){ const fy=py+Ly.ah; if(!Ly.job&&Ly.at&&Math.hypot(rX(fy)-Ly.at[0],fy-Ly.at[1])>Ly.mv) Ly.job=gGen(Ly,rX(fy+Ly.mv/2),fy+Ly.mv/2); while(Ly.job&&performance.now()-t<ms){ if(Ly.job.next().done) Ly.job=null; } }
+    // 手があいているときに、先の道のまわりの草の場所を前もって決めておく（作り直しを軽くして、遅れないように）
+    if(preY<py+40) preY=py+40; while(preY<py+150&&performance.now()-t<ms){ const j=Math.floor(preY/GCS), cx2=rX(preY); for(let i=Math.floor((cx2-90)/GCS);i<=Math.floor((cx2+90)/GCS);i++) gCell(i,j,Math.ceil(GL[0].f*GPC)); preY+=GCS; } };
   // 岩：Fableと相談して、ブレワイの岩に寄せた作り
   //  ・形：上を平らに削り、4〜5枚の大きな面と、はっきり丸い角（縁は明るく擦れた色）
   //  ・色：日なたは草より明るい温かいベージュ、影は青みの灰色。光は2段にやわらかく分かれる
