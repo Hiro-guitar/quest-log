@@ -5395,10 +5395,22 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
         if(r()<.18){ for(let k=0;k<6;k++){ const a=k/6*6.283, pt=mk(new T.ConeGeometry(.08,.3,4),mLily,x+Math.cos(a)*.1,.48,z+Math.sin(a)*.1); pt.rotation.set(Math.sin(a)*.6,0,-Math.cos(a)*.6); g.add(pt); } g.add(Sp(.07,mGold,x,.48,z,0)); } } }
       // アシの茂みとガマ
       for(let c=0;c<5;c++){ const ca=c/5*6.283+r()*.8, R=rad(ca)+.2, cx=Math.cos(ca)*R, cz=Math.sin(ca)*R; for(let q=0;q<16;q++){ const x=cx+(r()-.5)*2.4, z=cz+(r()-.5)*2.4, h=1.4+r()*1.4, rd=Cy(.025,.045,h,mReed,x,.3+h/2,z,3); rd.rotation.set((r()-.5)*.25,0,(r()-.5)*.25); g.add(rd); if(r()<.12) g.add(Cy(.07,.07,.4,mCat,x,.3+h+.1,z,5)); } } }],
-    ['鹿の群れ',g=>{ g.userData.deer=[]; for(let q=0;q<3;q++){ const d=new T.Group(); d.position.set((q-1)*5,0,(q%2)*4-2); d.rotation.y=q*1.7+.4; g.add(d);
-      const b=Sp(1,mDeer,0,2.6,0); b.scale.set(.8,.75,1.5); d.add(b); [[-.4,.9],[.4,.9],[-.4,-.9],[.4,-.9]].forEach(([x,z])=>d.add(Cy(.13,.1,2.2,mDeer,x,1.1,z,5)));
-      const n=new T.Group(); n.position.set(0,3,1.1); d.add(n); { const nc=Cy(.25,.35,1.5,mDeer,0,.6,.3,6); nc.rotation.x=.5; n.add(nc); } const h=Sp(.45,mDeer,0,1.4,.75); h.scale.set(.8,.8,1.4); n.add(h); n.add(Sp(.2,mDeerL,0,1.3,1.3,0));
-      if(q===1){ [-1,1].forEach(sg=>{ const a=Cy(.05,.07,1.3,mDeerL,sg*.35,2.2,.6,4); a.rotation.z=-sg*.4; n.add(a); }); } d.add(Sp(.3,mDeerL,0,2.8,-1.45,0)); g.userData.deer.push(n); } }],
+    // 鹿の群れ（ブレワイの鹿）：赤茶の毛に白い腹とおしり、細い脚は関節で折れてひづめは黒。首は前へ伸び、大きな耳と黒い鼻。枝分かれした角のある雄、雌2頭、白い斑点の子鹿。ときどき首を下げて草を食む
+    ['鹿の群れ',g=>{ g.userData.deer=[]; const mFur=tm([150,96,56]), mFurD=tm([118,74,44]), mBel=tm([232,218,196]), mHoof=tm([40,34,30]), mAnt=tm([214,198,166]), mSpotW=tm([244,236,220]);
+      const deer=(x,z,ry,s,kind)=>{ const d=new T.Group(); d.position.set(x,0,z); d.rotation.y=ry; d.scale.setScalar(s); g.add(d);
+        // 胴：前が高く、おしりは丸い
+        { const b=Sp(1,mFur,0,2.55,0,2); b.scale.set(.62,.66,1.35); d.add(b); const ch=Sp(.72,mFur,0,2.65,.85,2); ch.scale.set(.78,1,1); d.add(ch); const rp=Sp(.7,mFur,0,2.6,-.85,2); d.add(rp); const bl=Sp(.8,mBel,0,2.2,0,2); bl.scale.set(.6,.4,1.2); d.add(bl); const rw=Sp(.42,mBel,0,2.55,-1.3,1); rw.scale.set(.9,1,.4); d.add(rw); const tl=Sp(.18,mFurD,0,2.95,-1.48,1); tl.scale.set(.8,1.5,.6); d.add(tl); }
+        // 脚：上と下の2本、関節で折れる（後脚は「く」の字）
+        for(const [lx,lz,bk] of [[-.3,.85,0],[.3,.85,0],[-.3,-.85,1],[.3,-.85,1]]){ const hy=bk?2.3:2.2; const up=Cy(.17,.11,1.05,mFur,lx,hy-.45,lz+(bk?.15:0),6); up.rotation.x=bk?.35:-.05; d.add(up); const lo=Cy(.09,.06,1.35,bk?mFurD:mFur,lx,.72,lz+(bk?.12:0),5); lo.rotation.x=bk?-.12:.02; d.add(lo); d.add(Sp(.11,bk?mFurD:mFur,lx,1.33,lz+(bk?.2:0),1)); if(bk){ const th=Sp(.4,mFur,lx*.9,2.15,lz+.1,1); th.scale.set(.6,1.1,.9); d.add(th); } d.add(Cy(.08,.09,.14,mHoof,lx,.07,lz+(bk?.04:0),5)); }
+        // 首と頭（首の付け根を回して草を食む）
+        const n=new T.Group(); n.position.set(0,2.95,1.05); d.add(n);
+        { const nc=Cy(.24,.36,1.4,mFur,0,.55,.32,8); nc.rotation.x=.55; n.add(nc); const th=Cy(.18,.26,1.1,mBel,0,.4,.48,6); th.rotation.x=.55; n.add(th);
+          const hd=Sp(.36,mFur,0,1.25,.82,2); hd.scale.set(.85,.85,1.15); n.add(hd); const mz=Cy(.14,.24,.6,mFur,0,1.1,1.25,7); mz.rotation.x=1.9; n.add(mz); n.add(Sp(.1,mHoof,0,1.0,1.53,1)); const ch2=Sp(.13,mBel,0,.98,1.32,1); ch2.scale.set(1,.6,1.2); n.add(ch2);
+          for(const sg of [-1,1]){ const e=Sp(.24,mFur,sg*.36,1.55,.65,1); e.scale.set(.5,1,.32); e.rotation.z=-sg*.9; n.add(e); n.add(Sp(.06,mHoof,sg*.27,1.33,1.0,1)); }
+          if(kind==='stag') for(const sg of [-1,1]){ const ag=new T.Group(); ag.position.set(sg*.16,1.55,.75); ag.rotation.set(-.3,0,-sg*.35); n.add(ag); const bm=Cy(.05,.07,1.3,mAnt,0,.65,0,5); ag.add(bm); for(const [yy,a,l] of [[.35,.9,.5],[.75,.7,.45],[1.1,-.6,.4]]){ const t2=Cy(.03,.045,l,mAnt,0,yy+l*.35*Math.cos(a),l*.45*Math.sin(a),4); t2.rotation.x=a; ag.add(t2); } const tp=Cy(.02,.04,.4,mAnt,-sg*.1,1.45,-.05,4); tp.rotation.z=sg*.4; ag.add(tp); } }
+        if(kind==='fawn') for(let k=0;k<14;k++){ const sd=k%2?1:-1, sp=Sp(.07,mSpotW,sd*.6,2.65+((k*7)%5-2)*.1,-1+(k/14)*2,0); sp.scale.set(.4,1,1); d.add(sp); }
+        g.userData.deer.push(n); };
+      deer(-3,0,.6,1,'stag'); deer(3.5,2.5,2.4,.88,'doe'); deer(1,-4,-1.1,.9,'doe'); deer(5.8,-1,1.9,.58,'fawn'); }],
     ['花畑',g=>{ const N=260, im=new T.InstancedMesh(new T.IcosahedronGeometry(.32,0),mFlower,N), r=pRng('fl',g.id), m=new T.Matrix4(), cl=new T.Color(), cs=[[250,220,70],[250,250,240],[236,140,180],[170,130,220]];
       for(let q=0;q<N;q++){ const a=r()*6.28, d=Math.sqrt(r())*13; m.makeTranslation(Math.cos(a)*d,.5+r()*.4,Math.sin(a)*d); im.setMatrixAt(q,m); const c=cs[(q+Math.floor(r()*3))%4]; im.setColorAt(q,cl.setRGB(c[0]/255,c[1]/255,c[2]/255,T.SRGBColorSpace)); } g.add(im); }],
     // 岩の上の宝箱（ブレワイの宝箱）：平たい大岩の上に宝箱。金の枠と帯に、銀灰色の板をはめた箱。ふたはかまぼこ形で金の帯が4本、正面に赤い錠前。岩のまわりに足がかりの石
