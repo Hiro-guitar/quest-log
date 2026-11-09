@@ -5468,7 +5468,21 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
       { const md=mk(new T.SphereGeometry(3.6,16,6,0,6.283,0,1.25),tm([118,100,74]),0,.05,0); md.scale.y=.28; g.add(md); }
       for(let q=0;q<7;q++){ const a=q/7*6.283+r()*.3, d=2.6+r()*1.4, rd=.4+r()*.5, rk=mk(rockG(rd,90+q),mMono,Math.cos(a)*d,.35+rd*.3,Math.sin(a)*d); g.add(rk); }
       for(let q=0;q<8;q++){ const m=Sp(.6+r()*.4,mMoss,(r()-.5)*3,5.4+r()*1.2,(r()-.5)*1.2,1); m.scale.set(1.1,.3,1); hd.add(m); } }],
-    ['のろし台',g=>{ g.add(Cy(2.6,3,3,mStone,0,1.5,0,8)); g.add(Cy(1.6,1.2,1,mDark,0,3.4,0,8)); for(let q=0;q<5;q++){ const l=Cy(.18,.18,2.2,mWoodD,0,3.6,0,5); l.rotation.set(.7,q*1.25,0); g.add(l); } { const f=mkFire(0,3.7,0,1.5); g.add(f); g.userData.fire=f; } }],
+    // のろし台（ブレワイのかがり火の台）：切り石を3段に積んだ台の上に、4本の丸太を寄せて縄で縛ったやぐら。てっぺんの鉄のかごで火が燃える。台の脇に薪の山と、交差した脚の小さなかがり火
+    ['のろし台',g=>{ const r=pRng('beacon',61), mIr=tm([58,54,52]), mRope=tm([186,120,60]), V=(x,y,z)=>new T.Vector3(x,y,z);
+      g.add(Bx(5.2,.9,5.2,mStone,0,.45,0)); g.add(Bx(4.2,.8,4.2,mStone,0,1.3,0)); g.add(Bx(3.2,.6,3.2,mStone,0,2.0,0));
+      for(let k=0;k<3;k++) g.add(Bx(1.4,.3,.6,mStone,0,.6+k*.3,3.2-k*.5));
+      const H=7.6, top=2.3+H; for(const [sx,sz] of [[-1,-1],[1,-1],[1,1],[-1,1]]){ const b=V(sx*1.3,2.3,sz*1.3), t=V(sx*.42,top,sz*.42), c=Cy(.16,.2,b.distanceTo(t),mWoodD,(b.x+t.x)/2,(b.y+t.y)/2,(b.z+t.z)/2,6); c.lookAt(t.x,t.y,t.z); c.rotateX(1.5708); g.add(c); }
+      for(const yy of [4.4,6.8]){ const f=1-(yy-2.3)/H, w=(1.3*f+.42*(1-f))*2; for(const [a,b2] of [[0,1],[1,0]]) for(const sd of [-1,1]) g.add(Bx(a?w+.3:.12,.12,b2?w+.3:.12,mWood,a?0:sd*w/2,yy,a?sd*w/2:0)); for(const [sx,sz] of [[-1,-1],[1,-1],[1,1],[-1,1]]) g.add(Cy(.24,.24,.3,mRope,sx*w/2,yy,sz*w/2,6)); }
+      // 鉄のかご
+      g.add(Cy(.75,.55,.18,mIr,0,top+.05,0,12)); for(let q=0;q<12;q++){ const a=q/12*6.283, bar=Cy(.04,.04,1.2,mIr,Math.cos(a)*.85,top+.65,Math.sin(a)*.85,4); bar.rotation.set(Math.sin(a)*.22,0,-Math.cos(a)*.22); g.add(bar); }
+      { const rg=mk(new T.TorusGeometry(1.0,.05,4,16),mIr,0,top+1.22,0); rg.rotation.x=1.5708; g.add(rg); }
+      for(let q=0;q<5;q++){ const lg=Cy(.12,.12,1,mWoodD,0,top+.35,0,5); lg.rotation.set(1.5708,q*1.2,0); lg.rotation.order='YXZ'; g.add(lg); }
+      { const f=mkFire(0,top+.3,0,1.6); g.add(f); g.userData.fire=f; }
+      // 薪の山
+      for(let k=0;k<3;k++) for(let q=0;q<4-k;q++){ const lg=Cy(.22,.22,1.8,mWood,3.4+(q-(3-k)/2)*.46,.52+k*.4,-1.6,7); lg.rotation.x=1.5708; g.add(lg); }
+      // 交差した脚の小さなかがり火（足もと）
+      { const bx=-3.4, bz=2.2; for(let q=0;q<3;q++){ const a=q/3*6.283, lg=Cy(.07,.07,1.7,mWood,bx+Math.cos(a)*.25,.95,bz+Math.sin(a)*.25,5); lg.rotation.set(Math.sin(a)*.35,0,-Math.cos(a)*.35); g.add(lg); } g.add(Cy(.25,.25,.12,mRope,bx,1.0,bz,6)); g.add(mk(new T.SphereGeometry(.5,10,5,0,6.283,1.5708,1.2),mIr,bx,1.85,bz)); } }],
     // 羊飼いの小屋（ブレワイのハテノ村の家）：石の土台にしっくいの壁、黒っぽい木の柱と梁が見える。赤い瓦の切妻屋根は軒が深く、石の煙突。木の扉、窓と鎧戸、壁に掛かった旗、まわりに木の柵
     ['羊飼いの小屋',g=>{ g.add(Bx(7,.8,5.6,mStone,0,.4,0)); g.add(Bx(6.6,3.4,5.2,mWhite,0,2.5,0));
       for(const x of [-3.3,3.3]) for(const z of [-2.6,2.6]) g.add(Bx(.3,3.6,.3,mWoodD,x,2.6,z)); for(const z of [-2.6,2.6]) g.add(Bx(6.9,.3,.3,mWoodD,0,4.2,z)); g.add(Bx(.25,3.4,.25,mWoodD,0,2.5,2.62));
