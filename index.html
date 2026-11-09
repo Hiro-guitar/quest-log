@@ -5343,36 +5343,149 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
     for(let n=n0;n<=n1;n++){ if(disc.has(n)) continue; if(built++&&L.started) break; const s=dSpot(n), g=new T.Group(); DK[s.tp][1](g); bake(g); g.scale.setScalar(s.SC); let e=hW(s.x,s.yy); if(s.nm==='小さな池') e=Math.min(e,hW(s.x+12,s.yy),hW(s.x-12,s.yy),hW(s.x,s.yy+12),hW(s.x,s.yy-12))+.3; g.position.set(X(s.x),Math.max(-.2,e)-.15,Z(s.yy)); g.rotation.y=s.nm==='道しるべ'?(s.sg>0?-1.5708:1.5708):s.sg*.3; scene.add(g); disc.set(n,{g,s,seen:false}); }
     for(const [n,o] of disc){ if(!o.seen&&o.s.yy-py<110&&o.s.yy-py>-20&&(()=>{ const v=o.g.position.clone(); v.y+=8; v.project(cam); return Math.abs(v.x)<.85&&v.z<1&&o.g.position.distanceTo(cam.position)<150; })()){ o.seen=true; findEl.textContent=o.s.nm; findEl.classList.remove('on'); void findEl.offsetWidth; findEl.classList.add('on'); } } };
   const animDisc=(t,dt)=>{ for(const [,o] of disc){ const u=o.g.userData; if(u.mill) u.mill.rotation.z+=dt*.8; if(u.fire){ u.fire.scale.set(1+Math.sin(t*13)*.12,1+Math.sin(t*9+1)*.2,1+Math.cos(t*11)*.12); } if(u.deer) u.deer.forEach((n,q)=>{ n.rotation.x=.9*Math.max(0,Math.sin(t*.5+q*2.1)); }); } };
-  // 鳥：ブレワイのように土地ごとに違う鳥。草原はスズメの群れが低く飛び、空高くタカが輪を描く。森の近くはハトやカラス、湿地はサギ、雪山は赤いスズメと白いハト、砂漠は砂色のスズメ、火山は赤い羽のハト、海の近くだけカモメ
-  const BSP={
-    sparrow:{n:11,sc:.5,body:[150,112,74],wing:[128,94,62],tip:[70,52,38],beak:[70,58,46],hz:13,glide:.25,alt:[4,12],sp:17,near:1},
-    pigeon:{n:8,sc:.85,body:[150,156,168],wing:[132,138,152],tip:[58,62,72],beak:[220,196,170],hz:7.5,glide:.35,alt:[18,40],sp:16},
-    crow:{n:4,sc:1,body:[40,42,48],wing:[36,38,44],tip:[24,26,30],beak:[30,30,34],hz:4.5,glide:.4,alt:[20,45],sp:12},
-    heron:{n:2,sc:1.7,body:[214,218,224],wing:[150,168,192],tip:[58,68,90],beak:[226,190,70],hz:2.4,glide:.3,alt:[12,26],sp:9,neck:1},
-    gull:{n:9,sc:1.6,body:[238,240,242],wing:[150,166,184],tip:[46,56,72],beak:[236,196,60],hz:5.2,glide:.4,alt:[40,90],sp:20},
-    hawk:{n:1,sc:1.9,body:[128,96,64],wing:[116,86,58],tip:[48,36,26],beak:[230,190,60],hz:3,glide:.85,alt:[110,150],sp:0}};
   const tmC=new Map(), btm=c=>{ const k2=c.join(); if(!tmC.has(k2)) tmC.set(k2,patch(new T.MeshToonMaterial({color:c3(c),gradientMap:gmap}))); return tmC.get(k2); };
-  const wingSeg=(len,w0,w1,sweep,m)=>{ const sh=new T.Shape(); sh.moveTo(0,-w0*.35); sh.lineTo(len,-w1*.2+sweep); sh.lineTo(len,w1*.8+sweep); sh.lineTo(0,w0*.65); const g=new T.ExtrudeGeometry(sh,{depth:.03,bevelEnabled:false}); g.rotateX(Math.PI/2); return new T.Mesh(g,m); };
-  const mkBird=sp=>{ const b=new T.Group(), mB=btm(sp.body), mW=btm(sp.wing), mT=btm(sp.tip), mK=btm(sp.beak);
-    const body=new T.Mesh(new T.SphereGeometry(.22,10,7),mB); body.scale.set(1,.85,2.4); b.add(body);
-    const hd=new T.Mesh(new T.SphereGeometry(.13,8,6),mB); hd.position.set(0,.06,sp.neck?.9:.58); b.add(hd); if(sp.neck){ const nk=new T.Mesh(new T.CylinderGeometry(.06,.09,.5,6),mB); nk.rotation.x=Math.PI/2; nk.position.set(0,.04,.66); b.add(nk); const lg=new T.Mesh(new T.CylinderGeometry(.025,.025,.9,4),btm([60,58,56])); lg.rotation.x=Math.PI/2; lg.position.set(0,-.05,-.95); b.add(lg); }
-    const bk=new T.Mesh(new T.ConeGeometry(.035,sp.neck?.34:.16,5),mK); bk.rotation.x=Math.PI/2; bk.position.set(0,.04,sp.neck?1.12:.74); b.add(bk);
-    const tl=new T.Mesh(new T.ConeGeometry(.16,.4,4),mB); tl.scale.set(1,.2,1); tl.rotation.x=-Math.PI/2; tl.position.set(0,0,-.62); b.add(tl);
-    const wings=[]; for(const sd2 of [1,-1]){ const sh2=new T.Group(); sh2.position.set(.12*sd2,.05,.12); sh2.scale.x=sd2; b.add(sh2);
-      sh2.add(wingSeg(.62,.62,.52,0,mW)); const el=new T.Group(); el.position.x=.6; sh2.add(el); el.add(wingSeg(.6,.52,.2,-.2,mW)); const tip=wingSeg(.3,.26,.06,-.1,mT); tip.position.set(.42,.01,-.2); el.add(tip); wings.push([sh2,el,sd2]); }
-    b.scale.setScalar(sp.sc); return {b,wings}; };
+  // 鳥：ブレワイの図鑑・設定画・飛んでいる姿を見て、種類ごとに体・頭・翼・尾・脚を一から作り、飛び方も別々に作る（形の使い回しはしない）
+  const bFmC=new Map(), bFm=c=>{ const k2=c.join(); if(!bFmC.has(k2)) bFmC.set(k2,patch(new T.MeshToonMaterial({color:c3(c),gradientMap:gmap,flatShading:true}))); return bFmC.get(k2); };
+  const bVMat=patch(new T.MeshToonMaterial({vertexColors:true,gradientMap:gmap,side:T.DoubleSide,flatShading:true}));
+  const bBlob=(g,rx,ry,rz,c,x,y,z,w=8,h=6)=>{ const m=new T.Mesh(new T.SphereGeometry(1,w,h),bFm(c)); m.scale.set(rx,ry,rz); m.position.set(x,y,z); g.add(m); return m; };
+  const bCone=(g,r,l,c,x,y,z,rx,ry=0,rz=0,s=5)=>{ const m=new T.Mesh(new T.ConeGeometry(r,l,s),bFm(c)); m.position.set(x,y,z); m.rotation.set(rx,ry,rz); g.add(m); return m; };
+  const bRod=(g,r,a,b,c)=>{ const A=new T.Vector3(...a), B=new T.Vector3(...b), m=new T.Mesh(new T.CylinderGeometry(r,r,A.distanceTo(B),5),bFm(c)); m.position.copy(A).add(B).multiplyScalar(.5); m.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),B.clone().sub(A).normalize()); g.add(m); return m; };
+  // 平たい部品（翼・尾）：pts は x＝付け根→先、y＝前(+)／後(-)。col(u,v) で色分け
+  const bFlat=(pts,sx,sz,col)=>{ const sh=new T.Shape(); pts.forEach(([x,y],i)=>i?sh.lineTo(x,y):sh.moveTo(x,y)); const g=new T.ShapeGeometry(sh); g.scale(sx,sz,1); g.rotateX(Math.PI/2);
+    const p=g.attributes.position, cc=new Float32Array(p.count*3); for(let i=0;i<p.count;i++) cc.set(lin(col(p.getX(i)/sx,p.getZ(i)/sz)),i*3); g.setAttribute('color',new T.BufferAttribute(cc,3)); return new T.Mesh(g,bVMat); };
+  const bEye=(g,x,y,z,r,c=[248,248,244],pc=[18,18,22])=>{ for(const s of [1,-1]){ bBlob(g,r,r,r,c,s*x,y,z,6,5); bBlob(g,r*.55,r*.55,r*.55,pc,s*(x+r*.45),y,z+r*.2,6,5); } };
+  // 左右の翼：mk(sd) が {sh,el,…} を返す（sd＝1右・-1左。左は鏡うつし）
+  const bPair=(b,mk)=>[1,-1].map(sd=>{ const w=mk(sd); w.sh.scale.x=sd; b.add(w.sh); w.sd=sd; return w; });
+  const bL3=(a,b,t)=>[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t];
+
+  // スズメ（ブレワイのコモンスズメ）：ころんと丸い体、緑の頭にぎざぎざのとさか、黄色い顔、白っぽい胸、灰色の腹、尾の先が黄色。
+  //   設定画の飛ぶ姿：体を起こし、丸い翼を高くV字に上げ、尾を扇に開いて下げ、脚をぶら下げる。パタパタ速く羽ばたいては翼をたたんで弾む
+  const buildSparrow=P=>{ const b=new T.Group(), body=new T.Group(); b.add(body);
+    bBlob(body,.2,.19,.24,P.back,0,.02,-.02); bBlob(body,.17,.15,.15,P.chest,0,-.04,.1); bBlob(body,.15,.1,.17,P.belly,0,-.11,-.04);
+    bBlob(body,.15,.14,.15,P.head,0,.17,.17); bBlob(body,.11,.1,.07,P.face,0,.11,.27); bEye(body,.1,.2,.25,.035);
+    [[0,.31,.15,-.3],[0,.28,.08,-.7],[0,.3,.22,.1]].forEach(([x,y,z,a])=>bCone(body,.035,.13,P.crest,x,y,z,a)); bCone(body,.03,.08,P.beak,0,.14,.33,Math.PI/2+.2,0,0,4);
+    const tail=bFlat([[-.15,0],[-.5,-1],[-.2,-.92],[0,-1],[.2,-.92],[.5,-1],[.15,0]],.3,.3,(u,v)=>v<-.7?P.tip:P.tail); tail.position.set(0,0,-.2); tail.rotation.x=.5; body.add(tail);
+    for(const s of [1,-1]){ bRod(body,.012,[s*.05,-.16,0],[s*.06,-.3,.02],P.leg); }
+    const wings=bPair(body,sd=>{ const sh=new T.Group(); sh.position.set(sd*.15,.08,.04);
+      sh.add(bFlat([[0,-.5],[1,-.55],[1,.5],[0,.5]],.18,.24,(u,v)=>v<-.3?P.wingD:P.wing));
+      const el=new T.Group(); el.position.x=.18; sh.add(el);
+      const pts=[[0,-.55]]; for(let f=0;f<5;f++){ const y=-.5+f*.22; pts.push([.85+.08*Math.sin(f*.7),y],[1,y+.08],[.9+.06*Math.sin(f*.9),y+.16]); } pts.push([.6,.5],[0,.5]);
+      el.add(bFlat(pts,.2,.24,(u,v)=>u>.75||v<-.3?P.wingD:P.wing)); return {sh,el}; });
+    return {b,body,wings}; };
+  const flySparrow=(o,t)=>{ const cyc=(t*1.4+o.ph*.37)%1, beat=cyc<.6, fa=beat?Math.sin(t*17+o.ph):0, fold=beat?0:Math.sin((cyc-.6)/.4*Math.PI);
+    o.body.rotation.x=-.32+fold*.25; o.bob=Math.sin(cyc*Math.PI*2)*.25;
+    o.wings.forEach(w=>{ w.sh.rotation.z=w.sd*(.55+fa*.75-fold*.6); w.sh.rotation.y=w.sd*fold*1.3; w.el.rotation.z=fa<0?.5*fa:-.2*fa; w.el.rotation.y=fold*2.3; }); return fa; };
+
+  // ハト（ブレワイのモリバト）：ふっくらした胸に小さな頭、藤色の頭に細いとさか、首にピンク、白っぽい胸、紺の翼と長い尾、ピンクの足。
+  //   とがった長い翼で、まっすぐ速く羽ばたき、ときどき翼をV字に上げてすべる
+  const buildPigeon=P=>{ const b=new T.Group(), body=new T.Group(); b.add(body);
+    bBlob(body,.2,.19,.38,P.body,0,0,-.04); bBlob(body,.19,.19,.2,P.chest,0,-.02,.14); bBlob(body,.13,.12,.1,P.neck,0,.11,.25);
+    bBlob(body,.11,.1,.12,P.head,0,.19,.33); bEye(body,.08,.22,.38,.028,[250,220,90]); bCone(body,.015,.16,P.crest,0,.32,.3,-.5,0,0,3); bCone(body,.03,.09,P.beak,0,.17,.46,Math.PI/2,0,0,4);
+    const tail=bFlat([[-.1,0],[-.12,-1],[.12,-1],[.1,0]],1,.42,(u,v)=>v<-.8?P.wingD:P.tail); tail.position.set(0,0,-.36); body.add(tail);
+    for(const s of [1,-1]) bCone(body,.025,.1,P.feet,s*.05,-.16,-.12,-Math.PI/2-.4,0,0,4);
+    const wings=bPair(body,sd=>{ const sh=new T.Group(); sh.position.set(sd*.16,.08,.08);
+      sh.add(bFlat([[0,-.55],[1,-.5],[1,.5],[0,.55]],.25,.3,(u,v)=>v>.2?P.cov:P.wing));
+      const el=new T.Group(); el.position.x=.25; sh.add(el); el.add(bFlat([[0,-.5],[.45,-.42],[1,-.08],[.85,.1],[.4,.32],[0,.5]],.42,.3,(u,v)=>u>.55?P.wingD:P.wing)); return {sh,el}; });
+    return {b,body,wings}; };
+  const flyPigeon=(o,t)=>{ const cyc=(t*.4+o.ph*.21)%1, gl=cyc>.75, fa=gl?0:Math.sin(t*10+o.ph); o.body.rotation.x=-.05; o.bob=0;
+    o.wings.forEach(w=>{ w.sh.rotation.z=w.sd*(gl?.42:.1+fa*.95); w.sh.rotation.y=w.sd*(gl?0:-fa*.15); w.el.rotation.z=gl?-.1:(fa<0?.55*fa:-.15*fa); w.el.rotation.y=gl?0:Math.max(0,-fa)*.4; }); return fa; };
+
+  // カラス（ブレワイのヤマガラス）：細長くがっしりした黒灰色の体、大きな頭、太く長い灰青のくちばし、のどのぼさぼさの羽、
+  //   翼の先は5枚の羽が指のように開き、尾は丸い扇。ゆっくり漕ぐように羽ばたく
+  const buildCrow=P=>{ const b=new T.Group(), body=new T.Group(); b.add(body);
+    bBlob(body,.18,.17,.42,P.body,0,0,-.04,8,6); bBlob(body,.16,.16,.16,P.head,0,.08,.38); bEye(body,.12,.12,.44,.025,[200,210,214]);
+    const bk=bCone(body,.06,.3,P.beak,0,.06,.6,Math.PI/2+.12,0,0,4); bk.scale.set(.8,1,1.2);
+    [[-.05,.0],[0,-.02],[.05,0]].forEach(([x,dz])=>bCone(body,.035,.14,P.body,x,-.05,.3+dz,Math.PI-.5));
+    const tp=[[-.08,0]]; for(let i=0;i<=6;i++){ const a=-.5+i/6; tp.push([Math.sin(a*.9)*.9,-Math.cos(a*.9)]); } tp.push([.08,0]);
+    const tail=bFlat(tp,.18,.38,()=>P.tail); tail.position.set(0,0,-.4); body.add(tail);
+    const wings=bPair(body,sd=>{ const sh=new T.Group(); sh.position.set(sd*.15,.07,.06);
+      sh.add(bFlat([[0,-.55],[1,-.55],[1,.5],[0,.55]],.3,.36,(u,v)=>v>.25?P.cov:P.wing));
+      const el=new T.Group(); el.position.x=.3; sh.add(el); el.add(bFlat([[0,-.55],[1,-.5],[1,.5],[0,.55]],.16,.36,()=>P.wing));
+      const fg=[]; for(let f=0;f<5;f++){ const q=new T.Group(); q.position.set(.15,0,.14-f*.075); el.add(q); q.add(bFlat([[0,-.5],[.85,-.4],[1,0],[.85,.4],[0,.5]],.26,.07,()=>P.tip)); q.rotation.y=-.12*f+.15; fg.push(q); }
+      return {sh,el,fg}; });
+    return {b,body,wings}; };
+  const flyCrow=(o,t)=>{ const cyc=(t*.3+o.ph*.2)%1, gl=cyc>.7, fa=gl?0:Math.sin(t*4.6+o.ph); o.body.rotation.x=-.04; o.bob=0;
+    o.wings.forEach(w=>{ w.sh.rotation.z=w.sd*(gl?.08:.05+fa*.7); w.sh.rotation.y=w.sd*(gl?0:-fa*.18); w.el.rotation.z=gl?.04:(fa<0?.45*fa:-.25*fa); w.fg.forEach((q,i)=>{ q.rotation.z=(gl?.1:fa*.25)*(i/4); }); }); return fa; };
+
+  // サギ（ブレワイのアオサギ）：白い首をS字にたたんで頭を肩に乗せ、紺の長いくちばしと頭の後ろの黒い飾り羽、灰色の体、
+  //   大きく幅の広い翼（風切りは紺、先は指のように開く）を下へ弓なりにして、ゆっくり深く打ち下ろす。青い長い脚と黄色い足を後ろへまっすぐ伸ばす
+  const buildHeron=P=>{ const b=new T.Group(), body=new T.Group(); b.add(body);
+    bBlob(body,.15,.15,.34,P.body,0,0,0); bBlob(body,.12,.1,.28,P.belly,0,-.06,.02);
+    bRod(body,.06,[0,.02,.26],[0,.2,.22],P.neck); bRod(body,.055,[0,.2,.22],[0,.2,.4],P.neck); bBlob(body,.07,.07,.07,P.neck,0,.2,.22,6,5);
+    bBlob(body,.075,.075,.1,P.head,0,.21,.46); bBlob(body,.077,.03,.08,P.cap,0,.27,.45); bEye(body,.06,.23,.5,.02,[250,220,60]);
+    [[.0,.25,.36,-1.3],[.02,.23,.34,-1.4]].forEach(([x,y,z,a])=>bCone(body,.012,.22,P.cap,x,y,z,a,0,0,3));
+    bCone(body,.03,.4,P.beak,0,.2,.74,Math.PI/2,0,0,4);
+    const tail=bFlat([[-.12,0],[-.2,-1],[.2,-1],[.12,0]],1,.2,()=>P.body); tail.position.set(0,0,-.32); body.add(tail);
+    for(const s of [1,-1]){ bRod(body,.016,[s*.04,-.08,-.1],[s*.045,-.12,-.95],P.leg); bCone(body,.035,.14,P.feet,s*.045,-.12,-1.0,-Math.PI/2,0,0,4); }
+    const wings=bPair(body,sd=>{ const sh=new T.Group(); sh.position.set(sd*.12,.06,.06);
+      sh.add(bFlat([[0,-.55],[1,-.55],[1,.5],[0,.55]],.42,.46,(u,v)=>v<-.25?P.wingD:P.wing));
+      const el=new T.Group(); el.position.x=.42; sh.add(el); el.add(bFlat([[0,-.55],[1,-.5],[1,.5],[0,.55]],.2,.46,(u,v)=>v<-.1?P.wingD:P.wing));
+      const fg=[]; for(let f=0;f<6;f++){ const q=new T.Group(); q.position.set(.18,0,.2-f*.075); el.add(q); q.add(bFlat([[0,-.5],[.85,-.4],[1,0],[.85,.4],[0,.5]],.3,.08,()=>P.wingD)); q.rotation.y=-.1*f+.18; fg.push(q); }
+      return {sh,el,fg}; });
+    return {b,body,wings}; };
+  const flyHeron=(o,t)=>{ const fa=Math.sin(t*2.3+o.ph); o.body.rotation.x=-.06; o.bob=-fa*.12;
+    o.wings.forEach(w=>{ w.sh.rotation.z=w.sd*(-.1+fa*.55); w.sh.rotation.y=w.sd*(-fa*.12); w.el.rotation.z=-.35+(fa>0?-.2*fa:.25*fa); w.fg.forEach((q,i)=>{ q.rotation.z=-.06*i; }); }); return fa; };
+
+  // タカ（ブレワイのシマタカ）：白い胴と顔、紺の背、藤色の頭。幅の広い大きな翼は藤色に白い横じま、6枚の羽が指のように開く。
+  //   扇に広げた縞の尾、黄色い鉤のくちばしと足。翼を少し上に反らせて広げたまま、ほとんど羽ばたかずに空高く輪を描く
+  const buildHawk=P=>{ const b=new T.Group(), body=new T.Group(); b.add(body);
+    bBlob(body,.19,.18,.4,P.under,0,-.01,0); bBlob(body,.17,.07,.36,P.back,0,.12,-.02); bBlob(body,.14,.13,.15,P.face,0,.08,.36); bBlob(body,.14,.06,.13,P.cap,0,.17,.34); bEye(body,.11,.12,.42,.025,[250,210,60]);
+    bCone(body,.045,.12,P.beak,0,.06,.5,Math.PI/2+.6,0,0,4);
+    const tp=[[-.1,0]]; for(let i=0;i<=6;i++){ const a=-.5+i/6; tp.push([Math.sin(a*1.1)*.9,-Math.cos(a*1.1)]); } tp.push([.1,0]);
+    const tail=bFlat(tp,.22,.4,(u,v)=>Math.sin(v*22)>.4?P.bar:P.wing); tail.position.set(0,0,-.38); body.add(tail);
+    for(const s of [1,-1]) bCone(body,.04,.12,P.beak,s*.06,-.15,-.2,-Math.PI/2,0,0,4);
+    const wings=bPair(body,sd=>{ const sh=new T.Group(); sh.position.set(sd*.15,.08,.06);
+      sh.add(bFlat([[0,-.55],[1,-.55],[1,.5],[0,.55]],.45,.52,(u,v)=>v>.32?P.back:Math.sin(u*14)>.5&&v<.2?P.bar:P.wing));
+      const el=new T.Group(); el.position.x=.45; sh.add(el); el.add(bFlat([[0,-.55],[1,-.5],[1,.5],[0,.55]],.22,.52,(u,v)=>v>.32?P.back:Math.sin(u*14+6)>.5?P.bar:P.wing));
+      const fg=[]; for(let f=0;f<6;f++){ const q=new T.Group(); q.position.set(.2,0,.22-f*.085); el.add(q); q.add(bFlat([[0,-.5],[.85,-.4],[1,0],[.85,.4],[0,.5]],.32,.09,(u,v)=>u>.6?P.tip:Math.sin(u*14)>.5?P.bar:P.wing)); q.rotation.y=-.13*f+.28; fg.push(q); }
+      return {sh,el,fg}; });
+    return {b,body,wings}; };
+  const flyHawk=(o,t)=>{ const fl=Math.sin(t*.22+o.ph)>.9, fa=fl?Math.sin(t*3.2):0; o.body.rotation.x=0; o.bob=0;
+    o.wings.forEach(w=>{ w.sh.rotation.z=w.sd*(.16+fa*.4+Math.sin(t*.8)*.03); w.el.rotation.z=.04-fa*.2; w.fg.forEach((q,i)=>{ q.rotation.z=.04*i; }); }); return fa; };
+
+  // カモメ（ブレワイのカモメ・海の近くだけ）：白い体、黄色いくちばし、細長い翼は肘で上へ、手首で下へ折れる（M字）。翼先は濃い灰青。羽ばたいては長く滑空
+  const buildGull=P=>{ const b=new T.Group(), body=new T.Group(); b.add(body);
+    bBlob(body,.16,.15,.36,P.body,0,0,0); bBlob(body,.12,.11,.13,P.body,0,.1,.32); bEye(body,.09,.13,.38,.022,[240,230,120]); bCone(body,.03,.15,P.beak,0,.08,.5,Math.PI/2,0,0,4);
+    const tail=bFlat([[-.1,0],[-.16,-1],[.16,-1],[.1,0]],1,.22,()=>P.body); tail.position.set(0,0,-.34); body.add(tail);
+    const wings=bPair(body,sd=>{ const sh=new T.Group(); sh.position.set(sd*.13,.07,.06);
+      sh.add(bFlat([[0,-.5],[1,-.45],[1,.5],[0,.55]],.4,.26,()=>P.wing));
+      const el=new T.Group(); el.position.x=.4; sh.add(el); el.add(bFlat([[0,-.45],[.6,-.32],[1,-.05],[.7,.18],[0,.5]],.6,.26,(u,v)=>u>.55?P.tip:P.wing)); return {sh,el}; });
+    return {b,body,wings}; };
+  const flyGull=(o,t)=>{ const cyc=(t*.3+o.ph*.21)%1, gl=cyc>.55, fa=gl?0:Math.sin(t*5+o.ph); o.body.rotation.x=0; o.bob=0;
+    o.wings.forEach(w=>{ w.sh.rotation.z=w.sd*(gl?.32:.25+fa*.7); w.el.rotation.z=gl?-.55:-.45+(fa<0?.3*fa:-.2*fa); }); return fa; };
+
+  // 色（ブレワイの図鑑より）。土地によって色ちがいの仲間が出る
+  const PAL={
+    sparrow:{back:[66,146,58],chest:[228,216,184],belly:[112,116,124],head:[70,156,60],face:[236,198,56],crest:[72,160,60],beak:[236,124,52],tail:[64,140,56],tip:[232,200,60],wing:[66,148,58],wingD:[44,104,46],leg:[120,84,60]},
+    sparrowRed:{back:[150,60,58],chest:[238,228,210],belly:[150,150,160],head:[196,58,54],face:[244,214,196],crest:[200,60,54],beak:[236,170,60],tail:[150,56,52],tip:[230,220,210],wing:[170,62,58],wingD:[120,40,40],leg:[120,84,60]},
+    sparrowBlue:{back:[64,110,190],chest:[236,232,214],belly:[150,160,176],head:[70,116,196],face:[236,210,120],crest:[64,110,190],beak:[236,160,60],tail:[60,100,176],tip:[236,214,120],wing:[66,112,192],wingD:[44,76,140],leg:[120,84,60]},
+    sparrowSand:{back:[196,160,110],chest:[236,220,186],belly:[180,164,134],head:[200,164,114],face:[236,206,140],crest:[190,150,100],beak:[200,120,60],tail:[180,146,100],tip:[226,196,130],wing:[190,156,108],wingD:[150,120,82],leg:[120,84,60]},
+    pigeon:{body:[176,170,182],chest:[210,222,238],neck:[232,150,190],head:[176,140,214],crest:[150,110,196],beak:[232,196,170],tail:[54,58,84],wing:[96,100,124],cov:[176,170,182],wingD:[48,52,78],feet:[230,120,150]},
+    pigeonWhite:{body:[236,236,240],chest:[246,246,250],neck:[226,230,238],head:[242,242,246],crest:[230,230,236],beak:[232,196,170],tail:[220,224,232],wing:[226,228,236],cov:[240,240,244],wingD:[170,176,190],feet:[230,120,150]},
+    pigeonHot:{body:[200,86,56],chest:[240,180,120],neck:[250,200,80],head:[226,96,52],crest:[244,186,60],beak:[232,196,170],tail:[110,36,28],wing:[180,64,44],cov:[214,96,60],wingD:[90,28,22],feet:[230,120,150]},
+    crow:{body:[52,54,62],head:[56,58,66],beak:[118,140,150],tail:[44,46,54],wing:[46,48,56],cov:[64,66,76],tip:[34,36,42]},
+    heron:{body:[134,146,158],belly:[214,210,198],neck:[228,224,214],head:[160,170,180],cap:[34,44,72],beak:[44,70,140],wing:[146,158,172],wingD:[36,44,72],leg:[70,110,150],feet:[214,170,40]},
+    hawk:{under:[238,234,238],back:[50,48,80],face:[238,234,238],cap:[150,130,176],beak:[234,192,60],wing:[166,146,198],bar:[236,230,240],tip:[64,56,92]},
+    gull:{body:[240,242,244],beak:[236,196,60],wing:[150,166,184],tip:[46,56,72]}};
+  const BSP={
+    sparrow:{n:11,S:1.7,alt:[3,10],sp:15,near:1,build:()=>buildSparrow(PAL.sparrow),fly:flySparrow},
+    pigeon:{n:7,S:2,alt:[16,36],sp:17,build:()=>buildPigeon(PAL.pigeon),fly:flyPigeon},
+    crow:{n:4,S:2.3,alt:[18,40],sp:12,build:()=>buildCrow(PAL.crow),fly:flyCrow},
+    heron:{n:2,S:2.6,alt:[10,24],sp:9,build:()=>buildHeron(PAL.heron),fly:flyHeron},
+    gull:{n:9,S:2.6,alt:[40,90],sp:20,build:()=>buildGull(PAL.gull),fly:flyGull},
+    hawk:{n:1,S:3.6,alt:[110,150],sp:0,build:()=>buildHawk(PAL.hawk),fly:flyHawk}};
+  const mkBird=sp=>{ const o=sp.build(); o.b.scale.setScalar(sp.S); return o; };
   const birds=new T.Group(); scene.add(birds); L.birds=birds; let flock=[], fsp=null; L.bsp=BSP;
-  const setFlock=sp=>{ birds.clear(); flock=[]; fsp=sp; for(let q=0;q<sp.n;q++){ const o=mkBird(sp), s=sp.sc*2.4; o.ph=q*1.37+dRng()*2; o.off=new T.Vector3((q%2?1:-1)*Math.ceil(q/2)*s+Math.sin(q*3.1)*s*.5,Math.sin(q*1.7)*s*.6,Math.ceil(q/2)*-s*.9+Math.cos(q*2.3)*s*.5); birds.add(o.b); flock.push(o); } };
+  const setFlock=sp=>{ birds.clear(); flock=[]; fsp=sp; for(let q=0;q<sp.n;q++){ const o=mkBird(sp), s=sp.S*1.2; o.ph=q*1.37+dRng()*2; o.off=new T.Vector3((q%2?1:-1)*Math.ceil(q/2)*s+Math.sin(q*3.1)*s*.5,Math.sin(q*1.7)*s*.6,Math.ceil(q/2)*-s*.9+Math.cos(q*2.3)*s*.5); birds.add(o.b); flock.push(o); } };
   L.setFlock=sp=>{ setFlock(sp); bT=1e9; }; const hawk=mkBird(BSP.hawk); scene.add(hawk.b); hawk.b.visible=false; hawk.ph=0;
   const nearSea=()=>{ const wx=cam.position.x+OX, wy=y0-cam.position.z, v=vAt(wy), oc=pOceanAt(v); return !!(oc&&pOceanT(uOf(wx),v,oc)>-2.2); };
-  const pickSp=()=>{ if(nearSea()) return BSP.gull; const r=dRng();
-    if(BIO==='snow') return r<.6?{...BSP.sparrow,body:[196,74,62],wing:[170,60,52]}:{...BSP.pigeon,body:[236,236,238],wing:[222,224,228],tip:[160,164,172]};
-    if(BIO==='desert') return {...BSP.sparrow,body:[212,182,132],wing:[196,164,116],tip:[140,112,76]};
-    if(BIO==='volc') return {...BSP.pigeon,body:[190,74,52],wing:[170,60,44],tip:[70,30,24]};
-    if(BIO==='wet') return r<.5?BSP.heron:{...BSP.sparrow,body:[86,124,182],wing:[70,104,160]};
-    return r<.6?BSP.sparrow:r<.85?BSP.pigeon:BSP.crow; };
-  const flap=(o,sp,t)=>{ const p=o.ph, cyc=(t*.32+p*.21)%1, fl=cyc<1-sp.glide?1:0, fa=Math.sin(t*sp.hz+p)*fl, gl=1-fl;
-    o.wings.forEach(([sh2,el,sd2])=>{ sh2.rotation.z=sd2*(.12+fa*.75+gl*.08); el.rotation.z=-fa*.45+Math.max(0,-fa)*.3-gl*.06; }); return fa; };
+  const pickSp=()=>{ if(nearSea()) return BSP.gull; const r=dRng(), S=BSP.sparrow, P=BSP.pigeon;
+    if(BIO==='snow') return r<.6?{...S,build:()=>buildSparrow(PAL.sparrowRed)}:{...P,build:()=>buildPigeon(PAL.pigeonWhite)};
+    if(BIO==='desert') return {...S,build:()=>buildSparrow(PAL.sparrowSand)};
+    if(BIO==='volc') return {...P,build:()=>buildPigeon(PAL.pigeonHot)};
+    if(BIO==='wet') return r<.5?BSP.heron:{...S,build:()=>buildSparrow(PAL.sparrowBlue)};
+    return r<.6?S:r<.85?P:BSP.crow; };
+  const flap=(o,sp,t)=>sp.fly(o,t);
   const smk=[]; if(BIO==='volc'){ const sc2=document.createElement('canvas'); sc2.width=sc2.height=64; { const x=sc2.getContext('2d'), gd=x.createRadialGradient(32,32,2,32,32,30); gd.addColorStop(0,'rgba(255,255,255,.9)'); gd.addColorStop(1,'rgba(255,255,255,0)'); x.fillStyle=gd; x.fillRect(0,0,64,64); }
     const st=new T.CanvasTexture(sc2); for(let q=0;q<7;q++){ const g=new T.Group(); for(let k2=0;k2<8;k2++){ const sp=new T.Sprite(new T.SpriteMaterial({map:st,color:c3([92,84,84]),transparent:true,depthWrite:false})); sp.userData.t=k2/8; g.add(sp); } g.userData.need=1; scene.add(g); smk.push(g); } }
   const animSmoke=(t,dt)=>{ smk.forEach((g,q)=>{ if(g.userData.need||g.position.distanceTo(cam.position)>1300||(new T.Vector3().subVectors(g.position,cam.position).dot(new T.Vector3(Math.sin(hY),0,Math.cos(hY))))<-200){ const d=300+dRng()*800, a=hY+(dRng()-.5)*1.6, x=cam.position.x+Math.sin(a)*d, z=cam.position.z+Math.cos(a)*d; g.position.set(x,horse.position.y-6,z); g.userData.need=0; }
@@ -5385,7 +5498,7 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
       else { birds.userData.v=new T.Vector3(Math.cos(a)*sp.sp,0,Math.sin(a)*sp.sp); birds.position.set(cam.position.x-Math.cos(a)*380+(dRng()-.5)*200,cam.position.y+sp.alt[0]+dRng()*(sp.alt[1]-sp.alt[0]),cam.position.z-240-Math.sin(a)*380); }
       birds.rotation.y=Math.atan2(birds.userData.v.x,birds.userData.v.z); }
     birds.position.addScaledVector(birds.userData.v,dt);
-    flock.forEach(o=>{ const p=o.ph, fa=flap(o,fsp,t); o.b.position.copy(o.off).add(new T.Vector3(Math.sin(t*.4+p)*1.5*fsp.sc,Math.sin(t*.7+p*2)*.8*fsp.sc-fa*.25*fsp.sc,Math.cos(t*.33+p)*1.2*fsp.sc)); o.b.rotation.z=Math.sin(t*.5+p)*.12; o.b.rotation.x=-fa*.06; });
+    flock.forEach(o=>{ const p=o.ph, fa=flap(o,fsp,t); o.b.position.copy(o.off).add(new T.Vector3(Math.sin(t*.4+p)*1.5*fsp.S,Math.sin(t*.7+p*2)*.8*fsp.S+(o.bob||0)-fa*.25*fsp.S,Math.cos(t*.33+p)*1.2*fsp.S)); o.b.rotation.z=Math.sin(t*.5+p)*.12; o.b.rotation.x=-fa*.06; });
     // タカ：草原や森の空高くで、ゆっくり大きな輪を描く
     hawk.b.visible=!BIO&&!nearSea(); if(hawk.b.visible){ const r=160, an=t*.07; hawk.b.position.set(cam.position.x+Math.cos(an)*r+60,cam.position.y+120+Math.sin(t*.13)*10,cam.position.z+Math.sin(an)*r+220); hawk.b.rotation.set(0,an+Math.PI,-.28); flap(hawk,BSP.hawk,t); } };
   // ---- 進む・見る ----
