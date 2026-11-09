@@ -5284,6 +5284,17 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
     const v=new T.Vector3(); for(let i=0;i<P.count;i++){ v.fromBufferAttribute(P,i); for(const [n,d] of cuts){ const k=v.dot(n); if(k>d) v.addScaledVector(n,d-k); } v.multiplyScalar(1+.04*(pNoise(v.x*.9+seed,v.z*.9+v.y*.4)-.5)); P.setXYZ(i,v.x,v.y,v.z); }
     const ng=g.toNonIndexed(); ng.computeVertexNormals(); return ng; };
   const Bx=(w,h,d,m,x,y,z)=>mk((m===mStone||m===mDark||m===mSand2)?chBox(w,h,d):new T.BoxGeometry(w,h,d),m,x,y,z), Cy=(rt,rb,h,m,x,y,z,sg=10)=>mk(new T.CylinderGeometry(rt,rb,h,sg),m,x,y,z), Sp=(r,m,x,y,z,d=1)=>mk(new T.IcosahedronGeometry(r,d),m,x,y,z);
+  // 葉の房（記念物の木用）：でこぼこの扁平な球と、表面に貼った葉の板。色は上が明るい黄緑、下と内が暗い青緑。法線は木全体の丸みに寄せてやわらかく
+  const crown=(cl,C0,base,seed)=>{ const lr=pRng('crown'+seed,3), v=new T.Vector3(), Pm=[], Nm=[], Cm=[], Pl=[], Nl=[], Cl=[], Ul=[], ys=cl.map(c=>c[1]), yLo=Math.min(...ys)-2, yHi=Math.max(...ys)+2;
+    const colAt2=(p,n)=>{ const t=Math.min(1,Math.max(0,(p.y-yLo)/(yHi-yLo))), sh=.55+.45*t+.12*n.y; return [base[0]*sh*(.9+.2*t),base[1]*sh,base[2]*sh*(1.15-.35*t)]; };
+    cl.forEach(([x,y,z,r])=>{ const g=new T.IcosahedronGeometry(r,1).toNonIndexed(), p=g.attributes.position, c0=new T.Vector3(x,y,z);
+      for(let i=0;i<p.count;i++){ v.fromBufferAttribute(p,i); const n=v.clone().normalize(), w=1+(hsh(Math.round(v.x*3+seed),Math.round(v.y*3),Math.round(v.z*3))-.5)*.3; v.copy(n).multiplyScalar(r*w); if(v.y<0) v.y*=.55; v.add(c0); const nb=n.clone().multiplyScalar(.45).add(v.clone().sub(C0).normalize().multiplyScalar(.55)).normalize(); Pm.push(v.x,v.y,v.z); Nm.push(nb.x,nb.y,nb.z); Cm.push(...colAt2(v,nb)); }
+      const nc=Math.round(4+r*2.2); for(let q=0;q<nc;q++){ const th=lr()*6.28, ph=Math.acos(1-lr()*1.4), d=new T.Vector3(Math.sin(ph)*Math.cos(th),Math.cos(ph),Math.sin(ph)*Math.sin(th)), c=c0.clone().addScaledVector(d,r*.85), sz=(1.1+lr()*.8)*Math.min(1.4,r/2.2+.5);
+        const tq=new T.Quaternion().setFromUnitVectors(new T.Vector3(0,0,1),d); tq.premultiply(new T.Quaternion().setFromAxisAngle(d,lr()*6.28));
+        const cs=[[-1,-1,0,0],[1,-1,1,0],[1,1,1,1],[-1,1,0,1]].map(([a,b,u,w])=>[new T.Vector3(a*sz,b*sz,0).applyQuaternion(tq).add(c),u,w]);
+        for(const tri of [[0,1,2],[0,2,3],[0,2,1],[0,3,2]]) for(const k2 of tri){ const [pt,u,w]=cs[k2]; Pl.push(pt.x,pt.y,pt.z); Ul.push(u,w); const nb=pt.clone().sub(C0).normalize(); Nl.push(nb.x,nb.y,nb.z); Cl.push(...colAt2(pt,nb)); } } });
+    const mk2=(P,N,C,U)=>{ const g=new T.BufferGeometry(); g.setAttribute('position',new T.Float32BufferAttribute(P,3)); g.setAttribute('normal',new T.Float32BufferAttribute(N,3)); g.setAttribute('color',new T.Float32BufferAttribute(C,3)); if(U) g.setAttribute('uv',new T.Float32BufferAttribute(U,2)); return g; };
+    const grp=new T.Group(); for(const me of [new T.Mesh(mk2(Pm,Nm,Cm),mR),new T.Mesh(mk2(Pl,Nl,Cl,Ul),mL)]){ me.castShadow=me.receiveShadow=true; grp.add(me); } return grp; };
   const DK=[
     // 古い柱の遺跡（ブレワイの「聖なる場所」のような）：丸い石の床に、台座と柱頭が段になった四角い柱が輪に立つ。いくつかは折れて、かけらが床に転がる。まわりに低い石垣と階段
     ['古い柱の遺跡',g=>{ const r=pRng('rp',g.id); g.add(Cy(10.5,11,.7,mStone,0,.1,0,24)); g.add(Cy(4.2,4.2,.16,mDark,0,.5,0,20)); g.add(Cy(3.6,3.6,.18,mStone,0,.52,0,20));
@@ -5307,7 +5318,17 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
       for(let q=0;q<4;q++){ const l=Cy(.18,.2,2.2,mWoodD,6,.55,2,6); l.rotation.set(.9,q*1.57,0); g.add(l); }
       { const p1=Cy(.12,.12,3.4,mWood,-5,1.7,-3,5), p2=Cy(.12,.12,3.4,mWood,-1,1.7,-3,5); g.add(p1); g.add(p2); const tarp=Bx(4.6,.06,3.6,mCanvas,-3,2.1,-4.4); tarp.rotation.x=-.75; g.add(tarp); const roll=Cy(.4,.4,2.2,mRedC,-3,.4,-4.6,8); roll.rotation.z=1.5708; g.add(roll); }
       { const lg=Cy(.45,.5,3.2,mWood,2.5,.45,5,8); lg.rotation.z=1.5708; g.add(lg); for(let q=0;q<5;q++){ const w=Cy(.2,.2,1.6,mWoodD,-4.5+(q%3)*.42,.2+Math.floor(q/3)*.38,3.6,6); w.rotation.x=1.5708; g.add(w); } } }],
-    ['丘の大樹',g=>{ g.add(Cy(2.2,3.6,18,mWood,0,9,0,9)); [[0,22,0,9],[6,18,2,6.5],[-6,18.5,-1,6.8],[2,17,-6,6],[-2,17,6,6]].forEach(([x,y,z,r],q)=>g.add(Sp(r,q%2?mLeaf2:mLeaf,x,y,z))); }],
+    // 丘の大樹（ハイラル平原の一本木）：灰緑がかった太い幹は根元で張り出し、苔をまとう。途中から5本の太い枝が斜め上へ広がってさらに枝分かれ、枝先ごとに明るい黄緑の葉の房。房と房の間にすき間があり、空が透ける
+    ['丘の大樹',g=>{ const r=pRng('bigtree',67), V3=(x,y,z)=>new T.Vector3(x,y,z), tips=[], mMossT=tm([92,118,56]);
+      const seg=(a,b,r0,r1)=>{ const c=Cy(r1,r0,a.distanceTo(b)+r0*.3,mWoodG,(a.x+b.x)/2,(a.y+b.y)/2,(a.z+b.z)/2,9); c.lookAt(b); c.rotateX(1.5708); g.add(c); };
+      g.add(Cy(1.9,2.7,9.4,mWoodG,0,4.7,0,12)); g.add(Cy(1.2,1.9,1.8,mWoodG,0,10.2,0,12)); g.add(Cy(3.2,3.9,1.2,mWoodG,0,.6,0,12));
+      for(let q=0;q<6;q++){ const a=q/6*6.283+r()*.3; seg(V3(Math.cos(a)*1.6,2.2,Math.sin(a)*1.6),V3(Math.cos(a)*4.6,.1,Math.sin(a)*4.6),1.0,.3); }
+      const limb=(p,d,len,rad,lv)=>{ const q=p.clone().addScaledVector(d,len); seg(p,q,rad,rad*.72); if(lv>=2){ tips.push([q.x,q.y+.5,q.z,1.7+r()*.6]); return; }
+        for(let k=0;k<(lv===0?2:3);k++){ const a=r()*6.283, nd=V3(d.x+Math.cos(a)*.6,d.y+.05+r()*.25,d.z+Math.sin(a)*.6).normalize(); limb(q,nd,len*(.6+r()*.15),rad*.6,lv+1); } };
+      for(let q=0;q<5;q++){ const a=q/5*6.283+r()*.4, d=V3(Math.cos(a)*.6,.85+r()*.2,Math.sin(a)*.6).normalize(); limb(V3(0,8.6,0),d,5.8+r()*1.2,1.05,0); }
+      tips.push([0,19.5,0,2.6],[1.6,17.6,-1.8,2.2],[-1.8,17.4,1.6,2.2]);
+      for(let q=0;q<14;q++){ const a=r()*6.283, yy=1.2+r()*6, m=Sp(.35+r()*.3,mMossT,Math.cos(a)*2.4,yy,Math.sin(a)*2.4,1); m.lookAt(Math.cos(a)*9,yy,Math.sin(a)*9); m.scale.set(1.2,1.6,.15); g.add(m); }
+      const cr=crown(tips,V3(0,16,0),c3([140,186,64]).toArray(),67); g.add(cr); g.userData.keep=cr; }],
     ['りんごの木立',g=>{ const r=pRng('ap',g.id); for(let q=0;q<3;q++){ const x=(q-1)*8+r()*2, z=r()*6-3; g.add(Cy(.6,.9,5,mWood,x,2.5,z,7)); g.add(Sp(3.4,mLeaf,x,6.6,z)); for(let k=0;k<7;k++){ const a=r()*6.28, b=r()*1.2-.2; g.add(Sp(.38,mApple,x+Math.cos(a)*Math.cos(b)*3.4,6.6+Math.sin(b)*3.4,z+Math.sin(a)*Math.cos(b)*3.4,0)); } } }],
     // 丘の風車（ブレワイのハテノ村の風車）：石を積んだ土台に、しっくい塗りの少しすぼまる丸い塔、赤い瓦のとんがり屋根、小さな窓と木の扉。長い腕に三角の帆が8枚
     ['丘の風車',g=>{ for(let k=0;k<2;k++) g.add(Cy(3.9-k*.15,4,1.2,mStone,0,.6+k*1.2,0,16));
@@ -5680,7 +5701,7 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
       C[i]=c[0]; C[i+1]=c[1]; C[i+2]=c[2]; }
     ge.setAttribute('color',new T.BufferAttribute(C,3)); return [ge,wmat(m,kind)]; };
   const L3m=(a,b,t)=>[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t];
-  const bake=g=>{ g.updateMatrixWorld(true); const u=g.userData; if(u.deer) return; const keep=new Set([u.fire,u.mill].filter(Boolean)), inKeep=o=>{ for(let q=o;q;q=q.parent) if(keep.has(q)) return true; return false; }; g.updateMatrixWorld(true); const inv=new T.Matrix4().copy(g.matrixWorld).invert(), by=new Map(), rm=[];
+  const bake=g=>{ g.updateMatrixWorld(true); const u=g.userData; if(u.deer) return; const keep=new Set([u.fire,u.mill,u.keep].filter(Boolean)), inKeep=o=>{ for(let q=o;q;q=q.parent) if(keep.has(q)) return true; return false; }; g.updateMatrixWorld(true); const inv=new T.Matrix4().copy(g.matrixWorld).invert(), by=new Map(), rm=[];
     g.traverse(o=>{ if(!o.isMesh||o.isInstancedMesh||inKeep(o)) return; const k=o.material.uuid; if(!by.has(k)) by.set(k,{m:o.material,gs:[]}); const ge=(o.geometry.index?o.geometry.toNonIndexed():o.geometry.clone()); if(!ge.boundingBox) ge.computeBoundingBox(); const bb=ge.boundingBox, sz=new T.Vector3(); bb.getSize(sz); const ctr=new T.Vector3(); bb.getCenter(ctr);
       const ax=sz.x>=sz.y&&sz.x>=sz.z?new T.Vector3(1,0,0):sz.y>=sz.z?new T.Vector3(0,1,0):new T.Vector3(0,0,1); const Mx=new T.Matrix4().multiplyMatrices(inv,o.matrixWorld); ge.applyMatrix4(Mx);
       ax.transformDirection(Mx); ctr.applyMatrix4(Mx); const n=ge.attributes.position.count, D=new Float32Array(n*6); for(let i=0;i<n;i++){ D[i*6]=ax.x; D[i*6+1]=ax.y; D[i*6+2]=ax.z; D[i*6+3]=ctr.x; D[i*6+4]=ctr.y; D[i*6+5]=ctr.z; } ge.userData.dir=D; by.get(k).gs.push(ge); rm.push(o); });
