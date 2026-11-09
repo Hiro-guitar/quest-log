@@ -4752,7 +4752,7 @@ async function pLookOpen(){
   if(pLookSt) return; const k=dayView, H=pm2y(PATH_H1)+10, W=pW, isT=k===pJDay(), bl=pBlocks(k);
   const svv=$('slView'), retM=svv?Math.max(PATH_H0,Math.min(PATH_H1,PATH_H0+svv.scrollTop/PX)):8*60, nowM=isT?Math.max(PATH_H0,Math.min(PATH_H1,pJNow()+new Date().getSeconds()/60+new Date().getMilliseconds()/60000)):retM, y0=(nowM-PATH_H0)*P_KM;
   const ov=document.createElement('div'); ov.className='look'; const d=new Date(k+'T00:00:00');
-  ov.innerHTML=`<canvas class="lk-cv"></canvas><div class="lk-ui"><div class="lk-k">見渡す</div><div class="lk-t">${d.getMonth()+1}月${d.getDate()}日（${'日月火水木金土'[d.getDay()]}）${isT?`　${pfmt(Math.floor(nowM))}`:''}</div><button class="lk-x" data-act="lookx"><i>B</i>もどる</button><div class="lk-load"><i></i><span>景色を見ています…</span></div><div class="lk-hint">指でなぞって見回す・ふたつの指で近く／遠く</div><button class="lk-go">手綱を引く</button><div class="lk-find"></div></div>`;
+  ov.innerHTML=`<canvas class="lk-cv"></canvas><div class="lk-ui"><div class="lk-k">見渡す</div><div class="lk-t">${d.getMonth()+1}月${d.getDate()}日（${'日月火水木金土'[d.getDay()]}）${isT?`　${pfmt(Math.floor(nowM))}`:''}</div><button class="lk-x" data-act="lookx"><i>B</i>もどる</button><div class="lk-load"><i></i><span>景色を見ています…</span></div><div class="lk-hint">指でなぞって見回す・ふたつの指で近く／遠く<br><span style="opacity:.6;font-size:.85em">石の写真：Babylon.js Assets（CC BY 4.0）</span></div><button class="lk-go">手綱を引く</button><div class="lk-find"></div></div>`;
   document.body.appendChild(ov); requestAnimationFrame(()=>ov.classList.add('show'));
   const L=pLookSt={ov,alive:true,raf:0}; const cv=ov.querySelector('.lk-cv'), loadEl=ov.querySelector('.lk-load span'), tick=async p=>{ loadEl.textContent=`景色を見ています… ${Math.round(p*100)}%`; await new Promise(r=>setTimeout(r,0)); return L.alive; };
   let T; try{ T=await import('./three.module.min.js'); }catch(e){ loadEl.textContent='景色を読み込めなかった'; return; }
@@ -5262,11 +5262,13 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
   updFar(y0,true); { const it=ringGen(farC); let r; while(!(r=it.next()).done); setRing(r.value); } if(!(await tick(.9))) return;
   updChunks(y0,true); if(!(await tick(.95))) return;
   // ---- 見つけるもの：1分ほど走るごとに何かがある（遺跡・野営地・風車・鹿の群れ・宝箱…）。近づくと名前が出る ----
-  const mPondE=tm([120,108,80]), mFlower=tm([255,255,255]), mFlower2=tm([240,190,214]), mLava=new T.MeshBasicMaterial({color:c3([255,110,30]).multiplyScalar(1.8)}), mDark=tm([70,62,62]), mIce=tm([176,220,240]), mSnow=tm([236,242,250]), mSand2=tm([206,170,120]), mSandG=tm([222,186,124]), mBone=tm([236,226,204]), mStone=tm([172,176,162]), mMoss=tm([104,138,66]), mWood=tm([128,88,54]), mWoodD=tm([88,62,40]), mCanvas=tm([222,208,176]), mRedC=tm([176,64,48]), mLeaf=tm([76,128,54]), mLeaf2=tm([58,104,46]), mApple=tm([210,44,40]),
+  const mPondE=tm([120,108,80]), mFlower=tm([255,255,255]), mFlower2=tm([240,190,214]), mLava=new T.MeshBasicMaterial({color:c3([255,110,30]).multiplyScalar(1.8)}), mDark=tm([70,62,62]), mIce=tm([176,220,240]), mSnow=tm([236,242,250]), mSand2=tm([206,170,120]), mSandG=tm([222,186,124]), mBone=tm([236,226,204]), mStone=tm([196,200,186]), mMoss=tm([104,138,66]), mWood=tm([128,88,54]), mWoodD=tm([88,62,40]), mCanvas=tm([222,208,176]), mRedC=tm([176,64,48]), mLeaf=tm([76,128,54]), mLeaf2=tm([58,104,46]), mApple=tm([210,44,40]),
     mWhite=tm([236,230,216]), mRoof=tm([150,74,52]), mDeer=tm([160,106,62]), mDeerL=tm([232,214,188]), mGold=tm([226,182,72]), mFire=new T.MeshBasicMaterial({color:c3([255,170,60]).multiplyScalar(1.6)}),
     mWater=patch(new T.MeshStandardMaterial({color:c3([62,120,140]),roughness:.12,envMap:L.env||null,envMapIntensity:1.1}));
   const mk=(g,m,x=0,y=0,z=0)=>{ const o=shad(new T.Mesh(g,m)); o.position.set(x,y,z); return o; };
-  const Bx=(w,h,d,m,x,y,z)=>mk(new T.BoxGeometry(w,h,d),m,x,y,z), Cy=(rt,rb,h,m,x,y,z,sg=10)=>mk(new T.CylinderGeometry(rt,rb,h,sg),m,x,y,z), Sp=(r,m,x,y,z,d=1)=>mk(new T.IcosahedronGeometry(r,d),m,x,y,z);
+  const chBox=(w,h,d)=>{ const r=Math.min(.16,Math.min(w,h,d)*.09), sh=new T.Shape(), a=w/2-r, b=d/2-r; sh.moveTo(-a,-b); sh.lineTo(a,-b); sh.lineTo(a,b); sh.lineTo(-a,b); sh.lineTo(-a,-b);
+    const g=new T.ExtrudeGeometry(sh,{depth:Math.max(.01,h-2*r),bevelEnabled:true,bevelSize:r,bevelThickness:r,bevelSegments:2,curveSegments:1}); g.rotateX(-Math.PI/2); g.translate(0,-(h-2*r)/2,0); return g; };
+  const Bx=(w,h,d,m,x,y,z)=>mk((m===mStone||m===mDark||m===mSand2)?chBox(w,h,d):new T.BoxGeometry(w,h,d),m,x,y,z), Cy=(rt,rb,h,m,x,y,z,sg=10)=>mk(new T.CylinderGeometry(rt,rb,h,sg),m,x,y,z), Sp=(r,m,x,y,z,d=1)=>mk(new T.IcosahedronGeometry(r,d),m,x,y,z);
   const DK=[
     // 古い柱の遺跡（ブレワイの「聖なる場所」のような）：丸い石の床に、台座と柱頭が段になった四角い柱が輪に立つ。いくつかは折れて、かけらが床に転がる。まわりに低い石垣と階段
     ['古い柱の遺跡',g=>{ const r=pRng('rp',g.id); g.add(Cy(10.5,11,.7,mStone,0,.1,0,24)); g.add(Cy(4.2,4.2,.16,mDark,0,.5,0,20)); g.add(Cy(3.6,3.6,.18,mStone,0,.52,0,20));
@@ -5360,20 +5362,22 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
   const n3=(x,y,z)=>(pNoise(x+z*.71,y+3.1)+pNoise(y*1.13+11.7,z+x*.37)+pNoise(z*.93+5.3,x+7.9))/3;
   const KIND=new Map([[mStone,'stone'],[mDark,'stone'],[mSand2,'stone'],[mBone,'bone'],[mWood,'wood'],[mWoodD,'wood'],[mWhite,'plaster'],[mCanvas,'cloth'],[mRedC,'cloth'],[mRoof,'roof']]);
   // 石の表面（ブレワイの遺跡の石）：細かいざらつきと小さな斑点、切り石の目地（横の段と、段ごとにずれた縦の継ぎ目）、上の面と目地のまわりにふわっとした苔、壁を這うツタ。形は平らなまま、表面の模様で古さを出す
+  // 石の表面：本物の石垣の写真（Babylon.js Assets, CC BY 4.0）を世界の向きに合わせて3方向から貼る。石の形・ひび・欠け・凹凸は写真そのもの。
+  //   色はブレワイの遺跡の、少し緑がかった明るい灰色に寄せ、上の面と石の継ぎ目に苔、壁の一部にツタ
+  const stoneTex=new T.TextureLoader().load('stone.jpg'); stoneTex.wrapS=stoneTex.wrapT=T.RepeatWrapping; stoneTex.colorSpace=T.NoColorSpace; stoneTex.anisotropy=4;
   const STONE_FS=`
- { vec3 wn=normalize(vWN), p=vWP; vec3 aw=abs(wn); vec2 uv=aw.y>.6?p.xz:aw.x>aw.z?p.zy:p.xy;
-   float gr=vn(uv*3.1)*.45+vn(uv*9.7+3.)*.33+vn(uv*31.+7.)*.22, sp=step(.94,hh(floor(uv*26.)))*.5+step(.97,hh(floor(uv*61.)+5.))*.5;
-   float seam=1.; if(aw.y<.6){ float cy=p.y/1.25, row=floor(cy), fy=fract(cy); float u=dot(p.xz,normalize(vec2(-wn.z,wn.x)+1e-4))/2.1+row*.5; float fx=fract(u);
-     seam=1.-.3*(1.-smoothstep(.0,.04,fy))-.3*(1.-smoothstep(.0,.022,fx))*(.6+.4*vn(vec2(row,floor(u)))); }
-   vec3 c=diffuseColor.rgb*(.86+.26*gr)*(1.-.18*sp)*seam;
-   float mo=smoothstep(.55,.9,wn.y)*smoothstep(.5,.66,vn(p.xz*.45)+.25*(gr-.5)) + (1.-seam)*1.4*smoothstep(.55,.7,vn(uv*.7+9.));
-   float iv=(1.-smoothstep(.2,.5,aw.y))*smoothstep(.72,.8,vn(vec2(dot(p.xz,vec2(.7,.7))*.35,p.y*.12)+2.)+.12*gr)*smoothstep(.5,2.,p.y);
-   vec3 mc=mix(vec3(.2,.3,.08),vec3(.34,.44,.12),vn(uv*5.)+.3*gr);
-   c=mix(c,mc,clamp(mo,0.,1.)*(.75+.25*gr)); c=mix(c,vec3(.12,.2,.06)*(.8+.5*gr),clamp(iv,0.,1.)*.8);
+ { vec3 wn=normalize(vWN), p=vWP; vec3 aw=pow(abs(wn),vec3(4.)); aw/=aw.x+aw.y+aw.z; float S=.11;
+   float tx=texture2D(uStone,p.zy*S).r*aw.x+texture2D(uStone,p.xz*S+.37).r*aw.y+texture2D(uStone,p.xy*S+.71).r*aw.z;
+   float tb=texture2D(uStone,p.zy*S*.27+.13).r*aw.x+texture2D(uStone,p.xz*S*.27+.5).r*aw.y+texture2D(uStone,p.xy*S*.27+.29).r*aw.z;
+   float st=tx*1.25*(.85+.3*tb); vec3 c=diffuseColor.rgb*(.25+.95*st);
+   float gap=1.-smoothstep(.22,.4,tx); vec2 uv=aw.y>.5?p.xz:aw.x>aw.z?p.zy:p.xy;
+   float mo=smoothstep(.5,.9,wn.y)*smoothstep(.45,.62,vn(p.xz*.45)+.3*(tb-.5)) + gap*smoothstep(.45,.62,vn(uv*.5+9.))*.9 + (1.-smoothstep(.0,1.,p.y-0.))*0.;
+   vec3 mc=mix(vec3(.16,.24,.06),vec3(.38,.48,.12),smoothstep(.3,.8,vn(uv*4.)+.4*tx)); c=mix(c,mc*(.7+.5*tx),clamp(mo,0.,1.));
+   float iv=step(aw.y,.4)*smoothstep(.73,.8,vn(vec2(dot(p.xz,vec2(.7,.7))*.35,p.y*.12)+2.)+.12*tb)*smoothstep(.5,2.,p.y); c=mix(c,vec3(.1,.18,.05)*(.6+.8*tx),clamp(iv,0.,1.)*.85);
    diffuseColor.rgb=c; }`;
   const wMat=new Map(), wmat=(m,kind)=>{ if(!wMat.has(m)){ const mm=patch(new T.MeshToonMaterial({vertexColors:true,gradientMap:kind==='stone'?gmapG:gmap2,side:T.DoubleSide})); if(kind==='stone'){ const ob=mm.onBeforeCompile; mm.onBeforeCompile=sh=>{ ob(sh);
       sh.vertexShader='varying vec3 vWN;\n'+sh.vertexShader.replace('#include <beginnormal_vertex>','#include <beginnormal_vertex>\n vWN=normalize(mat3(modelMatrix)*objectNormal);');
-      sh.fragmentShader='varying vec3 vWN;\n'+sh.fragmentShader.replace('#include <color_fragment>','#include <color_fragment>\n'+STONE_FS); }; mm.customProgramCacheKey=()=>'wstone'; } wMat.set(m,mm); } return wMat.get(m); };
+      sh.uniforms.uStone={value:stoneTex}; sh.fragmentShader='varying vec3 vWN;\nuniform sampler2D uStone;\n'+sh.fragmentShader.replace('#include <color_fragment>','#include <color_fragment>\n'+STONE_FS); }; mm.customProgramCacheKey=()=>'wstone'; } wMat.set(m,mm); } return wMat.get(m); };
   const tess=(P,maxL)=>{ let cur=P; for(let it=0;it<3;it++){ const out=[]; let any=false; for(let i=0;i<cur.length;i+=9){ const a=cur.slice(i,i+3), b=cur.slice(i+3,i+6), c=cur.slice(i+6,i+9), d=(p,q)=>Math.hypot(p[0]-q[0],p[1]-q[1],p[2]-q[2]);
       if(Math.max(d(a,b),d(b,c),d(c,a))>maxL){ any=true; const m=(p,q)=>[(p[0]+q[0])/2,(p[1]+q[1])/2,(p[2]+q[2])/2], ab=m(a,b), bc=m(b,c), ca=m(c,a); out.push(...a,...ab,...ca, ...ab,...b,...bc, ...ca,...bc,...c, ...ab,...bc,...ca); } else out.push(...a,...b,...c); } cur=out; if(!any) break; } return new Float32Array(cur); };
   const MOSS=lin([88,122,56]), MOSS2=lin([120,146,70]), DIRT=lin([92,78,58]), IVY=lin([60,96,44]), GRAYW=lin([150,146,136]);
