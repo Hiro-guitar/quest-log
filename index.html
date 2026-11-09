@@ -4752,17 +4752,18 @@ async function pLookOpen(){
   const X=x=>x-OX, Z=y=>-(y-y0), lin=c=>c.map(v=>Math.pow(v/255,2.2));
   const {C,mix,colAt}=WD;
   // 草の生える地面は、草と同じ色に塗っておく（遠くで草の本数が減っても、草原の色のまま。近づいても色が変わらず「生えてくる」ように見えない）
-  const colG=(x,y,e,ny,b)=>{ const c=colAt(x,y,e,ny,b); if(e<1||b[0]>.2||b[1]>.25||b[3]>.3) return c; const g=.85*sm(.78,.86,ny)*sm(5,9,Math.abs(x-rX(y))); if(g<=0) return c; return [c[0]*(1-.45*g),c[1]*(1-.17*g),c[2]*(1-.7*g)]; };
+  const grW=(x,y,e,ny,b)=>(e<1||b[0]>.2||b[1]>.25||b[3]>.3)?0:sm(.78,.86,ny)*sm(5,9,Math.abs(x-rX(y)));
+  const colG=(x,y,e,ny,b)=>{ const c=colAt(x,y,e,ny,b), g=.85*grW(x,y,e,ny,b); if(g<=0) return c; return [c[0]*(1-.45*g),c[1]*(1-.17*g),c[2]*(1-.7*g)]; };
   const mkGround=(XA2,XB2,YA2,YB2,st,hf,bf,skirt)=>{ const mx=Math.ceil((XB2-XA2)/st)+1, my=Math.ceil((YB2-YA2)/st)+1, pos=new Float32Array(mx*my*3), idx=[];
     for(let j=0;j<my;j++) for(let i=0;i<mx;i++){ const o=j*mx+i, x=XA2+i*st, y=YA2+j*st; pos[o*3]=X(x); pos[o*3+1]=hf(x,y,i,j); pos[o*3+2]=Z(y); }
     for(let j=0;j<my-1;j++) for(let i=0;i<mx-1;i++){ const a=j*mx+i, b=a+1, c=a+mx, e=c+1; idx.push(a,b,c,b,e,c); }
     const g=new T.BufferGeometry(); g.setAttribute('position',new T.BufferAttribute(pos,3)); g.setIndex(idx); g.computeVertexNormals();
-    const nr=g.attributes.normal.array, col=new Float32Array(mx*my*3); for(let j=0;j<my;j++) for(let i=0;i<mx;i++){ const o=j*mx+i, x=XA2+i*st, y=YA2+j*st; col.set(colG(x,y,pos[o*3+1],nr[o*3+1],bf(x,y,i,j)),o*3); }
-    g.setAttribute('color',new T.BufferAttribute(col,3));
+    const nr=g.attributes.normal.array, col=new Float32Array(mx*my*3), grA=new Float32Array(mx*my); for(let j=0;j<my;j++) for(let i=0;i<mx;i++){ const o=j*mx+i, x=XA2+i*st, y=YA2+j*st; const bb=bf(x,y,i,j); col.set(colG(x,y,pos[o*3+1],nr[o*3+1],bb),o*3); grA[o]=grW(x,y,pos[o*3+1],nr[o*3+1],bb); }
+    g.setAttribute('color',new T.BufferAttribute(col,3)); g.setAttribute('aGr',new T.BufferAttribute(grA,1));
     if(skirt){ // 区画の左右のふちを下へ垂らして、遠くの地面とのすき間を隠す
-      const P2=Array.from(pos), N2=Array.from(nr), C2=Array.from(col); let n=mx*my; const sk=i=>{ const s=n++; P2.push(pos[i*3],pos[i*3+1]-300,pos[i*3+2]); N2.push(nr[i*3],nr[i*3+1],nr[i*3+2]); C2.push(col[i*3],col[i*3+1],col[i*3+2]); return s; };
+      const P2=Array.from(pos), N2=Array.from(nr), C2=Array.from(col), G2=Array.from(grA); let n=mx*my; const sk=i=>{ const s=n++; P2.push(pos[i*3],pos[i*3+1]-300,pos[i*3+2]); N2.push(nr[i*3],nr[i*3+1],nr[i*3+2]); C2.push(col[i*3],col[i*3+1],col[i*3+2]); G2.push(grA[i]); return s; };
       for(const side of [0,mx-1]){ let pv=null, pt=null; for(let j=0;j<my;j++){ const i=j*mx+side, s=sk(i); if(pv!==null){ idx.push(pv,i,pt,i,s,pt,pv,pt,i,i,pt,s); } pv=i; pt=s; } }
-      g.setAttribute('position',new T.Float32BufferAttribute(P2,3)); g.setAttribute('normal',new T.Float32BufferAttribute(N2,3)); g.setAttribute('color',new T.Float32BufferAttribute(C2,3)); g.setIndex(idx); }
+      g.setAttribute('position',new T.Float32BufferAttribute(P2,3)); g.setAttribute('normal',new T.Float32BufferAttribute(N2,3)); g.setAttribute('color',new T.Float32BufferAttribute(C2,3)); g.setAttribute('aGr',new T.Float32BufferAttribute(G2,1)); g.setIndex(idx); }
     return g; };
   if(!(await tick(.3))) return;
   const ridge=(x,y)=>{ const n=1-Math.abs(pNoise(x/300+9,y/300+4)*2-1); return n*n; };
@@ -4815,6 +4816,16 @@ async function pLookOpen(){
   const gc=document.createElement('canvas'); gc.width=3; gc.height=1; { const x=gc.getContext('2d'); [[0,90],[1,178],[2,255]].forEach(([i,v])=>{ x.fillStyle=`rgb(${v},${v},${v})`; x.fillRect(i,0,1,1); }); }
   const gmap=new T.CanvasTexture(gc); gmap.minFilter=gmap.magFilter=T.NearestFilter; gmap.colorSpace=T.NoColorSpace;
   const gMat=patch(new T.MeshToonMaterial({vertexColors:true,gradientMap:gmap}),0,1);
+  { const ob=gMat.onBeforeCompile; gMat.onBeforeCompile=sh=>{ ob(sh);
+    sh.vertexShader='attribute float aGr;\nvarying float vGr;\n'+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n vGr=aGr;');
+    sh.fragmentShader='varying float vGr;\n'+sh.fragmentShader.replace('#include <opaque_fragment>',`#include <opaque_fragment>
+ if(vGr>0.){ float dd=distance(vWP.xz,cameraPosition.xz), im=vGr*smoothstep(30.,150.,dd); vec3 V=normalize(cameraPosition-vWP); float gz=1.-abs(V.y);
+   // 草の葉は縦に立っているので、遠くからは細かい縦すじに見える：見る向きに対して横は細かく、奥行きは葉の高さぶんだけ伸ばした模様
+   vec2 vd=normalize(vWP.xz-cameraPosition.xz), la=vec2(-vd.y,vd.x); float ch=max(1.5,cameraPosition.y-vWP.y), lat=dot(vWP.xz,la), dep=dot(vWP.xz,vd);
+   float px=dd/700., st=vn(vec2(lat*1.25/max(1.,px),dep*ch/(1.7*dd))*1.)*.6+vn(vec2(lat*2.9/max(1.,px)+11.,dep*ch/(1.1*dd)))*.4, sk=mix(.5,st,1.-smoothstep(260.,900.,dd));
+   float cl=vn(vWP.xz*.42+3.)*.6+vn(vWP.xz*.11+7.)*.4;
+   float gw=sin((vWP.x*.6+vWP.z*.8)*.03-uTime*1.5)*.5+.5; gw*=gw;
+   gl_FragColor.rgb=mix(gl_FragColor.rgb,gl_FragColor.rgb*(.62+.62*sk)*(.82+.36*cl)*(.94+.3*gw)*mix(1.06,.9,gz),im); }`); }; }
   const chunkRoot=new T.Group(), farG=new T.Group(); scene.add(chunkRoot,farG);
   // ---- 光 ----
   const sun=new T.DirectionalLight(day>.1?c3(lerpA([255,246,232],[255,190,130],eve)):c3(RED?[236,128,116]:[150,176,236]),day>.1?2.2:1.2); scene.add(sun.target); sun.castShadow=true; sun.shadow.mapSize.set(2048,2048);
@@ -5206,8 +5217,8 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
     for(let j=0;j<myn;j++){ const y=ya+j*st, rxy=rX(y); for(let i=0;i<mxn;i++){ const x=xa+i*st, o=j*mxn+i; let e=raw(x,y); if(Math.abs(x-rxy)<LAT+80) e=Math.min(e,hFn(x,y))-16; pos[o*3]=X(x); pos[o*3+1]=e; pos[o*3+2]=Z(y); } if(j%8===7) yield; }
     for(let j=0;j<myn-1;j++) for(let i=0;i<mxn-1;i++){ const a=j*mxn+i, b=a+1, c=a+mxn, e=c+1; idx.push(a,b,c,b,e,c); }
     const g=new T.BufferGeometry(); g.setAttribute('position',new T.BufferAttribute(pos,3)); g.setIndex(idx); g.computeVertexNormals(); yield;
-    const nr=g.attributes.normal.array, col=new Float32Array(mxn*myn*3); for(let j=0;j<myn;j++){ for(let i=0;i<mxn;i++){ const o=j*mxn+i; col.set(colG(xa+i*st,ya+j*st,pos[o*3+1]+16*(Math.abs(xa+i*st-rX(ya+j*st))<LAT+80),nr[o*3+1],bAt(xa+i*st,ya+j*st)),o*3); } if(j%16===15) yield; }
-    g.setAttribute('color',new T.BufferAttribute(col,3)); const m=new T.Mesh(g,gMat); m.receiveShadow=true; return [m,cy]; };
+    const nr=g.attributes.normal.array, col=new Float32Array(mxn*myn*3), grA=new Float32Array(mxn*myn); for(let j=0;j<myn;j++){ for(let i=0;i<mxn;i++){ const o=j*mxn+i, x=xa+i*st, y=ya+j*st, e=pos[o*3+1]+16*(Math.abs(x-rX(y))<LAT+80), b=bAt(x,y); col.set(colG(x,y,e,nr[o*3+1],b),o*3); grA[o]=grW(x,y,e,nr[o*3+1],b); } if(j%16===15) yield; }
+    g.setAttribute('color',new T.BufferAttribute(col,3)); g.setAttribute('aGr',new T.BufferAttribute(grA,1)); const m=new T.Mesh(g,gMat); m.receiveShadow=true; return [m,cy]; };
   const setFar=([m,cy])=>{ if(farMesh){ farG.remove(farMesh); farMesh.geometry.dispose(); } farMesh=m; farC=cy; farG.add(m); };
   const updFar=(py,sync)=>{ if(sync){ const it=farGen(py); let r; while(!(r=it.next()).done); setFar(r.value); return; } if(!fJob&&Math.abs(py-farC)>2500) fJob=farGen(py+600); };
   const farStep=ms=>{ if(!fJob){ if(!ringJob&&Math.abs(farC-ringC)>5000) ringJob=ringGen(farC); if(ringJob){ const t=performance.now(); while(performance.now()-t<ms){ const r=ringJob.next(); if(r.done){ setRing(r.value); ringJob=null; break; } } } return; } const t=performance.now(); while(performance.now()-t<ms){ const r=fJob.next(); if(r.done){ setFar(r.value); fJob=null; return; } } };
