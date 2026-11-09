@@ -5053,6 +5053,24 @@ async function pLookOpen(){
   const coat=hm([204,140,80],1), coatD=hm([132,84,48],1), muz=hm([180,118,70]), sock=hm([242,234,212]), sockH=hm([238,228,200],2), mane=hm([242,228,186],2), maneD=hm([220,198,150],2), hoof=hm([88,76,66]), eyeM=hm([20,14,10]), strap=hm([70,42,28]), metal=hm([206,190,140]),
     cloak=hm([74,98,84]), cloakD=hm([56,74,64]), skin=hm([232,192,160]), hair=hm([96,64,40]), boot=hm([70,50,36]), saddle=hm([108,62,36]), blanket=hm([42,92,104]), blanketE=hm([226,206,160]);
   const shad=o=>{ o.castShadow=true; o.receiveShadow=true; return o; };
+  // ---- 毛（尾とたてがみ）：細い毛の筋を描いた半透明の帯をたくさん重ねる。帯は根もとから先へ曲がりながら、
+  //      走りの勢いで後ろへなびき、先ほど大きく波打つ（波は根もとから先へ伝わる）----
+  const hairTex=(()=>{ const c=document.createElement('canvas'); c.width=128; c.height=256; const x=c.getContext('2d'), hr=pRng('hairT',3);
+    for(let q=0;q<150;q++){ const x0=hr()*128, w=.6+hr()*1.8, len=.55+hr()*.45, b=150+hr()*105, a=.55+hr()*.45, wav=(hr()-.5)*10; x.strokeStyle=`rgba(${b},${b},${b},${a})`; x.lineWidth=w; x.beginPath(); x.moveTo(x0,0);
+      for(let y=0;y<=256*len;y+=8){ x.lineTo(x0+Math.sin(y/256*3.1+q)*wav*(y/256),y); } x.stroke(); }
+    const t=new T.CanvasTexture(c); t.colorSpace=T.SRGBColorSpace; t.anisotropy=4; return t; })();
+  const HAIR={uHT:{value:0},uHSw:{value:0}};
+  const hairMat=(col,mode)=>{ const m=hm(col,0); m.map=hairTex; m.alphaTest=.42; const ob=m.onBeforeCompile;
+    m.onBeforeCompile=sh=>{ ob(sh); Object.assign(sh.uniforms,HAIR);
+      sh.vertexShader='attribute float aS, aPh, aSd; uniform float uHT, uHSw;\n'+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n { float s=aS, s2=s*s, t=uHT;'+(mode==='tail'
+        ? ' float wv=sin(t*2.4-s*4.2+aPh)*(.07+.07*uHSw)+sin(t*3.9-s*7.+aPh*1.7)*(.025+.03*uHSw); transformed.x+=wv*s*1.3; transformed.z+=-uHSw*(.2+.07*sin(t*5.8-s*3.+aPh))*s2+cos(t*2.1-s*3.5+aPh)*.05*s2; transformed.y+=uHSw*.1*s2; }'
+        : ' float wv=sin(t*2.8-s*3.6+aPh); transformed.x+=aSd*(.02+.05*uHSw)*s2+aSd*wv*(.02+.03*uHSw)*s; transformed.z+=-(.04+.14*uHSw*(1.+.35*sin(t*6.-s*2.+aPh)))*s2; transformed.y+=uHSw*.06*s2; }'));
+      sh.fragmentShader=sh.fragmentShader.replace('#include <map_fragment>','#ifdef USE_MAP\n { vec4 tc=texture2D(map,vMapUv); diffuseColor.a*=tc.a; diffuseColor.rgb*=.7+.42*tc.r; }\n#endif'); };
+    m.customProgramCacheKey=()=>'hair'+mode; return m; };
+  // 毛の帯をまとめて1つの形に：f(s)=[x,y,z] の背骨にそって、横向き side の幅で並べる
+  const hairGeo=strands=>{ const P=[], N=[], U=[], S=[], PH=[], SD=[], I=[]; let base=0;
+    for(const {f,w,side,nrm,ph,sd,nseg=10} of strands){ for(let k=0;k<=nseg;k++){ const s=k/nseg, c=f(s), ww=w*(1-.8*Math.pow(s,1.6)); for(const e of [-1,1]){ P.push(c[0]+side[0]*ww*e*.5,c[1]+side[1]*ww*e*.5,c[2]+side[2]*ww*e*.5); const n=nrm(s); N.push(n[0],n[1],n[2]); U.push(e<0?0:1,s); S.push(s); PH.push(ph); SD.push(sd||0); } if(k){ const a=base+(k-1)*2; I.push(a,a+2,a+1,a+1,a+2,a+3); } } base+=(nseg+1)*2; }
+    const g=new T.BufferGeometry(); g.setAttribute('position',new T.Float32BufferAttribute(P,3)); g.setAttribute('normal',new T.Float32BufferAttribute(N,3)); g.setAttribute('uv',new T.Float32BufferAttribute(U,2)); g.setAttribute('aS',new T.Float32BufferAttribute(S,1)); g.setAttribute('aPh',new T.Float32BufferAttribute(PH,1)); g.setAttribute('aSd',new T.Float32BufferAttribute(SD,1)); g.setIndex(I); return g; };
   // pts: [x,y,z,横の半径,上側の半径,下側の半径]。点の間はなめらかに補う
   const smooth=(pts,k)=>{ const out=[], n=pts.length; for(let i=0;i<n-1;i++){ const p0=pts[Math.max(0,i-1)], p1=pts[i], p2=pts[i+1], p3=pts[Math.min(n-1,i+2)];
       for(let j=0;j<k;j++){ const t=j/k, t2=t*t, t3=t2*t; out.push(p1.map((_,d)=>.5*((2*p1[d])+(-p0[d]+p2[d])*t+(2*p0[d]-5*p1[d]+4*p2[d]-p3[d])*t2+(-p0[d]+3*p1[d]-3*p2[d]+p3[d])*t3))); } } out.push(pts[n-1]); return out; };
@@ -5100,9 +5118,12 @@ async function pLookOpen(){
   const MANE=[];
   // たてがみ：首すじから右に長く垂れる房と、前髪
   neck.add(tube(nk.map(q=>[.03,q[1]+q[4]*.92+.02,q[2]-q[4]*.42,.11,.13,.07]),mane,12,...NP));
-  for(let q=0;q<22;q++){ const sd=q<15?1:-1, qq=q<15?q:q-15, nq=q<15?14:6, f=qq/nq, i0=Math.min(3,Math.floor(f*3.99)), a=nk[i0], b=nk[i0+1], w=f*3.99-i0, y=a[1]+(b[1]-a[1])*w+(a[4]+(b[4]-a[4])*w)*.85, z=a[2]+(b[2]-a[2])*w-(a[4]+(b[4]-a[4])*w)*.4, rx=(a[3]+(b[3]-a[3])*w)*sd;
-    const ln=(.6-f*.18+Math.sin(q*2.7)*.08)*(sd>0?1:.7), wd=.12+Math.sin(q*1.9)*.03, dz=-.1-.04*Math.sin(q*1.3);
-    { const lg=new T.Group(), r0=[rx*.4-NP[0],y+.03-NP[1],z-NP[2]]; lg.position.set(...r0); lg.userData={sd,ph:q*1.37,k:.6+f*.5}; neck.add(lg); MANE.push(lg); const lm=tube([[rx*.4,y+.03,z,.05,wd,wd],[rx*.85,y-.08,z-.02,.05,wd,wd],[rx+.02*sd,y-ln*.45,z+dz*.5,.04,wd*1.05,wd*1.05],[rx+.04*sd,y-ln*.8,z+dz,.03,wd*.75,wd*.75],[rx+.06*sd,y-ln,z+dz*1.2,.01,wd*.15,wd*.15]],q%4===3?maneD:mane,10,...NP,3); lm.position.set(-r0[0],-r0[1],-r0[2]); lg.add(lm); } }
+  { const hr=pRng('maneH',7), Lm=[], Ld=[];
+    for(let q=0;q<70;q++){ const sd=hr()<.72?1:-1, f0=hr(), i0=Math.min(3,Math.floor(f0*3.99)), a=nk[i0], b=nk[i0+1], w=f0*3.99-i0, y=a[1]+(b[1]-a[1])*w+(a[4]+(b[4]-a[4])*w)*.85, z=a[2]+(b[2]-a[2])*w-(a[4]+(b[4]-a[4])*w)*.4, rx=(a[3]+(b[3]-a[3])*w)*sd;
+      const ln=(.5-f0*.16+hr()*.18)*(sd>0?1:.7), dz=-.08-.06*hr(), wd=.07+hr()*.07, ph=hr()*6.28;
+      const f=s=>[rx*.35+(rx*.62+.04*sd)*Math.min(1,s*2.5), y+.04-ln*Math.max(0,s-.15)*1.1, z+dz*s-NP[2]+0].map((v,k)=>k===0?v-NP[0]:k===1?v-NP[1]:v), side=[0,.25,1], nrm=s=>[sd*.85,.4,-.2];
+      (q%4===3?Ld:Lm).push({f,w:wd,side,nrm,ph,sd}); }
+    for(const [L,mm] of [[Lm,hairMat([242,228,186],'mane')],[Ld,hairMat([218,196,150],'mane')]]){ const me=new T.Mesh(hairGeo(L),mm); me.castShadow=true; me.frustumCulled=false; neck.add(me); } }
   hd.add(tube([[0,2.64,1.25,.09,.1,.1],[.02,2.57,1.4,.13,.1,.1],[.03,2.43,1.54,.11,.08,.08],[.04,2.3,1.62,.07,.05,.05],[.05,2.22,1.65,.01,.015,.015]],mane,12,...NP,3));
   [-1,1].forEach(sg=>hd.add(tube([[sg*.08,2.6,1.3,.03,.06,.06],[sg*.17,2.45,1.42,.03,.05,.05],[sg*.2,2.3,1.46,.01,.01,.01]],mane,8,...NP,3)));
   // 尾：根もとが太く、長く流れる
@@ -5110,11 +5131,13 @@ async function pLookOpen(){
   const TB={value:new T.Vector2()}, bend=m=>{ const c=m.clone(), ob=m.onBeforeCompile; c.onBeforeCompile=sh=>{ ob(sh); sh.uniforms.uTB=TB; sh.vertexShader='uniform vec2 uTB;\n'+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n { float d=max(0.,-position.y); transformed.x+=uTB.x*d*d; transformed.z+=uTB.y*d*d; }'); }; return c; }, tM=bend(mane), tD=bend(maneD);
   tail.add(tube([[0,.04,.06,.1,.1,.1],[0,-.06,-.06,.11,.11,.11],[0,-.24,-.14,.09,.09,.09]],coat,12,0,0,0,3));
   // 房のすき間を埋める芯（うしろから見ても一つの尾に見えるように）
-  tail.add(tube([[0,-.05,-.08,.1,.1,.1],[0,-.45,-.16,.15,.1,.1],[0,-.85,-.19,.17,.09,.09],[0,-1.05,-.19,.14,.06,.06],[0,-1.12,-.18,.02,.02,.02]],tD,14,0,0,0,3));
-  // ふさふさの尾：根もとから毛の房がたくさん分かれて広がる。房ごとに少しずつずれて揺れる
-  const TAIL=[]; for(let q=0;q<22;q++){ const a=q/22*6.283+Math.sin(q*3.1)*.3, rr=.03+.05*((q*7)%5)/4, ox=Math.cos(a)*rr, oz=Math.sin(a)*rr*.6, sp=Math.cos(a)*(.025+.035*((q*3)%4)/3), sz=Math.sin(a)*.035, ln=1.08+.14*Math.sin(q*2.3)+.08*((q*5)%3)/2, wd=.085+.035*((q*11)%4)/3;
-    const g=new T.Group(); g.userData={ph:q*1.73,k:.7+.6*((q*13)%5)/4}; tail.add(g); TAIL.push(g);
-    g.add(tube([[ox,0,-.04+oz,wd,wd,wd],[ox+sp*.3,-.18,-.1+oz+sz*.3,wd*1.35,wd*1.15,wd*1.15],[ox+sp*.65,-.5,-.16+oz+sz*.6,wd*1.5,wd*1.15,wd*1.15],[ox+sp,-.82*ln,-.2+oz+sz,wd*1.3,wd,wd],[ox+sp*1.3,-ln+.14,-.21+oz+sz*1.3,wd*1.0,wd*.8,wd*.8],[ox+sp*1.55,-ln,-.18+oz+sz*1.5,.03,.03,.03]],q%3===0?tD:tM,8,0,0,0,3)); }
+  tail.add(tube([[0,-.05,-.08,.09,.09,.09],[0,-.35,-.15,.1,.08,.08],[0,-.6,-.18,.06,.05,.05],[0,-.75,-.19,.01,.01,.01]],tD,12,0,0,0,3));
+  // ふさふさの尾：根もとの束から、細い毛の帯がたくさん分かれて流れる（外側ほど明るく、内側は濃い）
+  const TAIL=[]; { const hr=pRng('tailH',5), L1=[], L2=[];
+    for(let q=0;q<120;q++){ const a=hr()*6.283, rr=.02+hr()*.1, ln=1.0+hr()*.6, sp=(hr()-.5)*.16, sz=(hr()-.5)*.1, ph=hr()*6.28, w=.12+hr()*.12, ox=Math.cos(a)*rr, oz=Math.sin(a)*rr*.7-.06;
+      const f=s=>[ox+sp*s*s+Math.cos(a)*rr*.6*s, -ln*s, oz-.16*Math.sin(s*1.6)-.06*s+sz*s*s], sa=a+1.5708, side=[Math.cos(sa),0,Math.sin(sa)*.7], nrm=s=>{ const v=[Math.cos(a),.15,Math.sin(a)], l=Math.hypot(...v); return v.map(x=>x/l); };
+      (q%3===0?L2:L1).push({f,w,side,nrm,ph}); }
+    for(const [L,mm] of [[L1,hairMat([242,228,186],'tail')],[L2,hairMat([214,192,146],'tail')]]){ const me=new T.Mesh(hairGeo(L),mm); me.castShadow=true; me.receiveShadow=true; me.frustumCulled=false; tail.add(me); } }
   // 脚：太い腕と腿、細い管、球節、ひづめ。肩（ひじ）・ひざ・球節で曲がる
   const legs=[], mkLeg=(x,y,z,hind)=>{ const hip=new T.Group(); hip.position.set(x,y,z); bo.add(hip); const L1=hind?.62:.6, L2=hind?.52:.47, ys=L1/(hind?.46:.42), rs=.95;
     // 上は筋肉、下は骨ばって平たい。後ろ脚はひざ（スタイフル）が前、飛節が後ろに曲がる
@@ -6240,9 +6263,9 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
       else { l.hip.rotation.x=.3+(-.5*A*sn-.05)*sw; l.kn.rotation.x=-.3-.75*(1+.4*gl)*cs*sw; l.fe.rotation.x=(.45+.2*gl)*cs*sw; } });
     const rk=Math.sin(T0+.9), bo=Math.max(0,Math.sin(T0+2.2));
     body.rotation.x=rk*(.06+.09*gl)*sw; body.position.y=1.3+(Math.sin(T0*2)*.05*(1-gl)+(bo*.15-.05)*gl)*sw; neck.rotation.x=-rk*(.12+.16*gl)*sw+Math.sin(n/1600)*.03*(1-sw);
-    tail.rotation.x=.3*sw+.08*sw*Math.sin(T0*2)+Math.sin(n/600)*.08; tail.rotation.z=Math.sin(n/900)*.16+Math.sin(n/370)*.06; { const t=n/1000, gb=Math.sin(T0*2); TB.value.set(Math.sin(t*1.6)*.14+Math.sin(t*3.7)*.06+Math.sin(T0)*.1*sw,-.3*sw-.12*sw*gb+Math.sin(t*2.1)*.08);
+    tail.rotation.x=.14*sw+.06*sw*Math.sin(T0*2)+Math.sin(n/600)*.05; tail.rotation.z=Math.sin(n/900)*.1+Math.sin(n/370)*.04; { const t=n/1000, gb=Math.sin(T0*2); TB.value.set(Math.sin(t*1.6)*.14+Math.sin(t*3.7)*.06+Math.sin(T0)*.1*sw,-.3*sw-.12*sw*gb+Math.sin(t*2.1)*.08);
       MANE.forEach(g=>{ const u=g.userData; g.rotation.x=(.4*sw+.2*sw*Math.sin(T0*2+u.ph*.5)+.1*Math.sin(t*2.4+u.ph))*u.k; g.rotation.z=u.sd*(-.2*sw*Math.max(0,gb)+.1*Math.sin(t*1.9+u.ph)+.06*sw*Math.sin(T0*2+u.ph))*u.k; });
-      TAIL.forEach(g=>{ const u=g.userData; g.rotation.x=(.12*sw*Math.sin(T0*2+u.ph*.4)+.06*Math.sin(t*2.6+u.ph))*u.k; g.rotation.z=(.07*Math.sin(t*1.7+u.ph)+.06*sw*Math.sin(T0*2+u.ph*.7))*u.k; }); } rider.position.y=RY+Math.max(0,Math.sin(T0*2))*.04*sw*(1-gl)+bo*.05*gl*sw; rider.rotation.x=-rk*.05*gl*sw;
+      HAIR.uHT.value=t; HAIR.uHSw.value=sw; TAIL.forEach(g=>{ const u=g.userData; g.rotation.x=(.12*sw*Math.sin(T0*2+u.ph*.4)+.06*Math.sin(t*2.6+u.ph))*u.k; g.rotation.z=(.07*Math.sin(t*1.7+u.ph)+.06*sw*Math.sin(T0*2+u.ph*.7))*u.k; }); } rider.position.y=RY+Math.max(0,Math.sin(T0*2))*.04*sw*(1-gl)+bo*.05*gl*sw; rider.rotation.x=-rk*.05*gl*sw;
     plantStep(3); chunkStep(3); farStep(2);
     if(isT||k){ const m=nowM+(py-y0)/KM; tEl.textContent=`${dLab}　${pfmt(Math.floor(m))}`; }
     animDisc(n/1000,dt); animBirds(n/1000,dt); animSmoke(n/1000,dt); place(); L.started=1; clouds.forEach(s=>{ s.position.x+=dt*7; if(s.position.x>1600) s.position.x=-1600; if(s.position.z>cam.position.z+600) s.position.z-=3100; }); if(L.nt){ L.nt.offset.x+=dt*.004; L.nt.offset.y+=dt*.006; }
