@@ -4736,7 +4736,7 @@ function pWorld(k){ pSeedRoad(k); const key=k+'|'+pOff.toFixed(4); if(pWorldMemo
     if(e<-.3) c=mix(c,C.bed,sm(-.3,-4,e));
     const v=.92+.16*n2; return [c[0]*v,c[1]*v,c[2]*v]; };
   // 見つけるもの：約260ごとに1つ。場所と種類は地図の場所で決まる
-  const NOT0=['キノコの輪','羊飼いの小屋','倒木のトンネル','大きな切り株','鳥の巣の枯れ木']; const NOTM={volc:[...NOT0,'りんごの木立','花畑','鹿の群れ','小さな池','丘の大樹','丘の風車','苔むした石像'],desert:[...NOT0,'りんごの木立','花畑','鹿の群れ','小さな池','丘の大樹','丘の風車','苔むした石像'],snow:['キノコの輪','倒木のトンネル','りんごの木立','花畑','鹿の群れ','小さな池','丘の風車'],wet:['りんごの木立','丘の風車','花畑']};
+  const NOT0=['キノコの輪','羊飼いの小屋','倒木のトンネル','大きな切り株','鳥の巣の枯れ木']; const NOTM={volc:[...NOT0,'古い井戸','苔むしたアーチ','石の環','道しるべ','りんごの木立','花畑','鹿の群れ','小さな池','丘の大樹','丘の風車','苔むした石像'],desert:[...NOT0,'りんごの木立','花畑','鹿の群れ','小さな池','丘の大樹','丘の風車','苔むした石像'],snow:['キノコの輪','倒木のトンネル','りんごの木立','花畑','鹿の群れ','小さな池','丘の風車'],wet:['りんごの木立','丘の風車','花畑']};
   const PERM=new Map(), permFor=bn=>{ if(!PERM.has(bn)){ const r=pRng('lkd'+k+bn,7), NOT=NOTM[bn]||[]; PERM.set(bn,P_DKN.map((_,q)=>q).filter(q=>(P_DKN[q][1]&&P_DKN[q][1]!=='grass'?P_DKN[q][1]===bn:true)&&!NOT.includes(P_DKN[q][0])&&P_DKN[q][0]!=='旅人の墓標').sort(()=>r()-.5)); } return PERM.get(bn); };
   const LG=Math.round(260*KM/540*.75), spotC=new Map(), dSpot=n=>{ if(spotC.has(n)) return spotC.get(n); const r=pRng('lkd'+k+'_'+n,9), yy=n*LG+(r()-.5)*160, bn=FBI!=null?['volc','desert','wet','snow'][FBI]:bName(bAt(rX(yy),yy)), pl=permFor(bn), tp=pl[((n%pl.length)+pl.length)%pl.length], nm=P_DKN[tp][0], road2=nm==='道しるべ', sg=r()<.5?-1:1, big=nm==='丘の大樹'||nm==='丘の風車'||nm==='見張り台', SC={'鹿の群れ':1.6,'花畑':1.8,'道しるべ':1.5,'岩の上の宝箱':1.8,'小さな池':1.8,'石積み':1.8}[nm]||2.4, FR={'古い柱の遺跡':13,'崩れた石の門':16,'旅人の野営地':10,'丘の大樹':11,'りんごの木立':12,'丘の風車':6,'見張り台':5,'苔むした石像':4,'壊れた荷車':6,'小さな池':12,'鹿の群れ':8,'花畑':14,'岩の上の宝箱':5.5,'石積み':3,'沈みかけた柱':13,'古い木道':14,'大きな睡蓮':12,'溶岩をまたぐ石橋':20,'焼け落ちた砦':10,'噴気孔':9,'氷の柱':9,'凍った池':14,'雪をかぶった石塔':5,'砂に埋もれた巨像':10,'オアシス':13,'大きな獣の骨':15,'石の環':8,'古い井戸':3.5,'崩れた塔':6,'地面に刺さった大剣':4,'大きな切り株':8,'キノコの輪':6.5,'倒れた巨人像の手':5,'のろし台':4.5,'羊飼いの小屋':9,'苔むしたアーチ':13,'旅人の墓標':3,'巨大な一枚岩':7,'倒木のトンネル':9,'崩れた城壁の門':18,'鳥の巣の枯れ木':5}[nm]||4, o2=road2?8:12+FR*SC+r()*(big?70:25), o={tp,yy,nm,x:rX(yy)+sg*o2,sg,SC,rad:FR*SC}; spotC.set(n,o); return o; };
   // 見つけるもの（記念物）のまわりには木・岩・小物・草を置かない（重なって見えないように）
@@ -5192,7 +5192,7 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
           .replace('#include <lights_fragment_end>',`irradiance=mix(irradiance,vec3(dot(irradiance,vec3(.333)))*vec3(.96,.98,1.1),.6);
 #include <lights_fragment_end>
  { float rim=pow(1.-saturate(dot(normal,normalize(vViewPosition))),3.)*smoothstep(0.,.5,normal.y); reflectedLight.indirectDiffuse+=rim*.22*diffuseColor.rgb; }`); }; return m; };
-    const mB=mkMat(0), mS=mkMat(1), kinds=[[mkRock(1,3,1.0,0),mB,170],[mkRock(2,2,.95,0),mB,130],[mkRock(3,3,.55,3),mS,28],[mkRock(4,3,.92,0),mB,170]], rc=new T.Color(), tW=c3({volc:[86,78,76],desert:[206,164,116]}[BIO]||[184,172,152]), tC=c3({volc:[70,64,66],desert:[190,148,104]}[BIO]||[170,166,158]);
+    const mB=mkMat(0), mS=mkMat(1); L.rkMB=mB; L.rkG=[mkRock(11,3,1.25,0),mkRock(12,3,1.5,0),mkRock(13,3,.9,0)]; const kinds=[[mkRock(1,3,1.0,0),mB,170],[mkRock(2,2,.95,0),mB,130],[mkRock(3,3,.55,3),mS,28],[mkRock(4,3,.92,0),mB,170]], rc=new T.Color(), tW=c3({volc:[86,78,76],desert:[206,164,116]}[BIO]||[184,172,152]), tC=c3({volc:[70,64,66],desert:[190,148,104]}[BIO]||[170,166,158]);
     rocksFor=(tileG,yA,P,XA,XB,near,nx,ny,fz,rR)=>{ const im=kinds.map(([g,m,n])=>new T.InstancedMesh(g,m,Math.ceil(n*fz))), cnt=kinds.map(()=>0), NK=kinds.map(([g,m,n])=>Math.ceil(n*fz));
     const ca=near.attributes.color.array;
     const place=(kd,s2,x,y,rot,tilt)=>{ if(cnt[kd]>=NK[kd]||x<XA||x>XB||y<yA||y>yA+P) return; if(Math.abs(x-rX(y))<8+s2*1.3||nearMon(x,y,s2+2)) return; const e=Math.min(hAt(x,y),hAt(x+s2*.7,y),hAt(x-s2*.7,y),hAt(x,y+s2*.7),hAt(x,y-s2*.7)); if(e<1) return;
@@ -5225,13 +5225,32 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
       scat(dt0,bt([112,100,86]),70,()=>{ const [x,y]=nearRoad(14,160); return far(x,y,12)?[x,y,.9+br0()*.6,1,br0()*6.28,-.2]:null; });
     }
     if(BIO==='volc'){
-      // 黒い岩の尖塔と、地面を流れる溶岩の筋
-      scat(memo('spire',()=>mergeG([new T.ConeGeometry(1,4,6).translate(0,2,0),new T.ConeGeometry(.6,2.6,5).translate(.9,1.3,.3)])),bt([62,56,58]),260,()=>{ const [x,y]=nearRoad(10,170); return far(x,y,10)?[x,y,1.5+br0()*3.5,1+br0()*.9,br0()*6.28,-.4]:null; });
-      const LP=[], LI=[]; let ln=0;
-      for(let q=0;q<26*fz;q++){ let [x,y]=nearRoad(18,140); let a=br0()*6.28; const w=3.5+br0()*4, L2=60+br0()*180;
-        for(let t=0;t<=L2;t+=4){ a+=(br0()-.5)*.35; x+=Math.cos(a)*4; y+=Math.sin(a)*4; if(!far(x,y,12)) a+=Math.PI*.5; const nx2=-Math.sin(a), ny2=Math.cos(a), ww=w*(1-.6*Math.pow(t/L2,2));
-          for(const sg of [-1,1]){ const px=x+nx2*ww*sg, pyy=y+ny2*ww*sg; LP.push(X(px),Math.max(-.2,hAt(px,pyy))+.15,Z(pyy)); } if(t) LI.push(ln-2,ln,ln-1,ln-1,ln,ln+1); ln+=2; } ln+=0; LI.push(); }
-      { const g=new T.BufferGeometry(); g.setAttribute('position',new T.Float32BufferAttribute(LP,3)); const I2=[]; for(let i=0;i<LI.length;i+=6){ I2.push(...LI.slice(i,i+6)); } g.setIndex(I2); g.computeVertexNormals(); tileG.add(new T.Mesh(g,memo('lavaS',()=>new T.MeshBasicMaterial({color:c3([255,110,30]).multiplyScalar(1.8),side:T.DoubleSide,polygonOffset:true,polygonOffsetFactor:-2})))); }
+      // ブレワイのオルディン：赤茶の岩肌の崖と岩塊が地面から突き出し、溶岩は火口に近い所だけ。溶岩は黄〜橙に光り、表面に黒い冷えた殻が浮いてゆっくり流れる。岸は黒く冷え固まった縁
+      const hot=(x,y)=>bAt(x,y)[0];
+      // 溶岩の流れ：火口に近い所だけ。黒い冷えた岸（幅広）＋光る溶岩（幅狭）
+      const LP=[], LI=[], BP=[], BI=[], LS=[], BS=[], LC=[]; let ln=0, bn=0;
+      for(let q=0;q<26*fz;q++){ let [x,y]=nearRoad(18,150); if(hot(x,y)<.68) continue; let a=br0()*6.28; const w=3+br0()*4, L2=50+br0()*160; let first=true;
+        for(let t=0;t<=L2;t+=3){ a+=(br0()-.5)*.16; x+=Math.cos(a)*3; y+=Math.sin(a)*3; if(!far(x,y,14+w)||hot(x,y)<.6||nearMon(x,y,w+3)) break; const nx2=-Math.sin(a), ny2=Math.cos(a), ww=w*(1-.6*Math.pow(t/L2,2))*(.85+.3*Math.sin(t*.13));
+          LC.push([x,y,ww+2.5]); for(const sg of [-1,1]){ const px=x+nx2*ww*sg, pyy=y+ny2*ww*sg; LP.push(X(px),Math.max(-.2,hAt(px,pyy))+.16,Z(pyy)); LS.push(sg); const bx=x+nx2*(ww+2.4)*sg, by=y+ny2*(ww+2.4)*sg; BP.push(X(bx),Math.max(-.2,hAt(bx,by))+.04,Z(by)); BS.push(sg); }
+          if(!first){ LI.push(ln-2,ln,ln-1,ln-1,ln,ln+1); BI.push(bn-2,bn,bn-1,bn-1,bn,bn+1); } first=false; ln+=2; bn+=2; } }
+      if(LI.length){ const lg=new T.BufferGeometry(); lg.setAttribute('position',new T.Float32BufferAttribute(LP,3)); lg.setAttribute('aS',new T.Float32BufferAttribute(LS,1)); lg.setIndex(LI); lg.computeVertexNormals();
+        const lm=memo('lavaF',()=>{ const m=new T.MeshBasicMaterial({color:0xffffff,side:T.DoubleSide,polygonOffset:true,polygonOffsetFactor:-3}); m.onBeforeCompile=sh=>{ sh.uniforms.uTime=U.uTime;
+          sh.vertexShader='attribute float aS; varying float vS; varying vec3 vLP;\n'+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n vLP=position; vS=aS;');
+          sh.fragmentShader='varying vec3 vLP; varying float vS; uniform float uTime;\nfloat lh(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }\nfloat ln2(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.-2.*f); return mix(mix(lh(i),lh(i+vec2(1,0)),f.x),mix(lh(i+vec2(0,1)),lh(i+vec2(1,1)),f.x),f.y); }\nfloat lf(vec2 p){ return ln2(p)*.55+ln2(p*2.1+3.)*.28+ln2(p*4.3+7.)*.17; }\n'
+            +sh.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
+ { vec2 p=vLP.xz*.22; float t=uTime*.08; vec2 q=vec2(lf(p+vec2(t,t*.6)),lf(p+vec2(-t*.7,t)+4.)); float n=lf(p*1.6+q*1.8+vec2(t*.4,0.));
+   float hot2=smoothstep(.35,.75,n); vec3 c=mix(vec3(.85,.16,.02),vec3(1.0,.5,.06),hot2); c=mix(c,vec3(1.,.82,.3),smoothstep(.74,.92,n));
+   float cr=smoothstep(.5,.62,lf(p*2.6-q*1.3+vec2(0.,t*.6)+11.)); float edge=smoothstep(.0,.05,abs(lf(p*2.6-q*1.3+vec2(0.,t*.6)+11.)-.56));
+   float ed=abs(vS)+(lf(vLP.xz*.6+5.)-.5)*.5; if(ed>.98) discard; cr=max(cr,smoothstep(.6,.92,ed));
+   c=mix(c,vec3(.10,.06,.05)+vec3(.25,.07,.02)*(1.-edge),cr*.88);
+   diffuseColor.rgb=c*1.12; }`); }; m.customProgramCacheKey=()=>'lavaF'; return m; });
+        const lv=new T.Mesh(lg,lm); lv.renderOrder=2; lv.userData.lava=1; tileG.add(lv);
+        const bg=new T.BufferGeometry(); bg.setAttribute('position',new T.Float32BufferAttribute(BP,3)); bg.setAttribute('aS',new T.Float32BufferAttribute(BS,1)); bg.setIndex(BI); bg.computeVertexNormals(); const bm=new T.Mesh(bg,memo('lavaB',()=>{ const m=patch(new T.MeshToonMaterial({color:c3([58,44,40]),gradientMap:gmap,polygonOffset:true,polygonOffsetFactor:-1})), ob=m.onBeforeCompile; m.onBeforeCompile=sh=>{ ob(sh); sh.vertexShader='attribute float aS; varying float vS2; varying vec3 vBP;\n'+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n vS2=aS; vBP=position;'); sh.fragmentShader='varying float vS2; varying vec3 vBP;\nfloat bh0(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }\nfloat bh(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.-2.*f); return mix(mix(bh0(i),bh0(i+vec2(1,0)),f.x),mix(bh0(i+vec2(0,1)),bh0(i+vec2(1,1)),f.x),f.y); }\n'+sh.fragmentShader.replace('void main() {','void main() {\n { vec2 q=vBP.xz*.35; float n=bh(q)*.6+bh(q*2.3+3.)*.4; if(abs(vS2)+(n-.5)*.35>.9) discard; }').replace('#include <color_fragment>','#include <color_fragment>\n diffuseColor.rgb*=.75+.5*(1.-abs(vS2)); diffuseColor.rgb+=vec3(.35,.08,.0)*pow(1.-abs(vS2),6.);'); }; m.customProgramCacheKey=()=>'lavaB'; return m; })); bm.receiveShadow=true; tileG.add(bm); }
+      LC.forEach(([x,y,r])=>RK.push([x,y,r]));
+      { const mm=L.rkMB, rc=new T.Color(); for(const [gi,N0,s0,s1,sy] of [[0,110,3,9,1.6],[1,80,2.5,7,2.6],[2,160,1.2,3.2,1.2]]){ const N=Math.ceil(N0*fz), im=new T.InstancedMesh(L.rkG[gi],mm,N); let m=0;
+        for(let q=0;q<N*8&&m<N;q++){ const [x,y]=nearRoad(11,150), hw=hot(x,y); if(br0()>hw*1.6) continue; const s2=s0+br0()*(s1-s0); if(!far(x,y,10+s2)||nearMon(x,y,s2+2)||LC.some(([lx,ly,lr])=>Math.hypot(lx-x,ly-y)<lr+s2)) continue; const e=Math.min(hAt(x,y),hAt(x+s2*.6,y),hAt(x-s2*.6,y),hAt(x,y+s2*.6),hAt(x,y-s2*.6)); if(e<.8) continue;
+          Q.setFromEuler(new T.Euler((br0()-.5)*.25,br0()*6.28,(br0()-.5)*.25)); Sc.set(s2*(.8+br0()*.4),s2*sy*(.7+br0()*.6),s2*(.8+br0()*.4)); V.set(X(x),e-s2*.25,Z(y)); M.compose(V,Q,Sc); im.setMatrixAt(m,M); const w=.85+br0()*.25, t=br0()<.5?[.4,.25,.18]:[.3,.23,.2]; im.setColorAt(m,rc.setRGB(t[0]*w,t[1]*w,t[2]*w)); m++; RK.push([x,y,s2]); }
+        im.count=m; im.castShadow=im.receiveShadow=true; tileG.add(im); } }
     }
     if(BIO==='desert'){
       // サボテンと枯れた茂み
