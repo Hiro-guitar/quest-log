@@ -4824,8 +4824,7 @@ async function pLookOpen(){
    vec2 vd=normalize(vWP.xz-cameraPosition.xz), la=vec2(-vd.y,vd.x); float ch=max(1.5,cameraPosition.y-vWP.y), lat=dot(vWP.xz,la), dep=dot(vWP.xz,vd);
    float px=dd/700., st=vn(vec2(lat*1.25/max(1.,px),dep*ch/(1.7*dd))*1.)*.6+vn(vec2(lat*2.9/max(1.,px)+11.,dep*ch/(1.1*dd)))*.4, sk=mix(.5,st,1.-smoothstep(260.,900.,dd));
    float cl=vn(vWP.xz*.42+3.)*.6+vn(vWP.xz*.11+7.)*.4;
-   float gw=sin((vWP.x*.6+vWP.z*.8)*.03-uTime*1.5)*.5+.5; gw*=gw;
-   gl_FragColor.rgb=mix(gl_FragColor.rgb,gl_FragColor.rgb*(.62+.62*sk)*(.82+.36*cl)*(.94+.3*gw)*mix(1.06,.9,gz),im); }`); }; }
+   gl_FragColor.rgb=mix(gl_FragColor.rgb,gl_FragColor.rgb*(.62+.62*sk)*(.82+.36*cl)*mix(1.06,.9,gz)*1.05,im); }`); }; }
   const chunkRoot=new T.Group(), farG=new T.Group(); scene.add(chunkRoot,farG);
   // ---- 光 ----
   const sun=new T.DirectionalLight(day>.1?c3(lerpA([255,246,232],[255,190,130],eve)):c3(RED?[236,128,116]:[150,176,236]),day>.1?2.2:1.2); scene.add(sun.target); sun.castShadow=true; sun.shadow.mapSize.set(2048,2048);
@@ -5077,8 +5076,8 @@ async function pLookOpen(){
   const mkGM=near=>{ const gm=patch(new T.MeshLambertMaterial({map:gtx,alphaTest:.5,color:wet?0xd8e8d0:0xffffff,emissive:new T.Color(wet?0x1a2414:0x1c2a10).multiplyScalar(1-.85*nf)}),.18), ob=gm.onBeforeCompile;
     gm.onBeforeCompile=sh=>{ ob(sh);
       // 風の波：草原を明るい帯がゆっくり渡っていく（ブレワイの草原のように）／距離で大きさと見える本数を決める
-      sh.vertexShader='attribute float aRk;\nvarying float vGust, vVis;\n'+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n vGust=0.; vVis=1.;\n#ifdef USE_INSTANCING\n { float dd=distance(instanceMatrix[3].xz,cameraPosition.xz), fd='+gF+'; vVis=clamp((fd-aRk)/(fd*.3+.002),0.,1.)*'+(near?'step(dd,'+GSPLIT+'.)':'step('+GSPLIT+'.,dd)')+'*smoothstep('+GR+'.,'+(GR-40)+'.,dd);  /* 本数が減るぶん株を広げ、遠くも近くと同じくらい地面が草で埋まって見える */\n float gw=sin((instanceMatrix[3].x*.6+instanceMatrix[3].z*.8)*.03-uTime*1.5)*.5+.5; gw*=gw; vGust=gw; transformed.x+=gw*.6*max(0.,position.y); transformed.z+=gw*.3*max(0.,position.y); if(vVis<=0.) transformed*=0.; }\n#endif');
-      sh.fragmentShader='varying float vGust, vVis;\n'+sh.fragmentShader.replace('void main() {','void main() {\n if(vVis<fract(sin(dot(floor(gl_FragCoord.xy),vec2(12.9898,78.233)))*43758.5453)) discard;').replace('#include <opaque_fragment>','#include <opaque_fragment>\n gl_FragColor.rgb*=.94+.3*vGust;'); }; return gm; };
+      sh.vertexShader='attribute float aRk;\nvarying float vGust, vVis;\n'+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n vGust=0.; vVis=1.;\n#ifdef USE_INSTANCING\n { float dd=distance(instanceMatrix[3].xz,cameraPosition.xz), fd='+gF+'; vVis=clamp((fd-aRk)/(fd*.3+.002),0.,1.)*'+(near?'step(dd,'+GSPLIT+'.)':'step('+GSPLIT+'.,dd)')+'*smoothstep('+GR+'.,'+(GR-40)+'.,dd);  /* 本数が減るぶん株を広げ、遠くも近くと同じくらい地面が草で埋まって見える */\n float ph=fract(sin(dot(instanceMatrix[3].xz,vec2(12.9898,78.233)))*43758.5453)*6.283; transformed.x+=sin(uTime*1.4+ph)*.08*max(0.,position.y); transformed.z+=cos(uTime*1.1+ph)*.05*max(0.,position.y); // 風の波はやめ、1株ずつ小さくそよぐだけ if(vVis<=0.) transformed*=0.; }\n#endif');
+      sh.fragmentShader='varying float vGust, vVis;\n'+sh.fragmentShader.replace('void main() {','void main() {\n if(vVis<fract(sin(dot(floor(gl_FragCoord.xy),vec2(12.9898,78.233)))*43758.5453)) discard;').replace('#include <opaque_fragment>','#include <opaque_fragment>\n gl_FragColor.rgb*=1.05;'); }; return gm; };
   const gLay=(near,N)=>{ const g=GG.clone(), rk=new T.InstancedBufferAttribute(new Float32Array(N),1); g.setAttribute('aRk',rk); const gmat=mkGM(near); const m=new T.InstancedMesh(g,gmat,N); m.receiveShadow=near; m.frustumCulled=false; m.count=0; scene.add(m); return {m,rk,N,Ma:new Float32Array(N*16),Ca:new Float32Array(N*3),Ra:new Float32Array(N),at:null,job:null}; };
   const gNear=gLay(true,30000), gFar=gLay(false,70000), gCells=new Map(); L.gl=[gNear,gFar];
   // マスの草：順番どおりに必要な数だけ作り足す（同じマスは何度作っても同じ場所・同じ順番）
