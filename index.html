@@ -5411,7 +5411,21 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
       { const md=mk(new T.SphereGeometry(2.6,16,6,0,6.283,0,1.3),tm([118,98,72]),0,.05,0); md.scale.y=.32; g.add(md); }
       for(let q=0;q<9;q++){ const a=q/9*6.283+r()*.3, d=1.1+r()*1.4, rd=.35+r()*.45, rk=mk(rockG(rd,80+q),mMono,Math.cos(a)*d,.35+rd*.3,Math.sin(a)*d); rk.rotation.set(r()*.6,r()*6,r()*.6); g.add(rk); }
       for(let q=0;q<5;q++){ const a=r()*6.283, sl=Bx(.9+r(),.18,.6+r()*.5,tm([104,86,62]),Math.cos(a)*1.4,.5,Math.sin(a)*1.4); sl.rotation.set((r()-.5)*.9,a,(r()-.5)*.9); g.add(sl); } }],
-    ['大きな切り株',g=>{ g.add(Cy(4,4.8,3,mWood,0,1.5,0,12)); g.add(Cy(3.7,3.7,.12,mCanvas,0,3.05,0,12)); for(let q=0;q<5;q++){ const a=q/5*6.28, rt=Cy(.6,1.1,3.6,mWood,Math.cos(a)*4.2,.6,Math.sin(a)*4.2,6); rt.rotation.set(Math.sin(a)*1.2,0,-Math.cos(a)*1.2); g.add(rt); } for(let q=0;q<4;q++) g.add(Sp(.5+q*.1,mMoss,(q-1.5)*1.6,3.2,(q%2)*1.2-.6,0)); }],
+    // 大きな切り株（森の巨木の切り株）：太い幹は根元で広がり、地面をつかむ太い根が四方へうねる。上面は年輪の見える切り口で、片側は折れたささくれが立つ。樹皮は縦に割れ、苔と棚のようなキノコ
+    ['大きな切り株',g=>{ const r=pRng('stump',31), mFung=tm([196,160,108]), mMs=tm([86,112,48]), mMs2=tm([110,134,58]);
+      const R0=3.6, H=3.4, N=16; for(let q=0;q<N;q++){ const a=q/N*6.283, w=R0*6.283/N*1.08, h=H*(.92+r()*.1), pl=Bx(w,h,.8,mWoodD,Math.cos(a)*(R0-.3),h/2,Math.sin(a)*(R0-.3)); pl.rotation.y=-a+1.5708; g.add(pl); }
+      g.add(Cy(R0-.5,R0-.3,H-.1,mWood,0,(H-.1)/2,0,16));
+      g.add(Cy(R0*1.18,R0*1.32,1.1,mWoodD,0,.45,0,16));
+      // 切り口：年輪（木目）は縦向きの木材の端面に出る
+      g.add(Cy(R0-.45,R0-.45,.3,mWoodL,0,H-.1,0,18));
+      // 折れて立つささくれ
+      for(let q=0;q<7;q++){ const a=2.2+q*.17+(r()-.5)*.1, hh=.8+r()*1.8, sp=Bx(.35+r()*.3,hh,.25,mWood,Math.cos(a)*(R0-.6),H+hh/2-.1,Math.sin(a)*(R0-.6)); sp.rotation.set((r()-.5)*.2,-a,(r()-.5)*.25); g.add(sp); }
+      // 太い根：根元から外へうねって地面に沈む
+      for(let q=0;q<7;q++){ const a=q/7*6.283+r()*.4; let px=Math.cos(a)*(R0*.95), pz=Math.sin(a)*(R0*.95), py=1.2, rad=.95; for(let k=0;k<5;k++){ const nx=px+Math.cos(a)*1.3+(r()-.5)*.4, nz=pz+Math.sin(a)*1.3+(r()-.5)*.4, ny=Math.max(.1,py-.32-r()*.12), sg=Cy(rad*.8,rad,Math.hypot(nx-px,ny-py,nz-pz)+.3,mWoodD,(px+nx)/2,(py+ny)/2,(pz+nz)/2,7); sg.lookAt(nx,ny,nz); sg.rotateX(1.5708); g.add(sg); px=nx; py=ny; pz=nz; rad*=.78; } }
+      // 苔（上と北側）とキノコ
+      for(let q=0;q<6;q++){ const a=r()*6.283, d=r()*(R0-1), m=Sp(.45+r()*.4,q%2?mMs:mMs2,Math.cos(a)*d,H+.08,Math.sin(a)*d,1); m.scale.set(1.2,.22,1.2); g.add(m); }
+      for(let q=0;q<10;q++){ const a=-1.2+r()*2.4, yy=.8+r()*2.3, m=Sp(.3+r()*.25,mMs,Math.cos(a)*R0,yy,Math.sin(a)*R0,1); m.lookAt(Math.cos(a)*9,yy,Math.sin(a)*9); m.scale.set(1.2,1.4,.18); g.add(m); }
+      for(let q=0;q<7;q++){ const a=2.6+r()*1.6, yy=.8+q*.32, f=mk(new T.CylinderGeometry(.42-q*.03,.32,.12,10,1,false,-1.4,2.8),mFung,Math.cos(a)*(R0+.05),yy,Math.sin(a)*(R0+.05)); f.rotation.y=-a+1.5708; g.add(f); } }],
     ['キノコの輪',g=>{ for(let q=0;q<11;q++){ const a=q/11*6.28, d=5+Math.sin(q*3)*.6, s=.7+((q*5)%3)*.3; g.add(Cy(.25*s,.32*s,1.2*s,mWhite,Math.cos(a)*d,.6*s,Math.sin(a)*d,6)); const cp=mk(new T.SphereGeometry(.9*s,10,6,0,6.3,0,1.6),mRedC,Math.cos(a)*d,1.15*s,Math.sin(a)*d); g.add(cp); } },'grass'],
     ['倒れた巨人像の手',g=>{ g.add(Bx(6,2.4,4,mMono,0,1,0)); for(let q=0;q<4;q++){ const f=Bx(1,1.1,3.2,mMono,-2.2+q*1.45,1.2+(q===1?.6:0),3.4); f.rotation.x=-.3-q*.1; g.add(f); } const th=Bx(1.2,1.2,2.6,mMono,3.4,1.4,1.8); th.rotation.y=-.6; g.add(th); g.add(Bx(6.2,.3,4.2,mMoss,0,2.3,0)); }],
     ['のろし台',g=>{ g.add(Cy(2.6,3,3,mStone,0,1.5,0,8)); g.add(Cy(1.6,1.2,1,mDark,0,3.4,0,8)); for(let q=0;q<5;q++){ const l=Cy(.18,.18,2.2,mWoodD,0,3.6,0,5); l.rotation.set(.7,q*1.25,0); g.add(l); } { const f=mkFire(0,3.7,0,1.5); g.add(f); g.userData.fire=f; } }],
