@@ -5076,7 +5076,7 @@ async function pLookOpen(){
     const g=new T.BufferGeometry(); g.setAttribute('position',new T.Float32BufferAttribute(Pg,3)); g.setAttribute('normal',new T.Float32BufferAttribute(Pg.map((_,i)=>i%3===1?1:0),3)); g.setAttribute('uv',new T.Float32BufferAttribute(Ug,2)); return g; })();
   const GB=(()=>{ const g=new T.PlaneGeometry(2.6,1.6).translate(0,.8,0); const n=g.attributes.normal.array; for(let i=0;i<n.length;i+=3){ n[i]=0; n[i+1]=1; n[i+2]=0; } return g; })();
   // 層：f＝草の順番のうち何割を使うか（遠くほど少なく、そのぶん板を K 倍に横長に）、a〜b＝受け持つ距離、fi/fo＝受け渡しの幅
-  const GLAY=[{nm:'near',f:.32,K:1,a:0,b:72,N:9000,mv:12,mg:8},{nm:'mid',f:.08,K:4,a:60,b:250,N:26000,mv:24,mg:14},{nm:'far',f:.04,K:8,a:236,b:GR,N:46000,mv:50,mg:28}];
+  const GLAY=[{nm:'near',f:.32,K:1,a:0,b:84,N:12000,mv:12,mg:8},{nm:'mid',f:.1,K:4,a:56,b:250,N:26000,mv:24,mg:14},{nm:'far',f:.04,K:8,a:236,b:GR,N:46000,mv:50,mg:28}];
   const mkGM=Ly=>{ const gm=patch(new T.MeshToonMaterial({map:gtx,alphaTest:.5,gradientMap:gmap,color:wet?0xd8e8d0:0xffffff}),Ly.K===1?.18:0,1), ob=gm.onBeforeCompile, K=Ly.K.toFixed(1), fa=Ly.a.toFixed(1), fb=Ly.b.toFixed(1);
     gm.onBeforeCompile=sh=>{ ob(sh);
       const band=(Ly.a>0?'smoothstep('+fa+','+(Ly.a+12).toFixed(1)+',dd)':'1.')+'*(1.-smoothstep('+(Ly.b-12).toFixed(1)+','+fb+',dd))';
@@ -5087,8 +5087,8 @@ async function pLookOpen(){
       if(Ly.K>1) sh.vertexShader=sh.vertexShader.replace('#include <uv_vertex>','#include <uv_vertex>\n#ifdef USE_MAP\n vMapUv.x*='+K+';\n#endif');
       sh.fragmentShader='varying float vVis, vDd;\n'+sh.fragmentShader.replace('void main() {','void main() {\n if(vVis<fract(sin(dot(floor(gl_FragCoord.xy),vec2(12.9898,78.233)))*43758.5453)) discard;')
         // テクスチャは形（透け）と根元→先の明暗だけに使い、色は地面と同じ。遠くでは透けの切り捨てを甘くして、葉が痩せて地面が透けるのを防ぐ
-        .replace('#include <map_fragment>','#ifdef USE_MAP\n { vec4 tc=texture2D(map,vMapUv); diffuseColor.a*=tc.a; diffuseColor.rgb*=mix(.86,1.1,fract(vMapUv.y)); }\n#endif')
-        .replace('#include <alphatest_fragment>','if(diffuseColor.a<mix(.5,.22,smoothstep(30.,200.,vDd))) discard;'); }; return gm; };
+        .replace('#include <map_fragment>','#ifdef USE_MAP\n { vec4 tc=texture2D(map,vMapUv); vec2 tq=vMapUv*128.; float lod=max(0.,.5*log2(max(dot(dFdx(tq),dFdx(tq)),dot(dFdy(tq),dFdy(tq))))); diffuseColor.a*=tc.a*(1.+lod*.32); diffuseColor.rgb*=mix(.86,1.1,fract(vMapUv.y)); }\n#endif')
+        .replace('#include <alphatest_fragment>','if(diffuseColor.a<.5) discard;'); }; gm.customProgramCacheKey=()=>'grass-'+Ly.nm; return gm; }; // 層ごとに別のシェーダーとして作らせる（同じ形の関数だと使い回されてしまう）
   const gLay=Ly=>{ const g=(Ly.K===1?GG:GB).clone(), rk=new T.InstancedBufferAttribute(new Float32Array(Ly.N),1); g.setAttribute('aRk',rk); const m=new T.InstancedMesh(g,mkGM(Ly),Ly.N); m.receiveShadow=true; m.frustumCulled=false; m.count=0; scene.add(m); return Object.assign({m,rk,Ma:new Float32Array(Ly.N*16),Ca:new Float32Array(Ly.N*3),Ra:new Float32Array(Ly.N),at:null,job:null},Ly); };
   const GL=GLAY.map(gLay), gCells=new Map(); L.gl=GL;
   // マスの草：順番どおりに必要な数だけ作り足す（同じマスは何度作っても同じ場所・同じ順番）
