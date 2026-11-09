@@ -5270,7 +5270,7 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
   updFar(y0,true); { const it=ringGen(farC); let r; while(!(r=it.next()).done); setRing(r.value); } if(!(await tick(.9))) return;
   updChunks(y0,true); if(!(await tick(.95))) return;
   // ---- 見つけるもの：1分ほど走るごとに何かがある（遺跡・野営地・風車・鹿の群れ・宝箱…）。近づくと名前が出る ----
-  const mPondE=tm([120,108,80]), mFlower=tm([255,255,255]), mFlower2=tm([240,190,214]), mLava=new T.MeshBasicMaterial({color:c3([255,110,30]).multiplyScalar(1.8)}), mDark=tm([70,62,62]), mIce=tm([176,220,240]), mSnow=tm([236,242,250]), mSand2=tm([206,170,120]), mSandG=tm([222,186,124]), mBone=tm([236,226,204]), mStone=tm([196,200,186]), mMono=tm([200,202,188]), mMonoD=tm([118,118,108]), mMoss=tm([104,138,66]), mWood=tm([132,104,76]), mWoodD=tm([92,74,56]), mWoodL=tm([182,142,98]), mSteelW=tm([156,162,168]), mWoodG=tm([162,152,136]), mCanvas=tm([222,208,176]), mRedC=tm([176,64,48]), mLeaf=tm([76,128,54]), mLeaf2=tm([58,104,46]), mApple=tm([210,44,40]),
+  const mPondE=tm([120,108,80]), mFlower=tm([255,255,255]), mFlower2=tm([240,190,214]), mLava=new T.MeshBasicMaterial({color:c3([255,110,30]).multiplyScalar(1.8)}), mDark=tm([70,62,62]), mIce=tm([176,220,240]), mSnow=tm([236,242,250]), mSand2=tm([206,170,120]), mSandG=tm([222,186,124]), mBone=tm([236,226,204]), mStone=tm([196,200,186]), mMono=tm([200,202,188]), mMonoD=tm([118,118,108]), mMoss=tm([104,138,66]), mWood=tm([132,104,76]), mWoodD=tm([92,74,56]), mWoodL=tm([182,142,98]), mSteelW=tm([156,162,168]), mWoodG=tm([162,152,136]), mBas=tm([96,84,80]), mBasL=tm([132,112,100]), mChar=tm([46,40,38]), mCanvas=tm([222,208,176]), mRedC=tm([176,64,48]), mLeaf=tm([76,128,54]), mLeaf2=tm([58,104,46]), mApple=tm([210,44,40]),
     mWhite=tm([236,230,216]), mRoof=tm([150,74,52]), mDeer=tm([160,106,62]), mDeerL=tm([232,214,188]), mGold=tm([226,182,72]), mFire=new T.MeshBasicMaterial({color:c3([255,120,30]).multiplyScalar(1.5)}), mFireC=new T.MeshBasicMaterial({color:c3([255,230,120]).multiplyScalar(1.8)}),
     mWater=patch(new T.MeshStandardMaterial({color:c3([62,120,140]),roughness:.12,envMap:L.env||null,envMapIntensity:1.1}));
   // 炎の絵：下が白っぽい黄色、上へ行くほど橙から赤く細くなって消える
@@ -5690,9 +5690,45 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
       for(let q=0;q<7;q++){ const [x,z,R]=plc[(q*5)%plc.length]; fl(x+R*.25,z-R*.15,1.9+r()*.9); }
       for(let q=0;q<3;q++){ const a=r()*6.283, d=2+r()*6, x=Math.cos(a)*d, z=Math.sin(a)*d, h=.6+r()*.5; g.add(Cy(.04,.05,h,mLeaf2,x,.35+h/2,z,4)); const bd=Sp(.18,mPink,x,.35+h+.12,z,1); bd.scale.set(.75,1.4,.75); g.add(bd); } },'wet'],
     // 火山
-    ['溶岩をまたぐ石橋',g=>{ g.add(Bx(4,.6,16,mLava,0,.05,0)); g.add(Bx(5,.8,3,mDark,0,2.4,0)); [-1,1].forEach(z=>{ g.add(Bx(5,2.2,1.4,mDark,0,1.1,z*2.2)); g.add(Bx(.4,.8,3,mDark,z*2.3,3.2,0)); }); },'volc'],
-    ['焼け落ちた砦',g=>{ const r=pRng('fo',g.id); [[0,-5,10,1],[5,0,1,8],[-5,1,1,6]].forEach(([x,z,w,d])=>{ for(let k2=0;k2<4;k2++){ const h=2+r()*4; g.add(Bx(w===10?2.4:1.2,h,d===1?1.2:2,mDark,x+(w===10?(k2-1.5)*2.5:0),h/2,z+(d>1?(k2-1.5)*(d/4):0))); } }); for(let q=0;q<4;q++){ const b=Cy(.25,.3,4,mWoodD,(r()-.5)*6,.5,(r()-.5)*6,5); b.rotation.set(r(),0,1.4); g.add(b); } },'volc'],
-    ['噴気孔',g=>{ for(let q=0;q<9;q++){ const a=q/9*6.28; g.add(Sp(1.2,mDark,Math.cos(a)*2.4,.4,Math.sin(a)*2.4,0)); } g.add(Cy(1.6,1.6,.2,mLava,0,.2,0,12)); g.userData.vent=1; },'volc'],
+    // 溶岩をまたぐ石橋（デスマウンテンのエルディン大橋）：赤く光る溶岩の川を、黒い玄武岩の切り石の橋がまたぐ。中央が高い太鼓橋で、両端は階段。分厚い欄干の上に丸い石、橋脚の根元は冷えて黒く固まった溶岩。川面は黒い溶岩の殻が浮き、割れ目が光る
+    ['溶岩をまたぐ石橋',g=>{ const r=pRng('lbr',101), mCrust=tm([52,42,40]);
+      { const lv=mk(new T.PlaneGeometry(9,40),mLava,0,.36,0); lv.rotation.x=-1.5708; g.add(lv); for(let q=0;q<26;q++){ const x=(r()-.5)*7.5, z=(r()-.5)*36, rr=.5+r()*1.4, c=mk(new T.CircleGeometry(rr,6),mCrust,x,.4,z); c.rotation.x=-1.5708; c.scale.set(1,.5+r()*.8,1); c.rotation.z=r()*6; g.add(c); }
+        for(const sd of [-1,1]) for(let q=0;q<9;q++){ const z=-18+q*4.5+(r()-.5)*2, rd=1.2+r()*1.4, rk=mk(rockG(rd,110+q+(sd>0?20:0)),mBas,sd*(5.2+r()*1.2),.1+rd*.25,z); rk.scale.y=.6; g.add(rk); } }
+      // 橋：X方向に渡る。中央が高いアーチ
+      const span=14, H0=1.6, H1=4.0, W=4.2, n=14;
+      for(let k=0;k<n;k++){ const t=(k+.5)/n, x=-span/2+t*span, yt=H0+(H1-H0)*Math.sin(Math.PI*t), ang=Math.atan((H1-H0)*Math.PI/span*Math.cos(Math.PI*t));
+        const dk=Bx(span/n+.04,.55,W,mBasL,x,yt,0); dk.rotation.z=ang; g.add(dk);
+        for(const sd of [-1,1]){ const pa=Bx(span/n+.03,1.0,.6,mBas,x,yt+.7,sd*(W/2-.1)); pa.rotation.z=ang; g.add(pa); }
+        // アーチの下面（側面の石）
+        const ab=H0-.6+(H1-H0)*Math.sin(Math.PI*t)-Math.max(0,2.6*Math.sin(Math.PI*t)-.4); for(const sd of [-1,1]){ const hh=yt-.3-Math.max(.2,ab); const sb=Bx(span/n+.02,hh,.9,mBas,x,yt-.3-hh/2,sd*(W/2-.45)); g.add(sb); } }
+      for(const sd of [-1,1]) for(const t of [.0,.33,.66,1]){ const x=-span/2+t*span, yt=H0+(H1-H0)*Math.sin(Math.PI*t); g.add(Sp(.42,mBas,x,yt+1.45,sd*(W/2-.1),1)); }
+      // 両端の階段と橋台
+      for(const sx of [-1,1]){ g.add(Bx(3,H0+.4,W+1,mBas,sx*(span/2+1.4),(H0+.4)/2-.2,0)); for(let k=0;k<4;k++) g.add(Bx(.7,.42,W-.6,mBasL,sx*(span/2+3.2+k*.7),H0-.2-k*.42,0)); }
+      // 橋脚の根元：冷えて固まった溶岩
+      for(const sx of [-1,1]) for(let q=0;q<5;q++){ const rd=.7+r()*.6, b=mk(rockG(rd,140+q+(sx>0?7:0)),mCrust,sx*(span/2-1)+(r()-.5)*2,.2,(r()-.5)*5.5); b.scale.y=.5; g.add(b); } },'volc'],
+    // 焼け落ちた砦（オルディン地方の焼けた木の砦）：黒焦げの丸太の柵が輪になって立ち、多くは折れたり倒れたりしている。中に崩れた見張り台の骨組み。玄武岩の土台、焦げた地面、まだくすぶる残り火と煙
+    ['焼け落ちた砦',g=>{ const r=pRng('fort',103), mAsh=tm([86,80,76]);
+      { const ash=mk(new T.CircleGeometry(10,24),mAsh,0,.34,0); ash.rotation.x=-1.5708; g.add(ash); }
+      for(let q=0;q<34;q++){ const a=q/34*6.283; if(q>=7&&q<=10) continue; const R=8.4+(r()-.5)*.3, brk=r()<.45, h=brk?1+r()*2.2:4+r()*1.5, x=Math.cos(a)*R, z=Math.sin(a)*R; const lg=Cy(.3,.34,h,mChar,x,h/2,z,7); lg.rotation.set((r()-.5)*.12,0,(r()-.5)*.12); g.add(lg); if(!brk) g.add(mk(new T.ConeGeometry(.31,.7,7),mChar,x,h+.3,z));
+        else if(r()<.5){ const fl=Cy(.28,.3,2+r()*2,mChar,x*1.12,.35,z*1.12,7); fl.rotation.set(1.5708,a+(r()-.5),0); g.add(fl); } }
+      for(const yy of [1.4,3.4]) for(let q=0;q<34;q+=3){ if(q>=4&&q<=12) continue; const a0=q/34*6.283, a1=(q+3)/34*6.283, R=8.0, A=new T.Vector3(Math.cos(a0)*R,yy,Math.sin(a0)*R), B=new T.Vector3(Math.cos(a1)*R,yy+(r()-.5)*.3,Math.sin(a1)*R), c=Cy(.12,.12,A.distanceTo(B),mChar,(A.x+B.x)/2,(A.y+B.y)/2,(A.z+B.z)/2,5); c.lookAt(B); c.rotateX(1.5708); g.add(c); }
+      for(const a of [1.0,1.75]){ g.add(Bx(1.6,1.0,1.6,mBas,Math.cos(a)*8.4,.5,Math.sin(a)*8.4)); }
+      // 崩れた見張り台
+      { const tw=new T.Group(); tw.position.set(-1.5,0,-1); tw.rotation.set(.12,.4,-.18); g.add(tw); for(const [x,z,h] of [[-1.4,-1.4,7],[1.4,-1.4,4.5],[1.4,1.4,6.5],[-1.4,1.4,2.8]]) tw.add(Cy(.22,.26,h,mChar,x,h/2,z,7)); for(const yy of [2.2,4.4]) for(const [x,z,ry] of [[0,-1.4,0],[1.4,0,1.5708]]){ const b=Bx(3,.2,.2,mChar,x,yy,z); b.rotation.y=ry; tw.add(b); } { const br=Cy(.12,.12,3.6,mChar,0,2.7,-1.4,5); br.rotation.z=.85; tw.add(br); } { const pl=Bx(2.4,.18,1.6,mChar,-.3,4.6,-.6); pl.rotation.z=-.3; tw.add(pl); } }
+      // 床に散らばる焦げた木材と石
+      for(let q=0;q<10;q++){ const lg=Cy(.18,.2,1.5+r()*2,mChar,(r()-.5)*11,.55,(r()-.5)*11,6); lg.rotation.set(1.5708,r()*3,0); g.add(lg); }
+      for(let q=0;q<6;q++){ const rd=.4+r()*.5, rk=mk(rockG(rd,150+q),mBas,(r()-.5)*12,.3+rd*.3,(r()-.5)*12); g.add(rk); }
+      { const f=mkFire(2.6,.5,1.8,.75); g.add(f); g.userData.fire=f; } },'volc'],
+    // 噴気孔（デスマウンテンの噴気孔）：黒い岩が盛り上がった小さな火口。縁は赤茶に焼け、黄色い硫黄が付く。穴の奥は溶岩が光り、白い蒸気が噴き上がる。まわりに転がる軽石
+    ['噴気孔',g=>{ const r=pRng('vent',107), mSul=tm([226,200,80]), mRust=tm([150,84,56]);
+      { const cone=new T.LatheGeometry([new T.Vector2(5.2,0),new T.Vector2(4.2,.8),new T.Vector2(2.9,2.0),new T.Vector2(2.0,2.6),new T.Vector2(1.6,2.5),new T.Vector2(1.2,1.6),new T.Vector2(.8,.6)],20); const P=cone.attributes.position; for(let k=0;k<P.count;k++){ const x=P.getX(k), y=P.getY(k), z=P.getZ(k), a=Math.atan2(z,x), f=1+.12*Math.sin(a*5+1)+.07*Math.sin(a*11); P.setXYZ(k,x*f,y*(1+.1*Math.sin(a*3)),z*f); } cone.computeVertexNormals(); g.add(mk(cone,mBas,0,0,0)); }
+      { const lv=mk(new T.CircleGeometry(1.0,14),mLava,0,.75,0); lv.rotation.x=-1.5708; g.add(lv); }
+      for(let q=0;q<9;q++){ const a=q/9*6.283+r()*.4, rr=1.8+r()*.5, s2=mk(new T.CircleGeometry(.35+r()*.4,7),r()<.6?mSul:mRust,Math.cos(a)*rr,2.55+(r()-.5)*.2,Math.sin(a)*rr); s2.lookAt(Math.cos(a)*rr*1.3,8,Math.sin(a)*rr*1.3); g.add(s2); }
+      for(let q=0;q<14;q++){ const a=r()*6.283, d=5+r()*4, rd=.25+r()*.6, rk=mk(rockG(rd,160+q%8),q%3?mBas:mBasL,Math.cos(a)*d,.3+rd*.3,Math.sin(a)*d); rk.rotation.y=r()*6; g.add(rk); }
+      for(const [x,z] of [[3.6,1.5],[-2.8,-3.2]]){ const sm2=mk(new T.CircleGeometry(.5,8),mLava,x,.4,z); sm2.rotation.x=-1.5708; g.add(sm2); }
+      { const cv=document.createElement('canvas'); cv.width=cv.height=64; const x2=cv.getContext('2d'), gd=x2.createRadialGradient(32,32,2,32,32,30); gd.addColorStop(0,'rgba(255,255,255,.85)'); gd.addColorStop(.5,'rgba(255,255,255,.35)'); gd.addColorStop(1,'rgba(255,255,255,0)'); x2.fillStyle=gd; x2.fillRect(0,0,64,64); const tx=new T.CanvasTexture(cv), st=new T.Group(); g.add(st); g.userData.fire=st;
+        for(let q=0;q<12;q++){ const sp=new T.Sprite(new T.SpriteMaterial({map:tx,color:0xf4f2ee,transparent:true,opacity:.55-q*.035,depthWrite:false})); const h=2.6+q*1.05; sp.position.set(Math.sin(q*.9)*.25*q*.3,h,Math.cos(q*1.3)*.25*q*.3); sp.scale.setScalar(1.6+q*.55); sp.userData.ph=q; st.add(sp); } }
+      g.userData.vent=1; },'volc'],
     // 雪山
     ['氷の柱',g=>{ const r=pRng('ic',g.id); for(let q=0;q<7;q++){ const h=3+r()*6, c=mk(new T.ConeGeometry(.6+r()*.6,h,5),mIce,(r()-.5)*7,h/2-.3,(r()-.5)*7); c.rotation.set((r()-.5)*.4,r()*3,(r()-.5)*.4); g.add(c); } },'snow'],
     ['凍った池',g=>{ g.add(mk(new T.CylinderGeometry(9,9,.3,26),mIce,0,.12,0)); for(let q=0;q<10;q++){ const a=q/10*6.28; g.add(Sp(.9,mSnow,Math.cos(a)*9.4,.2,Math.sin(a)*9.4,0)); } },'snow'],
@@ -5708,7 +5744,7 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
   // 見つけるものの部品を、色ごとに1つの形にまとめる（描く回数を減らして軽くする）。動く部品はそのまま
   // ---- 古びた質感（ブレワイの遺跡のように）：石は角が欠けてでこぼこし、色むら・根元の土汚れ・上面の苔・縦の雨だれ・側面のツタ。木は木目と色あせ ----
   const n3=(x,y,z)=>(pNoise(x+z*.71,y+3.1)+pNoise(y*1.13+11.7,z+x*.37)+pNoise(z*.93+5.3,x+7.9))/3;
-  const KIND=new Map([[mMono,'mono'],[mMonoD,'mono'],[mSteelW,'mono'],[mStone,'stone'],[mDark,'stone'],[mSand2,'stone'],[mBone,'bone'],[mWood,'wood'],[mWoodD,'wood'],[mWoodL,'wood'],[mWoodG,'wood'],[mWhite,'plaster'],[mCanvas,'cloth'],[mRedC,'cloth'],[mRoof,'roof']]);
+  const KIND=new Map([[mMono,'mono'],[mMonoD,'mono'],[mSteelW,'mono'],[mStone,'stone'],[mDark,'stone'],[mSand2,'stone'],[mBone,'bone'],[mWood,'wood'],[mWoodD,'wood'],[mWoodL,'wood'],[mWoodG,'wood'],[mBas,'basalt'],[mBasL,'basalt'],[mChar,'char'],[mWhite,'plaster'],[mCanvas,'cloth'],[mRedC,'cloth'],[mRoof,'roof']]);
   // 石の表面（ブレワイの遺跡の石）：細かいざらつきと小さな斑点、切り石の目地（横の段と、段ごとにずれた縦の継ぎ目）、上の面と目地のまわりにふわっとした苔、壁を這うツタ。形は平らなまま、表面の模様で古さを出す
   // 石の表面：本物の石垣の写真（Babylon.js Assets, CC BY 4.0）を世界の向きに合わせて3方向から貼る。石の形・ひび・欠け・凹凸は写真そのもの。
   //   色はブレワイの遺跡の、少し緑がかった明るい灰色に寄せ、上の面と石の継ぎ目に苔、壁の一部にツタ
@@ -5759,6 +5795,23 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
    float mo=smoothstep(.35,.85,wn.y)*smoothstep(.4,.6,vn(p.xz*.5)+.3*(g2-.5)) + smoothstep(.6,.75,vn(uv*.45+3.))*(1.-smoothstep(.0,.3,wn.y))*.7;
    vec3 mc=mix(vec3(.16,.24,.06),vec3(.38,.48,.12),smoothstep(.3,.8,vn(uv*4.)+.4*g1)); c=mix(c,mc*(.7+.5*g1),clamp(mo,0.,1.));
    diffuseColor.rgb=c; }`;
+  const BASALT_FS=`
+ { vec3 wn=normalize(vWN), p=vWP; vec3 aw=pow(abs(wn),vec3(4.)); aw/=aw.x+aw.y+aw.z;
+   float g1=texture2D(uRock,p.zy*.3).r*aw.x+texture2D(uRock,p.xz*.3+.37).r*aw.y+texture2D(uRock,p.xy*.3+.71).r*aw.z;
+   float g2=texture2D(uRock,p.zy*.08+.2).r*aw.x+texture2D(uRock,p.xz*.08+.5).r*aw.y+texture2D(uRock,p.xy*.08+.8).r*aw.z;
+   vec2 uv=aw.y>.5?p.xz:aw.x>aw.z?p.zy:p.xy; g1=clamp(.5+(g1-.593)*4.5,0.,1.); g2=clamp(.5+(g2-.593)*4.5,0.,1.);
+   vec3 c=diffuseColor.rgb*(.62+.6*g1)*(.8+.36*g2)*(.85+.3*vn(uv*.3));
+   float ck=abs(vn(uv*.5+7.)-.5); c*=1.-.5*(1.-smoothstep(.0,.025,ck));
+   c=mix(c,c*vec3(1.25,.9,.75),smoothstep(.6,.8,vn(uv*.2+3.))*.5);
+   c=mix(c,c*.55,(1.-smoothstep(.0,.6,p.y-vCtr.y+1.))*.4);
+   diffuseColor.rgb=c; }`;
+  const CHAR_FS=`
+ { vec3 wn=normalize(vWN), p=vWP; vec3 dir=normalize(vDir+1e-4); float along=dot(p-vCtr,dir); vec3 q=p-vCtr-dir*along; float ac=atan(q.z,q.x+1e-4);
+   float blk=step(.5,fract(along*1.2+vn(vec2(ac*2.,along*.3))*.4)), chk=abs(fract(ac*1.3+vn(vec2(along*.4,ac))*.5)-.5);
+   vec3 c=diffuseColor.rgb*(.75+.4*vn(vec2(along*3.,ac*4.)))*(1.-.45*(1.-smoothstep(.0,.06,chk))); c*=.85+.3*blk*vn(vec2(along*2.,ac*3.));
+   float em=smoothstep(.7,.9,vn(vec2(along*1.5+3.,ac*2.)))*(1.-smoothstep(.0,.05,chk)); c=mix(c,vec3(1.,.38,.1),em*.7);
+   c=mix(c,vec3(.55,.52,.5),smoothstep(.55,.9,wn.y)*.35);
+   diffuseColor.rgb=c; }`;
   const STONE_FS=`
  { vec3 wn=normalize(vWN), p=vWP; vec3 aw=pow(abs(wn),vec3(4.)); aw/=aw.x+aw.y+aw.z; float S=.11;
    float tx=texture2D(uStone,p.zy*S).r*aw.x+texture2D(uStone,p.xz*S+.37).r*aw.y+texture2D(uStone,p.xy*S+.71).r*aw.z;
@@ -5771,7 +5824,7 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
    diffuseColor.rgb=c; }`;
   const wMat=new Map(), wmat=(m,kind)=>{ if(!wMat.has(m)){ const mm=patch(new T.MeshToonMaterial({vertexColors:true,gradientMap:kind!=='bone'?gmapG:gmap2,side:T.DoubleSide})); if(kind!=='bone'){ const ob=mm.onBeforeCompile; mm.onBeforeCompile=sh=>{ ob(sh);
       sh.vertexShader='attribute vec3 aDir, aCtr;\nvarying vec3 vWN, vDir, vCtr;\n'+sh.vertexShader.replace('#include <beginnormal_vertex>','#include <beginnormal_vertex>\n vWN=normalize(mat3(modelMatrix)*objectNormal); vDir=normalize(mat3(modelMatrix)*aDir+1e-5); vCtr=(modelMatrix*vec4(aCtr,1.)).xyz;');
-      sh.uniforms.uStone={value:stoneTex}; sh.uniforms.uRock={value:rockTex}; sh.uniforms.uWood={value:woodTex}; sh.fragmentShader='varying vec3 vWN, vDir, vCtr;\nuniform sampler2D uStone, uRock, uWood;\n'+sh.fragmentShader.replace('#include <color_fragment>','#include <color_fragment>\n'+({mono:MONO_FS,wood:WOOD_FS,cloth:CLOTH_FS,roof:ROOF_FS,plaster:PLASTER_FS}[kind]||STONE_FS)); }; mm.customProgramCacheKey=()=>'w'+kind; } wMat.set(m,mm); } return wMat.get(m); };
+      sh.uniforms.uStone={value:stoneTex}; sh.uniforms.uRock={value:rockTex}; sh.uniforms.uWood={value:woodTex}; sh.fragmentShader='varying vec3 vWN, vDir, vCtr;\nuniform sampler2D uStone, uRock, uWood;\n'+sh.fragmentShader.replace('#include <color_fragment>','#include <color_fragment>\n'+({mono:MONO_FS,wood:WOOD_FS,cloth:CLOTH_FS,roof:ROOF_FS,plaster:PLASTER_FS,basalt:BASALT_FS,char:CHAR_FS}[kind]||STONE_FS)); }; mm.customProgramCacheKey=()=>'w'+kind; } wMat.set(m,mm); } return wMat.get(m); };
   const tess=(P,maxL)=>{ let cur=P; for(let it=0;it<3;it++){ const out=[]; let any=false; for(let i=0;i<cur.length;i+=9){ const a=cur.slice(i,i+3), b=cur.slice(i+3,i+6), c=cur.slice(i+6,i+9), d=(p,q)=>Math.hypot(p[0]-q[0],p[1]-q[1],p[2]-q[2]);
       if(Math.max(d(a,b),d(b,c),d(c,a))>maxL){ any=true; const m=(p,q)=>[(p[0]+q[0])/2,(p[1]+q[1])/2,(p[2]+q[2])/2], ab=m(a,b), bc=m(b,c), ca=m(c,a); out.push(...a,...ab,...ca, ...ab,...b,...bc, ...ca,...bc,...c, ...ab,...bc,...ca); } else out.push(...a,...b,...c); } cur=out; if(!any) break; } return new Float32Array(cur); };
   const MOSS=lin([88,122,56]), MOSS2=lin([120,146,70]), DIRT=lin([92,78,58]), IVY=lin([60,96,44]), GRAYW=lin([150,146,136]);
