@@ -5730,9 +5730,37 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
         for(let q=0;q<12;q++){ const sp=new T.Sprite(new T.SpriteMaterial({map:tx,color:0xf4f2ee,transparent:true,opacity:.55-q*.035,depthWrite:false})); const h=2.6+q*1.05; sp.position.set(Math.sin(q*.9)*.25*q*.3,h,Math.cos(q*1.3)*.25*q*.3); sp.scale.setScalar(1.6+q*.55); sp.userData.ph=q; st.add(sp); } }
       g.userData.vent=1; },'volc'],
     // 雪山
-    ['氷の柱',g=>{ const r=pRng('ic',g.id); for(let q=0;q<7;q++){ const h=3+r()*6, c=mk(new T.ConeGeometry(.6+r()*.6,h,5),mIce,(r()-.5)*7,h/2-.3,(r()-.5)*7); c.rotation.set((r()-.5)*.4,r()*3,(r()-.5)*.4); g.add(c); } },'snow'],
-    ['凍った池',g=>{ g.add(mk(new T.CylinderGeometry(9,9,.3,26),mIce,0,.12,0)); for(let q=0;q<10;q++){ const a=q/10*6.28; g.add(Sp(.9,mSnow,Math.cos(a)*9.4,.2,Math.sin(a)*9.4,0)); } },'snow'],
-    ['雪をかぶった石塔',g=>{ let y=0; for(let q=0;q<4;q++){ const w=3-q*.6; g.add(Bx(w,1.6,w,mStone,0,y+.8,0)); g.add(Bx(w+.3,.35,w+.3,mSnow,0,y+1.7,0)); y+=1.85; } },'snow'],
+    // 氷の柱（ヘブラの氷の結晶）：雪の吹きだまりから、青白く透ける六角の氷の結晶が束になって斜めに突き出る。先はとがり、根元は雪に埋もれる。まわりに凍った岩と小さな氷のかけら
+    ['氷の柱',g=>{ const r=pRng('icep',113), mIceG=patch(new T.MeshStandardMaterial({color:c3([170,220,244]),roughness:.08,metalness:0,transparent:true,opacity:.82,envMap:L.env||null,envMapIntensity:1.4,emissive:c3([40,80,110]),flatShading:true})), mIceD=patch(new T.MeshStandardMaterial({color:c3([110,170,214]),roughness:.1,transparent:true,opacity:.9,envMap:L.env||null,envMapIntensity:1.2,flatShading:true}));
+      const crys=(x,z,h,rd,tx,tz,m)=>{ const c=new T.Group(); c.position.set(x,.1,z); c.rotation.set(tx,r()*6.28,tz); g.add(c); c.add(mk(new T.CylinderGeometry(rd,rd*1.05,h,6),m,0,h/2,0)); c.add(mk(new T.ConeGeometry(rd,rd*2.2,6),m,0,h+rd*1.1,0)); };
+      for(const [cx,cz,n,s2] of [[0,0,7,1],[5,3,4,.6],[-4.5,2.5,4,.55],[-1,-5,3,.5]]) for(let q=0;q<n;q++){ const a=r()*6.283, d=r()*1.4*s2; crys(cx+Math.cos(a)*d,cz+Math.sin(a)*d,(3+r()*6)*s2*(q===0?1.4:1),(.45+r()*.4)*s2,Math.cos(a)*(.15+r()*.45),Math.sin(a)*(.15+r()*.45),r()<.3?mIceD:mIceG); }
+      for(const [x,z,rr] of [[0,0,3.2],[5,3,1.8],[-4.5,2.5,1.7],[-1,-5,1.5]]){ const sd=mk(new T.SphereGeometry(rr,14,6,0,6.283,0,1.4),mSnow,x,.0,z); sd.scale.y=.35; g.add(sd); }
+      for(let q=0;q<8;q++){ const a=r()*6.283, d=5+r()*4, rd=.4+r()*.6, rk=mk(rockG(rd,170+q),mMono,Math.cos(a)*d,.25+rd*.3,Math.sin(a)*d); g.add(rk); const cap=mk(new T.SphereGeometry(rd*1.05,10,4,0,6.283,0,1.1),mSnow,Math.cos(a)*d,.35+rd*.55,Math.sin(a)*d); cap.scale.y=.45; g.add(cap); }
+      for(let q=0;q<10;q++){ const a=r()*6.283, d=2.5+r()*5, sh=mk(new T.OctahedronGeometry(.2+r()*.25,0),mIceG,Math.cos(a)*d,.4,Math.sin(a)*d); sh.rotation.set(r()*3,r()*3,r()*3); g.add(sh); } },'snow'],
+    // 凍った池（ヘブラの凍った湖）：雪原の中の、青く澄んだ氷の池。表面に白いひびが走り、縁は雪が盛り上がる。氷の下に暗い水の色が透け、ところどころ雪が薄く積もる。岸に雪をかぶった針葉樹の若木と岩
+    ['凍った池',g=>{ const r=pRng('fpond',127), mIcePd=patch(new T.MeshStandardMaterial({color:c3([150,200,226]),roughness:.06,envMap:L.env||null,envMapIntensity:1.3})), mCrk=tm([236,246,252]), mFir=tm([52,84,66]);
+      const N=36, rad=a=>9+1.4*Math.sin(a*2+.8)+.9*Math.sin(a*3+2.1);
+      const shp=(k)=>{ const sh=new T.Shape(); for(let q=0;q<=N;q++){ const a=q/N*6.283, R=rad(a)*k; q?sh.lineTo(Math.cos(a)*R,Math.sin(a)*R):sh.moveTo(Math.cos(a)*R,Math.sin(a)*R); } return sh; };
+      { const ic=mk(new T.ShapeGeometry(shp(1)),mIcePd,0,.34,0); ic.rotation.x=-1.5708; g.add(ic); const dp=mk(new T.ShapeGeometry(shp(.55)),tm([70,120,150]),0,.345,0); dp.rotation.x=-1.5708; dp.material.transparent=true; dp.material.opacity=.45; g.add(dp); }
+      // ひび：中心から枝分かれする白い線
+      for(let q=0;q<7;q++){ let x=(r()-.5)*4, z=(r()-.5)*4, a=r()*6.283; for(let k=0;k<7;k++){ const L2=.8+r()*1.4, nx=x+Math.cos(a)*L2, nz=z+Math.sin(a)*L2; if(Math.hypot(nx,nz)>rad(Math.atan2(nz,nx))-.6) break; const cr=Bx(L2,.01,.05,mCrk,(x+nx)/2,.36,(z+nz)/2); cr.rotation.y=-a; g.add(cr); if(r()<.3){ const b=a+(r()<.5?1:-1)*(.6+r()*.5), bx=nx+Math.cos(b)*L2*.6, bz=nz+Math.sin(b)*L2*.6, c2=Bx(L2*.6,.01,.035,mCrk,(nx+bx)/2,.36,(nz+bz)/2); c2.rotation.y=-b; g.add(c2); } x=nx; z=nz; a+=(r()-.5)*.9; } }
+      for(let q=0;q<3;q++){ const a=r()*6.283, d=r()*6, sp=mk(new T.CircleGeometry(.4+r()*.6,8),mSnow,Math.cos(a)*d,.355,Math.sin(a)*d); sp.rotation.x=-1.5708; sp.scale.set(1,.5+r()*.6,1); g.add(sp); }
+      for(let q=0;q<26;q++){ const a=q/26*6.283, R=rad(a)+.5, b=mk(new T.SphereGeometry(1.1+r()*.6,10,5,0,6.283,0,1.4),mSnow,Math.cos(a)*R,.05,Math.sin(a)*R); b.scale.y=.5; g.add(b); }
+      for(let q=0;q<5;q++){ const a=r()*6.283, R=rad(a)+2.5+r()*2, x=Math.cos(a)*R, z=Math.sin(a)*R, s2=.7+r()*.6; g.add(Cy(.1*s2,.16*s2,1.2*s2,tm([90,70,56]),x,.6*s2+.2,z,5)); for(let k=0;k<4;k++){ const t=k/4, c=mk(new T.ConeGeometry((1.4-t*1.0)*s2,1.5*s2,7),mFir,x,(1.0+k*1.0)*s2+.2,z); g.add(c); const sc=mk(new T.ConeGeometry((1.2-t*.9)*s2,.7*s2,7),mSnow,x,(1.4+k*1.0)*s2+.2,z); g.add(sc); } }
+      for(let q=0;q<5;q++){ const a=r()*6.283, R=rad(a)+1.2, rd=.6+r()*.6, rk=mk(rockG(rd,190+q),mMono,Math.cos(a)*R,.3+rd*.25,Math.sin(a)*R); g.add(rk); const cap=mk(new T.SphereGeometry(rd,10,4,0,6.283,0,1.1),mSnow,Math.cos(a)*R,.4+rd*.45,Math.sin(a)*R); cap.scale.y=.45; g.add(cap); } },'snow'],
+    // 雪をかぶった石塔（ヘブラの古い石の祠の塔）：灰色の切り石を積んだ四角い塔。段ごとに張り出した軒石、正面に縦長の窓と彫りの帯。一つひとつの軒と頂に雪が厚く積もり、縁から垂れる。北面に氷柱、足もとは雪の吹きだまり
+    ['雪をかぶった石塔',g=>{ const r=pRng('stower',131), mIcc=patch(new T.MeshStandardMaterial({color:c3([200,232,248]),roughness:.1,transparent:true,opacity:.85,envMap:L.env||null}));
+      let y=0; const ws=[4.2,3.6,3.0,2.4];
+      ws.forEach((w,q)=>{ const h=q===0?3.4:2.6; for(let yy=0;yy<h-.01;yy+=.9){ const sh=Math.min(.9,h-yy); g.add(Bx(w,sh-.03,w,mStone,(r()-.5)*.04,y+yy+sh/2,(r()-.5)*.04)); }
+        g.add(Bx(.55,h*.5,.1,mDark,0,y+h*.5,w/2+.02)); g.add(Bx(.85,.15,.15,mStone,0,y+h*.78,w/2+.06));
+        const ey=y+h; g.add(Bx(w+.6,.35,w+.6,mStone,0,ey+.17,0));
+        // 雪：軒の上に厚く、縁は丸く垂れる
+        const sn=mk(new T.BoxGeometry(w+.7,.5,w+.7,4,1,4),mSnow,0,ey+.6,0); { const P=sn.geometry.attributes.position; for(let k=0;k<P.count;k++){ const px=P.getX(k), py=P.getY(k), pz=P.getZ(k); if(py>0){ const e=Math.max(Math.abs(px),Math.abs(pz))/((w+.7)/2); P.setY(k,py+.15*(1-e*e)+(r()-.5)*.06); } } sn.geometry.computeVertexNormals(); } g.add(sn);
+        for(let k=0;k<6;k++){ const sd=k%4, t=(r()-.5)*w, x=sd===0?t:sd===2?t:(sd===1?1:-1)*(w/2+.32), z=sd===1||sd===3?t:(sd===0?1:-1)*(w/2+.32), dr=Sp(.22+r()*.12,mSnow,x,ey+.32,z,1); dr.scale.set(1.2,1.4,1.2); g.add(dr); }
+        for(let k=0;k<5;k++){ const ic=mk(new T.ConeGeometry(.07+r()*.05,.5+r()*.7,5),mIcc,(r()-.5)*w,ey-.2,-(w/2+.3)); ic.rotation.x=Math.PI; g.add(ic); }
+        y=ey+.35; });
+      { const tp=mk(new T.ConeGeometry(1.5,1.6,4),mStone,0,y+.8,0); tp.rotation.y=.785; g.add(tp); const sc=mk(new T.ConeGeometry(1.35,1.1,4),mSnow,0,y+1.15,0); sc.rotation.y=.785; g.add(sc); }
+      for(let q=0;q<12;q++){ const a=q/12*6.283, d=3.2+r()*1.2, b=mk(new T.SphereGeometry(1.2+r()*.8,10,5,0,6.283,0,1.4),mSnow,Math.cos(a)*d,.05,Math.sin(a)*d); b.scale.y=.4; g.add(b); } },'snow'],
     // 砂漠
     ['砂に埋もれた巨像',g=>{ g.add(Bx(4.5,5,4,mMono,0,2,0)); g.add(Bx(4.7,1,1.2,mMono,0,4.6,2)); g.add(Bx(1,1.4,1.2,mMono,0,2.8,2.4)); [-1,1].forEach(x=>g.add(Bx(.9,.4,.3,mDark,x*1.1,3.6,2.05))); g.add(Sp(3.2,mSandG,0,-.6,0,1)); },'desert'],
     ['オアシス',g=>{ g.add(mk(new T.CylinderGeometry(8,8,.3,24),mWater,0,.1,0)); for(let q=0;q<5;q++){ const a=q/5*6.28+.4, x=Math.cos(a)*9.5, z=Math.sin(a)*9.5, tr=Cy(.35,.5,8,mWood,x,4,z,6); tr.rotation.z=.15; g.add(tr); for(let k2=0;k2<6;k2++){ const l=Bx(4,.12,1.1,mLeaf,x+.6+Math.cos(k2)*1.6,8.2,z+Math.sin(k2)*1.6); l.rotation.set(0,k2,-.35); g.add(l); } } },'desert'],
