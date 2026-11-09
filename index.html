@@ -4752,7 +4752,7 @@ async function pLookOpen(){
   if(pLookSt) return; const k=dayView, H=pm2y(PATH_H1)+10, W=pW, isT=k===pJDay(), bl=pBlocks(k);
   const svv=$('slView'), retM=svv?Math.max(PATH_H0,Math.min(PATH_H1,PATH_H0+svv.scrollTop/PX)):8*60, nowM=isT?Math.max(PATH_H0,Math.min(PATH_H1,pJNow()+new Date().getSeconds()/60+new Date().getMilliseconds()/60000)):retM, y0=(nowM-PATH_H0)*P_KM;
   const ov=document.createElement('div'); ov.className='look'; const d=new Date(k+'T00:00:00');
-  ov.innerHTML=`<canvas class="lk-cv"></canvas><div class="lk-ui"><div class="lk-k">見渡す</div><div class="lk-t">${d.getMonth()+1}月${d.getDate()}日（${'日月火水木金土'[d.getDay()]}）${isT?`　${pfmt(Math.floor(nowM))}`:''}</div><button class="lk-x" data-act="lookx"><i>B</i>もどる</button><div class="lk-load"><i></i><span>景色を見ています…</span></div><div class="lk-hint">指でなぞって見回す・ふたつの指で近く／遠く<br><span style="opacity:.6;font-size:.85em">石の写真：Babylon.js Assets（CC BY 4.0）</span></div><button class="lk-go">手綱を引く</button><div class="lk-find"></div></div>`;
+  ov.innerHTML=`<canvas class="lk-cv"></canvas><div class="lk-ui"><div class="lk-k">見渡す</div><div class="lk-t">${d.getMonth()+1}月${d.getDate()}日（${'日月火水木金土'[d.getDay()]}）${isT?`　${pfmt(Math.floor(nowM))}`:''}</div><button class="lk-x" data-act="lookx"><i>B</i>もどる</button><div class="lk-load"><i></i><span>景色を見ています…</span></div><div class="lk-hint">指でなぞって見回す・ふたつの指で近く／遠く<br><span style="opacity:.6;font-size:.85em">石と木の写真：Babylon.js Assets（CC BY 4.0）</span></div><button class="lk-go">手綱を引く</button><div class="lk-find"></div></div>`;
   document.body.appendChild(ov); requestAnimationFrame(()=>ov.classList.add('show'));
   const L=pLookSt={ov,alive:true,raf:0}; const cv=ov.querySelector('.lk-cv'), loadEl=ov.querySelector('.lk-load span'), tick=async p=>{ loadEl.textContent=`景色を見ています… ${Math.round(p*100)}%`; await new Promise(r=>setTimeout(r,0)); return L.alive; };
   let T; try{ T=await import('./three.module.min.js'); }catch(e){ loadEl.textContent='景色を読み込めなかった'; return; }
@@ -5263,11 +5263,15 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
   updChunks(y0,true); if(!(await tick(.95))) return;
   // ---- 見つけるもの：1分ほど走るごとに何かがある（遺跡・野営地・風車・鹿の群れ・宝箱…）。近づくと名前が出る ----
   const mPondE=tm([120,108,80]), mFlower=tm([255,255,255]), mFlower2=tm([240,190,214]), mLava=new T.MeshBasicMaterial({color:c3([255,110,30]).multiplyScalar(1.8)}), mDark=tm([70,62,62]), mIce=tm([176,220,240]), mSnow=tm([236,242,250]), mSand2=tm([206,170,120]), mSandG=tm([222,186,124]), mBone=tm([236,226,204]), mStone=tm([196,200,186]), mMono=tm([200,202,188]), mMonoD=tm([118,118,108]), mMoss=tm([104,138,66]), mWood=tm([128,88,54]), mWoodD=tm([88,62,40]), mCanvas=tm([222,208,176]), mRedC=tm([176,64,48]), mLeaf=tm([76,128,54]), mLeaf2=tm([58,104,46]), mApple=tm([210,44,40]),
-    mWhite=tm([236,230,216]), mRoof=tm([150,74,52]), mDeer=tm([160,106,62]), mDeerL=tm([232,214,188]), mGold=tm([226,182,72]), mFire=new T.MeshBasicMaterial({color:c3([255,170,60]).multiplyScalar(1.6)}),
+    mWhite=tm([236,230,216]), mRoof=tm([150,74,52]), mDeer=tm([160,106,62]), mDeerL=tm([232,214,188]), mGold=tm([226,182,72]), mFire=new T.MeshBasicMaterial({color:c3([255,120,30]).multiplyScalar(1.5)}), mFireC=new T.MeshBasicMaterial({color:c3([255,230,120]).multiplyScalar(1.8)}),
     mWater=patch(new T.MeshStandardMaterial({color:c3([62,120,140]),roughness:.12,envMap:L.env||null,envMapIntensity:1.1}));
   const mk=(g,m,x=0,y=0,z=0)=>{ const o=shad(new T.Mesh(g,m)); o.position.set(x,y,z); return o; };
   const chBox=(w,h,d)=>{ const r=Math.min(.16,Math.min(w,h,d)*.09), sh=new T.Shape(), a=w/2-r, b=d/2-r; sh.moveTo(-a,-b); sh.lineTo(a,-b); sh.lineTo(a,b); sh.lineTo(-a,b); sh.lineTo(-a,-b);
     const g=new T.ExtrudeGeometry(sh,{depth:Math.max(.01,h-2*r),bevelEnabled:true,bevelSize:r,bevelThickness:r,bevelSegments:2,curveSegments:1}); g.rotateX(-Math.PI/2); g.translate(0,-(h-2*r)/2,0); return g; };
+  // 角ばった岩：球を割れ目のような平らな面でいくつも削り、少しゆがめる（ブレワイの大岩のように）
+  const rockG=(r,seed)=>{ const rr=pRng('rk'+seed,3), g=new T.IcosahedronGeometry(r,3), P=g.attributes.position, cuts=[]; for(let q=0;q<14;q++){ const n=new T.Vector3(rr()*2-1,rr()*1.6-.5,rr()*2-1).normalize(); cuts.push([n,r*(.5+rr()*.32)]); }
+    const v=new T.Vector3(); for(let i=0;i<P.count;i++){ v.fromBufferAttribute(P,i); for(const [n,d] of cuts){ const k=v.dot(n); if(k>d) v.addScaledVector(n,d-k); } v.multiplyScalar(1+.04*(pNoise(v.x*.9+seed,v.z*.9+v.y*.4)-.5)); P.setXYZ(i,v.x,v.y,v.z); }
+    const ng=g.toNonIndexed(); ng.computeVertexNormals(); return ng; };
   const Bx=(w,h,d,m,x,y,z)=>mk((m===mStone||m===mDark||m===mSand2)?chBox(w,h,d):new T.BoxGeometry(w,h,d),m,x,y,z), Cy=(rt,rb,h,m,x,y,z,sg=10)=>mk(new T.CylinderGeometry(rt,rb,h,sg),m,x,y,z), Sp=(r,m,x,y,z,d=1)=>mk(new T.IcosahedronGeometry(r,d),m,x,y,z);
   const DK=[
     // 古い柱の遺跡（ブレワイの「聖なる場所」のような）：丸い石の床に、台座と柱頭が段になった四角い柱が輪に立つ。いくつかは折れて、かけらが床に転がる。まわりに低い石垣と階段
@@ -5284,10 +5288,10 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
       const f1=Bx(4.2,1.6,2.4,mStone,3,.8,3.2); f1.rotation.y=.5; g.add(f1); const f2=Bx(2,1.4,2.2,mStone,5.8,.7,-2.5); f2.rotation.set(.2,1,.15); g.add(f2);
       for(const sd of [-1,1]) for(let k=0;k<5;k++){ const x=sd*(6.8+k*2.5), hh=Math.max(.8,(sd<0?7:4.5)-k*1.4-r()*.8); for(let y=0;y<hh;y+=1.1){ const top=Math.min(1.1,hh-y); g.add(Bx(2.5,top,1.6,mStone,x+(r()-.5)*.2,y+top/2,(r()-.5)*.2)); } } }],
     // 旅人の野営地（ブレワイの料理鍋とたき火）：三本足の黒い鍋の下で火が燃え、そばに丸太を組んだたき火と石の輪。布を張った雨よけ、寝袋、腰かけの丸太、薪の山
-    ['旅人の野営地',g=>{ const mIron=tm([40,38,40]);
-      { const pot=mk(new T.SphereGeometry(1.7,12,8,0,6.29,1.35,1.79),mIron,0,2.6,0); pot.rotation.x=Math.PI; g.add(pot); { const rim=mk(new T.TorusGeometry(1.7,.16,6,16),mIron,0,2.6,0); rim.rotation.x=1.5708; g.add(rim); }
+    ['旅人の野営地',g=>{ const mIron=tm([70,68,66]);
+      { const pot=mk(new T.SphereGeometry(1.7,14,8,0,6.29,1.45,1.69),mIron,0,3.2,0); g.add(pot); const soup=mk(new T.CircleGeometry(1.62,16),tm([150,110,60]),0,3.05,0); soup.rotation.x=-1.5708; g.add(soup); { const rim=mk(new T.TorusGeometry(1.7,.16,6,16),mIron,0,3.15,0); rim.rotation.x=1.5708; g.add(rim); }
         for(let q=0;q<3;q++){ const a=q/3*6.28; const lg=Cy(.16,.2,2.2,mIron,Math.cos(a)*1.55,1.1,Math.sin(a)*1.55,5); lg.rotation.set(Math.sin(a)*-.25,0,Math.cos(a)*.25); g.add(lg); }
-        const fl=mk(new T.ConeGeometry(.9,1.6,7),mFire,0,.8,0); fl.castShadow=false; g.add(fl); g.userData.fire=fl; }
+        const fl=new T.Group(); fl.position.set(0,.2,0); g.add(fl); g.userData.fire=fl; [[0,0,1,1.8,mFire],[.4,.2,.6,1.2,mFire],[-.35,-.25,.6,1.3,mFire],[0,0,.55,1.1,mFireC]].forEach(([x,z,r,h,m])=>{ const c2=new T.Mesh(new T.ConeGeometry(r,h,7),m); c2.position.set(x,h/2,z); fl.add(c2); }); for(let q=0;q<5;q++){ const lg=Cy(.16,.2,2,mWoodD,0,.15,0,6); lg.rotation.set(1.45,q*1.26,0); g.add(lg); } }
       for(let q=0;q<8;q++){ const a=q/8*6.28; g.add(Sp(.42,mStone,6+Math.cos(a)*1.3,.15,2+Math.sin(a)*1.3,0)); }
       for(let q=0;q<4;q++){ const l=Cy(.18,.2,2.2,mWoodD,6,.55,2,6); l.rotation.set(.9,q*1.57,0); g.add(l); }
       { const p1=Cy(.12,.12,3.4,mWood,-5,1.7,-3,5), p2=Cy(.12,.12,3.4,mWood,-1,1.7,-3,5); g.add(p1); g.add(p2); const tarp=Bx(4.6,.06,3.6,mCanvas,-3,2.1,-4.4); tarp.rotation.x=-.75; g.add(tarp); const roll=Cy(.4,.4,2.2,mRedC,-3,.4,-4.6,8); roll.rotation.z=1.5708; g.add(roll); }
@@ -5337,7 +5341,7 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
     ['羊飼いの小屋',g=>{ g.add(Bx(6,3.2,5,mWhite,0,1.6,0)); const rf=new T.Mesh(new T.CylinderGeometry(3.6,3.6,6.4,3,1,false),mRoof); rf.rotation.set(0,0,1.5708); rf.rotation.y=1.5708; rf.position.set(0,4.2,0); rf.scale.set(1,1,.9); shad(rf); g.add(rf); g.add(Bx(1.2,2,.2,mWoodD,0,1,2.55)); for(let q=0;q<8;q++) g.add(Cy(.12,.14,1.4,mWood,-5+q*1.4,.7,5,5)); g.add(Bx(11,.2,.15,mWood,0,1.1,5)); },'grass'],
     ['苔むしたアーチ',g=>{ [-1,1].forEach(x=>g.add(Bx(1.6,7,1.6,mStone,x*4,3.5,0))); for(let q=0;q<7;q++){ const a=Math.PI*q/6, b=Bx(1.6,1.2,1.7,mStone,Math.cos(a)*4,7+Math.sin(a)*2.4,0); b.rotation.z=a-1.5708; g.add(b); } g.add(Bx(9,.3,1.8,mMoss,0,9.5,0)); }],
     ['旅人の墓標',g=>{ g.add(Bx(2.6,.4,4,mStone,0,.2,0)); const st=Bx(1.6,2.4,.4,mStone,0,1.6,-1.6); st.rotation.x=-.1; g.add(st); g.add(Bx(.15,2.6,.15,mWoodD,.9,1.2,1.2)); g.add(Bx(1.2,.15,.15,mWoodD,.9,2,1.2)); { const wr=mk(new T.TorusGeometry(.5,.1,6,12),mLeaf,0,.55,.4); wr.rotation.x=1.5708; g.add(wr); } }],
-    ['巨大な一枚岩',g=>{ const r=Sp(4,mMono,0,6,0,3); r.scale.set(1,2.2,.8); g.add(r); const b1=Sp(1.6,mMono,4,.8,2,2); g.add(b1); g.add(Sp(1.1,mMono,-3.5,.5,-2,2)); }],
+    ['巨大な一枚岩',g=>{ const r=mk(rockG(4,7),mMono,0,7.2,0); r.scale.set(1.3,1.9,1.05); r.rotation.y=.4; g.add(r); const b1=mk(rockG(1.7,8),mMono,4.4,1,2.2); g.add(b1); const b2=mk(rockG(1.1,9),mMono,-3.8,.6,-2); g.add(b2); }],
     ['倒木のトンネル',g=>{ const t=Cy(2.2,2.6,16,mWood,0,2.2,0,10); t.rotation.z=1.5708; t.rotation.y=.3; g.add(t); const hol=Cy(1.6,1.6,16.2,mDark,0,2.2,0,10); hol.rotation.z=1.5708; hol.rotation.y=.3; g.add(hol); for(let q=0;q<5;q++) g.add(Sp(.7,mMoss,-6+q*3,4.3,(q%2)*.6,0)); for(let q=0;q<3;q++) g.add(mk(new T.SphereGeometry(.5,8,5,0,6.3,0,1.6),mRedC,-4+q*4,4.4,1.2)); }],
     ['崩れた城壁の門',g=>{ [-1,1].forEach(x=>{ g.add(Bx(3,9,3,mStone,x*5,4.5,0)); g.add(Bx(5,4+x*1.5,2,mStone,x*9,(4+x*1.5)/2,0)); }); g.add(Bx(7,1.5,3,mStone,-1.2,9.3,0)); for(let q=0;q<5;q++) g.add(Bx(1.2,.9,1.1,mStone,1.5+q*.8,.4,2+q*.5)); [-1,1].forEach(x=>{ const fl=Bx(1.6,2.4,.08,mRedC,x*5,7,1.6); g.add(fl); }); }],
     ['鳥の巣の枯れ木',g=>{ g.add(Cy(.6,1,10,mWoodD,0,5,0,7)); [[2,8,.5],[-2,9,-.3],[.4,11,1.6]].forEach(([x,y,z])=>{ const b=Cy(.12,.3,Math.hypot(x,y-7,z),mWoodD,x/2,(y+7)/2,z/2,5); b.lookAt(x,y,z); b.rotateX(1.5708); g.add(b); }); { const ns=mk(new T.TorusGeometry(1.1,.45,6,14),mWood,0,10.2,0); ns.rotation.x=1.5708; g.add(ns); } [-.3,.3].forEach(x=>g.add(Sp(.28,mWhite,x,10.3,0,1))); }],
@@ -5370,6 +5374,33 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
   //   色はブレワイの遺跡の、少し緑がかった明るい灰色に寄せ、上の面と石の継ぎ目に苔、壁の一部にツタ
   const stoneTex=new T.TextureLoader().load('stone.jpg'); stoneTex.wrapS=stoneTex.wrapT=T.RepeatWrapping; stoneTex.colorSpace=T.NoColorSpace; stoneTex.anisotropy=4;
   const rockTex=new T.TextureLoader().load('rock.jpg'); rockTex.wrapS=rockTex.wrapT=T.RepeatWrapping; rockTex.colorSpace=T.NoColorSpace; rockTex.anisotropy=4;
+  const woodTex=new T.TextureLoader().load('wood.jpg'); woodTex.wrapS=woodTex.wrapT=T.RepeatWrapping; woodTex.colorSpace=T.NoColorSpace; woodTex.anisotropy=4;
+  // 木：本物の木目の写真（Babylon.js Assets, CC BY 4.0）。縦の面は木目が縦に流れ、上の面は年輪のように。日に焼けて灰色がかり、根元は土で汚れる
+  const WOOD_FS=`
+ { vec3 wn=normalize(vWN), p=vWP; vec3 aw=pow(abs(wn),vec3(4.)); aw/=aw.x+aw.y+aw.z;
+   float gx=texture2D(uWood,vec2(p.z*.45,p.y*.07)).r, gz=texture2D(uWood,vec2(p.x*.45+.3,p.y*.07)).r, gy=texture2D(uWood,vec2(p.x*.3,p.z*.06)+.5).r;
+   float g=gx*aw.x+gz*aw.z+gy*aw.y; vec2 uv=aw.y>.5?p.xz:aw.x>aw.z?p.zy:p.xy;
+   vec3 c=diffuseColor.rgb*(.55+.75*g); float old=vn(uv*.35)*.6+vn(uv*1.3+3.)*.4; c=mix(c,vec3(dot(c,vec3(.33)))*vec3(1.,.96,.88),.45+.3*smoothstep(.4,.8,old));
+   c*=1.-.25*smoothstep(.5,.0,p.y-0.)*0.; float mo=smoothstep(.6,.9,wn.y)*smoothstep(.55,.7,vn(p.xz*.8)); c=mix(c,vec3(.24,.32,.1),mo*.7);
+   diffuseColor.rgb=c; }`;
+  // 布：細かい織り目と、たるみのしわ、色あせ
+  const CLOTH_FS=`
+ { vec3 wn=normalize(vWN), p=vWP; vec3 aw=abs(wn); vec2 uv=aw.y>.5?p.xz:aw.x>aw.z?p.zy:p.xy;
+   float w=sin(uv.x*60.)*sin(uv.y*60.)*.5+.5, fold=sin(uv.x*2.2+vn(uv*.6)*4.)*.5+.5;
+   vec3 c=diffuseColor.rgb*(.9+.1*w)*(.82+.24*fold); c=mix(c,vec3(dot(c,vec3(.33))),.25*vn(uv*.5)); c*=.9+.15*vn(uv*3.);
+   diffuseColor.rgb=c; }`;
+  // 屋根：板ぶき（段ごとにずれた板、端は少し暗く、日に焼けて色むら）／しっくいの壁：ざらついた塗り壁、ところどころ剥げて石がのぞく、雨だれ
+  const ROOF_FS=`
+ { vec3 p=vWP; vec2 uv=vec2(p.x+p.z*.7,p.y*1.6+p.z*.5); float row=floor(uv.y*2.2), fy=fract(uv.y*2.2), col=floor(uv.x*1.6+row*.5), fx=fract(uv.x*1.6+row*.5);
+   float g=texture2D(uWood,vec2(fx*.3+hh(vec2(col,row)),fy*.2)).r; vec3 c=diffuseColor.rgb*(.8+.35*hh(vec2(col,row)))*(.65+.5*g);
+   c*=1.-.45*(1.-smoothstep(.0,.08,fy))-.3*(1.-smoothstep(.0,.04,min(fx,1.-fx))); c=mix(c,vec3(dot(c,vec3(.33))),.3*vn(p.xz*.4)); c=mix(c,vec3(.24,.32,.1),.22*smoothstep(.66,.78,vn(p.xz*.6)));
+   diffuseColor.rgb=c; }`;
+  const PLASTER_FS=`
+ { vec3 wn=normalize(vWN), p=vWP; vec3 aw=abs(wn); vec2 uv=aw.y>.5?p.xz:aw.x>aw.z?p.zy:p.xy;
+   float r=vn(uv*7.)*.5+vn(uv*23.)*.3+vn(uv*1.5)*.2; vec3 c=diffuseColor.rgb*(.86+.2*r);
+   float pe=smoothstep(.7,.74,vn(uv*.6+3.)); float st=texture2D(uStone,uv*.2).r; c=mix(c,vec3(.62,.62,.56)*(.4+.8*st),pe);
+   c*=1.-.15*smoothstep(.55,.8,vn(vec2(uv.x*2.,uv.y*.15)+5.)); c=mix(c,vec3(.36,.3,.22),(1.-smoothstep(.0,1.2,p.y-vWP.y+uv.y*0.))*0.);
+   diffuseColor.rgb=c; }`;
   const MONO_FS=`
  { vec3 wn=normalize(vWN), p=vWP; vec3 aw=pow(abs(wn),vec3(4.)); aw/=aw.x+aw.y+aw.z;
    float g1=texture2D(uRock,p.zy*.35).r*aw.x+texture2D(uRock,p.xz*.35+.37).r*aw.y+texture2D(uRock,p.xy*.35+.71).r*aw.z;
@@ -5391,9 +5422,9 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
    vec3 mc=mix(vec3(.16,.24,.06),vec3(.38,.48,.12),smoothstep(.3,.8,vn(uv*4.)+.4*tx)); c=mix(c,mc*(.7+.5*tx),clamp(mo,0.,1.));
    float iv=step(aw.y,.4)*smoothstep(.73,.8,vn(vec2(dot(p.xz,vec2(.7,.7))*.35,p.y*.12)+2.)+.12*tb)*smoothstep(.5,2.,p.y); c=mix(c,vec3(.1,.18,.05)*(.6+.8*tx),clamp(iv,0.,1.)*.85);
    diffuseColor.rgb=c; }`;
-  const wMat=new Map(), wmat=(m,kind)=>{ if(!wMat.has(m)){ const mm=patch(new T.MeshToonMaterial({vertexColors:true,gradientMap:kind==='stone'||kind==='mono'?gmapG:gmap2,side:T.DoubleSide})); if(kind==='stone'||kind==='mono'){ const ob=mm.onBeforeCompile; mm.onBeforeCompile=sh=>{ ob(sh);
+  const wMat=new Map(), wmat=(m,kind)=>{ if(!wMat.has(m)){ const mm=patch(new T.MeshToonMaterial({vertexColors:true,gradientMap:kind!=='bone'?gmapG:gmap2,side:T.DoubleSide})); if(kind!=='bone'){ const ob=mm.onBeforeCompile; mm.onBeforeCompile=sh=>{ ob(sh);
       sh.vertexShader='varying vec3 vWN;\n'+sh.vertexShader.replace('#include <beginnormal_vertex>','#include <beginnormal_vertex>\n vWN=normalize(mat3(modelMatrix)*objectNormal);');
-      sh.uniforms.uStone={value:stoneTex}; sh.uniforms.uRock={value:rockTex}; sh.fragmentShader='varying vec3 vWN;\nuniform sampler2D uStone, uRock;\n'+sh.fragmentShader.replace('#include <color_fragment>','#include <color_fragment>\n'+(kind==='mono'?MONO_FS:STONE_FS)); }; mm.customProgramCacheKey=()=>'w'+kind; } wMat.set(m,mm); } return wMat.get(m); };
+      sh.uniforms.uStone={value:stoneTex}; sh.uniforms.uRock={value:rockTex}; sh.uniforms.uWood={value:woodTex}; sh.fragmentShader='varying vec3 vWN;\nuniform sampler2D uStone, uRock, uWood;\n'+sh.fragmentShader.replace('#include <color_fragment>','#include <color_fragment>\n'+({mono:MONO_FS,wood:WOOD_FS,cloth:CLOTH_FS,roof:ROOF_FS,plaster:PLASTER_FS}[kind]||STONE_FS)); }; mm.customProgramCacheKey=()=>'w'+kind; } wMat.set(m,mm); } return wMat.get(m); };
   const tess=(P,maxL)=>{ let cur=P; for(let it=0;it<3;it++){ const out=[]; let any=false; for(let i=0;i<cur.length;i+=9){ const a=cur.slice(i,i+3), b=cur.slice(i+3,i+6), c=cur.slice(i+6,i+9), d=(p,q)=>Math.hypot(p[0]-q[0],p[1]-q[1],p[2]-q[2]);
       if(Math.max(d(a,b),d(b,c),d(c,a))>maxL){ any=true; const m=(p,q)=>[(p[0]+q[0])/2,(p[1]+q[1])/2,(p[2]+q[2])/2], ab=m(a,b), bc=m(b,c), ca=m(c,a); out.push(...a,...ab,...ca, ...ab,...b,...bc, ...ca,...bc,...c, ...ab,...bc,...ca); } else out.push(...a,...b,...c); } cur=out; if(!any) break; } return new Float32Array(cur); };
   const MOSS=lin([88,122,56]), MOSS2=lin([120,146,70]), DIRT=lin([92,78,58]), IVY=lin([60,96,44]), GRAYW=lin([150,146,136]);
@@ -5408,7 +5439,7 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
         c=L3m(c,DIRT,Math.max(0,1-y/1.2)*.3); // 根元の土汚れ
         if(ny<.4) c=c.map(q=>q*(1-.16*sm(.55,.8,pNoise(x*.9+z*.9,y*.05))*(1-sm(-.2,.4,ny)*.0))); // 雨だれ
       }
-      else if(kind==='wood'){ const g2=.88+.14*Math.sin((x+z)*3.1+n3(x*.5,y*.5,z*.5)*6)+.08*(n3(x*2,y*2,z*2)-.5); c=c.map(q=>q*g2); c=L3m(c,GRAYW,.18*n3(x*.2,y*.2,z*.2)); c=L3m(c,DIRT,Math.max(0,1-y/1)*.35); }
+      else if(kind==='wood'){ c=L3m(c,GRAYW,.18*n3(x*.2,y*.2,z*.2)); c=L3m(c,DIRT,Math.max(0,1-y/1)*.35); }
       else if(kind==='bone'){ const v=.86+.2*n3(x*.4,y*.4,z*.4); c=c.map(q=>q*v); c=L3m(c,DIRT,Math.max(0,1-y/1.2)*.4); }
       else if(kind==='plaster'){ const v=.88+.14*n3(x*.4,y*.4,z*.4); c=c.map(q=>q*v); c=L3m(c,DIRT,Math.max(0,1-y/2)*.35); if(ny<.3) c=c.map(q=>q*(1-.1*sm(.6,.85,pNoise(x*.7+z*.7,1.3)))); }
       else { const v=.86+.18*n3(x*.5,y*.5,z*.5); c=c.map(q=>q*v); if(kind!=='roof') c=L3m(c,DIRT,Math.max(0,1-y/1)*.3); }
