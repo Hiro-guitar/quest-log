@@ -5270,7 +5270,7 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
   updFar(y0,true); { const it=ringGen(farC); let r; while(!(r=it.next()).done); setRing(r.value); } if(!(await tick(.9))) return;
   updChunks(y0,true); if(!(await tick(.95))) return;
   // ---- 見つけるもの：1分ほど走るごとに何かがある（遺跡・野営地・風車・鹿の群れ・宝箱…）。近づくと名前が出る ----
-  const mPondE=tm([120,108,80]), mFlower=tm([255,255,255]), mFlower2=tm([240,190,214]), mLava=new T.MeshBasicMaterial({color:c3([255,110,30]).multiplyScalar(1.8)}), mDark=tm([70,62,62]), mIce=tm([176,220,240]), mSnow=tm([236,242,250]), mSand2=tm([206,170,120]), mSandG=tm([222,186,124]), mBone=tm([236,226,204]), mStone=tm([196,200,186]), mMono=tm([200,202,188]), mMonoD=tm([118,118,108]), mMoss=tm([104,138,66]), mWood=tm([132,104,76]), mWoodD=tm([92,74,56]), mWoodL=tm([182,142,98]), mSteelW=tm([156,162,168]), mCanvas=tm([222,208,176]), mRedC=tm([176,64,48]), mLeaf=tm([76,128,54]), mLeaf2=tm([58,104,46]), mApple=tm([210,44,40]),
+  const mPondE=tm([120,108,80]), mFlower=tm([255,255,255]), mFlower2=tm([240,190,214]), mLava=new T.MeshBasicMaterial({color:c3([255,110,30]).multiplyScalar(1.8)}), mDark=tm([70,62,62]), mIce=tm([176,220,240]), mSnow=tm([236,242,250]), mSand2=tm([206,170,120]), mSandG=tm([222,186,124]), mBone=tm([236,226,204]), mStone=tm([196,200,186]), mMono=tm([200,202,188]), mMonoD=tm([118,118,108]), mMoss=tm([104,138,66]), mWood=tm([132,104,76]), mWoodD=tm([92,74,56]), mWoodL=tm([182,142,98]), mSteelW=tm([156,162,168]), mWoodG=tm([162,152,136]), mCanvas=tm([222,208,176]), mRedC=tm([176,64,48]), mLeaf=tm([76,128,54]), mLeaf2=tm([58,104,46]), mApple=tm([210,44,40]),
     mWhite=tm([236,230,216]), mRoof=tm([150,74,52]), mDeer=tm([160,106,62]), mDeerL=tm([232,214,188]), mGold=tm([226,182,72]), mFire=new T.MeshBasicMaterial({color:c3([255,120,30]).multiplyScalar(1.5)}), mFireC=new T.MeshBasicMaterial({color:c3([255,230,120]).multiplyScalar(1.8)}),
     mWater=patch(new T.MeshStandardMaterial({color:c3([62,120,140]),roughness:.12,envMap:L.env||null,envMapIntensity:1.1}));
   // 炎の絵：下が白っぽい黄色、上へ行くほど橙から赤く細くなって消える
@@ -5514,7 +5514,20 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
       for(const sd of [-1,1]) for(let k=0;k<5;k++){ const x=sd*(TX+TW/2+1.25+k*2.5), hh=sd<0?Math.max(2,7.5-(k>2?(k-2)*2:0)):Math.max(.9,6.2-k*1.6-r()*.6); for(let y=0;y<hh;y+=1.2){ const tp=Math.min(1.2,hh-y); g.add(Bx(2.5,tp,2.4,mStone,x+(r()-.5)*.12,y+tp/2,-.4)); } if(sd<0&&k<3) for(const dx of [-.7,.7]) g.add(Bx(.8,.8,.8,mStone,x+dx,hh+.4,-.4+.8)); }
       for(let q=0;q<9;q++){ const f=Bx(.8+r()*1.4,.6+r()*.8,.8+r()*1.2,mStone,TX+3+r()*9,.35,1.5+r()*3.5); f.rotation.set((r()-.5)*.5,r()*3,(r()-.5)*.5); g.add(f); }
       for(let q=0;q<5;q++){ const m=Sp(.6+r()*.5,mMoss,(r()-.5)*16,.3,1.6+r()*2,0); m.scale.y=.35; g.add(m); } }],
-    ['鳥の巣の枯れ木',g=>{ g.add(Cy(.6,1,10,mWoodD,0,5,0,7)); [[2,8,.5],[-2,9,-.3],[.4,11,1.6]].forEach(([x,y,z])=>{ const b=Cy(.12,.3,Math.hypot(x,y-7,z),mWoodD,x/2,(y+7)/2,z/2,5); b.lookAt(x,y,z); b.rotateX(1.5708); g.add(b); }); { const ns=mk(new T.TorusGeometry(1.1,.45,6,14),mWood,0,10.2,0); ns.rotation.x=1.5708; g.add(ns); } [-.3,.3].forEach(x=>g.add(Sp(.28,mWhite,x,10.3,0,1))); }],
+    // 鳥の巣の枯れ木（ブレワイの枯れた大木）：葉の落ちた白っぽい幹がねじれて何度も枝分かれし、枝先は細く空へ広がる。太い枝の股に小枝を編んだ巣があり、クリーム色にこげ茶の斑点の卵が3つ
+    ['鳥の巣の枯れ木',g=>{ const r=pRng('dtree',43), mTw=tm([120,96,70]), mEgg=tm([240,230,206]), mEsp=tm([96,70,48]); let nest=null;
+      const V3=(x,y,z)=>new T.Vector3(x,y,z);
+      const seg=(a,b,r0,r1)=>{ const c=Cy(r1,r0,a.distanceTo(b)+r0*.4,mWoodG,(a.x+b.x)/2,(a.y+b.y)/2,(a.z+b.z)/2,7); c.lookAt(b); c.rotateX(1.5708); g.add(c); };
+      const br=(p,d,len,rad,lv)=>{ let q=p.clone(), dd=d.clone(); const n=3; for(let k=0;k<n;k++){ dd.add(V3((r()-.5)*.5,(r()-.3)*.25,(r()-.5)*.5)).normalize(); const nq=q.clone().addScaledVector(dd,len/n), r1=rad*(1-.22*(k+1)/n); seg(q,nq,rad*(1-.22*k/n),r1); q=nq; }
+        const re=rad*.78; if(lv===1&&!nest&&rad>.35){ nest=q.clone(); window.__nest=[q.x,q.y,q.z]; }
+        if(lv>=4||re<.05){ return; } const m=lv<2?3:2; for(let k=0;k<m;k++){ const a=(k/m)*6.283+r()*1.2, sp=.55+r()*.45, nd=V3(dd.x+Math.cos(a)*sp,dd.y+.35,dd.z+Math.sin(a)*sp).normalize(); br(q,nd,len*(.62+r()*.15),re*(k===0?.9:.7),lv+1); } };
+      // 根元の張り出し
+      for(let q=0;q<5;q++){ const a=q/5*6.283+r()*.4; seg(V3(0,1.2,0),V3(Math.cos(a)*1.8,.15,Math.sin(a)*1.8),.55,.2); }
+      br(V3(0,0,0),V3(.08,1,.05),5.5,.85,0);
+      // 巣：小枝を輪に編む＋卵
+      if(nest){ const N=nest.clone(); N.y+=.25; for(let q=0;q<34;q++){ const a=q/34*6.283*1.6, rr=.62+r()*.16, yy=N.y+.08+(q/34)*.32+(r()-.5)*.06, p1=V3(N.x+Math.cos(a-.45)*rr,yy,N.z+Math.sin(a-.45)*rr), p2=V3(N.x+Math.cos(a+.45)*rr,yy+(r()-.5)*.1,N.z+Math.sin(a+.45)*rr), tw=Cy(.035,.035,p1.distanceTo(p2)+.15,mTw,(p1.x+p2.x)/2,(p1.y+p2.y)/2,(p1.z+p2.z)/2,3); tw.lookAt(p2); tw.rotateX(1.5708); g.add(tw); }
+        { const bw=mk(new T.SphereGeometry(.66,10,5,0,6.283,1.5708,1.4),mTw,N.x,N.y+.4,N.z); bw.scale.y=.5; g.add(bw); }
+        for(let q=0;q<3;q++){ const a=q/3*6.283, ex=N.x+Math.cos(a)*.2, ez=N.z+Math.sin(a)*.2, e=Sp(.15,mEgg,ex,N.y+.3,ez,2); e.scale.set(1,1.25,1); e.rotation.z=.4; g.add(e); for(let k=0;k<4;k++){ const b=r()*6.28, c2=r()*1.2-.2, sp=Sp(.04,mEsp,ex+Math.cos(b)*Math.cos(c2)*.17,N.y+.3+Math.sin(c2)*.18,ez+Math.sin(b)*Math.cos(c2)*.17,0); sp.scale.setScalar(.35+r()*.4); g.add(sp); } } } }],
     // 湿地
     ['沈みかけた柱',g=>{ g.add(mk(new T.CylinderGeometry(10,10,.3,26),mWater,0,.1,0)); const r=pRng('sk',g.id); for(let q=0;q<5;q++){ const a=q/5*6.28+r(), h=2+r()*5, c=Cy(1,1.1,h,mStone,Math.cos(a)*6,h/2-.5,Math.sin(a)*6,8); c.rotation.z=(r()-.5)*.4; g.add(c); g.add(Cy(1.05,1.05,.3,mMoss,Math.cos(a)*6,h-.4,Math.sin(a)*6,8)); } },'wet'],
     ['古い木道',g=>{ for(let q=0;q<12;q++){ const p=Bx(3.2,.2,1,mWood,0,.9+Math.sin(q*.7)*.1,q*1.25-7); p.rotation.y=(Math.sin(q*1.9))*.06; g.add(p); if(q%3===0) [-1.4,1.4].forEach(x=>g.add(Cy(.15,.18,1.8,mWoodD,x,.3,q*1.25-7,5))); } },'wet'],
@@ -5538,7 +5551,7 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
   // 見つけるものの部品を、色ごとに1つの形にまとめる（描く回数を減らして軽くする）。動く部品はそのまま
   // ---- 古びた質感（ブレワイの遺跡のように）：石は角が欠けてでこぼこし、色むら・根元の土汚れ・上面の苔・縦の雨だれ・側面のツタ。木は木目と色あせ ----
   const n3=(x,y,z)=>(pNoise(x+z*.71,y+3.1)+pNoise(y*1.13+11.7,z+x*.37)+pNoise(z*.93+5.3,x+7.9))/3;
-  const KIND=new Map([[mMono,'mono'],[mMonoD,'mono'],[mSteelW,'mono'],[mStone,'stone'],[mDark,'stone'],[mSand2,'stone'],[mBone,'bone'],[mWood,'wood'],[mWoodD,'wood'],[mWoodL,'wood'],[mWhite,'plaster'],[mCanvas,'cloth'],[mRedC,'cloth'],[mRoof,'roof']]);
+  const KIND=new Map([[mMono,'mono'],[mMonoD,'mono'],[mSteelW,'mono'],[mStone,'stone'],[mDark,'stone'],[mSand2,'stone'],[mBone,'bone'],[mWood,'wood'],[mWoodD,'wood'],[mWoodL,'wood'],[mWoodG,'wood'],[mWhite,'plaster'],[mCanvas,'cloth'],[mRedC,'cloth'],[mRoof,'roof']]);
   // 石の表面（ブレワイの遺跡の石）：細かいざらつきと小さな斑点、切り石の目地（横の段と、段ごとにずれた縦の継ぎ目）、上の面と目地のまわりにふわっとした苔、壁を這うツタ。形は平らなまま、表面の模様で古さを出す
   // 石の表面：本物の石垣の写真（Babylon.js Assets, CC BY 4.0）を世界の向きに合わせて3方向から貼る。石の形・ひび・欠け・凹凸は写真そのもの。
   //   色はブレワイの遺跡の、少し緑がかった明るい灰色に寄せ、上の面と石の継ぎ目に苔、壁の一部にツタ
