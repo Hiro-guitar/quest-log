@@ -5649,7 +5649,25 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
         { const bw=mk(new T.SphereGeometry(.66,10,5,0,6.283,1.5708,1.4),mTw,N.x,N.y+.4,N.z); bw.scale.y=.5; g.add(bw); }
         for(let q=0;q<3;q++){ const a=q/3*6.283, ex=N.x+Math.cos(a)*.2, ez=N.z+Math.sin(a)*.2, e=Sp(.15,mEgg,ex,N.y+.3,ez,2); e.scale.set(1,1.25,1); e.rotation.z=.4; g.add(e); for(let k=0;k<4;k++){ const b=r()*6.28, c2=r()*1.2-.2, sp=Sp(.04,mEsp,ex+Math.cos(b)*Math.cos(c2)*.17,N.y+.3+Math.sin(c2)*.18,ez+Math.sin(b)*Math.cos(c2)*.17,0); sp.scale.setScalar(.35+r()*.4); g.add(sp); } } } }],
     // 湿地
-    ['沈みかけた柱',g=>{ g.add(mk(new T.CylinderGeometry(10,10,.3,26),mWater,0,.1,0)); const r=pRng('sk',g.id); for(let q=0;q<5;q++){ const a=q/5*6.28+r(), h=2+r()*5, c=Cy(1,1.1,h,mStone,Math.cos(a)*6,h/2-.5,Math.sin(a)*6,8); c.rotation.z=(r()-.5)*.4; g.add(c); g.add(Cy(1.05,1.05,.3,mMoss,Math.cos(a)*6,h-.4,Math.sin(a)*6,8)); } },'wet'],
+    // 沈みかけた柱（ラネール湿原の水没した遺跡）：浅い水たまりに、彫り模様の帯がある四角い石柱が傾いて立つ。1本は折れて水に倒れ、柱の上には苔と草。水辺に白い幹の細い湿地の木、草の小島、アシ
+    ['沈みかけた柱',g=>{ const r=pRng('sunk',83), mBark=tm([214,208,190]), mIsl=tm([96,140,58]);
+      const N=36, rad=a=>11+1.8*Math.sin(a*2+.4)+1.2*Math.sin(a*3+1.7);
+      { const sh=new T.Shape(); for(let q=0;q<=N;q++){ const a=q/N*6.283, R=rad(a); q?sh.lineTo(Math.cos(a)*R,Math.sin(a)*R):sh.moveTo(Math.cos(a)*R,Math.sin(a)*R); } const bt=mk(new T.ShapeGeometry(sh),tm([92,96,70]),0,.0,0); bt.rotation.x=-1.5708; g.add(bt); const mW=mWater.clone(); mW.transparent=true; mW.opacity=.7; const w=mk(new T.ShapeGeometry(sh),mW,0,.34,0); w.rotation.x=-1.5708; w.castShadow=false; g.add(w); g.userData.keep=w; }
+      const pillar=(x,z,h,tx,tz,brk)=>{ const p=new T.Group(); p.position.set(x,-.2,z); p.rotation.set(tx,r()*.6,tz); g.add(p);
+        p.add(Bx(2.4,.8,2.4,mStone,0,.4,0)); let y=.8; while(y<h-.2){ const sh=Math.min(1.6,h-y); p.add(Bx(1.8,sh-.04,1.8,mStone,0,y+sh/2,0)); y+=sh; }
+        for(const yy of [2.2,h*.65]) if(yy<h-.4){ p.add(Bx(2.0,.35,2.0,mStone,0,yy,0)); for(let k=0;k<4;k++){ const f=Bx(.3,.18,.06,mDark,(k-1.5)*.42,yy,1.01); p.add(f); const f2=Bx(.06,.18,.3,mDark,1.01,yy,(k-1.5)*.42); p.add(f2); } }
+        if(!brk){ p.add(Bx(2.3,.5,2.3,mStone,0,h+.25,0)); } else { for(let k=0;k<3;k++){ const c=Bx(.7+r()*.5,.5+r()*.5,.6+r()*.5,mStone,(r()-.5)*1.1,h+.2,(r()-.5)*1.1); c.rotation.set(r()*.4,r()*3,r()*.4); p.add(c); } }
+        const m=Sp(1.0,mMoss,0,h+(brk?.5:.55),0,1); m.scale.set(1.25,.3,1.25); p.add(m); for(let k=0;k<6;k++){ const a=r()*6.28, yy=1+r()*(h-1.5), v=Sp(.4,mMoss,Math.cos(a)*.92,yy,Math.sin(a)*.92,1); v.lookAt(Math.cos(a)*5,yy,Math.sin(a)*5); v.scale.set(1,1.6,.1); p.add(v); } };
+      pillar(-4,-2,9,.06,-.1,false); pillar(3,-4.5,7,-.12,.08,true); pillar(5.5,2.5,10.5,.04,.12,false); pillar(-2,4.5,5,.15,.05,true);
+      // 倒れて水に沈む柱
+      { const f=new T.Group(); f.position.set(-1,.15,-7.5); f.rotation.set(0,.5,1.5708-.08); g.add(f); for(let k=0;k<4;k++) f.add(Bx(1.8,1.55,1.8,mStone,0,-2.4+k*1.6,0)); const m=Sp(.9,mMoss,-.9,0,0,1); m.scale.set(.3,2.6,1); f.add(m); }
+      // 湿地の木：白い細い幹、上の方だけ枝が出て小さな丸い房
+      const wt=(x,z,s,sd)=>{ const h=5.5*s; g.add(Cy(.12*s,.2*s,h,mBark,x,h/2+.2,z,6)); const tips=[]; for(let k=0;k<4;k++){ const a=k/4*6.283+sd, bx=x+Math.cos(a)*1.3*s, bz=z+Math.sin(a)*1.3*s, by=h*(.75+k*.06); const b=Cy(.04*s,.07*s,1.6*s,mBark,(x+bx)/2,(h*.6+by)/2+.2,(z+bz)/2,4); b.lookAt(bx,by+.2,bz); b.rotateX(1.5708); g.add(b); tips.push([bx,by+.6*s,bz,1.0*s]); } tips.push([x,h+.6*s,z,1.2*s]); const cr=crown(tips,new T.Vector3(x,h,z),c3([150,200,70]).toArray(),Math.round(x*10+z)); g.add(cr); (g.userData.keeps=g.userData.keeps||[]).push(cr); };
+      wt(9.5,-6,1,1); wt(-9,4,.85,2); wt(8,8,.75,.3);
+      // 草の小島とアシ
+      for(const [x,z,rr] of [[9,-5.5,2.2],[-8.8,4.3,1.8],[-6,-7,1.4]]){ const is=mk(new T.SphereGeometry(rr,12,4,0,6.283,0,1.2),mIsl,x,-.1,z); is.scale.y=.25; g.add(is); }
+      for(let q=0;q<60;q++){ const a=r()*6.283, d=rad(a)-r()*2.5, x=Math.cos(a)*d, z=Math.sin(a)*d, h=1.2+r()*1.3, rd=Cy(.025,.04,h,mLeaf2,x,.3+h/2,z,3); rd.rotation.set((r()-.5)*.3,0,(r()-.5)*.3); g.add(rd); }
+      for(let q=0;q<14;q++){ const a=r()*6.283, d=3+r()*7, pd=mk(new T.CircleGeometry(.35+r()*.3,10,.25,6),tm([88,142,58]),Math.cos(a)*d,.37,Math.sin(a)*d); pd.rotation.x=-1.5708; g.add(pd); } },'wet'],
     ['古い木道',g=>{ for(let q=0;q<12;q++){ const p=Bx(3.2,.2,1,mWood,0,.9+Math.sin(q*.7)*.1,q*1.25-7); p.rotation.y=(Math.sin(q*1.9))*.06; g.add(p); if(q%3===0) [-1.4,1.4].forEach(x=>g.add(Cy(.15,.18,1.8,mWoodD,x,.3,q*1.25-7,5))); } },'wet'],
     ['大きな睡蓮',g=>{ g.add(mk(new T.CylinderGeometry(9,9,.3,24),mWater,0,.1,0)); const r=pRng('ly',g.id); for(let q=0;q<11;q++){ const a=r()*6.28, d=r()*6.5, s=.8+r()*1.4; g.add(Cy(s,s,.08,mLeaf,Math.cos(a)*d,.3,Math.sin(a)*d,10)); if(q%3===0) g.add(mk(new T.ConeGeometry(.35,.6,6),mFlower2,Math.cos(a)*d,.6,Math.sin(a)*d)); } },'wet'],
     // 火山
@@ -5756,7 +5774,7 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
       C[i]=c[0]; C[i+1]=c[1]; C[i+2]=c[2]; }
     ge.setAttribute('color',new T.BufferAttribute(C,3)); return [ge,wmat(m,kind)]; };
   const L3m=(a,b,t)=>[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t];
-  const bake=g=>{ g.updateMatrixWorld(true); const u=g.userData; if(u.deer) return; const keep=new Set([u.fire,u.mill,u.keep].filter(Boolean)), inKeep=o=>{ for(let q=o;q;q=q.parent) if(keep.has(q)) return true; return false; }; g.updateMatrixWorld(true); const inv=new T.Matrix4().copy(g.matrixWorld).invert(), by=new Map(), rm=[];
+  const bake=g=>{ g.updateMatrixWorld(true); const u=g.userData; if(u.deer) return; const keep=new Set([u.fire,u.mill,u.keep,...(u.keeps||[])].filter(Boolean)), inKeep=o=>{ for(let q=o;q;q=q.parent) if(keep.has(q)) return true; return false; }; g.updateMatrixWorld(true); const inv=new T.Matrix4().copy(g.matrixWorld).invert(), by=new Map(), rm=[];
     g.traverse(o=>{ if(!o.isMesh||o.isInstancedMesh||inKeep(o)) return; const k=o.material.uuid; if(!by.has(k)) by.set(k,{m:o.material,gs:[]}); const ge=(o.geometry.index?o.geometry.toNonIndexed():o.geometry.clone()); if(!ge.boundingBox) ge.computeBoundingBox(); const bb=ge.boundingBox, sz=new T.Vector3(); bb.getSize(sz); const ctr=new T.Vector3(); bb.getCenter(ctr);
       const ax=sz.x>=sz.y&&sz.x>=sz.z?new T.Vector3(1,0,0):sz.y>=sz.z?new T.Vector3(0,1,0):new T.Vector3(0,0,1); const Mx=new T.Matrix4().multiplyMatrices(inv,o.matrixWorld); ge.applyMatrix4(Mx);
       ax.transformDirection(Mx); ctr.applyMatrix4(Mx); const n=ge.attributes.position.count, D=new Float32Array(n*6); for(let i=0;i<n;i++){ D[i*6]=ax.x; D[i*6+1]=ax.y; D[i*6+2]=ax.z; D[i*6+3]=ctr.x; D[i*6+4]=ctr.y; D[i*6+5]=ctr.z; } ge.userData.dir=D; by.get(k).gs.push(ge); rm.push(o); });
