@@ -5427,7 +5427,17 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
       // 片側の崩れた石垣（段々に低くなる）と落ちた石
       for(let k=0;k<4;k++){ const x=-X0-2.6-k*2.4, hh=Math.max(1,6.5-k*1.7-r()*.8); for(let yy=0;yy<hh;yy+=1){ const tp=Math.min(1,hh-yy); const b=Bx(2.3,tp,1.7,mStone,x+(r()-.5)*.25,yy+tp/2,-.3+(r()-.5)*.15); g.add(b); } const m=Sp(.6,mMoss,x,hh+.05,-.3,0); m.scale.set(1.6,.35,1.2); g.add(m); }
       for(let q=0;q<4;q++){ const f=Bx(1.3+r(),.9+r()*.5,1.1+r()*.6,mStone,(r()<.5?-1:1)*(2.5+r()*5),.4,1.8+r()*2.5); f.rotation.set((r()-.5)*.4,r()*3,(r()-.5)*.3); g.add(f); } }],
-    ['旅人の墓標',g=>{ g.add(Bx(2.6,.4,4,mStone,0,.2,0)); const st=Bx(1.6,2.4,.4,mStone,0,1.6,-1.6); st.rotation.x=-.1; g.add(st); g.add(Bx(.15,2.6,.15,mWoodD,.9,1.2,1.2)); g.add(Bx(1.2,.15,.15,mWoodD,.9,2,1.2)); { const wr=mk(new T.TorusGeometry(.5,.1,6,12),mLeaf,0,.55,.4); wr.rotation.x=1.5708; g.add(wr); } }],
+    // 旅人の墓標：土を盛った小さな塚に、上の丸い風化した石の墓標。手前に供えたリンゴと野の花、まわりを小石で囲む。横に枝を縛った十字と、風にほつれた布。墓標には苔
+    ['旅人の墓標',g=>{ const r=pRng('grave',23), mDirt=tm([122,100,72]), mTwine=tm([170,150,110]);
+      { const md=mk(new T.SphereGeometry(1.05,14,6,0,6.283,0,1.4),mDirt,0,.22,.55); md.scale.set(1,.42,1.5); g.add(md); }
+      { const sh=new T.Shape(); sh.moveTo(-.62,0); sh.lineTo(-.62,1.25); sh.absarc(0,1.25,.62,Math.PI,0,true); sh.lineTo(.62,0); sh.lineTo(-.62,0); const ge=new T.ExtrudeGeometry(sh,{depth:.24,bevelEnabled:true,bevelSize:.05,bevelThickness:.05,bevelSegments:1,curveSegments:8}); ge.translate(0,0,-.12); const st=mk(ge,mMono,0,.15,-1.0); st.rotation.set(-.08,.05,.04); g.add(st); }
+      g.add(Bx(1.6,.3,.5,mMono,0,.2,-1.0));
+      for(let q=0;q<12;q++){ const a=q/12*6.283, rd=.16+r()*.1, p=mk(rockG(rd,70+q%5),mMono,Math.cos(a)*1.3,.3+rd*.25,.5+Math.sin(a)*1.95); p.scale.y=.6; g.add(p); }
+      { const m=Sp(.32,mMoss,.32,1.9,-1.05,0); m.scale.set(1,.5,.5); g.add(m); }
+      g.add(Sp(.16,mApple,-.3,.78,-.62,1)); g.add(Sp(.15,mApple,-.05,.76,-.58,1));
+      for(let q=0;q<6;q++){ const a=q/6*6.28, st=Cy(.015,.015,.5,mLeaf,.38+Math.cos(a)*.06,.85,-.5+Math.sin(a)*.06,3); st.rotation.z=Math.cos(a)*.3; g.add(st); g.add(Sp(.07,q%2?mFlower:mFlower2,.38+Math.cos(a)*.14,1.1,-.5+Math.sin(a)*.14,0)); }
+      const cr=new T.Group(); cr.position.set(1.7,0,-.6); cr.rotation.set(0,.4,-.1); g.add(cr); cr.add(Cy(.06,.08,2.4,mWoodD,0,1.3,0,5)); { const h=Cy(.05,.06,1.1,mWoodD,0,1.85,0,5); h.rotation.z=1.5708; cr.add(h); } cr.add(Bx(.16,.16,.16,mTwine,0,1.85,0));
+      for(let k=0;k<3;k++){ const cl=Bx(.14,.7-k*.15,.02,mRedC,.12+k*.13,1.48+k*.05,.06); cl.rotation.z=.25+k*.12; cr.add(cl); } }],
     ['巨大な一枚岩',g=>{ const r=mk(rockG(4,7),mMono,0,7.2,0); r.scale.set(1.3,1.9,1.05); r.rotation.y=.4; g.add(r); const b1=mk(rockG(1.7,8),mMono,4.4,1,2.2); g.add(b1); const b2=mk(rockG(1.1,9),mMono,-3.8,.6,-2); g.add(b2); }],
     ['倒木のトンネル',g=>{ const t=Cy(2.2,2.6,16,mWood,0,2.2,0,10); t.rotation.z=1.5708; t.rotation.y=.3; g.add(t); const hol=Cy(1.6,1.6,16.2,mDark,0,2.2,0,10); hol.rotation.z=1.5708; hol.rotation.y=.3; g.add(hol); for(let q=0;q<5;q++) g.add(Sp(.7,mMoss,-6+q*3,4.3,(q%2)*.6,0)); for(let q=0;q<3;q++) g.add(mk(new T.SphereGeometry(.5,8,5,0,6.3,0,1.6),mRedC,-4+q*4,4.4,1.2)); }],
     // 崩れた城壁の門（ブレワイの城下町の門）：狭間（ギザギザ）のある四角い塔が2つ。間に丸いアーチの門、半分上がったさびた鉄格子。破れた赤い旗。左右にのびる城壁は片方が崩れ、がれきが散らばる
