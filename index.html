@@ -5329,7 +5329,21 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
       tips.push([0,19.5,0,2.6],[1.6,17.6,-1.8,2.2],[-1.8,17.4,1.6,2.2]);
       for(let q=0;q<14;q++){ const a=r()*6.283, yy=1.2+r()*6, m=Sp(.35+r()*.3,mMossT,Math.cos(a)*2.4,yy,Math.sin(a)*2.4,1); m.lookAt(Math.cos(a)*9,yy,Math.sin(a)*9); m.scale.set(1.2,1.6,.15); g.add(m); }
       const cr=crown(tips,V3(0,16,0),c3([140,186,64]).toArray(),67); g.add(cr); g.userData.keep=cr; }],
-    ['りんごの木立',g=>{ const r=pRng('ap',g.id); for(let q=0;q<3;q++){ const x=(q-1)*8+r()*2, z=r()*6-3; g.add(Cy(.6,.9,5,mWood,x,2.5,z,7)); g.add(Sp(3.4,mLeaf,x,6.6,z)); for(let k=0;k<7;k++){ const a=r()*6.28, b=r()*1.2-.2; g.add(Sp(.38,mApple,x+Math.cos(a)*Math.cos(b)*3.4,6.6+Math.sin(b)*3.4,z+Math.sin(a)*Math.cos(b)*3.4,0)); } } }],
+    // りんごの木立（ブレワイのリンゴの林）：白っぽい灰色のなめらかな幹がくねって傾き、低い所から何本もの枝に分かれる。横に広い明るい緑の葉の房。房の下や縁に赤いリンゴが実り、根元にも落ちている
+    ['りんごの木立',g=>{ const r=pRng('apple',71), V3=(x,y,z)=>new T.Vector3(x,y,z), keep=new T.Group(); g.add(keep); g.userData.keep=keep; const mStemA=tm([96,72,44]);
+      const seg=(a,b,r0,r1)=>{ const c=Cy(r1,r0,a.distanceTo(b)+r0*.3,mWoodG,(a.x+b.x)/2,(a.y+b.y)/2,(a.z+b.z)/2,8); c.lookAt(b); c.rotateX(1.5708); g.add(c); };
+      const apple=(x,y,z,hang)=>{ const a=Sp(.3,mApple,x,y,z,2); a.scale.set(1.05,.92,1.05); g.add(a); g.add(Cy(.03,.03,hang?.5:.18,mStemA,x,y+(hang?.5:.3),z,3)); };
+      [[-7,0,-1,1.0,.25],[1.5,0,-4,.85,-.3],[7.5,0,1.5,.95,.4],[-.5,0,5,.7,-.15]].forEach(([x0,,z0,s,lean],t)=>{ const tips=[];
+        let p=V3(x0,0,z0), d=V3(Math.sin(lean)*.5,1,Math.cos(lean)*.3).normalize(); g.add(Cy(.75*s,1.05*s,.8,mWoodG,x0,.4,z0,9));
+        for(let k=0;k<2;k++){ d.add(V3((r()-.5)*.45,0,(r()-.5)*.45)).normalize(); const q=p.clone().addScaledVector(d,2.1*s); seg(p,q,.7*s*(1-k*.15),.6*s*(1-k*.15)); p=q; }
+        const nb=3+Math.floor(r()*2); for(let b=0;b<nb;b++){ const a=b/nb*6.283+r()*.5; let q0=p.clone(), dd=V3(Math.cos(a)*.85,.55+r()*.25,Math.sin(a)*.85).normalize(), rad=.42*s;
+          for(let k=0;k<2;k++){ dd.add(V3((r()-.5)*.4,.15,(r()-.5)*.4)).normalize(); const q=q0.clone().addScaledVector(dd,(2.2-k*.5)*s); seg(q0,q,rad,rad*.7); q0=q; rad*=.7; }
+          tips.push([q0.x,q0.y+.5*s,q0.z,(1.8+r()*.5)*s]); }
+        tips.push([p.x,p.y+2.6*s,p.z,2.3*s]);
+        const C0=V3(p.x,p.y+1.6*s,p.z); keep.add(crown(tips,C0,c3([128,184,62]).toArray(),71+t));
+        // リンゴ：房の下側と縁に
+        tips.forEach(([x,y,z,rr])=>{ const n=2+Math.floor(r()*3); for(let k=0;k<n;k++){ const a=r()*6.283, el=-.55+r()*.5; apple(x+Math.cos(a)*Math.cos(el)*rr*.95,y+Math.sin(el)*rr*.6-.15,z+Math.sin(a)*Math.cos(el)*rr*.95,true); } });
+        for(let k=0;k<2+Math.floor(r()*3);k++){ const a=r()*6.283, d2=1.2+r()*2.5; apple(x0+Math.cos(a)*d2,.55,z0+Math.sin(a)*d2,false); } }); },],
     // 丘の風車（ブレワイのハテノ村の風車）：石を積んだ土台に、しっくい塗りの少しすぼまる丸い塔、赤い瓦のとんがり屋根、小さな窓と木の扉。長い腕に三角の帆が8枚
     ['丘の風車',g=>{ for(let k=0;k<2;k++) g.add(Cy(3.9-k*.15,4,1.2,mStone,0,.6+k*1.2,0,16));
       g.add(mk(new T.CylinderGeometry(2.9,3.6,10,18,1,true),mWhite,0,7.4,0)); g.add(Cy(3.15,3.15,.5,mWoodD,0,12.5,0,18));
