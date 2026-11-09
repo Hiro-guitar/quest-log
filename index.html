@@ -4737,7 +4737,7 @@ function pWorld(k){ pSeedRoad(k); const key=k+'|'+pOff.toFixed(4); if(pWorldMemo
     const v=.92+.16*n2; return [c[0]*v,c[1]*v,c[2]*v]; };
   // 見つけるもの：約260ごとに1つ。場所と種類は地図の場所で決まる
   const NOT0=['キノコの輪','羊飼いの小屋','倒木のトンネル','大きな切り株','鳥の巣の枯れ木']; const NOTM={volc:[...NOT0,'りんごの木立','花畑','鹿の群れ','小さな池','丘の大樹','丘の風車','苔むした石像'],desert:[...NOT0,'りんごの木立','花畑','鹿の群れ','小さな池','丘の大樹','丘の風車','苔むした石像'],snow:['キノコの輪','倒木のトンネル','りんごの木立','花畑','鹿の群れ','小さな池','丘の風車'],wet:['りんごの木立','丘の風車','花畑']};
-  const PERM=new Map(), permFor=bn=>{ if(!PERM.has(bn)){ const r=pRng('lkd'+k+bn,7), NOT=NOTM[bn]||[]; PERM.set(bn,P_DKN.map((_,q)=>q).filter(q=>(P_DKN[q][1]&&P_DKN[q][1]!=='grass'?P_DKN[q][1]===bn:true)&&!NOT.includes(P_DKN[q][0])).sort(()=>r()-.5)); } return PERM.get(bn); };
+  const PERM=new Map(), permFor=bn=>{ if(!PERM.has(bn)){ const r=pRng('lkd'+k+bn,7), NOT=NOTM[bn]||[]; PERM.set(bn,P_DKN.map((_,q)=>q).filter(q=>(P_DKN[q][1]&&P_DKN[q][1]!=='grass'?P_DKN[q][1]===bn:true)&&!NOT.includes(P_DKN[q][0])&&P_DKN[q][0]!=='旅人の墓標').sort(()=>r()-.5)); } return PERM.get(bn); };
   const LG=Math.round(260*KM/540*.75), spotC=new Map(), dSpot=n=>{ if(spotC.has(n)) return spotC.get(n); const r=pRng('lkd'+k+'_'+n,9), yy=n*LG+(r()-.5)*160, bn=FBI!=null?['volc','desert','wet','snow'][FBI]:bName(bAt(rX(yy),yy)), pl=permFor(bn), tp=pl[((n%pl.length)+pl.length)%pl.length], nm=P_DKN[tp][0], road2=nm==='道しるべ', sg=r()<.5?-1:1, big=nm==='丘の大樹'||nm==='丘の風車'||nm==='見張り台', SC={'鹿の群れ':1.6,'花畑':1.8,'道しるべ':1.5,'岩の上の宝箱':1.8,'小さな池':1.8,'石積み':1.8}[nm]||2.4, FR={'古い柱の遺跡':12,'崩れた石の門':8,'旅人の野営地':10,'丘の大樹':10,'りんごの木立':12,'丘の風車':5,'見張り台':4,'苔むした石像':3.5,'壊れた荷車':6,'小さな池':11,'鹿の群れ':9,'花畑':14,'岩の上の宝箱':4,'石積み':2,'沈みかけた柱':11,'古い木道':8,'大きな睡蓮':10,'溶岩をまたぐ石橋':9,'焼け落ちた砦':7,'噴気孔':4,'氷の柱':5,'凍った池':10,'雪をかぶった石塔':2,'砂に埋もれた巨像':4,'オアシス':12,'大きな獣の骨':7,'石の環':10,'古い井戸':3,'崩れた塔':5,'地面に刺さった大剣':3,'大きな切り株':6,'キノコの輪':6,'倒れた巨人像の手':5,'のろし台':3,'羊飼いの小屋':8,'苔むしたアーチ':6,'旅人の墓標':3,'巨大な一枚岩':5,'倒木のトンネル':9,'崩れた城壁の門':11,'鳥の巣の枯れ木':3}[nm]||4, o2=road2?8:12+FR*SC+r()*(big?70:25), o={tp,yy,nm,x:rX(yy)+sg*o2,sg,SC}; spotC.set(n,o); return o; };
   const w={k,KM,ST,W,vAt,uOf,pn,nz,sm,mir,macro,bAt,bName,elevM,roadU,rMean,rX,raw,roadH,hFn,hTile,hAt,TL,colAt,lin,mix,C,LG,dSpot,FBI};
   pWorldMemo.set(key,w); return w; }
@@ -5426,7 +5426,17 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
       for(let q=0;q<6;q++){ const a=r()*6.283, d=r()*(R0-1), m=Sp(.45+r()*.4,q%2?mMs:mMs2,Math.cos(a)*d,H+.08,Math.sin(a)*d,1); m.scale.set(1.2,.22,1.2); g.add(m); }
       for(let q=0;q<10;q++){ const a=-1.2+r()*2.4, yy=.8+r()*2.3, m=Sp(.3+r()*.25,mMs,Math.cos(a)*R0,yy,Math.sin(a)*R0,1); m.lookAt(Math.cos(a)*9,yy,Math.sin(a)*9); m.scale.set(1.2,1.4,.18); g.add(m); }
       for(let q=0;q<7;q++){ const a=2.6+r()*1.6, yy=.8+q*.32, f=mk(new T.CylinderGeometry(.42-q*.03,.32,.12,10,1,false,-1.4,2.8),mFung,Math.cos(a)*(R0+.05),yy,Math.sin(a)*(R0+.05)); f.rotation.y=-a+1.5708; g.add(f); } }],
-    ['キノコの輪',g=>{ for(let q=0;q<11;q++){ const a=q/11*6.28, d=5+Math.sin(q*3)*.6, s=.7+((q*5)%3)*.3; g.add(Cy(.25*s,.32*s,1.2*s,mWhite,Math.cos(a)*d,.6*s,Math.sin(a)*d,6)); const cp=mk(new T.SphereGeometry(.9*s,10,6,0,6.3,0,1.6),mRedC,Math.cos(a)*d,1.15*s,Math.sin(a)*d); g.add(cp); } },'grass'],
+    // キノコの輪（妖精の輪）：草が濃くなった輪の上に、ハイリアダケ（薄茶のかさ）、ガンバリダケ（黄色）、ヒンヤリダケ（青白い）が株になって輪に並ぶ。かさの裏にひだ、白い斑点のあるものも
+    ['キノコの輪',g=>{ const r=pRng('fring',37), mStem=tm([232,222,200]), mGill=tm([206,186,150]), mSpot=tm([246,240,226]), caps=[tm([176,128,84]),tm([168,116,70]),tm([226,176,60]),tm([150,196,214])];
+      { const rg=mk(new T.RingGeometry(4.4,5.8,40),tm([84,128,46]),0,.33,0); rg.rotation.x=-1.5708; g.add(rg); }
+      const shroom=(x,z,s,ci,tl,ry)=>{ const m=new T.Group(); m.position.set(x,.3,z); m.rotation.set(tl*Math.cos(ry),ry,tl*Math.sin(ry)); m.scale.setScalar(s); g.add(m);
+        m.add(mk(new T.CylinderGeometry(.11,.15,.9,7),mStem,0,.45,0));
+        const cp=mk(new T.LatheGeometry([new T.Vector2(0,.62),new T.Vector2(.25,.6),new T.Vector2(.42,.5),new T.Vector2(.5,.36),new T.Vector2(.47,.3),new T.Vector2(.12,.36)],10),caps[ci],0,.55,0); m.add(cp);
+        const gl=mk(new T.CircleGeometry(.46,10),mGill,0,.86,0); gl.rotation.x=1.5708; m.add(gl);
+        if(ci===0&&r()<.6) for(let k=0;k<4;k++){ const a=r()*6.28, sp=Sp(.05,mSpot,Math.cos(a)*.26,1.12,Math.sin(a)*.26,0); sp.scale.y=.4; m.add(sp); } };
+      for(let q=0;q<20;q++){ const a=q/20*6.283+(r()-.5)*.12, d=5.1+(r()-.5)*.6, n=1+Math.floor(r()*3), ci=r()<.6?(r()<.5?0:1):(r()<.6?2:3);
+        for(let k=0;k<n;k++){ const da=(r()-.5)*.08, dd=(r()-.5)*.5; shroom(Math.cos(a+da)*(d+dd),Math.sin(a+da)*(d+dd),k===0?.9+r()*.6:.45+r()*.4,ci,(r()-.5)*.35,r()*6.28); } }
+      for(let q=0;q<6;q++){ const a=r()*6.283, d=1.5+r()*2; shroom(Math.cos(a)*d,Math.sin(a)*d,.35+r()*.25,r()<.5?0:1,(r()-.5)*.3,r()*6); } },'grass'],
     ['倒れた巨人像の手',g=>{ g.add(Bx(6,2.4,4,mMono,0,1,0)); for(let q=0;q<4;q++){ const f=Bx(1,1.1,3.2,mMono,-2.2+q*1.45,1.2+(q===1?.6:0),3.4); f.rotation.x=-.3-q*.1; g.add(f); } const th=Bx(1.2,1.2,2.6,mMono,3.4,1.4,1.8); th.rotation.y=-.6; g.add(th); g.add(Bx(6.2,.3,4.2,mMoss,0,2.3,0)); }],
     ['のろし台',g=>{ g.add(Cy(2.6,3,3,mStone,0,1.5,0,8)); g.add(Cy(1.6,1.2,1,mDark,0,3.4,0,8)); for(let q=0;q<5;q++){ const l=Cy(.18,.18,2.2,mWoodD,0,3.6,0,5); l.rotation.set(.7,q*1.25,0); g.add(l); } { const f=mkFire(0,3.7,0,1.5); g.add(f); g.userData.fire=f; } }],
     // 羊飼いの小屋（ブレワイのハテノ村の家）：石の土台にしっくいの壁、黒っぽい木の柱と梁が見える。赤い瓦の切妻屋根は軒が深く、石の煙突。木の扉、窓と鎧戸、壁に掛かった旗、まわりに木の柵
