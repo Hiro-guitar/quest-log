@@ -5115,7 +5115,7 @@ async function pLookOpen(){
         // テクスチャは形（透け）と根元→先の明暗だけに使い、色は地面と同じ。遠くでは透けの切り捨てを甘くして、葉が痩せて地面が透けるのを防ぐ
         .replace('#include <map_fragment>','#ifdef USE_MAP\n { vec4 tc=texture2D(map,vMapUv); vec2 tq=vMapUv*128.; float lod=max(0.,.5*log2(max(dot(dFdx(tq),dFdx(tq)),dot(dFdy(tq),dFdy(tq))))); diffuseColor.a*=tc.a*(1.+lod*.32); gTip=smoothstep(.2,1.,fract(vMapUv.y)); }\n#endif')
         .replace('#include <alphatest_fragment>','if(diffuseColor.a<.5) discard;')
-        .replace('#include <color_fragment>','#include <color_fragment>\n diffuseColor.rgb=mix(diffuseColor.rgb,mix(diffuseColor.rgb*1.25,vec3(.95,.95,.5),.22),gTip*'+(Ly.K===1?'1.':'.6')+');')
+        .replace('#include <color_fragment>','#include <color_fragment>\n diffuseColor.rgb=mix(diffuseColor.rgb,mix(mix(diffuseColor.rgb*1.25,vec3(.95,.95,.5),.22),diffuseColor.rgb*vec3(.9,1.02,1.0),uNtT),gTip*'+(Ly.K===1?'1.':'.6')+');')
         .replace('#include <dithering_fragment>','#include <dithering_fragment>\n { float kt=pow(max(dot(normalize(vWP-cameraPosition),uSun),0.),3.); gl_FragColor.rgb+=vec3(1.,.96,.78)*.3*kt*gTip*gTip*(1.-uNtT); }'); }; gm.customProgramCacheKey=()=>'grass-'+Ly.nm; return gm; }; // 層ごとに別のシェーダーとして作らせる（同じ形の関数だと使い回されてしまう）
   const gLay=Ly=>{ const g=(Ly.K===1?GG:GB).clone(), rk=new T.InstancedBufferAttribute(new Float32Array(Ly.N),1); g.setAttribute('aRk',rk); const m=new T.InstancedMesh(g,mkGM(Ly),Ly.N); m.receiveShadow=true; m.frustumCulled=false; m.count=0; scene.add(m); return Object.assign({m,rk,Ma:new Float32Array(Ly.N*16),Ca:new Float32Array(Ly.N*3),Ra:new Float32Array(Ly.N),at:null,job:null},Ly); };
   const GL=GLAY.map(gLay), gCells=new Map(); L.gl=GL;
