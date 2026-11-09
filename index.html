@@ -5270,7 +5270,7 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
   updFar(y0,true); { const it=ringGen(farC); let r; while(!(r=it.next()).done); setRing(r.value); } if(!(await tick(.9))) return;
   updChunks(y0,true); if(!(await tick(.95))) return;
   // ---- 見つけるもの：1分ほど走るごとに何かがある（遺跡・野営地・風車・鹿の群れ・宝箱…）。近づくと名前が出る ----
-  const mPondE=tm([120,108,80]), mFlower=tm([255,255,255]), mFlower2=tm([240,190,214]), mLava=new T.MeshBasicMaterial({color:c3([255,110,30]).multiplyScalar(1.8)}), mDark=tm([70,62,62]), mIce=tm([176,220,240]), mSnow=tm([236,242,250]), mSand2=tm([206,170,120]), mSandG=tm([222,186,124]), mBone=tm([236,226,204]), mStone=tm([196,200,186]), mMono=tm([200,202,188]), mMonoD=tm([118,118,108]), mMoss=tm([104,138,66]), mWood=tm([132,104,76]), mWoodD=tm([92,74,56]), mWoodL=tm([182,142,98]), mSteelW=tm([156,162,168]), mWoodG=tm([162,152,136]), mBas=tm([96,84,80]), mBasL=tm([132,112,100]), mChar=tm([46,40,38]), mCanvas=tm([222,208,176]), mRedC=tm([176,64,48]), mLeaf=tm([76,128,54]), mLeaf2=tm([58,104,46]), mApple=tm([210,44,40]),
+  const mPondE=tm([120,108,80]), mFlower=tm([255,255,255]), mFlower2=tm([240,190,214]), mLava=new T.MeshBasicMaterial({color:c3([255,110,30]).multiplyScalar(1.8)}), mDark=tm([70,62,62]), mIce=tm([176,220,240]), mSnow=tm([236,242,250]), mSand2=tm([206,170,120]), mSandG=tm([222,186,124]), mBone=tm([236,226,204]), mStone=tm([196,200,186]), mMono=tm([200,202,188]), mMonoD=tm([118,118,108]), mMoss=tm([104,138,66]), mWood=tm([132,104,76]), mWoodD=tm([92,74,56]), mWoodL=tm([182,142,98]), mSteelW=tm([156,162,168]), mWoodG=tm([162,152,136]), mBas=tm([96,84,80]), mBasL=tm([132,112,100]), mChar=tm([46,40,38]), mSandS=tm([222,186,140]), mPalm=tm([150,120,86]), mCanvas=tm([222,208,176]), mRedC=tm([176,64,48]), mLeaf=tm([76,128,54]), mLeaf2=tm([58,104,46]), mApple=tm([210,44,40]),
     mWhite=tm([236,230,216]), mRoof=tm([150,74,52]), mDeer=tm([160,106,62]), mDeerL=tm([232,214,188]), mGold=tm([226,182,72]), mFire=new T.MeshBasicMaterial({color:c3([255,120,30]).multiplyScalar(1.5)}), mFireC=new T.MeshBasicMaterial({color:c3([255,230,120]).multiplyScalar(1.8)}),
     mWater=patch(new T.MeshStandardMaterial({color:c3([62,120,140]),roughness:.12,envMap:L.env||null,envMapIntensity:1.1}));
   // 炎の絵：下が白っぽい黄色、上へ行くほど橙から赤く細くなって消える
@@ -5762,9 +5762,48 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
       { const tp=mk(new T.ConeGeometry(1.5,1.6,4),mStone,0,y+.8,0); tp.rotation.y=.785; g.add(tp); const sc=mk(new T.ConeGeometry(1.35,1.1,4),mSnow,0,y+1.15,0); sc.rotation.y=.785; g.add(sc); }
       for(let q=0;q<12;q++){ const a=q/12*6.283, d=3.2+r()*1.2, b=mk(new T.SphereGeometry(1.2+r()*.8,10,5,0,6.283,0,1.4),mSnow,Math.cos(a)*d,.05,Math.sin(a)*d); b.scale.y=.4; g.add(b); } },'snow'],
     // 砂漠
-    ['砂に埋もれた巨像',g=>{ g.add(Bx(4.5,5,4,mMono,0,2,0)); g.add(Bx(4.7,1,1.2,mMono,0,4.6,2)); g.add(Bx(1,1.4,1.2,mMono,0,2.8,2.4)); [-1,1].forEach(x=>g.add(Bx(.9,.4,.3,mDark,x*1.1,3.6,2.05))); g.add(Sp(3.2,mSandG,0,-.6,0,1)); },'desert'],
-    ['オアシス',g=>{ g.add(mk(new T.CylinderGeometry(8,8,.3,24),mWater,0,.1,0)); for(let q=0;q<5;q++){ const a=q/5*6.28+.4, x=Math.cos(a)*9.5, z=Math.sin(a)*9.5, tr=Cy(.35,.5,8,mWood,x,4,z,6); tr.rotation.z=.15; g.add(tr); for(let k2=0;k2<6;k2++){ const l=Bx(4,.12,1.1,mLeaf,x+.6+Math.cos(k2)*1.6,8.2,z+Math.sin(k2)*1.6); l.rotation.set(0,k2,-.35); g.add(l); } } },'desert'],
-    ['大きな獣の骨',g=>{ for(let q=0;q<7;q++){ const t=mk(new T.TorusGeometry(3.2-q*.25,.25,6,16,Math.PI),mBone,0,0,q*1.4-4); g.add(t); } { const sp2=Cy(.4,.4,11,mBone,0,3,0,6); sp2.rotation.x=1.5708; g.add(sp2); } g.add(Sp(1.6,mBone,0,1.5,6.5,1)); },'desert']];
+    // 砂に埋もれた巨像（ゲルドの女神像）：砂丘から上半身だけ出た、砂岩の巨大な女性像。長い髪を後ろへ垂らし、胸の前で両手を組む。頭には飾りの冠、顔は風に削られて丸い。肩に砂が積もり、まわりに崩れた台座の石
+    ['砂に埋もれた巨像',g=>{ const r=pRng('colos',137);
+      const st=new T.Group(); st.position.set(0,-2.5,0); st.rotation.set(.12,.2,-.06); g.add(st);
+      { const bd=new T.LatheGeometry([new T.Vector2(3.4,0),new T.Vector2(3.0,3),new T.Vector2(2.7,5.5),new T.Vector2(2.9,7.2),new T.Vector2(2.5,8.4),new T.Vector2(1.1,9.2),new T.Vector2(.85,9.8)],16); const b=mk(bd,mSandS,0,0,0); b.scale.z=.62; st.add(b); }
+      { const hd=Sp(1.45,mSandS,0,11.2,.15,2); hd.scale.set(.9,1.12,.95); st.add(hd); const nz=Sp(.3,mSandS,0,11.1,1.35,1); nz.scale.set(.6,1.1,.6); st.add(nz); for(const sd of [-1,1]){ const ey=Bx(.4,.1,.1,mBas,sd*.45,11.45,1.38); ey.rotation.y=sd*.3; st.add(ey); const br=Bx(.5,.12,.2,mSandS,sd*.45,11.68,1.32); br.rotation.z=-sd*.15; st.add(br); } st.add(Bx(.45,.08,.1,mBas,0,10.55,1.32)); }
+      { const hr=Sp(1.6,mSandS,0,10.6,-.6,1); hr.scale.set(1,1.5,.75); st.add(hr); for(const sd of [-1,1]){ const lk=Cy(.55,.45,5,mSandS,sd*1.5,8.7,-.2,8); lk.rotation.z=sd*.08; st.add(lk); } }
+      { const cr=Cy(1.4,1.25,.6,mSandS,0,12.55,.1,10); st.add(cr); for(let k=0;k<7;k++){ const a=-1.3+k*.43, sp=mk(new T.ConeGeometry(.22,.9,4),mSandS,Math.sin(a)*1.25,13.2,Math.cos(a)*1.0+.1); st.add(sp); } st.add(Sp(.3,mGold,0,12.6,1.42,1)); }
+      // 腕：肩から下へ、胸の前で手を組む
+      for(const sd of [-1,1]){ const sh=Sp(.95,mSandS,sd*2.75,8.0,0,1); st.add(sh); const ua=Cy(.75,.65,3.4,mSandS,sd*3.0,6.3,.35,9); ua.rotation.x=-.2; st.add(ua); const fa=Cy(.62,.55,3.0,mSandS,sd*1.5,4.75,1.5,9); fa.rotation.set(0,0,sd*1.35); fa.rotation.x=.15; st.add(fa); }
+      { const hn=Sp(.95,mSandS,0,4.7,1.7,1); hn.scale.set(1.3,.8,.75); st.add(hn); }
+      // 胸の飾り帯
+      { const nb=mk(new T.TorusGeometry(1.7,.16,5,16,Math.PI),mSandS,0,8.3,.15); nb.rotation.set(-1.25,0,Math.PI); st.add(nb); }
+      // 砂丘と肩の砂
+      { const dn=mk(new T.SphereGeometry(7,20,8,0,6.283,0,1.25),mSandG,0,-1.3,0); dn.scale.set(1.15,.5,1); g.add(dn); }
+      for(const sd of [-1,1]){ const sa=mk(new T.SphereGeometry(1.1,10,5,0,6.283,0,1.3),mSandG,sd*2.6,6.0,-.15); sa.scale.y=.4; sa.rotation.z=-sd*.2; g.add(sa); }
+      for(let q=0;q<7;q++){ const a=r()*6.283, d=6+r()*4, b=Bx(1.2+r()*1.6,.7+r()*.9,1+r()*1.4,mSandS,Math.cos(a)*d,.5,Math.sin(a)*d); b.rotation.set((r()-.5)*.6,r()*3,(r()-.5)*.6); g.add(b); } },'desert'],
+    // オアシス（ゲルドの砂漠のオアシス）：砂の中のくぼ地に、浅瀬が明るい水色で深い所が青い澄んだ泉。弓なりに曲がったヤシの木が水辺に傾き、先に羽のような長い葉が垂れて、根元に実の房。岸に草と低い茂み、砂岩の岩
+    ['オアシス',g=>{ const r=pRng('oasis',139), mFrond=tm([96,150,56]), mFrondD=tm([70,118,48]), mNut=tm([120,88,50]), mShal=tm([120,200,196]), mBush=tm([84,128,52]);
+      const N=34, rad=a=>8+1.2*Math.sin(a*2+.3)+.8*Math.sin(a*3+1.4);
+      const shp=k=>{ const sh=new T.Shape(); for(let q=0;q<=N;q++){ const a=q/N*6.283, R=rad(a)*k; q?sh.lineTo(Math.cos(a)*R,Math.sin(a)*R):sh.moveTo(Math.cos(a)*R,Math.sin(a)*R); } return sh; };
+      { const sb=mk(new T.ShapeGeometry(shp(1.05)),mShal,0,.02,0); sb.rotation.x=-1.5708; g.add(sb); const dp=mk(new T.ShapeGeometry(shp(.6)),tm([40,110,150]),0,.04,0); dp.rotation.x=-1.5708; g.add(dp); const mW=mWater.clone(); mW.transparent=true; mW.opacity=.55; const w=mk(new T.ShapeGeometry(shp(1)),mW,0,.34,0); w.rotation.x=-1.5708; g.add(w); g.userData.keep=w; }
+      { const bk=mk(new T.RingGeometry(7.5,11.5,34),tm([150,160,80]),0,.33,0); bk.rotation.x=-1.5708; g.add(bk); }
+      const keeps=[]; const palm=(x,z,h,lean,dir)=>{ const pts=[]; for(let k=0;k<=8;k++){ const t=k/8; pts.push(new T.Vector3(x+Math.cos(dir)*lean*h*t*t,t*h,z+Math.sin(dir)*lean*h*t*t)); }
+        for(let k=0;k<8;k++){ const A=pts[k], B=pts[k+1], c=Cy(.32-k*.02,.36-k*.02,A.distanceTo(B)+.05,mPalm,(A.x+B.x)/2,(A.y+B.y)/2,(A.z+B.z)/2,8); c.lookAt(B); c.rotateX(1.5708); g.add(c); const rg=mk(new T.TorusGeometry(.35-k*.02,.05,4,10),mPalm,A.x,A.y+.2,A.z); rg.lookAt(B); g.add(rg); }
+        const T0=pts[8]; for(let k=0;k<9;k++){ const a=k/9*6.283+r()*.3, L2=3.4+r()*1.2, fr=new T.Group(); fr.position.copy(T0); fr.rotation.set(0,-a,0); g.add(fr); keeps.push(fr);
+          let px=0, py=0; for(let q=0;q<6;q++){ const t=q/6, ang=.5-t*1.6, nx=px+Math.cos(ang)*L2/6, ny=py+Math.sin(ang)*L2/6, sg=mk(new T.PlaneGeometry(L2/6+.05,(1-t*.6)*1.1),k%2?mFrond:mFrondD,(px+nx)/2,(py+ny)/2,0); sg.rotation.set(-1.5708+.25,0,ang); sg.material.side=T.DoubleSide; fr.add(sg); px=nx; py=ny; } }
+        for(let k=0;k<5;k++){ const a=k/5*6.283, n2=Sp(.18,mNut,T0.x+Math.cos(a)*.35,T0.y-.3,T0.z+Math.sin(a)*.35,1); g.add(n2); } };
+      [[ -8.5,2,9,.28,0],[-7,-4.5,7.5,.35,.6],[8,3.5,10,.24,3.3],[6,-6,8,.3,2.4],[1.5,9,8.5,.3,-1.6]].forEach(p=>palm(...p));
+      const kg=new T.Group(); keeps.forEach(k=>{}); g.userData.keeps=keeps;
+      for(let q=0;q<9;q++){ const a=r()*6.283, R=rad(a)+1.5+r()*1.5, b=Sp(.7+r()*.6,mBush,Math.cos(a)*R,.6,Math.sin(a)*R,1); b.scale.y=.65; g.add(b); }
+      for(let q=0;q<5;q++){ const a=r()*6.283, R=rad(a)+3+r()*2, rd=.6+r()*.8, rk=mk(rockG(rd,200+q),mSandS,Math.cos(a)*R,.3+rd*.3,Math.sin(a)*R); g.add(rk); } },'desert'],
+    // 大きな獣の骨（ゲルドの大骸骨）：砂に半分埋もれた巨大な獣の骨。鳥のくちばしのように長くとがった頭骨、背骨が波打って続き、弓なりの肋骨が砂から立ち上がる。骨は白く日に焼け、割れ目と砂の汚れ
+    ['大きな獣の骨',g=>{ const r=pRng('bones',149), V3=(x,y,z)=>new T.Vector3(x,y,z);
+      const sp=[]; for(let k=0;k<=16;k++){ const t=k/16; sp.push(V3(0,2.4+Math.sin(t*3.2)*1.1-t*2.2,-6+t*20)); }
+      for(let k=0;k<16;k++){ const A=sp[k], B=sp[k+1], c=Cy(.38,.42,A.distanceTo(B)*.7,mBone,(A.x+B.x)/2,(A.y+B.y)/2,(A.z+B.z)/2,8); c.lookAt(B); c.rotateX(1.5708); g.add(c); const pr=mk(new T.ConeGeometry(.16,1.1-k*.05,5),mBone,A.x,A.y+.75,A.z+.12); pr.rotation.x=-.35; g.add(pr); }
+      // 肋骨：背骨から左右に弓なりに下りて砂に刺さる
+      for(let k=1;k<9;k++){ const P=sp[k], w=3.4-Math.abs(k-4)*.25; for(const sd of [-1,1]){ const pts=[]; for(let q=0;q<=6;q++){ const t=q/6, ang=t*2.3; pts.push(V3(sd*Math.sin(ang)*w,P.y-(1-Math.cos(ang))*w*.85+.2,P.z+t*.6)); } if(k===6&&sd>0) pts.length=4; for(let q=0;q<pts.length-1;q++){ const A=pts[q], B=pts[q+1], c=Cy(.13,.16,A.distanceTo(B)+.05,mBone,(A.x+B.x)/2,(A.y+B.y)/2,(A.z+B.z)/2,6); c.lookAt(B); c.rotateX(1.5708); g.add(c); } } }
+      // 頭骨：長いくちばし状の顎
+      { const hd=new T.Group(); hd.position.copy(sp[0]).add(V3(0,.2,-.6)); hd.rotation.set(.18,0,.15); g.add(hd); const cr=Sp(1.4,mBone,0,0,0,2); cr.scale.set(1,.9,1.2); hd.add(cr); for(const sd of [-1,1]) hd.add(Sp(.42,mDark,sd*.75,.25,-.45,1));
+        const bk=mk(new T.ConeGeometry(.75,7,8),mBone,0,-.2,-4.6); bk.rotation.x=-1.5708; bk.scale.set(1,1,.6); hd.add(bk); const jw=mk(new T.ConeGeometry(.55,6,8),mBone,0,-.9,-4.0); jw.rotation.x=-1.5708-.15; jw.scale.set(1,1,.5); hd.add(jw); for(let k=0;k<6;k++) hd.add(mk(new T.ConeGeometry(.09,.35,4),mBone,(k%2?.3:-.3),-.6,-1.6-k*.6)); }
+      // 尾の先は砂に沈む／砂丘
+      for(const [x,z,rr] of [[0,14,5],[-4,-2,3.2],[4.5,4,3.6],[0,-8,3]]){ const d=mk(new T.SphereGeometry(rr,14,6,0,6.283,0,1.3),mSandG,x,-.6,z); d.scale.y=.35; g.add(d); } },'desert']];
   // 土地に合わないものは出さない
   // その場所の土地に合うものから、順番を混ぜて選ぶ
   if(DK.length!==P_DKN.length||DK.some((d,q)=>d[0]!==P_DKN[q][0])) console.warn('DK mismatch');
@@ -5772,7 +5811,7 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
   // 見つけるものの部品を、色ごとに1つの形にまとめる（描く回数を減らして軽くする）。動く部品はそのまま
   // ---- 古びた質感（ブレワイの遺跡のように）：石は角が欠けてでこぼこし、色むら・根元の土汚れ・上面の苔・縦の雨だれ・側面のツタ。木は木目と色あせ ----
   const n3=(x,y,z)=>(pNoise(x+z*.71,y+3.1)+pNoise(y*1.13+11.7,z+x*.37)+pNoise(z*.93+5.3,x+7.9))/3;
-  const KIND=new Map([[mMono,'mono'],[mMonoD,'mono'],[mSteelW,'mono'],[mStone,'stone'],[mDark,'stone'],[mSand2,'stone'],[mBone,'bone'],[mWood,'wood'],[mWoodD,'wood'],[mWoodL,'wood'],[mWoodG,'wood'],[mBas,'basalt'],[mBasL,'basalt'],[mChar,'char'],[mWhite,'plaster'],[mCanvas,'cloth'],[mRedC,'cloth'],[mRoof,'roof']]);
+  const KIND=new Map([[mMono,'mono'],[mMonoD,'mono'],[mSteelW,'mono'],[mStone,'stone'],[mDark,'stone'],[mSand2,'stone'],[mBone,'bone'],[mWood,'wood'],[mWoodD,'wood'],[mWoodL,'wood'],[mWoodG,'wood'],[mBas,'basalt'],[mBasL,'basalt'],[mChar,'char'],[mSandS,'basalt'],[mPalm,'wood'],[mWhite,'plaster'],[mCanvas,'cloth'],[mRedC,'cloth'],[mRoof,'roof']]);
   // 石の表面（ブレワイの遺跡の石）：細かいざらつきと小さな斑点、切り石の目地（横の段と、段ごとにずれた縦の継ぎ目）、上の面と目地のまわりにふわっとした苔、壁を這うツタ。形は平らなまま、表面の模様で古さを出す
   // 石の表面：本物の石垣の写真（Babylon.js Assets, CC BY 4.0）を世界の向きに合わせて3方向から貼る。石の形・ひび・欠け・凹凸は写真そのもの。
   //   色はブレワイの遺跡の、少し緑がかった明るい灰色に寄せ、上の面と石の継ぎ目に苔、壁の一部にツタ
