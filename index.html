@@ -3625,13 +3625,13 @@ function pCliff(k,H,m0,m1,open,openT){
 }
 // 地名：ブレワイの地図のような「〜地方」「〜村」「〜馬宿」…を日ごとに組み合わせる（すべてこの旅のための架空の地名）
 const PN_A=['ミズナラ','カゼノネ','シラユキ','アカツチ','ホタル','ツユクサ','コケムス','ヒバリ','タソガレ','イワツツジ','ハヤテ','サザナミ','ヒカゲ','ユウナギ','アオバ','カタクリ','ナギサ','オボロ','ツララ','キリフ','ヒイラギ','クモマ','ススキ','ヤマセ','ワタリ','コダマ','ハルカ','トキワ','アサギ','ムラサメ','カゲロウ','ヨモギ','シノノメ','ユキワリ','マツカゼ','イナホ','フブキ','ホムラ','サギリ','アマツ','イソラ','ウツギ','エニシ','オモダカ','カスミ','キササゲ','クヌギ','ケヤキ','コノハ','サクヤ','シオン','スズラン','セキレイ','タチバナ','チドリ','ツバキ','トウゲ','ナツメ','ニレ','ヌマタ','ネムノキ','ノギク','ハクロ','フジナミ','ホオズキ','マソホ','ミサゴ','ムクゲ','モズ','ヤマブキ','ユズリハ','ヨシキリ','リンドウ','ワカバ','アケボノ','イサリビ','ウスズミ','エボシ','オキナ','カガリ','カワセミ','クサナギ','コガネ','サンゴ','シジマ','スミレ','セセラギ','タマユラ','ツクバネ','トバリ','ナナカマド','ハシバミ','ヒスイ','ホシクズ','マホロ','ミナモ','ヤマナミ','ユウヅツ','ワダツミ'];
-const PN={region:'地方',village:'村',stable:'馬宿',lake:'湖',mount:'山',river:'川',tower:'の塔',ruin:'の遺跡',oasis:'のオアシス',island:'島',shrine:'の祠',volc:'火山',volcR:'火山帯',desert:'砂漠',lava:'溶岩湖',peak:'峰',snowR:'雪原',castle:'城',town:'城下町',wood:'の森',bridge:'大橋',plain:'平原',hill:'丘陵',vale:'渓谷',high:'高原',pass:'峠',marsh:'湿原',falls:'の滝'};
+const PN={region:'地方',village:'村',stable:'馬宿',lake:'湖',mount:'山',river:'川',tower:'の塔',ruin:'の遺跡',oasis:'のオアシス',island:'島',shrine:'の祠',volc:'火山',volcR:'火山帯',desert:'砂漠',lava:'溶岩湖',peak:'峰',snowR:'雪原',castle:'城',town:'城下町',wood:'の森',bridge:'大橋',plain:'平原',hill:'丘陵',vale:'渓谷',high:'高原',pass:'峠',marsh:'湿原',coast:'海岸',falls:'の滝'};
 // 似た名前（rv12とrv13など）でも最初の値がばらけるよう、混ぜてから使う
 function pRng(k,salt){ let h=salt; for(const c of k) h=(h*131+c.charCodeAt(0))>>>0; h=Math.imul(h^(h>>>16),2246822507)>>>0; h=Math.imul(h^(h>>>13),3266489909)>>>0; h=(h^(h>>>16))>>>0; return ()=>{ h=(h*1664525+1013904223)>>>0; return h/4294967296; }; }
 function pNamer(k){ const r=pRng(k,991), used=new Set(); return t=>{ let n; for(let i=0;i<20;i++){ n=PN_A[Math.floor(r()*PN_A.length)]; if(!used.has(n)) break; } used.add(n); return n+PN[t]; }; }
 const pNm=(sd,t)=>{ const r=pRng(sd,991); return PN_A[Math.floor(r()*PN_A.length)]+PN[t]; };
 // 地方の境目も世界に固定。日のはじめは、前の日から続いている地方の名前を出す
-function pRegions(k){ const g=pGeo(k), off=pOffOf(k)+(g.s-PATH_H0), L=g.e-g.s, CW=300, out=[], mk=c=>{ const r=pRng('rg'+c,77), v=c*CW+r()*200, bi=pBiomeW(pW/2,v), t0=r()<.6?'region':['plain','hill','high','vale'][Math.floor(r()*4)]; return [v, pNm('rg'+c,bi[0]>.5?'volcR':bi[3]>.5?'snowR':bi[1]>.5?'desert':bi[2]>.5?'marsh':t0)]; };
+function pRegions(k){ const g=pGeo(k), off=pOffOf(k)+(g.s-PATH_H0), L=g.e-g.s, CW=300, out=[], mk=c=>{ const r=pRng('rg'+c,77), v=c*CW+r()*200, bi=pBiomeW(pW/2,v), t0=r()<.6?'region':['plain','hill','high','vale'][Math.floor(r()*4)]; return [v, pNm('rg'+c,bi[0]>.5?'volcR':bi[3]>.5?'snowR':bi[1]>.5?'desert':bi[2]>.5?'marsh':pOceanAt(v)&&Math.abs(v-pOceanAt(v).v)<pOceanAt(v).RV*.8?'coast':t0)]; };
   for(let c=Math.floor(off/CW)-1;c<=Math.floor((off+L)/CW);c++){ const [v,n]=mk(c); if(P_CASTLE){ const q=pCastleAt(pW/2,v); if(q&&v>q[1]-260*q[3]&&v<q[1]+220*q[3]) continue; } if(v>=off&&v<off+L) out.push([g.s+v-off,n]); }
   if(!out.length||out[0][0]>g.s+90){ let c=Math.floor(off/CW); while(mk(c)[0]>=off) c--; out.unshift([g.s+20/PX,mk(c)[1]]); }
   return out.filter((x,i)=>!i||x[1]!==out[i-1][1]); }
@@ -3644,8 +3644,8 @@ const P_SEA=.27;
 // 高さ（0〜1）。x は画面の横位置、y は地図の縦位置（ズームの影響を受けない単位に直して計算）
 function pHgt(x,y){ return pHgtC(x,y,true); }
 // raw=false で道のまわりの盛り土をしない高さ（川の流れを決めるのに使う）
-let pLastCarve=0, pLastEdge=99, pLastRim=0, pLastDark=0, pLastWet=0, pLastCastle=0, pLastCL=0;
-function pHgtC(x,y,road){ pLastCarve=0; pLastEdge=99; pLastRim=0; pLastDark=0; pLastWet=0; pLastCastle=0; pLastCL=0; const v=y/PX+pOff, u=x*1.05; let f=0,amp=.5,fr=1/170; for(let o=0;o<5;o++){ f+=amp*pNoise(u*fr+o*17,v*fr+o*31); amp*=.5; fr*=2.03; }
+let pLastCarve=0, pLastEdge=99, pLastRim=0, pLastDark=0, pLastWet=0, pLastCastle=0, pLastCL=0, pLastSea=0;
+function pHgtC(x,y,road){ pLastSea=0; pLastCarve=0; pLastEdge=99; pLastRim=0; pLastDark=0; pLastWet=0; pLastCastle=0; pLastCL=0; const v=y/PX+pOff, u=x*1.05; let f=0,amp=.5,fr=1/170; for(let o=0;o<5;o++){ f+=amp*pNoise(u*fr+o*17,v*fr+o*31); amp*=.5; fr*=2.03; }
   const r=1-Math.abs(2*pNoise(u/240+9,v/240+3)-1); let h=.62*f+.5*r*r*r-.08; { const [bv,bd,bw,bs]=pBiomeW(x,v);
     if(bv>0){ // 火山：全体を高く、細かいこぶの多い岩場にする。まわりの水辺は陸にする（マグマと水がとなり合わないように）
       const bump=.06*(pNoise(u/22+1.7,v/22+6.1)-.5)+.04*(pNoise(u/9+3.1,v/9+2.3)-.5); h=h*(1-bv)+(.5+.12*bv+bump)*bv; if(bv<.6) h=Math.max(h,P_SEA+.05*Math.min(1,bv*4));
@@ -3662,8 +3662,12 @@ function pHgtC(x,y,road){ pLastCarve=0; pLastEdge=99; pLastRim=0; pLastDark=0; p
       else { const sN=pSm(-30,-110,ly), s2=sd+10*(pNoise(lx/60+ph,ly/60)-.5)*2, hc=base+.14*pSm(0,4,s2)+.14*pSm(14,18,s2), bN=pSm(110,60,sd), hN=h*(1-bN)+Math.max(hc,h*.3+hc*.7)*bN, bS=pSm(230,150,sd), hS=h*(1-bS)+base*bS; h=hN*sN+hS*(1-sN); } } } // 北は段々の崖、南は平地（城下町）// 南は平地（城下町）
   { const cv=pTgCarve(x,v); if(cv){ h=Math.max(h,P_SEA+.1*pSm(3.2,2,cv[1])); if(road){ h-=cv[3]; pLastCarve+=cv[3]; } } } // 溶岩の舌の谷（まわりに湖を作らない）
   { const lw=pSnowLow(x,v); if(lw>0&&h>P_SEA+.02) h+=(.36-h)*.45*lw; } // 雪山のまわりの低地（ツンドラ）は平ら
+  { const oc=pOceanAt(v); if(oc){ const t=pOceanT(x,v,oc); if(t>-1.6){ // 海：浜へ下りる斜面、白い砂浜、だんだん深くなる海。沖には小島がぽつぽつ
+      if(t<0){ const bh=P_SEA+.012+.05*pSm(-.08,-1.6,t); if(h>bh) h=bh+(h-bh)*pSm(-.3,-1.6,t); else h=Math.max(h,P_SEA+.012); }
+      else { const sea=P_SEA-.008-.13*pSm(0,5,t), il=pSm(.8,.87,pNoise(u/6+oc.ph,v/6+2.2))*pSm(1.5,3,t); h=sea+(P_SEA+.05+.12*pNoise(u/2+1,v/2)-sea)*il; }
+      pLastSea=1; } } }
   // 道のまわりは陸地にする（道が水に沈まないように）
-  const dd=road&&!(P_DESERT&&pDsPond&&pBiomeW(x,v)[1]>.5)&&!pLastWet&&!pLastCastle?Math.abs(x-pRX(y)):1e9; if(dd<80){ const t=1-dd/80, m=P_SEA+.07*t*t*(3-2*t); if(h<m) h=m+(h-m)*.15*(1-t); }
+  const dd=road&&!(P_DESERT&&pDsPond&&pBiomeW(x,v)[1]>.5)&&!pLastWet&&!pLastCastle&&!pLastSea?Math.abs(x-pRX(y)):1e9; if(dd<80){ const t=1-dd/80, m=P_SEA+.07*t*t*(3-2*t); if(h<m) h=m+(h-m)*.15*(1-t); }
   return Math.max(0,Math.min(1,h)); }
 // 地方ごとの景色（ブレワイのオルディン＝火山とマグマ、ゲルド＝砂漠、ラネール＝湿地）：世界の位置で決まる、ゆるやかに入れ替わる
 const pSm=(a,b,x)=>{ let t=(x-a)/(b-a); t=t<0?0:t>1?1:t; return t*t*(3-2*t); };
@@ -3779,6 +3783,22 @@ function pWet(c){ const key=c+'|'+(pW|0); if(pWtMemo.has(key)) return pWtMemo.ge
   pWtMemo.set(key,o); return o; }
 function pWetAt(v){ const c=Math.floor(v/P_WC); let b=null,bd=1e9; for(let k=c-1;k<=c+1;k++){ const o=pWet(k); if(o){ const d=Math.abs(v-o.v); if(d<o.RV*2.8&&d<bd){ bd=d; b=o; } } } return b; }
 function pWetD(x,v,o){ const dx=(x-o.x)*.9, dv=(v-o.v)*.7, a=Math.atan2(dv,dx); return Math.hypot(dx,dv)/(o.RV*(1+.35*(pNoise(Math.cos(a)*3+o.ph,Math.sin(a)*3)-.5)+.2*(pNoise(Math.cos(a)*7+o.ph+3,Math.sin(a)*7)-.5)))+.06*(pNoise(x/40+o.ph,v/40)-.5); }
+// 海岸：ときどき（数日に1度）、道が海沿いを通る。海岸線は道の片側に寄り添って曲がり、外側は地平線まで海。始まりと終わりは海岸が道から離れていく
+const P_OCEAN=true, P_OC=2600, P_OCP=.28, pOcMemo=new Map();
+const pRXv=v=>{ const R=[4.1,1.3,2.2,1.05], c=pW/2, A=pW/2-34; return Math.max(30,Math.min(pW-30,c+A*(.62*Math.sin(v/(150*R[3])+R[0])+.28*Math.sin(v/61+R[1])+.1*Math.sin(v/27+R[2])))); };
+function pOcean(c){ const key=c+'|'+(pW|0); if(pOcMemo.has(key)) return pOcMemo.get(key); const r=pRng('oc'+c,17); let o=null;
+  if(P_OCEAN&&r()<P_OCP){ const RV=240+r()*200, s2=r()<.5?-1:1, d0=.55+r()*.6, ph=r()*50;
+    for(let t=0;t<10&&!o;t++){ const v=c*P_OC+RV*.6+r()*Math.max(1,P_OC-RV*1.2); let near=false;
+      for(let k=Math.floor(v/P_VC)-1;k<=Math.floor(v/P_VC)+1;k++){ const vo=pVolc(k); if(vo&&Math.abs(vo.v-v)<vo.RV*1.2+RV) near=true; }
+      for(let k=Math.floor(v/P_SC)-1;k<=Math.floor(v/P_SC)+1;k++){ const so=pSnow(k); if(so&&Math.abs(so.v-v)<so.RV*1.3+RV) near=true; }
+      for(let k=Math.floor(v/P_DC)-1;k<=Math.floor(v/P_DC)+1;k++){ const dso=pDesert(k); if(dso&&Math.abs(dso.v-v)<dso.RV*1.3+RV) near=true; }
+      for(let k=Math.floor(v/P_WC)-1;k<=Math.floor(v/P_WC)+1;k++){ const wo=pWet(k); if(wo&&Math.abs(wo.v-v)<wo.RV*1.4+RV) near=true; }
+      if(!near) o={v,RV,s:s2,d0,ph,c}; } }
+  pOcMemo.set(key,o); return o; }
+function pOceanAt(v){ const c=Math.floor(v/P_OC); for(let k=c-1;k<=c+1;k++){ const o=pOcean(k); if(o&&Math.abs(v-o.v)<o.RV+500) return o; } return null; }
+// 海までの距離（海の側へ正。0が波打ちぎわ）
+function pOceanT(x,v,o){ const e=pSm(o.RV,o.RV*.55,Math.abs(v-o.v)), xc=pRXv(v)+o.s*(o.d0+.22*(pNoise(v/40+o.ph,3.3)-.5)*2+.1*(pNoise(v/7+o.ph,7.1)-.5)*2+(1-e)*520); return o.s*(x-xc); }
+function pOceanW(x,v){ const o=pOceanAt(v); if(!o) return 0; return pSm(-1,.3,pOceanT(x,v,o)); }
 function pWetW(x,v){ if(!P_WET) return 0; const o=pWetAt(v); if(!o) return 0; return pSm(1.05,.88,pWetD(x,v,o)); }
 // 島：小さな平たい島はノイズで散らばり、大きな島は少し丘がある
 function pWetIsl(x,v,o){ let best=0, hill=0;
@@ -4769,7 +4789,7 @@ async function pLookOpen(){
   const ridge=(x,y)=>{ const n=1-Math.abs(pNoise(x/300+9,y/300+4)*2-1); return n*n; };
   // ---- 描く道具 ----
   const ren=new T.WebGLRenderer({canvas:cv,antialias:true,powerPreference:'high-performance'}); L.ren=ren; ren.setPixelRatio(Math.min(1.35,window.devicePixelRatio||1)); ren.shadowMap.enabled=true; ren.shadowMap.type=T.PCFSoftShadowMap; ren.outputColorSpace=T.SRGBColorSpace; ren.toneMapping=T.ACESFilmicToneMapping; ren.toneMappingExposure=.9;
-  const scene=new T.Scene(); L.scene=scene; const cam=new T.PerspectiveCamera(48,1,1,40000); L.cam=cam; L.T=T; if(/lkshot/.test(location.search)){ window.__lk=L; L.pWorld=pWorld; L.pHgtC=pHgtC; }
+  const scene=new T.Scene(); L.scene=scene; const cam=new T.PerspectiveCamera(48,1,1,40000); L.cam=cam; L.T=T; if(/lkshot/.test(location.search)){ window.__lk=L; L.pWorld=pWorld; L.pHgtC=pHgtC; L.pq={pOffOf,pGeo,pOcean,pOceanAt,P_OC}; }
   const rs=()=>{ const w=ov.clientWidth, h=ov.clientHeight; ren.setSize(w,h,false); cam.aspect=w/h; cam.updateProjectionMatrix(); }; L.rs=rs; window.addEventListener('resize',rs); rs();
   // ---- 太陽と空の色（今の時刻・天気）----
   let wx=null; try{ wx=JSON.parse(localStorage.getItem(WX_KEY)||'null'); }catch(e){} const wc=isT&&wx&&Date.now()-wx.at<3*3600e3?(+(new URLSearchParams(location.search).get('wx'))||wx.code):1, cc=isT&&wx&&wx.cc!=null?wx.cc:35, rl=WXFX.rain[wc]||0, sl=WXFX.snow[wc]||0, wet=rl||sl;
@@ -5102,7 +5122,7 @@ async function pLookOpen(){
     if(c.q>=need||c.q>=GPC) return c; if(!c.ex){ const cy=(iy+.5)*GCS, a=Math.max(0,Math.floor((cy-60)/LG)-1); c.ex=[]; for(let q=a;q<a+3;q++){ const s2=dSpot(q), R={'花畑':26,'小さな池':24,'鹿の群れ':14,'岩の上の宝箱':9}[s2.nm]||12; c.ex.push([s2.x,s2.yy,R]); } }
     while(c.q<need&&c.q<GPC){ const r=c.r, rank=c.q/GPC, x=(ix+r())*GCS, y=(iy+r())*GCS, rot=r()*6.28, s0=r(), v0=r(), v1=r(); c.q++;
       if(!c.G){ c.G=[]; for(let gj=0;gj<5;gj++) for(let gi=0;gi<5;gi++){ const gx2=(ix+gi/4)*GCS, gy2=(iy+gj/4)*GCS, e2=hAt(gx2,gy2), b2=bAt(gx2,gy2), sx2=hAt(gx2+3,gy2)-hAt(gx2-3,gy2), sy2=hAt(gx2,gy2+3)-hAt(gx2,gy2-3), ny2=6/Math.hypot(sx2,sy2,6); c.G.push({b:b2,ny:ny2,ok:!(b2[0]>.2||b2[1]>.25||b2[3]>.3)&&ny2>=.8,col:colAt(gx2,gy2,e2,ny2,b2)}); } }
-      const gp=c.G[Math.round((y/GCS-iy)*4)*5+Math.round((x/GCS-ix)*4)]; if(!gp.ok) continue; const e=hAt(x,y); if(e<1) continue; { const dr=Math.abs(x-rX(y)); if(dr<5.2||(dr<8&&v1<(8-dr)/2.8)) continue; } if(c.ex.some(([ex2,ey,R])=>Math.hypot(x-ex2,y-ey)<R)) continue; if(RK.some(([rx2,ry2,rs])=>Math.abs(ry2-y)<rs*1.1&&Math.hypot(rx2-x,ry2-y)<rs*1.05)) continue;
+      const gp=c.G[Math.round((y/GCS-iy)*4)*5+Math.round((x/GCS-ix)*4)]; if(!gp.ok) continue; const e=hAt(x,y); if(e<2.6) continue; { const dr=Math.abs(x-rX(y)); if(dr<5.2||(dr<8&&v1<(8-dr)/2.8)) continue; } if(c.ex.some(([ex2,ey,R])=>Math.hypot(x-ex2,y-ey)<R)) continue; if(RK.some(([rx2,ry2,rs])=>Math.abs(ry2-y)<rs*1.1&&Math.hypot(rx2-x,ry2-y)<rs*1.05)) continue;
       const cc=gp.col; Q.setFromAxisAngle(up,rot); const s=.8+s0*.4, hA=.6+.9*sm(.25,.75,pNoise(x/150+3.1,y/150+7.7)); Sc.set(s,s*(.9+v0*.25)*hA,s); /* 場所によって背の高い草むら・低い草地 */ V.set(X(x),e-.1,Z(y)); M.compose(V,Q,Sc); for(const v of M.elements) c.P.push(v); const vb=.95+v0*.1; c.C.push(cc[0]*vb,cc[1]*vb,cc[2]*vb); c.R.push(rank); }
     return c; };
   // 並べ直し：層ごとに、受け持つ距離の草だけを入れる（少し余裕をもって。細かい出し入れはシェーダーで）
@@ -5323,26 +5343,51 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
     for(let n=n0;n<=n1;n++){ if(disc.has(n)) continue; if(built++&&L.started) break; const s=dSpot(n), g=new T.Group(); DK[s.tp][1](g); bake(g); g.scale.setScalar(s.SC); let e=hW(s.x,s.yy); if(s.nm==='小さな池') e=Math.min(e,hW(s.x+12,s.yy),hW(s.x-12,s.yy),hW(s.x,s.yy+12),hW(s.x,s.yy-12))+.3; g.position.set(X(s.x),Math.max(-.2,e)-.15,Z(s.yy)); g.rotation.y=s.nm==='道しるべ'?(s.sg>0?-1.5708:1.5708):s.sg*.3; scene.add(g); disc.set(n,{g,s,seen:false}); }
     for(const [n,o] of disc){ if(!o.seen&&o.s.yy-py<110&&o.s.yy-py>-20&&(()=>{ const v=o.g.position.clone(); v.y+=8; v.project(cam); return Math.abs(v.x)<.85&&v.z<1&&o.g.position.distanceTo(cam.position)<150; })()){ o.seen=true; findEl.textContent=o.s.nm; findEl.classList.remove('on'); void findEl.offsetWidth; findEl.classList.add('on'); } } };
   const animDisc=(t,dt)=>{ for(const [,o] of disc){ const u=o.g.userData; if(u.mill) u.mill.rotation.z+=dt*.8; if(u.fire){ u.fire.scale.set(1+Math.sin(t*13)*.12,1+Math.sin(t*9+1)*.2,1+Math.cos(t*11)*.12); } if(u.deer) u.deer.forEach((n,q)=>{ n.rotation.x=.9*Math.max(0,Math.sin(t*.5+q*2.1)); }); } };
-  // 鳥の群れ：ときどき空を横切る。ブレワイのカモメのように、白い胴と、肘で折れる灰青の翼（先は濃い色）。ゆったり羽ばたいては滑空し、群れはゆるく形を変える
-  const birds=new T.Group(); scene.add(birds); L.birds=birds; { const tm=c=>patch(new T.MeshToonMaterial({color:c3(c),gradientMap:gmap})), mB=tm([238,240,242]), mW=tm([150,166,184]), mT=tm([46,56,72]), mK=tm([236,196,60]);
-    const wingSeg=(len,w0,w1,sweep,m)=>{ const sh=new T.Shape(); sh.moveTo(0,-w0*.35); sh.lineTo(len,-w1*.2+sweep); sh.lineTo(len,w1*.8+sweep); sh.lineTo(0,w0*.65); const g=new T.ExtrudeGeometry(sh,{depth:.03,bevelEnabled:false}); g.rotateX(Math.PI/2); return new T.Mesh(g,m); };
-    for(let q=0;q<9;q++){ const b=new T.Group();
-      const body=new T.Mesh(new T.SphereGeometry(.22,10,7),mB); body.scale.set(1,.85,2.4); b.add(body);
-      const hd=new T.Mesh(new T.SphereGeometry(.13,8,6),mB); hd.position.set(0,.06,.58); b.add(hd); const bk=new T.Mesh(new T.ConeGeometry(.035,.16,5),mK); bk.rotation.x=Math.PI/2; bk.position.set(0,.04,.74); b.add(bk);
-      const tl=new T.Mesh(new T.ConeGeometry(.16,.4,4),mB); tl.scale.set(1,.2,1); tl.rotation.x=-Math.PI/2; tl.position.set(0,0,-.62); b.add(tl);
-      const wings=[]; for(const sd2 of [1,-1]){ const sh2=new T.Group(); sh2.position.set(.12*sd2,.05,.12); sh2.scale.x=sd2; b.add(sh2);
-        const inner=wingSeg(.62,.62,.52,0,mW); sh2.add(inner); const el=new T.Group(); el.position.x=.6; sh2.add(el); const outer=wingSeg(.6,.52,.2,-.2,mW); el.add(outer); const tip=wingSeg(.3,.26,.06,-.1,mT); tip.position.set(.42,.01,-.2); el.add(tip); wings.push([sh2,el,sd2]); }
-      b.userData={wings,ph:q*1.37,off:new T.Vector3((q%2?1:-1)*Math.ceil(q/2)*4.2+Math.sin(q*3.1)*2,Math.sin(q*1.7)*2.4,Math.ceil(q/2)*-3.8+Math.cos(q*2.3)*2)};
-      b.scale.setScalar(1.6); birds.add(b); } }
+  // 鳥：ブレワイのように土地ごとに違う鳥。草原はスズメの群れが低く飛び、空高くタカが輪を描く。森の近くはハトやカラス、湿地はサギ、雪山は赤いスズメと白いハト、砂漠は砂色のスズメ、火山は赤い羽のハト、海の近くだけカモメ
+  const BSP={
+    sparrow:{n:11,sc:.5,body:[150,112,74],wing:[128,94,62],tip:[70,52,38],beak:[70,58,46],hz:13,glide:.25,alt:[4,12],sp:17,near:1},
+    pigeon:{n:8,sc:.85,body:[150,156,168],wing:[132,138,152],tip:[58,62,72],beak:[220,196,170],hz:7.5,glide:.35,alt:[18,40],sp:16},
+    crow:{n:4,sc:1,body:[40,42,48],wing:[36,38,44],tip:[24,26,30],beak:[30,30,34],hz:4.5,glide:.4,alt:[20,45],sp:12},
+    heron:{n:2,sc:1.7,body:[214,218,224],wing:[150,168,192],tip:[58,68,90],beak:[226,190,70],hz:2.4,glide:.3,alt:[12,26],sp:9,neck:1},
+    gull:{n:9,sc:1.6,body:[238,240,242],wing:[150,166,184],tip:[46,56,72],beak:[236,196,60],hz:5.2,glide:.4,alt:[40,90],sp:20},
+    hawk:{n:1,sc:1.9,body:[128,96,64],wing:[116,86,58],tip:[48,36,26],beak:[230,190,60],hz:3,glide:.85,alt:[110,150],sp:0}};
+  const tmC=new Map(), btm=c=>{ const k2=c.join(); if(!tmC.has(k2)) tmC.set(k2,patch(new T.MeshToonMaterial({color:c3(c),gradientMap:gmap}))); return tmC.get(k2); };
+  const wingSeg=(len,w0,w1,sweep,m)=>{ const sh=new T.Shape(); sh.moveTo(0,-w0*.35); sh.lineTo(len,-w1*.2+sweep); sh.lineTo(len,w1*.8+sweep); sh.lineTo(0,w0*.65); const g=new T.ExtrudeGeometry(sh,{depth:.03,bevelEnabled:false}); g.rotateX(Math.PI/2); return new T.Mesh(g,m); };
+  const mkBird=sp=>{ const b=new T.Group(), mB=btm(sp.body), mW=btm(sp.wing), mT=btm(sp.tip), mK=btm(sp.beak);
+    const body=new T.Mesh(new T.SphereGeometry(.22,10,7),mB); body.scale.set(1,.85,2.4); b.add(body);
+    const hd=new T.Mesh(new T.SphereGeometry(.13,8,6),mB); hd.position.set(0,.06,sp.neck?.9:.58); b.add(hd); if(sp.neck){ const nk=new T.Mesh(new T.CylinderGeometry(.06,.09,.5,6),mB); nk.rotation.x=Math.PI/2; nk.position.set(0,.04,.66); b.add(nk); const lg=new T.Mesh(new T.CylinderGeometry(.025,.025,.9,4),btm([60,58,56])); lg.rotation.x=Math.PI/2; lg.position.set(0,-.05,-.95); b.add(lg); }
+    const bk=new T.Mesh(new T.ConeGeometry(.035,sp.neck?.34:.16,5),mK); bk.rotation.x=Math.PI/2; bk.position.set(0,.04,sp.neck?1.12:.74); b.add(bk);
+    const tl=new T.Mesh(new T.ConeGeometry(.16,.4,4),mB); tl.scale.set(1,.2,1); tl.rotation.x=-Math.PI/2; tl.position.set(0,0,-.62); b.add(tl);
+    const wings=[]; for(const sd2 of [1,-1]){ const sh2=new T.Group(); sh2.position.set(.12*sd2,.05,.12); sh2.scale.x=sd2; b.add(sh2);
+      sh2.add(wingSeg(.62,.62,.52,0,mW)); const el=new T.Group(); el.position.x=.6; sh2.add(el); el.add(wingSeg(.6,.52,.2,-.2,mW)); const tip=wingSeg(.3,.26,.06,-.1,mT); tip.position.set(.42,.01,-.2); el.add(tip); wings.push([sh2,el,sd2]); }
+    b.scale.setScalar(sp.sc); return {b,wings}; };
+  const birds=new T.Group(); scene.add(birds); L.birds=birds; let flock=[], fsp=null; L.bsp=BSP;
+  const setFlock=sp=>{ birds.clear(); flock=[]; fsp=sp; for(let q=0;q<sp.n;q++){ const o=mkBird(sp), s=sp.sc*2.4; o.ph=q*1.37+dRng()*2; o.off=new T.Vector3((q%2?1:-1)*Math.ceil(q/2)*s+Math.sin(q*3.1)*s*.5,Math.sin(q*1.7)*s*.6,Math.ceil(q/2)*-s*.9+Math.cos(q*2.3)*s*.5); birds.add(o.b); flock.push(o); } };
+  L.setFlock=sp=>{ setFlock(sp); bT=1e9; }; const hawk=mkBird(BSP.hawk); scene.add(hawk.b); hawk.b.visible=false; hawk.ph=0;
+  const nearSea=()=>{ const wx=cam.position.x+OX, wy=y0-cam.position.z, v=vAt(wy), oc=pOceanAt(v); return !!(oc&&pOceanT(uOf(wx),v,oc)>-2.2); };
+  const pickSp=()=>{ if(nearSea()) return BSP.gull; const r=dRng();
+    if(BIO==='snow') return r<.6?{...BSP.sparrow,body:[196,74,62],wing:[170,60,52]}:{...BSP.pigeon,body:[236,236,238],wing:[222,224,228],tip:[160,164,172]};
+    if(BIO==='desert') return {...BSP.sparrow,body:[212,182,132],wing:[196,164,116],tip:[140,112,76]};
+    if(BIO==='volc') return {...BSP.pigeon,body:[190,74,52],wing:[170,60,44],tip:[70,30,24]};
+    if(BIO==='wet') return r<.5?BSP.heron:{...BSP.sparrow,body:[86,124,182],wing:[70,104,160]};
+    return r<.6?BSP.sparrow:r<.85?BSP.pigeon:BSP.crow; };
+  const flap=(o,sp,t)=>{ const p=o.ph, cyc=(t*.32+p*.21)%1, fl=cyc<1-sp.glide?1:0, fa=Math.sin(t*sp.hz+p)*fl, gl=1-fl;
+    o.wings.forEach(([sh2,el,sd2])=>{ sh2.rotation.z=sd2*(.12+fa*.75+gl*.08); el.rotation.z=-fa*.45+Math.max(0,-fa)*.3-gl*.06; }); return fa; };
   const smk=[]; if(BIO==='volc'){ const sc2=document.createElement('canvas'); sc2.width=sc2.height=64; { const x=sc2.getContext('2d'), gd=x.createRadialGradient(32,32,2,32,32,30); gd.addColorStop(0,'rgba(255,255,255,.9)'); gd.addColorStop(1,'rgba(255,255,255,0)'); x.fillStyle=gd; x.fillRect(0,0,64,64); }
     const st=new T.CanvasTexture(sc2); for(let q=0;q<7;q++){ const g=new T.Group(); for(let k2=0;k2<8;k2++){ const sp=new T.Sprite(new T.SpriteMaterial({map:st,color:c3([92,84,84]),transparent:true,depthWrite:false})); sp.userData.t=k2/8; g.add(sp); } g.userData.need=1; scene.add(g); smk.push(g); } }
   const animSmoke=(t,dt)=>{ smk.forEach((g,q)=>{ if(g.userData.need||g.position.distanceTo(cam.position)>1300||(new T.Vector3().subVectors(g.position,cam.position).dot(new T.Vector3(Math.sin(hY),0,Math.cos(hY))))<-200){ const d=300+dRng()*800, a=hY+(dRng()-.5)*1.6, x=cam.position.x+Math.sin(a)*d, z=cam.position.z+Math.cos(a)*d; g.position.set(x,horse.position.y-6,z); g.userData.need=0; }
       g.children.forEach(sp=>{ let u=(sp.userData.t+t*.05+q*.13)%1; const s=10+u*60; sp.position.set(Math.sin(u*5+q)*u*14,u*140,0); sp.scale.set(s,s,1); sp.material.opacity=.55*Math.sin(Math.PI*u); }); }); };
-  let bT=-1e9; const animBirds=(t,dt)=>{ if(t-bT>40){ bT=t; const a=dRng()*6.28; birds.userData.v=new T.Vector3(Math.cos(a)*22,0,Math.sin(a)*22); birds.position.set(cam.position.x-Math.cos(a)*420+(dRng()-.5)*200,cam.position.y+60+dRng()*50,cam.position.z-260-Math.sin(a)*420); birds.rotation.y=Math.atan2(Math.cos(a),Math.sin(a)); }
+  let bT=-1e9; const animBirds=(t,dt)=>{
+    if(t-bT>(fsp&&fsp.near?22:40)){ bT=t; const sp=pickSp(); setFlock(sp); const a=dRng()*6.28, fw=new T.Vector3(Math.sin(hY),0,Math.cos(hY));
+      if(sp.near){ // 小鳥：前方の草むらから飛び立って、道を低く横切る
+        const ahead=cam.position.clone().addScaledVector(fw,70+dRng()*60), sd=dRng()<.5?-1:1, rt=new T.Vector3(fw.z,0,-fw.x).multiplyScalar(sd);
+        birds.position.copy(ahead).addScaledVector(rt,-90); birds.position.y=gnd(rXw(py),py)+sp.alt[0]+dRng()*(sp.alt[1]-sp.alt[0]); birds.userData.v=rt.clone().multiplyScalar(sp.sp).addScaledVector(fw,4); }
+      else { birds.userData.v=new T.Vector3(Math.cos(a)*sp.sp,0,Math.sin(a)*sp.sp); birds.position.set(cam.position.x-Math.cos(a)*380+(dRng()-.5)*200,cam.position.y+sp.alt[0]+dRng()*(sp.alt[1]-sp.alt[0]),cam.position.z-240-Math.sin(a)*380); }
+      birds.rotation.y=Math.atan2(birds.userData.v.x,birds.userData.v.z); }
     birds.position.addScaledVector(birds.userData.v,dt);
-    birds.children.forEach(b=>{ const u=b.userData, p=u.ph, cyc=(t*.32+p*.21)%1, flap=cyc<.6?1:0, fa=Math.sin(t*5.2+p)*flap, gl=1-flap; // 羽ばたいては、翼を広げて滑空
-      u.wings.forEach(([sh2,el,sd2])=>{ sh2.rotation.z=sd2*(.12+fa*.75+gl*.08); el.rotation.z=-fa*.45+Math.max(0,-fa)*.3-gl*.06; });
-      b.position.copy(u.off).add(new T.Vector3(Math.sin(t*.4+p)*1.5,Math.sin(t*.7+p*2)*.8-fa*.25,Math.cos(t*.33+p)*1.2)); b.rotation.z=Math.sin(t*.5+p)*.12; b.rotation.x=-fa*.06; }); };
+    flock.forEach(o=>{ const p=o.ph, fa=flap(o,fsp,t); o.b.position.copy(o.off).add(new T.Vector3(Math.sin(t*.4+p)*1.5*fsp.sc,Math.sin(t*.7+p*2)*.8*fsp.sc-fa*.25*fsp.sc,Math.cos(t*.33+p)*1.2*fsp.sc)); o.b.rotation.z=Math.sin(t*.5+p)*.12; o.b.rotation.x=-fa*.06; });
+    // タカ：草原や森の空高くで、ゆっくり大きな輪を描く
+    hawk.b.visible=!BIO&&!nearSea(); if(hawk.b.visible){ const r=160, an=t*.07; hawk.b.position.set(cam.position.x+Math.cos(an)*r+60,cam.position.y+120+Math.sin(t*.13)*10,cam.position.z+Math.sin(an)*r+220); hawk.b.rotation.set(0,an+Math.PI,-.28); flap(hawk,BSP.hawk,t); } };
   // ---- 進む・見る ----
   const yEnd=y0+(PATH_H1-nowM)*KM, gnd=(x,y)=>Math.max(-.2,hW(x,y))+.42, tEl=ov.querySelector('.lk-t'), dLab=`${d.getMonth()+1}月${d.getDate()}日（${'日月火水木金土'[d.getDay()]}）`, goB=ov.querySelector('.lk-go');
   const OFF=.2; let py=y0, v=0, go=true, ph=0, hY=0, off=OFF, cp=12*rad, dist=21, lastTouch=-1e9, tIn=performance.now(), intro=true;
