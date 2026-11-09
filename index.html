@@ -5376,7 +5376,13 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
       for(let q=0;q<7;q++){ const a=q/7*6.28, rd=.25+r()*.15, st=mk(rockG(rd,60+q),mMono,Math.cos(a)*.55,.3+rd*.35,Math.sin(a)*.55); st.scale.y=.7; g.add(st); }
       // 小さな向き札
       { const ar=new T.Group(); ar.position.set(0,4.0,0); ar.rotation.y=-.6; g.add(ar); const b=Bx(1.3,.28,.08,mWoodL,.75,0,.18); ar.add(b); const tp=mk(new T.CylinderGeometry(.2,.2,.08,3),mWood,1.48,0,.18); tp.rotation.x=1.5708; tp.rotation.y=0; ar.add(tp); } }],
-    ['石積み',g=>{ let y=0; for(let q=0;q<6;q++){ const r=1.6-q*.2, s=Sp(r,mStone,(q%2-.5)*.2,y+r*.4,0,0); s.scale.y=.55; g.add(s); y+=r*.9; } }],
+    // 石積み（ブレワイの丘の上のケルン）：白っぽい丸い石を大きい順に積み上げた塔。少しずつずれて傾き、根元は小石が囲む。そばに積み残しの石がひとつ
+    ['石積み',g=>{ const r=pRng('cairn',53);
+      const peb=(rad,sd,x,y,z,fl)=>{ const ge=new T.IcosahedronGeometry(rad,2), P=ge.attributes.position, v=new T.Vector3(); for(let i=0;i<P.count;i++){ v.fromBufferAttribute(P,i); v.multiplyScalar(1+.14*(pNoise(v.x*1.3/rad+sd,v.z*1.3/rad+v.y*.7/rad)-.5)); v.y*=fl; if(v.y<-rad*fl*.55) v.y=-rad*fl*.55; P.setXYZ(i,v.x,v.y,v.z); } const ng=ge.toNonIndexed(); ng.computeVertexNormals(); const m=mk(ng,mMono,x,y,z); m.rotation.y=r()*6.28; g.add(m); return m; };
+      let y=.3, ox=0, oz=0; const rs=[1.2,.9,.86,.62,.6,.42,.36];
+      rs.forEach((rd,k)=>{ const fl=.58+r()*.12; y+=rd*fl*.5; const p=peb(rd,k*3.7,ox,y,oz,fl); p.scale.set(1+(r()-.3)*.4,1,1-(r()-.3)*.3); p.rotation.z=(r()-.5)*.3; p.rotation.x=(r()-.5)*.3; y+=rd*fl*.4; ox+=(r()-.5)*.36; oz+=(r()-.5)*.36; });
+      for(let q=0;q<10;q++){ const a=q/10*6.283+r()*.3, d=1.35+r()*.35, rd=.22+r()*.18; peb(rd,20+q,Math.cos(a)*d,.3+rd*.25,Math.sin(a)*d,.6); }
+      peb(.42,40,2.4,.5,.9,.62); peb(.25,41,-2.1,.38,1.6,.6); }],
     // ---- 草原やどこにでもあるもの（追加）----
     // 石の環（ブレワイのコログの石の輪）：丸みのある灰色の岩が草の上に輪に並ぶ。ひとつだけ欠けていて、その岩は少し離れた所に転がっている。まわりに小石
     ['石の環',g=>{ const r=pRng('ring',11), N=13, R0=6.2, gap=4;
