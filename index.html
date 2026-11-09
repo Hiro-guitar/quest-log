@@ -4723,7 +4723,7 @@ function pWorld(k){ pSeedRoad(k); const key=k+'|'+pOff.toFixed(4); if(pWorldMemo
   const TL=96, hT=new Map(), hTile=(ti,tj)=>{ const kk=ti*100003+tj; let t=hT.get(kk); if(!t){ const n=TL/ST+1; t=new Float32Array(n*n); for(let j=0;j<n;j++) for(let i=0;i<n;i++) t[j*n+i]=hFn(ti*TL+i*ST,tj*TL+j*ST); hT.set(kk,t); if(hT.size>4000) hT.delete(hT.keys().next().value); } return t; };
   const hAt=(x,y)=>{ const ti=Math.floor(x/TL), tj=Math.floor(y/TL), t=hTile(ti,tj), n=TL/ST+1, fx=(x-ti*TL)/ST, fy=(y-tj*TL)/ST, i=Math.min(n-2,fx|0), j=Math.min(n-2,fy|0), a=fx-i, b=fy-j, o=j*n+i; return (t[o]*(1-a)+t[o+1]*a)*(1-b)+(t[o+n]*(1-a)+t[o+n+1]*a)*b; };
   const lin=c=>c.map(v=>Math.pow(v/255,2.2));
-  const C={g1:lin([158,198,74]),g2:lin([136,182,66]),dry:lin([182,186,96]),rock:lin([150,140,135]),rock2:lin([112,104,100]),sand:lin([214,200,160]),snow:lin([235,240,250]),desert:lin([222,186,124]),dune:lin([196,150,96]),vrock:lin([122,106,98]),vash:lin([86,78,78]),wet:lin([78,104,58]),mud:lin([96,88,60]),bed:lin([60,90,96])};
+  const C={g1:lin([158,198,74]),g2:lin([136,182,66]),dry:lin([182,186,96]),rock:lin([150,140,135]),rock2:lin([112,104,100]),sand:lin([214,200,160]),snow:lin([235,240,250]),desert:lin([222,186,124]),dune:lin([196,150,96]),vrock:lin([170,124,96]),vash:lin([132,98,80]),wet:lin([78,104,58]),mud:lin([96,88,60]),bed:lin([60,90,96])};
   const mix=(a,b,t)=>[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t];
   const colAt=(x,y,e,nyy,b)=>{ const n1=pn(x,y,46,3), n2=pn(x,y,6,7,2), slope=1-nyy, [bv,bd,bw,bs]=b;
     let c=mix(C.g1,C.g2,sm(.35,.7,n1)); c=mix(c,C.dry,sm(.62,.9,pn(x,y,90,1,5))*.45);
@@ -4861,7 +4861,7 @@ async function pLookOpen(){
     const nt=new T.CanvasTexture(nc); nt.wrapS=nt.wrapT=T.RepeatWrapping; nt.repeat.set(.02,.02); L.nt=nt;
     L.waterMat=patch(new T.MeshStandardMaterial({color:c3([62,120,140]),roughness:.12,metalness:.0,envMap:env,envMapIntensity:1.1,normalMap:nt,normalScale:new T.Vector2(.25,.25),transparent:true,opacity:.9})); L.lavaMat=new T.MeshBasicMaterial({color:c3([255,120,20]).multiplyScalar(2)}); }
   // 区画の水（低い所）と溶岩（火山の低い所）
-  const waterFor=(G,yA,yB,XA,XB)=>{ const P=[], I=[], Pl=[], Il=[]; let n=0, nl=0; const wst=ST*2; for(let y=yA;y<yB;y+=wst) for(let x=XA;x<XB;x+=wst){ const hs=[hAt(x,y),hAt(x+wst,y),hAt(x,y+wst),hAt(x+wst,y+wst)]; if(Math.min(...hs)>-.2) continue; const lava=bAt(x,y)[0]>.4, A=lava?Pl:P, B=lava?Il:I, m=lava?nl:n;
+  const waterFor=(G,yA,yB,XA,XB)=>{ const P=[], I=[], Pl=[], Il=[]; let n=0, nl=0; const wst=ST*2; for(let y=yA;y<yB;y+=wst) for(let x=XA;x<XB;x+=wst){ const hs=[hAt(x,y),hAt(x+wst,y),hAt(x,y+wst),hAt(x+wst,y+wst)]; if(Math.min(...hs)>-.2) continue; const lava=bAt(x,y)[0]>.4&&(FBI!=null||(typeof pVolcLava==='function'&&pVolcLava(uOf(x),vAt(y)))), A=lava?Pl:P, B=lava?Il:I, m=lava?nl:n;
       [[x,y],[x+wst,y],[x,y+wst],[x+wst,y+wst]].forEach(([a,c])=>A.push(X(a),-.35,Z(c))); B.push(m,m+1,m+2,m+1,m+3,m+2); if(lava) nl+=4; else n+=4; }
     if(n){ const g=new T.BufferGeometry(); g.setAttribute('position',new T.Float32BufferAttribute(P,3)); g.setIndex(I); g.computeVertexNormals(); const uv=new Float32Array(P.length/3*2); for(let q=0;q<P.length/3;q++){ uv[q*2]=P[q*3]; uv[q*2+1]=P[q*3+2]; } g.setAttribute('uv',new T.BufferAttribute(uv,2)); G.add(new T.Mesh(g,L.waterMat)); }
     if(nl){ const g=new T.BufferGeometry(); g.setAttribute('position',new T.Float32BufferAttribute(Pl,3)); g.setIndex(Il); G.add(new T.Mesh(g,L.lavaMat)); } };
@@ -5192,7 +5192,7 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
           .replace('#include <lights_fragment_end>',`irradiance=mix(irradiance,vec3(dot(irradiance,vec3(.333)))*vec3(.96,.98,1.1),.6);
 #include <lights_fragment_end>
  { float rim=pow(1.-saturate(dot(normal,normalize(vViewPosition))),3.)*smoothstep(0.,.5,normal.y); reflectedLight.indirectDiffuse+=rim*.22*diffuseColor.rgb; }`); }; return m; };
-    const mB=mkMat(0), mS=mkMat(1); L.rkMB=mB; L.rkG=[mkRock(11,3,1.25,0),mkRock(12,3,1.5,0),mkRock(13,3,.9,0)]; const kinds=[[mkRock(1,3,1.0,0),mB,170],[mkRock(2,2,.95,0),mB,130],[mkRock(3,3,.55,3),mS,28],[mkRock(4,3,.92,0),mB,170]], rc=new T.Color(), tW=c3({volc:[86,78,76],desert:[206,164,116]}[BIO]||[184,172,152]), tC=c3({volc:[70,64,66],desert:[190,148,104]}[BIO]||[170,166,158]);
+    const mB=mkMat(0), mS=mkMat(1); L.rkMB=mB; L.rkMS=mS; L.rkG=[mkRock(11,3,1.0,0),mkRock(12,3,1.3,2),mkRock(13,3,.9,0)]; const kinds=[[mkRock(1,3,1.0,0),mB,170],[mkRock(2,2,.95,0),mB,130],[mkRock(3,3,.55,3),mS,28],[mkRock(4,3,.92,0),mB,170]], rc=new T.Color(), tW=c3({volc:[176,128,104],desert:[206,164,116]}[BIO]||[184,172,152]), tC=c3({volc:[150,108,92],desert:[190,148,104]}[BIO]||[170,166,158]);
     rocksFor=(tileG,yA,P,XA,XB,near,nx,ny,fz,rR)=>{ const im=kinds.map(([g,m,n])=>new T.InstancedMesh(g,m,Math.ceil(n*fz))), cnt=kinds.map(()=>0), NK=kinds.map(([g,m,n])=>Math.ceil(n*fz));
     const ca=near.attributes.color.array;
     const place=(kd,s2,x,y,rot,tilt)=>{ if(cnt[kd]>=NK[kd]||x<XA||x>XB||y<yA||y>yA+P) return; if(Math.abs(x-rX(y))<8+s2*1.3||nearMon(x,y,s2+2)) return; const e=Math.min(hAt(x,y),hAt(x+s2*.7,y),hAt(x-s2*.7,y),hAt(x,y+s2*.7),hAt(x,y-s2*.7)); if(e<1) return;
@@ -5226,11 +5226,11 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
     }
     if(BIO==='volc'){
       // ブレワイのオルディン：赤茶の岩肌の崖と岩塊が地面から突き出し、溶岩は火口に近い所だけ。溶岩は黄〜橙に光り、表面に黒い冷えた殻が浮いてゆっくり流れる。岸は黒く冷え固まった縁
-      const hot=(x,y)=>bAt(x,y)[0];
+      const hot=(x,y)=>bAt(x,y)[0], lvC=new Map(), lavaAt=(x,y)=>{ if(FBI!=null) return hot(x,y)>.68; const kk=Math.round(x/6)+'_'+Math.round(y/6); if(!lvC.has(kk)) lvC.set(kk,typeof pVolcLava==='function'&&pVolcLava(uOf(x),vAt(y))); return lvC.get(kk); }; // 溶岩は地図で溶岩（橙・紅）の所だけ
       // 溶岩の流れ：火口に近い所だけ。黒い冷えた岸（幅広）＋光る溶岩（幅狭）
       const LP=[], LI=[], BP=[], BI=[], LS=[], BS=[], LC=[]; let ln=0, bn=0;
-      for(let q=0;q<26*fz;q++){ let [x,y]=nearRoad(18,150); if(hot(x,y)<.68) continue; let a=br0()*6.28; const w=3+br0()*4, L2=50+br0()*160; let first=true;
-        for(let t=0;t<=L2;t+=3){ a+=(br0()-.5)*.16; x+=Math.cos(a)*3; y+=Math.sin(a)*3; if(!far(x,y,14+w)||hot(x,y)<.6||nearMon(x,y,w+3)) break; const nx2=-Math.sin(a), ny2=Math.cos(a), ww=w*(1-.6*Math.pow(t/L2,2))*(.85+.3*Math.sin(t*.13));
+      for(let q=0;q<26*fz;q++){ let [x,y]=nearRoad(18,150); if(!lavaAt(x,y)) continue; let a=br0()*6.28; const w=3+br0()*4, L2=50+br0()*160; let first=true;
+        for(let t=0;t<=L2;t+=3){ a+=(br0()-.5)*.16; x+=Math.cos(a)*3; y+=Math.sin(a)*3; if(!far(x,y,14+w)||!lavaAt(x,y)||nearMon(x,y,w+3)) break; const nx2=-Math.sin(a), ny2=Math.cos(a), ww=w*(1-.6*Math.pow(t/L2,2))*(.85+.3*Math.sin(t*.13));
           LC.push([x,y,ww+2.5]); for(const sg of [-1,1]){ const px=x+nx2*ww*sg, pyy=y+ny2*ww*sg; LP.push(X(px),Math.max(-.2,hAt(px,pyy))+.16,Z(pyy)); LS.push(sg); const bx=x+nx2*(ww+2.4)*sg, by=y+ny2*(ww+2.4)*sg; BP.push(X(bx),Math.max(-.2,hAt(bx,by))+.04,Z(by)); BS.push(sg); }
           if(!first){ LI.push(ln-2,ln,ln-1,ln-1,ln,ln+1); BI.push(bn-2,bn,bn-1,bn-1,bn,bn+1); } first=false; ln+=2; bn+=2; } }
       if(LI.length){ const lg=new T.BufferGeometry(); lg.setAttribute('position',new T.Float32BufferAttribute(LP,3)); lg.setAttribute('aS',new T.Float32BufferAttribute(LS,1)); lg.setIndex(LI); lg.computeVertexNormals();
@@ -5247,9 +5247,9 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
         const lv=new T.Mesh(lg,lm); lv.renderOrder=2; lv.userData.lava=1; tileG.add(lv);
         const bg=new T.BufferGeometry(); bg.setAttribute('position',new T.Float32BufferAttribute(BP,3)); bg.setAttribute('aS',new T.Float32BufferAttribute(BS,1)); bg.setIndex(BI); bg.computeVertexNormals(); const bm=new T.Mesh(bg,memo('lavaB',()=>{ const m=patch(new T.MeshToonMaterial({color:c3([58,44,40]),gradientMap:gmap,polygonOffset:true,polygonOffsetFactor:-1})), ob=m.onBeforeCompile; m.onBeforeCompile=sh=>{ ob(sh); sh.vertexShader='attribute float aS; varying float vS2; varying vec3 vBP;\n'+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n vS2=aS; vBP=position;'); sh.fragmentShader='varying float vS2; varying vec3 vBP;\nfloat bh0(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }\nfloat bh(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.-2.*f); return mix(mix(bh0(i),bh0(i+vec2(1,0)),f.x),mix(bh0(i+vec2(0,1)),bh0(i+vec2(1,1)),f.x),f.y); }\n'+sh.fragmentShader.replace('void main() {','void main() {\n { vec2 q=vBP.xz*.35; float n=bh(q)*.6+bh(q*2.3+3.)*.4; if(abs(vS2)+(n-.5)*.35>.9) discard; }').replace('#include <color_fragment>','#include <color_fragment>\n diffuseColor.rgb*=.75+.5*(1.-abs(vS2)); diffuseColor.rgb+=vec3(.35,.08,.0)*pow(1.-abs(vS2),6.);'); }; m.customProgramCacheKey=()=>'lavaB'; return m; })); bm.receiveShadow=true; tileG.add(bm); }
       LC.forEach(([x,y,r])=>RK.push([x,y,r]));
-      { const mm=L.rkMB, rc=new T.Color(); for(const [gi,N0,s0,s1,sy] of [[0,110,3,9,1.6],[1,80,2.5,7,2.6],[2,160,1.2,3.2,1.2]]){ const N=Math.ceil(N0*fz), im=new T.InstancedMesh(L.rkG[gi],mm,N); let m=0;
+      { const mm=L.rkMS, rc=new T.Color(); for(const [gi,N0,s0,s1,sy] of [[0,90,5,14,1.5],[1,50,4,10,1.9],[2,140,1.2,3.5,1.1]]){ const N=Math.ceil(N0*fz), im=new T.InstancedMesh(L.rkG[gi],mm,N); let m=0;
         for(let q=0;q<N*8&&m<N;q++){ const [x,y]=nearRoad(11,150), hw=hot(x,y); if(br0()>hw*1.6) continue; const s2=s0+br0()*(s1-s0); if(!far(x,y,10+s2)||nearMon(x,y,s2+2)||LC.some(([lx,ly,lr])=>Math.hypot(lx-x,ly-y)<lr+s2)) continue; const e=Math.min(hAt(x,y),hAt(x+s2*.6,y),hAt(x-s2*.6,y),hAt(x,y+s2*.6),hAt(x,y-s2*.6)); if(e<.8) continue;
-          Q.setFromEuler(new T.Euler((br0()-.5)*.25,br0()*6.28,(br0()-.5)*.25)); Sc.set(s2*(.8+br0()*.4),s2*sy*(.7+br0()*.6),s2*(.8+br0()*.4)); V.set(X(x),e-s2*.25,Z(y)); M.compose(V,Q,Sc); im.setMatrixAt(m,M); const w=.85+br0()*.25, t=br0()<.5?[.4,.25,.18]:[.3,.23,.2]; im.setColorAt(m,rc.setRGB(t[0]*w,t[1]*w,t[2]*w)); m++; RK.push([x,y,s2]); }
+          Q.setFromEuler(new T.Euler((br0()-.5)*.25,br0()*6.28,(br0()-.5)*.25)); Sc.set(s2*(.8+br0()*.4),s2*sy*(.7+br0()*.6),s2*(.8+br0()*.4)); V.set(X(x),e-s2*.25,Z(y)); M.compose(V,Q,Sc); im.setMatrixAt(m,M); const w=.85+br0()*.25, t=br0()<.5?[.72,.44,.32]:[.62,.4,.32]; im.setColorAt(m,rc.setRGB(t[0]*w,t[1]*w,t[2]*w)); m++; RK.push([x,y,s2]); }
         im.count=m; im.castShadow=im.receiveShadow=true; tileG.add(im); } }
     }
     if(BIO==='desert'){
