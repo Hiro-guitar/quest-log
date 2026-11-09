@@ -5379,8 +5379,22 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
       wheel(1,1.2,1.7,0,0); wheel(3.6,.15,3.4,1.5708,0);
       g.add(Bx(1.2,1,1.2,mWood,-1.2,2.1,0)); const br=Cy(.6,.7,1.4,mWood,3.5,.6,-2.3,12); br.rotation.x=1.5708; br.rotation.z=.4; g.add(br);
       for(let q=0;q<5;q++){ const hy=Sp(.6,mCanvas,-2+q*.9,.3,-2.6+(q%2)*.4,1); hy.scale.set(1,.45,1); g.add(hy); } }],
-    ['小さな池',g=>{ const w=mk(new T.CylinderGeometry(10,10,.6,28),mWater,0,.05,0); w.receiveShadow=true; w.castShadow=false; g.add(w); { const rr=mk(new T.TorusGeometry(10,.8,6,28),mPondE,0,.1,0); rr.rotation.x=1.5708; g.add(rr); }
-      const r=pRng('pd',g.id); for(let q=0;q<9;q++){ const a=r()*6.28, d=r()*7; g.add(Cy(.9,.9,.08,mLeaf,Math.cos(a)*d,.4,Math.sin(a)*d,8)); } for(let q=0;q<14;q++){ const a=r()*6.28; g.add(Cy(.07,.1,2.6+r(),mLeaf2,Math.cos(a)*10.5,1.2,Math.sin(a)*10.5,4)); } }],
+    // 小さな池（ブレワイの平原の池）：いびつな形の浅い池。岸は灰色の岩と土、浅い所は砂地が透けて明るく、深い所は青緑。丸いスイレンの葉が群れて浮き、ピンクの花がぽつぽつ。岸にアシの茂み、水面近くに丸い石
+    ['小さな池',g=>{ const r=pRng('pond',73), mSandP=tm([168,150,110]), mDeep=tm([34,74,84]), mPad=tm([88,142,58]), mPadD=tm([64,112,46]), mLily=tm([238,160,190]), mReed=tm([108,138,58]), mCat=tm([110,74,44]);
+      const N=40, rad=a=>9+1.6*Math.sin(a*2+1)+1.0*Math.sin(a*3+2.2)+.5*Math.sin(a*5);
+      // 池の底（浅い縁は砂、中央は深い）
+      { const sh=new T.Shape(); for(let q=0;q<=N;q++){ const a=q/N*6.283, R=rad(a)+.6; q?sh.lineTo(Math.cos(a)*R,Math.sin(a)*R):sh.moveTo(Math.cos(a)*R,Math.sin(a)*R); } const bt=mk(new T.ShapeGeometry(sh),mSandP,0,-.05,0); bt.rotation.x=-1.5708; g.add(bt); }
+      { const sh=new T.Shape(); for(let q=0;q<=N;q++){ const a=q/N*6.283, R=rad(a)*.62; q?sh.lineTo(Math.cos(a)*R,Math.sin(a)*R):sh.moveTo(Math.cos(a)*R,Math.sin(a)*R); } const dp=mk(new T.ShapeGeometry(sh),mDeep,0,0,0); dp.rotation.x=-1.5708; g.add(dp); }
+      // 水面（半透明で底が透ける）
+      { const sh=new T.Shape(); for(let q=0;q<=N;q++){ const a=q/N*6.283, R=rad(a)+.3; q?sh.lineTo(Math.cos(a)*R,Math.sin(a)*R):sh.moveTo(Math.cos(a)*R,Math.sin(a)*R); } const mW=mWater.clone(); mW.transparent=true; mW.opacity=.62; const w=mk(new T.ShapeGeometry(sh),mW,0,.32,0); w.rotation.x=-1.5708; w.receiveShadow=true; w.castShadow=false; g.add(w); g.userData.keep=w; }
+      // 岸：土の帯と岩
+      { const sh=new T.Shape(), ho=new T.Path(); for(let q=0;q<=N;q++){ const a=q/N*6.283, R1=rad(a)+1.4+.6*Math.sin(a*7), R0=rad(a)+.25; q?sh.lineTo(Math.cos(a)*R1,Math.sin(a)*R1):sh.moveTo(Math.cos(a)*R1,Math.sin(a)*R1); q?ho.lineTo(Math.cos(a)*R0,Math.sin(a)*R0):ho.moveTo(Math.cos(a)*R0,Math.sin(a)*R0); } sh.holes.push(ho); const bk=mk(new T.ShapeGeometry(sh),tm([132,116,84]),0,.34,0); bk.rotation.x=-1.5708; g.add(bk); }
+      for(let q=0;q<11;q++){ const a=r()*6.283, R=rad(a)+.6+r()*.8, rd=.5+r()*1.1, rk=mk(rockG(rd,100+q),mMono,Math.cos(a)*R,.2+rd*.3,Math.sin(a)*R); rk.scale.y=.65; g.add(rk); }
+      // スイレンの葉（切れ込みのある円）と花：岸寄りに群れる
+      for(let c=0;c<4;c++){ const ca=r()*6.283, cr=rad(ca)*(.45+r()*.35), cx=Math.cos(ca)*cr, cz=Math.sin(ca)*cr; for(let q=0;q<9;q++){ const x=cx+(r()-.5)*4, z=cz+(r()-.5)*4; if(Math.hypot(x,z)>rad(Math.atan2(z,x))-.4) continue; const s2=.45+r()*.4, pd=mk(new T.CircleGeometry(s2,12,.25,6.0),r()<.6?mPad:mPadD,x,.36,z); pd.rotation.x=-1.5708; pd.rotation.z=r()*6.28; g.add(pd);
+        if(r()<.18){ for(let k=0;k<6;k++){ const a=k/6*6.283, pt=mk(new T.ConeGeometry(.08,.3,4),mLily,x+Math.cos(a)*.1,.48,z+Math.sin(a)*.1); pt.rotation.set(Math.sin(a)*.6,0,-Math.cos(a)*.6); g.add(pt); } g.add(Sp(.07,mGold,x,.48,z,0)); } } }
+      // アシの茂みとガマ
+      for(let c=0;c<5;c++){ const ca=c/5*6.283+r()*.8, R=rad(ca)+.2, cx=Math.cos(ca)*R, cz=Math.sin(ca)*R; for(let q=0;q<16;q++){ const x=cx+(r()-.5)*2.4, z=cz+(r()-.5)*2.4, h=1.4+r()*1.4, rd=Cy(.025,.045,h,mReed,x,.3+h/2,z,3); rd.rotation.set((r()-.5)*.25,0,(r()-.5)*.25); g.add(rd); if(r()<.12) g.add(Cy(.07,.07,.4,mCat,x,.3+h+.1,z,5)); } } }],
     ['鹿の群れ',g=>{ g.userData.deer=[]; for(let q=0;q<3;q++){ const d=new T.Group(); d.position.set((q-1)*5,0,(q%2)*4-2); d.rotation.y=q*1.7+.4; g.add(d);
       const b=Sp(1,mDeer,0,2.6,0); b.scale.set(.8,.75,1.5); d.add(b); [[-.4,.9],[.4,.9],[-.4,-.9],[.4,-.9]].forEach(([x,z])=>d.add(Cy(.13,.1,2.2,mDeer,x,1.1,z,5)));
       const n=new T.Group(); n.position.set(0,3,1.1); d.add(n); { const nc=Cy(.25,.35,1.5,mDeer,0,.6,.3,6); nc.rotation.x=.5; n.add(nc); } const h=Sp(.45,mDeer,0,1.4,.75); h.scale.set(.8,.8,1.4); n.add(h); n.add(Sp(.2,mDeerL,0,1.3,1.3,0));
