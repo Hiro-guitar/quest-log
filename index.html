@@ -5453,7 +5453,21 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
       for(let q=0;q<20;q++){ const a=q/20*6.283+(r()-.5)*.12, d=5.1+(r()-.5)*.6, n=1+Math.floor(r()*3), ci=r()<.6?(r()<.5?0:1):(r()<.6?2:3);
         for(let k=0;k<n;k++){ const da=(r()-.5)*.08, dd=(r()-.5)*.5; shroom(Math.cos(a+da)*(d+dd),Math.sin(a+da)*(d+dd),k===0?.9+r()*.6:.45+r()*.4,ci,(r()-.5)*.35,r()*6.28); } }
       for(let q=0;q<6;q++){ const a=r()*6.283, d=1.5+r()*2; shroom(Math.cos(a)*d,Math.sin(a)*d,.35+r()*.25,r()<.5?0:1,(r()-.5)*.3,r()*6); } },'grass'],
-    ['倒れた巨人像の手',g=>{ g.add(Bx(6,2.4,4,mMono,0,1,0)); for(let q=0;q<4;q++){ const f=Bx(1,1.1,3.2,mMono,-2.2+q*1.45,1.2+(q===1?.6:0),3.4); f.rotation.x=-.3-q*.1; g.add(f); } const th=Bx(1.2,1.2,2.6,mMono,3.4,1.4,1.8); th.rotation.y=-.6; g.add(th); g.add(Bx(6.2,.3,4.2,mMoss,0,2.3,0)); }],
+    // 倒れた巨人像の手（フィローネの草原の石の巨大な手）：地面から突き出た巨人の石の手。手首は土に埋まり、手のひらは空へ向けて少し開く。指は3つの節で曲がり、1本は折れて足もとに転がる。上向きの面は苔、割れ目に草
+    ['倒れた巨人像の手',g=>{ const r=pRng('ghand',59), V3=(x,y,z)=>new T.Vector3(x,y,z);
+      const hd=new T.Group(); hd.position.set(0,-.4,0); hd.rotation.set(-.35,.3,.12); g.add(hd);
+      { const wr=mk(new T.CylinderGeometry(1.9,2.3,4,12),mMono,0,1.2,0); wr.scale.z=.7; hd.add(wr); }
+      { const pm=mk(new T.CylinderGeometry(2.4,2.0,3.6,12),mMono,0,4.8,0); pm.scale.z=.62; hd.add(pm); }
+      const seg=(p,q,rd)=>{ const c=Cy(rd*.92,rd,p.distanceTo(q)+rd*.5,mMono,(p.x+q.x)/2,(p.y+q.y)/2,(p.z+q.z)/2,9); c.lookAt(hd.localToWorld?q:q); c.lookAt(q); c.rotateX(1.5708); hd.add(c); hd.add(Sp(rd*.98,mMono,q.x,q.y,q.z,1)); };
+      const finger=(x0,len,rd,bend,spr,brk)=>{ let p=V3(x0,6.4,0), ang=spr, pitch=0; for(let k=0;k<3;k++){ if(brk&&k===2) return; pitch+=bend*(k===0?.4:1); const L=len*[.42,.33,.25][k], d=V3(Math.sin(ang)*Math.cos(pitch),Math.cos(ang)*Math.cos(pitch),Math.sin(pitch)), q=p.clone().addScaledVector(d,L); seg(p,q,rd*(1-k*.13)); p=q; } };
+      finger(-1.55,4.2,.52,.5,-.18,false); finger(-.52,5.0,.55,.38,-.05,false); finger(.52,4.8,.55,.55,.06,true); finger(1.5,3.9,.48,.75,.2,false);
+      { let p=V3(2.0,3.6,.3); const ds=[V3(.75,.55,.25),V3(.55,.8,.45)]; ds.forEach((d,k)=>{ const q=p.clone().addScaledVector(d.normalize(),1.9-k*.4); seg(p,q,.66-k*.1); p=q; }); }
+      // 折れた指先が足もとに
+      { const fp=Cy(.48,.5,1.7,mMono,3.4,.55,2.6,9); fp.rotation.set(1.3,.4,.2); g.add(fp); g.add(Sp(.48,mMono,3.7,.62,3.2,1)); }
+      // 盛り上がった土、割れた岩、苔と草
+      { const md=mk(new T.SphereGeometry(3.6,16,6,0,6.283,0,1.25),tm([118,100,74]),0,.05,0); md.scale.y=.28; g.add(md); }
+      for(let q=0;q<7;q++){ const a=q/7*6.283+r()*.3, d=2.6+r()*1.4, rd=.4+r()*.5, rk=mk(rockG(rd,90+q),mMono,Math.cos(a)*d,.35+rd*.3,Math.sin(a)*d); g.add(rk); }
+      for(let q=0;q<8;q++){ const m=Sp(.6+r()*.4,mMoss,(r()-.5)*3,5.4+r()*1.2,(r()-.5)*1.2,1); m.scale.set(1.1,.3,1); hd.add(m); } }],
     ['のろし台',g=>{ g.add(Cy(2.6,3,3,mStone,0,1.5,0,8)); g.add(Cy(1.6,1.2,1,mDark,0,3.4,0,8)); for(let q=0;q<5;q++){ const l=Cy(.18,.18,2.2,mWoodD,0,3.6,0,5); l.rotation.set(.7,q*1.25,0); g.add(l); } { const f=mkFire(0,3.7,0,1.5); g.add(f); g.userData.fire=f; } }],
     // 羊飼いの小屋（ブレワイのハテノ村の家）：石の土台にしっくいの壁、黒っぽい木の柱と梁が見える。赤い瓦の切妻屋根は軒が深く、石の煙突。木の扉、窓と鎧戸、壁に掛かった旗、まわりに木の柵
     ['羊飼いの小屋',g=>{ g.add(Bx(7,.8,5.6,mStone,0,.4,0)); g.add(Bx(6.6,3.4,5.2,mWhite,0,2.5,0));
