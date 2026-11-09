@@ -5426,14 +5426,14 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
       for(let q=0;q<6;q++){ const a=r()*6.283, d=r()*(R0-1), m=Sp(.45+r()*.4,q%2?mMs:mMs2,Math.cos(a)*d,H+.08,Math.sin(a)*d,1); m.scale.set(1.2,.22,1.2); g.add(m); }
       for(let q=0;q<10;q++){ const a=-1.2+r()*2.4, yy=.8+r()*2.3, m=Sp(.3+r()*.25,mMs,Math.cos(a)*R0,yy,Math.sin(a)*R0,1); m.lookAt(Math.cos(a)*9,yy,Math.sin(a)*9); m.scale.set(1.2,1.4,.18); g.add(m); }
       for(let q=0;q<7;q++){ const a=2.6+r()*1.6, yy=.8+q*.32, f=mk(new T.CylinderGeometry(.42-q*.03,.32,.12,10,1,false,-1.4,2.8),mFung,Math.cos(a)*(R0+.05),yy,Math.sin(a)*(R0+.05)); f.rotation.y=-a+1.5708; g.add(f); } }],
-    // キノコの輪（妖精の輪）：草が濃くなった輪の上に、ハイリアダケ（薄茶のかさ）、ガンバリダケ（黄色）、ヒンヤリダケ（青白い）が株になって輪に並ぶ。かさの裏にひだ、白い斑点のあるものも
-    ['キノコの輪',g=>{ const r=pRng('fring',37), mStem=tm([232,222,200]), mGill=tm([206,186,150]), mSpot=tm([246,240,226]), caps=[tm([176,128,84]),tm([168,116,70]),tm([226,176,60]),tm([150,196,214])];
+    // キノコの輪（妖精の輪）：草が濃くなった輪の上に、ハイリアダケ（赤橙のまだらなかさ・灰白の柄）、ガンバリダケ（黄〜橙のかさ・紫の柄）、ヒンヤリダケ（青白い）が株になって輪に並ぶ。かさの裏にひだ、白い斑点のあるものも
+    ['キノコの輪',g=>{ const r=pRng('fring',37), stems=[tm([214,206,190]),tm([214,206,190]),tm([150,120,190]),tm([226,232,236])], mGill=tm([206,186,150]), mSpot=tm([232,150,96]), caps=[tm([214,96,52]),tm([196,80,46]),tm([238,178,48]),tm([150,196,214])];
       { const rg=mk(new T.RingGeometry(4.4,5.8,40),tm([84,128,46]),0,.33,0); rg.rotation.x=-1.5708; g.add(rg); }
       const shroom=(x,z,s,ci,tl,ry)=>{ const m=new T.Group(); m.position.set(x,.3,z); m.rotation.set(tl*Math.cos(ry),ry,tl*Math.sin(ry)); m.scale.setScalar(s); g.add(m);
-        m.add(mk(new T.CylinderGeometry(.11,.15,.9,7),mStem,0,.45,0));
+        m.add(mk(new T.CylinderGeometry(ci===2?.13:.11,ci===2?.2:.15,.9,7),stems[ci],0,.45,0));
         const cp=mk(new T.LatheGeometry([new T.Vector2(0,.62),new T.Vector2(.25,.6),new T.Vector2(.42,.5),new T.Vector2(.5,.36),new T.Vector2(.47,.3),new T.Vector2(.12,.36)],10),caps[ci],0,.55,0); m.add(cp);
         const gl=mk(new T.CircleGeometry(.46,10),mGill,0,.86,0); gl.rotation.x=1.5708; m.add(gl);
-        if(ci===0&&r()<.6) for(let k=0;k<4;k++){ const a=r()*6.28, sp=Sp(.05,mSpot,Math.cos(a)*.26,1.12,Math.sin(a)*.26,0); sp.scale.y=.4; m.add(sp); } };
+        if(ci<2) for(let k=0;k<5;k++){ const a=r()*6.28, sp=Sp(.07,mSpot,Math.cos(a)*.27,1.12,Math.sin(a)*.27,0); sp.scale.y=.4; m.add(sp); } };
       for(let q=0;q<20;q++){ const a=q/20*6.283+(r()-.5)*.12, d=5.1+(r()-.5)*.6, n=1+Math.floor(r()*3), ci=r()<.6?(r()<.5?0:1):(r()<.6?2:3);
         for(let k=0;k<n;k++){ const da=(r()-.5)*.08, dd=(r()-.5)*.5; shroom(Math.cos(a+da)*(d+dd),Math.sin(a+da)*(d+dd),k===0?.9+r()*.6:.45+r()*.4,ci,(r()-.5)*.35,r()*6.28); } }
       for(let q=0;q<6;q++){ const a=r()*6.283, d=1.5+r()*2; shroom(Math.cos(a)*d,Math.sin(a)*d,.35+r()*.25,r()<.5?0:1,(r()-.5)*.3,r()*6); } },'grass'],
@@ -5479,7 +5479,21 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
       const cr=new T.Group(); cr.position.set(1.7,0,-.6); cr.rotation.set(0,.4,-.1); g.add(cr); cr.add(Cy(.06,.08,2.4,mWoodD,0,1.3,0,5)); { const h=Cy(.05,.06,1.1,mWoodD,0,1.85,0,5); h.rotation.z=1.5708; cr.add(h); } cr.add(Bx(.16,.16,.16,mTwine,0,1.85,0));
       for(let k=0;k<3;k++){ const cl=Bx(.14,.7-k*.15,.02,mRedC,.12+k*.13,1.48+k*.05,.06); cl.rotation.z=.25+k*.12; cr.add(cl); } }],
     ['巨大な一枚岩',g=>{ const r=mk(rockG(4,7),mMono,0,7.2,0); r.scale.set(1.3,1.9,1.05); r.rotation.y=.4; g.add(r); const b1=mk(rockG(1.7,8),mMono,4.4,1,2.2); g.add(b1); const b2=mk(rockG(1.1,9),mMono,-3.8,.6,-2); g.add(b2); }],
-    ['倒木のトンネル',g=>{ const t=Cy(2.2,2.6,16,mWood,0,2.2,0,10); t.rotation.z=1.5708; t.rotation.y=.3; g.add(t); const hol=Cy(1.6,1.6,16.2,mDark,0,2.2,0,10); hol.rotation.z=1.5708; hol.rotation.y=.3; g.add(hol); for(let q=0;q<5;q++) g.add(Sp(.7,mMoss,-6+q*3,4.3,(q%2)*.6,0)); for(let q=0;q<3;q++) g.add(mk(new T.SphereGeometry(.5,8,5,0,6.3,0,1.6),mRedC,-4+q*4,4.4,1.2)); }],
+    // 倒木のトンネル（ブレワイの中が空洞の倒木）：くぐれるほど太い倒木が横たわる。こげ茶の樹皮、切り口は明るい木肌の輪で中はうす暗い空洞。片端は折れてささくれ立つ。上は苔、根元にキノコ。そばに短い丸太がもう1本転がる
+    ['倒木のトンネル',g=>{ const r=pRng('flog',41), mIn=tm([74,58,42]), mHyl=tm([214,96,52]), mStm=tm([214,206,190]);
+      const log=(L,R0,R1,x,y,z,ry,brk)=>{ const lg=new T.Group(); lg.position.set(x,y,z); lg.rotation.set(0,ry,1.5708); g.add(lg);
+        lg.add(mk(new T.CylinderGeometry(R0,R0*1.04,L,18,1,true),mWoodD,0,0,0));
+        lg.add(mk(new T.CylinderGeometry(R1,R1,L-.05,16,1,true).scale(-1,1,1),mIn,0,0,0));
+        for(const e of brk?[1]:[1,-1]){ const rg=mk(new T.RingGeometry(R1,R0+.02,18),mWoodL,0,e*L/2,0); rg.rotation.x=e>0?-1.5708:1.5708; lg.add(rg); }
+        if(brk) for(let q=0;q<22;q++){ const a=q/22*6.283+r()*.1, hh=.3+r()*r()*2.2, rr=R1+(R0-R1)*(.25+r()*.5), sp=mk(new T.ConeGeometry(.22+r()*.12,hh,4),q%3?mWoodD:mWood,Math.cos(a)*rr,-L/2-hh/2+.05,Math.sin(a)*rr); sp.rotation.set(Math.PI,-a,0); sp.scale.z=.5; lg.add(sp); }
+        return lg; };
+      // 中の空洞は人がくぐれる高さ
+      log(13,2.5,2.0,0,2.25,0,.25,true); log(4.2,1.25,.9,-3.4,1.15,5.2,-.5,false);
+      // 上面の苔と、つたう葉
+      for(let q=0;q<12;q++){ const t=(q/11-.5)*11, m=Sp(.6+r()*.5,q%2?mMoss:tm([88,118,52]),Math.cos(.25)*t+(r()-.5)*.6,4.6+(r()-.5)*.15,-Math.sin(.25)*t+(r()-.5)*1.1,1); m.scale.set(1.3,.3,1.1); g.add(m); }
+      for(let q=0;q<5;q++){ const t=(r()-.5)*10, m=Sp(.35,mLeaf,Math.cos(.25)*t,3.2+r(),-Math.sin(.25)*t+2.45,0); m.lookAt(Math.cos(.25)*t,3.6,9); m.scale.set(1.1,1.8,.15); g.add(m); }
+      // 根元のハイリアダケ
+      for(let q=0;q<6;q++){ const t=(r()-.5)*9, x=Math.cos(.25)*t, z=-Math.sin(.25)*t+(r()<.5?-1:1)*2.7, sc=.5+r()*.5; g.add(Cy(.09*sc,.12*sc,.7*sc,mStm,x,.3+.35*sc,z,6)); const cp=mk(new T.SphereGeometry(.38*sc,10,5,0,6.283,0,1.4),mHyl,x,.3+.68*sc,z); cp.scale.y=.6; g.add(cp); } }],
     // 崩れた城壁の門（ブレワイの城下町の門）：狭間（ギザギザ）のある四角い塔が2つ。間に丸いアーチの門、半分上がったさびた鉄格子。破れた赤い旗。左右にのびる城壁は片方が崩れ、がれきが散らばる
     ['崩れた城壁の門',g=>{ const r=pRng('cgate',13), mIronG=tm([66,62,58]), TX=4.6, TW=3.8, TD=4.2, AW=2.6, AS=4.4, WD=3.2, top=9.2;
       const tower=(x,h,brk)=>{ g.add(Bx(TW+.6,1.2,TD+.6,mStone,x,.6,0)); g.add(Bx(TW,h-1.2,TD,mStone,x,1.2+(h-1.2)/2,0)); g.add(Bx(TW+.35,.4,TD+.35,mStone,x,5.2,0));
