@@ -5376,7 +5376,25 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
       g.add(Bx(1.3,2.2,.2,mWoodD,-1.2,1.9,2.65)); for(const x of [1.6]){ g.add(Bx(1.1,1,.15,tm([40,46,52]),x,2.8,2.65)); for(const s2 of [-1,1]){ const sh=Bx(.55,1.1,.1,mWood,x+s2*.85,2.8,2.72); g.add(sh); } }
       const ban=Bx(.9,1.8,.06,mRedC,-2.6,3.1,2.7); g.add(ban); { const rd=Cy(.05,.05,1.2,mWoodD,-2.6,4.05,2.75,4); rd.rotation.z=1.5708; g.add(rd); }
       for(let q=0;q<9;q++) g.add(Cy(.12,.14,1.4,mWood,-5.6+q*1.4,.7,5.2,5)); for(const y of [.55,1.1]) g.add(Bx(12.4,.15,.12,mWood,0,y,5.2)); },'grass'],
-    ['苔むしたアーチ',g=>{ [-1,1].forEach(x=>g.add(Bx(1.6,7,1.6,mStone,x*4,3.5,0))); for(let q=0;q<7;q++){ const a=Math.PI*q/6, b=Bx(1.6,1.2,1.7,mStone,Math.cos(a)*4,7+Math.sin(a)*2.4,0); b.rotation.z=a-1.5708; g.add(b); } g.add(Bx(9,.3,1.8,mMoss,0,9.5,0)); }],
+    // 苔むしたアーチ（ブレワイの平原に立つ古い門）：太鼓石を積んだ丸い柱が2本。四角い台座、帯の飾り、柱頭。ゆるく反った横石が渡り、上は苔に覆われツタが垂れる。横には崩れかけた石垣
+    ['苔むしたアーチ',g=>{ const r=pRng('arch',3), X0=4.3, mMossD=tm([84,112,44]);
+      for(const sd of [-1,1]){ const x=sd*X0, lean=sd*.012;
+        g.add(Bx(3.4,.9,3.4,mStone,x,.35,0)); g.add(Bx(2.9,.6,2.9,mStone,x,1.1,0)); g.add(Cy(1.32,1.4,.45,mMono,x,1.6,0,12));
+        let y=1.82; const hs=sd<0?[1.3,1.1,1.25,.35,1.2,1.15,1.3,.35,1.1]:[1.2,1.3,1.1,.35,1.25,1.2,1.15,.35,1.2];
+        hs.forEach((h,k)=>{ const band=h<.5, rr=band?1.3:1.08+(r()-.5)*.06; const d=Cy(rr*(band?1:.98),rr,h,mMono,x+lean*y*10+(r()-.5)*.05,y+h/2,(r()-.5)*.05,band?12:11); d.rotation.y=r()*3; g.add(d); y+=h; });
+        g.add(Cy(1.38,1.12,.5,mMono,x+lean*y*10,y+.25,0,12)); g.add(Bx(2.7,.55,2.6,mMono,x+lean*y*10,y+.78,0));
+        // 柱に這う苔とツタ（北側の面に多め）
+        for(let q=0;q<12;q++){ const a=r()*6.28, yy=1.8+r()*(y-1.6), m=Sp(.3+r()*.3,mMossD,x+Math.cos(a)*1.02,yy,Math.sin(a)*1.02,1); m.lookAt(x+Math.cos(a)*3,yy,Math.sin(a)*3); m.scale.set(1.1,1.2+r(),.12); g.add(m); } }
+      // 横石：5つの石をゆるい弧に並べる（下面は少しだけアーチ状）
+      const top=12.25; for(let q=0;q<5;q++){ const t=(q-2)/2, xx=t*4.3, yy=top+.95-Math.abs(t)*.25*0, b=Bx(2.25,1.7-Math.abs(t)*.1,2.3,mMono,xx,yy-(1-t*t)*.0,0); b.rotation.z=-t*.06; if(q===4){ b.rotation.z-=.05; b.position.y-=.12; } g.add(b); }
+      // 上面の苔：厚く盛り上がり、縁から少しはみ出す
+      for(let q=0;q<11;q++){ const xx=-5.6+q*1.12+(r()-.5)*.4, m=Sp(.7+r()*.35,mMoss,xx,top+1.85,(r()-.5)*.6,1); m.scale.set(1.2,.42,1.5); g.add(m); }
+      for(let q=0;q<4;q++){ const m=Sp(.45,mLeaf,-4+q*2.6+r(),top+2.15,(r()-.5)*.8,0); m.scale.set(1,.6,1); g.add(m); }
+      // 垂れ下がるツタ
+      for(let q=0;q<14;q++){ let xx=-5+r()*10, zz=(r()<.5?-1:1)*1.17, yy=top+.3; const n=3+Math.floor(r()*12); for(let k=0;k<n;k++){ const lf=Sp(.1+r()*.05,mLeaf,xx+(k%2?.09:-.09),yy,zz,0); lf.scale.set(1.4,.8,.35); lf.rotation.z=(k%2?.5:-.5); g.add(lf); yy-=.2; xx+=(r()-.5)*.06; } }
+      // 片側の崩れた石垣（段々に低くなる）と落ちた石
+      for(let k=0;k<4;k++){ const x=-X0-2.6-k*2.4, hh=Math.max(1,6.5-k*1.7-r()*.8); for(let yy=0;yy<hh;yy+=1){ const tp=Math.min(1,hh-yy); const b=Bx(2.3,tp,1.7,mStone,x+(r()-.5)*.25,yy+tp/2,-.3+(r()-.5)*.15); g.add(b); } const m=Sp(.6,mMoss,x,hh+.05,-.3,0); m.scale.set(1.6,.35,1.2); g.add(m); }
+      for(let q=0;q<4;q++){ const f=Bx(1.3+r(),.9+r()*.5,1.1+r()*.6,mStone,(r()<.5?-1:1)*(2.5+r()*5),.4,1.8+r()*2.5); f.rotation.set((r()-.5)*.4,r()*3,(r()-.5)*.3); g.add(f); } }],
     ['旅人の墓標',g=>{ g.add(Bx(2.6,.4,4,mStone,0,.2,0)); const st=Bx(1.6,2.4,.4,mStone,0,1.6,-1.6); st.rotation.x=-.1; g.add(st); g.add(Bx(.15,2.6,.15,mWoodD,.9,1.2,1.2)); g.add(Bx(1.2,.15,.15,mWoodD,.9,2,1.2)); { const wr=mk(new T.TorusGeometry(.5,.1,6,12),mLeaf,0,.55,.4); wr.rotation.x=1.5708; g.add(wr); } }],
     ['巨大な一枚岩',g=>{ const r=mk(rockG(4,7),mMono,0,7.2,0); r.scale.set(1.3,1.9,1.05); r.rotation.y=.4; g.add(r); const b1=mk(rockG(1.7,8),mMono,4.4,1,2.2); g.add(b1); const b2=mk(rockG(1.1,9),mMono,-3.8,.6,-2); g.add(b2); }],
     ['倒木のトンネル',g=>{ const t=Cy(2.2,2.6,16,mWood,0,2.2,0,10); t.rotation.z=1.5708; t.rotation.y=.3; g.add(t); const hol=Cy(1.6,1.6,16.2,mDark,0,2.2,0,10); hol.rotation.z=1.5708; hol.rotation.y=.3; g.add(hol); for(let q=0;q<5;q++) g.add(Sp(.7,mMoss,-6+q*3,4.3,(q%2)*.6,0)); for(let q=0;q<3;q++) g.add(mk(new T.SphereGeometry(.5,8,5,0,6.3,0,1.6),mRedC,-4+q*4,4.4,1.2)); }],
