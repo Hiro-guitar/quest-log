@@ -5262,7 +5262,7 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
   updFar(y0,true); { const it=ringGen(farC); let r; while(!(r=it.next()).done); setRing(r.value); } if(!(await tick(.9))) return;
   updChunks(y0,true); if(!(await tick(.95))) return;
   // ---- 見つけるもの：1分ほど走るごとに何かがある（遺跡・野営地・風車・鹿の群れ・宝箱…）。近づくと名前が出る ----
-  const mPondE=tm([120,108,80]), mFlower=tm([255,255,255]), mFlower2=tm([240,190,214]), mLava=new T.MeshBasicMaterial({color:c3([255,110,30]).multiplyScalar(1.8)}), mDark=tm([70,62,62]), mIce=tm([176,220,240]), mSnow=tm([236,242,250]), mSand2=tm([206,170,120]), mSandG=tm([222,186,124]), mBone=tm([236,226,204]), mStone=tm([196,200,186]), mMono=tm([200,202,188]), mMonoD=tm([118,118,108]), mMoss=tm([104,138,66]), mWood=tm([128,88,54]), mWoodD=tm([88,62,40]), mCanvas=tm([222,208,176]), mRedC=tm([176,64,48]), mLeaf=tm([76,128,54]), mLeaf2=tm([58,104,46]), mApple=tm([210,44,40]),
+  const mPondE=tm([120,108,80]), mFlower=tm([255,255,255]), mFlower2=tm([240,190,214]), mLava=new T.MeshBasicMaterial({color:c3([255,110,30]).multiplyScalar(1.8)}), mDark=tm([70,62,62]), mIce=tm([176,220,240]), mSnow=tm([236,242,250]), mSand2=tm([206,170,120]), mSandG=tm([222,186,124]), mBone=tm([236,226,204]), mStone=tm([196,200,186]), mMono=tm([200,202,188]), mMonoD=tm([118,118,108]), mMoss=tm([104,138,66]), mWood=tm([132,104,76]), mWoodD=tm([92,74,56]), mCanvas=tm([222,208,176]), mRedC=tm([176,64,48]), mLeaf=tm([76,128,54]), mLeaf2=tm([58,104,46]), mApple=tm([210,44,40]),
     mWhite=tm([236,230,216]), mRoof=tm([150,74,52]), mDeer=tm([160,106,62]), mDeerL=tm([232,214,188]), mGold=tm([226,182,72]), mFire=new T.MeshBasicMaterial({color:c3([255,120,30]).multiplyScalar(1.5)}), mFireC=new T.MeshBasicMaterial({color:c3([255,230,120]).multiplyScalar(1.8)}),
     mWater=patch(new T.MeshStandardMaterial({color:c3([62,120,140]),roughness:.12,envMap:L.env||null,envMapIntensity:1.1}));
   // 炎の絵：下が白っぽい黄色、上へ行くほど橙から赤く細くなって消える
@@ -5365,7 +5365,7 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
       for(const s2 of [-1,1]){ const tri=new T.Shape(); tri.moveTo(-2.6,0); tri.lineTo(2.6,0); tri.lineTo(0,2.3); const gb=new T.Mesh(new T.ShapeGeometry(tri),mWhite); gb.rotation.y=1.5708; gb.position.set(s2*3.3,4.35,0); shad(gb); g.add(gb); }
       for(const s2 of [-1,1]){ const rf=Bx(8.2,.28,3.9,mRoof,0,5.55,s2*1.55); rf.rotation.x=s2*.72; g.add(rf); } g.add(Bx(8.3,.3,.4,mRoof,0,6.75,0));
       g.add(Bx(1,2.6,1,mStone,2.2,6.6,-1)); g.add(Bx(1.3,.25,1.3,mStone,2.2,7.9,-1));
-      g.add(Bx(1.3,2.2,.2,mWoodD,-1.2,1.9,2.65)); for(const x of [1.6]){ g.add(Bx(1.1,1,.15,mDark,x,2.8,2.65)); for(const s2 of [-1,1]){ const sh=Bx(.55,1.1,.1,mWood,x+s2*.85,2.8,2.72); g.add(sh); } }
+      g.add(Bx(1.3,2.2,.2,mWoodD,-1.2,1.9,2.65)); for(const x of [1.6]){ g.add(Bx(1.1,1,.15,tm([40,46,52]),x,2.8,2.65)); for(const s2 of [-1,1]){ const sh=Bx(.55,1.1,.1,mWood,x+s2*.85,2.8,2.72); g.add(sh); } }
       const ban=Bx(.9,1.8,.06,mRedC,-2.6,3.1,2.7); g.add(ban); { const rd=Cy(.05,.05,1.2,mWoodD,-2.6,4.05,2.75,4); rd.rotation.z=1.5708; g.add(rd); }
       for(let q=0;q<9;q++) g.add(Cy(.12,.14,1.4,mWood,-5.6+q*1.4,.7,5.2,5)); for(const y of [.55,1.1]) g.add(Bx(12.4,.15,.12,mWood,0,y,5.2)); },'grass'],
     ['苔むしたアーチ',g=>{ [-1,1].forEach(x=>g.add(Bx(1.6,7,1.6,mStone,x*4,3.5,0))); for(let q=0;q<7;q++){ const a=Math.PI*q/6, b=Bx(1.6,1.2,1.7,mStone,Math.cos(a)*4,7+Math.sin(a)*2.4,0); b.rotation.z=a-1.5708; g.add(b); } g.add(Bx(9,.3,1.8,mMoss,0,9.5,0)); }],
@@ -5406,11 +5406,18 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
   const woodTex=new T.TextureLoader().load('wood.jpg'); woodTex.wrapS=woodTex.wrapT=T.RepeatWrapping; woodTex.colorSpace=T.NoColorSpace; woodTex.anisotropy=4;
   // 木：本物の木目の写真（Babylon.js Assets, CC BY 4.0）。縦の面は木目が縦に流れ、上の面は年輪のように。日に焼けて灰色がかり、根元は土で汚れる
   const WOOD_FS=`
- { vec3 wn=normalize(vWN), p=vWP; vec3 aw=pow(abs(wn),vec3(4.)); aw/=aw.x+aw.y+aw.z;
-   float gx=texture2D(uWood,vec2(p.z*.45,p.y*.07)).r, gz=texture2D(uWood,vec2(p.x*.45+.3,p.y*.07)).r, gy=texture2D(uWood,vec2(p.x*.3,p.z*.06)+.5).r;
-   float g=gx*aw.x+gz*aw.z+gy*aw.y; vec2 uv=aw.y>.5?p.xz:aw.x>aw.z?p.zy:p.xy;
-   vec3 c=diffuseColor.rgb*(.55+.75*g); float old=vn(uv*.35)*.6+vn(uv*1.3+3.)*.4; c=mix(c,vec3(dot(c,vec3(.33)))*vec3(1.,.96,.88),.45+.3*smoothstep(.4,.8,old));
-   c*=1.-.25*smoothstep(.5,.0,p.y-0.)*0.; float mo=smoothstep(.6,.9,wn.y)*smoothstep(.55,.7,vn(p.xz*.8)); c=mix(c,vec3(.24,.32,.1),mo*.7);
+ { vec3 wn=normalize(vWN), p=vWP, d=normalize(vDir+1e-5); vec3 q=p-vCtr; float al=dot(q,d); vec3 rr=q-d*al; float ac=dot(rr,normalize(cross(d,wn)+1e-5));
+   float endg=smoothstep(.75,.9,abs(dot(wn,d))), seed=hh(vCtr.xz*.37+vCtr.y);
+   // 木目：写真の木目を部品の長い向きに沿って流し、部品ごとにずらす。細い繊維・節・ひび割れ・日焼けの灰色
+   float g=texture2D(uWood,vec2(ac*1.8+seed*7.,al*.09+seed*3.)).r, g2=texture2D(uWood,vec2(ac*5.+seed*3.,al*.35)).r; g=clamp(.5+(g-.5)*1.6,0.,1.); g2=clamp(.5+(g2-.5)*1.6,0.,1.);
+   vec2 kp=vec2(ac*1.6,al*.35)+seed*13.; float kn=vn(kp*1.7); float knot=smoothstep(.78,.86,kn); g=mix(g,.15+.5*fract(kn*14.),knot*.8);
+   float ring=fract(length(rr)*3.2+vn(rr.xz*2.)*.6); float endc=mix(.55,.85,smoothstep(.0,.25,ring)*smoothstep(.6,.3,ring));
+   float gr=mix(g*.75+g2*.25,endc,endg); vec3 base=diffuseColor.rgb*(.9+.25*seed);
+   vec3 c=base*(.42+.9*gr); c*=1.-.35*(1.-smoothstep(.0,.06,abs(fract(ac*4.+seed*2.+vn(vec2(ac*3.,al*.2))*.6)-.5)))*(1.-endg);
+   float crack=(1.-smoothstep(.0,.025,abs(fract(ac*.9+seed*4.)-.5)))*smoothstep(.6,.75,vn(vec2(ac*.5,al*.08)+seed*9.))*(1.-endg); c*=1.-.6*crack;
+   float wea=smoothstep(.2,.9,vn(vec2(ac*.3,al*.05)+seed*5.)*.7+.3*(1.-wn.y*.5)); c=mix(c,vec3(dot(c,vec3(.3,.45,.25)))*vec3(1.02,.98,.9),.25+.3*wea);
+   c*=.88+.2*vn(p.xz*1.3+p.y);
+   float mo=smoothstep(.6,.95,wn.y)*smoothstep(.6,.75,vn(p.xz*.8)); c=mix(c,vec3(.24,.32,.1)*(.7+.6*g),mo*.65);
    diffuseColor.rgb=c; }`;
   // 布：細かい織り目と、たるみのしわ、色あせ
   const CLOTH_FS=`
@@ -5452,8 +5459,8 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
    float iv=step(aw.y,.4)*smoothstep(.73,.8,vn(vec2(dot(p.xz,vec2(.7,.7))*.35,p.y*.12)+2.)+.12*tb)*smoothstep(.5,2.,p.y); c=mix(c,vec3(.1,.18,.05)*(.6+.8*tx),clamp(iv,0.,1.)*.85);
    diffuseColor.rgb=c; }`;
   const wMat=new Map(), wmat=(m,kind)=>{ if(!wMat.has(m)){ const mm=patch(new T.MeshToonMaterial({vertexColors:true,gradientMap:kind!=='bone'?gmapG:gmap2,side:T.DoubleSide})); if(kind!=='bone'){ const ob=mm.onBeforeCompile; mm.onBeforeCompile=sh=>{ ob(sh);
-      sh.vertexShader='varying vec3 vWN;\n'+sh.vertexShader.replace('#include <beginnormal_vertex>','#include <beginnormal_vertex>\n vWN=normalize(mat3(modelMatrix)*objectNormal);');
-      sh.uniforms.uStone={value:stoneTex}; sh.uniforms.uRock={value:rockTex}; sh.uniforms.uWood={value:woodTex}; sh.fragmentShader='varying vec3 vWN;\nuniform sampler2D uStone, uRock, uWood;\n'+sh.fragmentShader.replace('#include <color_fragment>','#include <color_fragment>\n'+({mono:MONO_FS,wood:WOOD_FS,cloth:CLOTH_FS,roof:ROOF_FS,plaster:PLASTER_FS}[kind]||STONE_FS)); }; mm.customProgramCacheKey=()=>'w'+kind; } wMat.set(m,mm); } return wMat.get(m); };
+      sh.vertexShader='attribute vec3 aDir, aCtr;\nvarying vec3 vWN, vDir, vCtr;\n'+sh.vertexShader.replace('#include <beginnormal_vertex>','#include <beginnormal_vertex>\n vWN=normalize(mat3(modelMatrix)*objectNormal); vDir=normalize(mat3(modelMatrix)*aDir+1e-5); vCtr=(modelMatrix*vec4(aCtr,1.)).xyz;');
+      sh.uniforms.uStone={value:stoneTex}; sh.uniforms.uRock={value:rockTex}; sh.uniforms.uWood={value:woodTex}; sh.fragmentShader='varying vec3 vWN, vDir, vCtr;\nuniform sampler2D uStone, uRock, uWood;\n'+sh.fragmentShader.replace('#include <color_fragment>','#include <color_fragment>\n'+({mono:MONO_FS,wood:WOOD_FS,cloth:CLOTH_FS,roof:ROOF_FS,plaster:PLASTER_FS}[kind]||STONE_FS)); }; mm.customProgramCacheKey=()=>'w'+kind; } wMat.set(m,mm); } return wMat.get(m); };
   const tess=(P,maxL)=>{ let cur=P; for(let it=0;it<3;it++){ const out=[]; let any=false; for(let i=0;i<cur.length;i+=9){ const a=cur.slice(i,i+3), b=cur.slice(i+3,i+6), c=cur.slice(i+6,i+9), d=(p,q)=>Math.hypot(p[0]-q[0],p[1]-q[1],p[2]-q[2]);
       if(Math.max(d(a,b),d(b,c),d(c,a))>maxL){ any=true; const m=(p,q)=>[(p[0]+q[0])/2,(p[1]+q[1])/2,(p[2]+q[2])/2], ab=m(a,b), bc=m(b,c), ca=m(c,a); out.push(...a,...ab,...ca, ...ab,...b,...bc, ...ca,...bc,...c, ...ab,...bc,...ca); } else out.push(...a,...b,...c); } cur=out; if(!any) break; } return new Float32Array(cur); };
   const MOSS=lin([88,122,56]), MOSS2=lin([120,146,70]), DIRT=lin([92,78,58]), IVY=lin([60,96,44]), GRAYW=lin([150,146,136]);
@@ -5476,10 +5483,12 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
     ge.setAttribute('color',new T.BufferAttribute(C,3)); return [ge,wmat(m,kind)]; };
   const L3m=(a,b,t)=>[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t];
   const bake=g=>{ g.updateMatrixWorld(true); const u=g.userData; if(u.deer) return; const keep=new Set([u.fire,u.mill].filter(Boolean)), inKeep=o=>{ for(let q=o;q;q=q.parent) if(keep.has(q)) return true; return false; }; g.updateMatrixWorld(true); const inv=new T.Matrix4().copy(g.matrixWorld).invert(), by=new Map(), rm=[];
-    g.traverse(o=>{ if(!o.isMesh||o.isInstancedMesh||inKeep(o)) return; const k=o.material.uuid; if(!by.has(k)) by.set(k,{m:o.material,gs:[]}); const ge=(o.geometry.index?o.geometry.toNonIndexed():o.geometry.clone()); ge.applyMatrix4(new T.Matrix4().multiplyMatrices(inv,o.matrixWorld)); by.get(k).gs.push(ge); rm.push(o); });
+    g.traverse(o=>{ if(!o.isMesh||o.isInstancedMesh||inKeep(o)) return; const k=o.material.uuid; if(!by.has(k)) by.set(k,{m:o.material,gs:[]}); const ge=(o.geometry.index?o.geometry.toNonIndexed():o.geometry.clone()); if(!ge.boundingBox) ge.computeBoundingBox(); const bb=ge.boundingBox, sz=new T.Vector3(); bb.getSize(sz); const ctr=new T.Vector3(); bb.getCenter(ctr);
+      const ax=sz.x>=sz.y&&sz.x>=sz.z?new T.Vector3(1,0,0):sz.y>=sz.z?new T.Vector3(0,1,0):new T.Vector3(0,0,1); const Mx=new T.Matrix4().multiplyMatrices(inv,o.matrixWorld); ge.applyMatrix4(Mx);
+      ax.transformDirection(Mx); ctr.applyMatrix4(Mx); const n=ge.attributes.position.count, D=new Float32Array(n*6); for(let i=0;i<n;i++){ D[i*6]=ax.x; D[i*6+1]=ax.y; D[i*6+2]=ax.z; D[i*6+3]=ctr.x; D[i*6+4]=ctr.y; D[i*6+5]=ctr.z; } ge.userData.dir=D; by.get(k).gs.push(ge); rm.push(o); });
     rm.forEach(o=>{ o.parent.remove(o); o.geometry.dispose(); });
-    for(const {m,gs} of by.values()){ let n=0; gs.forEach(x=>n+=x.attributes.position.count); const P=new Float32Array(n*3), N=new Float32Array(n*3); let o2=0; gs.forEach(x=>{ P.set(x.attributes.position.array,o2*3); N.set(x.attributes.normal.array,o2*3); o2+=x.attributes.position.count; x.dispose(); });
-      let ge=new T.BufferGeometry(); ge.setAttribute('position',new T.BufferAttribute(P,3)); ge.setAttribute('normal',new T.BufferAttribute(N,3)); let mm=m; const wr=weather(ge,m); if(wr){ ge=wr[0]; mm=wr[1]; } const me=new T.Mesh(ge,mm); me.castShadow=me.receiveShadow=true; g.add(me); } };
+    for(const {m,gs} of by.values()){ let n=0; gs.forEach(x=>n+=x.attributes.position.count); const P=new Float32Array(n*3), N=new Float32Array(n*3), DD=new Float32Array(n*6); let o2=0; gs.forEach(x=>{ P.set(x.attributes.position.array,o2*3); N.set(x.attributes.normal.array,o2*3); DD.set(x.userData.dir,o2*6); o2+=x.attributes.position.count; x.dispose(); });
+      let ge=new T.BufferGeometry(); ge.setAttribute('position',new T.BufferAttribute(P,3)); ge.setAttribute('normal',new T.BufferAttribute(N,3)); let mm=m; const wr=weather(ge,m); if(wr){ ge=wr[0]; mm=wr[1]; if(ge.attributes.position.count===n){ const ib=new T.InterleavedBuffer(DD,6); ge.setAttribute('aDir',new T.InterleavedBufferAttribute(ib,3,0)); ge.setAttribute('aCtr',new T.InterleavedBufferAttribute(ib,3,3)); } } const me=new T.Mesh(ge,mm); me.castShadow=me.receiveShadow=true; g.add(me); } };
   if(/lkshot/.test(location.search)){ L.DK=DK; L.bake=bake; L.hW=hW; L.OX=OX; L.y0=y0; }
   const putDisc=py=>{ const n0=Math.max(0,Math.floor((py-260)/LG)-1), n1=Math.floor((py+1500)/LG); let built=0;
     for(const [n,o] of disc) if(n<n0||n>n1){ scene.remove(o.g); o.g.traverse(m=>{ if(m.geometry) m.geometry.dispose(); }); disc.delete(n); }
