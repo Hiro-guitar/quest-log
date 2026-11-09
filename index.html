@@ -4703,7 +4703,7 @@ function pWorld(k){ pSeedRoad(k); const key=k+'|'+pOff.toFixed(4); if(pWorldMemo
   const TL=96, hT=new Map(), hTile=(ti,tj)=>{ const kk=ti*100003+tj; let t=hT.get(kk); if(!t){ const n=TL/ST+1; t=new Float32Array(n*n); for(let j=0;j<n;j++) for(let i=0;i<n;i++) t[j*n+i]=hFn(ti*TL+i*ST,tj*TL+j*ST); hT.set(kk,t); if(hT.size>4000) hT.delete(hT.keys().next().value); } return t; };
   const hAt=(x,y)=>{ const ti=Math.floor(x/TL), tj=Math.floor(y/TL), t=hTile(ti,tj), n=TL/ST+1, fx=(x-ti*TL)/ST, fy=(y-tj*TL)/ST, i=Math.min(n-2,fx|0), j=Math.min(n-2,fy|0), a=fx-i, b=fy-j, o=j*n+i; return (t[o]*(1-a)+t[o+1]*a)*(1-b)+(t[o+n]*(1-a)+t[o+n+1]*a)*b; };
   const lin=c=>c.map(v=>Math.pow(v/255,2.2));
-  const C={g1:lin([128,170,64]),g2:lin([98,140,54]),dry:lin([150,150,80]),rock:lin([150,140,135]),rock2:lin([112,104,100]),sand:lin([214,200,160]),snow:lin([235,240,250]),desert:lin([222,186,124]),dune:lin([196,150,96]),vrock:lin([122,106,98]),vash:lin([86,78,78]),wet:lin([78,104,58]),mud:lin([96,88,60]),bed:lin([60,90,96])};
+  const C={g1:lin([158,198,74]),g2:lin([136,182,66]),dry:lin([182,186,96]),rock:lin([150,140,135]),rock2:lin([112,104,100]),sand:lin([214,200,160]),snow:lin([235,240,250]),desert:lin([222,186,124]),dune:lin([196,150,96]),vrock:lin([122,106,98]),vash:lin([86,78,78]),wet:lin([78,104,58]),mud:lin([96,88,60]),bed:lin([60,90,96])};
   const mix=(a,b,t)=>[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t];
   const colAt=(x,y,e,nyy,b)=>{ const n1=pn(x,y,46,3), n2=pn(x,y,6,7,2), slope=1-nyy, [bv,bd,bw,bs]=b;
     let c=mix(C.g1,C.g2,sm(.35,.7,n1)); c=mix(c,C.dry,sm(.62,.9,pn(x,y,90,1,5))*.45);
@@ -4810,12 +4810,14 @@ async function pLookOpen(){
    vec3 g=vec3(dot(gl_FragColor.rgb,vec3(.299,.587,.114))); gl_FragColor.rgb=mix(g,gl_FragColor.rgb,uSat); gl_FragColor.rgb*=mix(vec3(1.),uTint,uNtT);
    float cs=vn(vWP.xz*.004+vec2(uTime*.012,uTime*.004))*.65+vn(vWP.xz*.011+3.)*.35; gl_FragColor.rgb*=1.-.26*smoothstep(.62-.25*uCloud,.82-.2*uCloud,cs);
    vec3 vd=vWP-cameraPosition; float d=length(vd); vd/=d; float f=1.-exp(-d*uFogD); f+=clamp((uFogH-vWP.y)/(40.+d*.12),0.,1.)*uFogHk*smoothstep(20.,220.,d)*(1.-.6*smoothstep(1500.,6000.,d)); f=clamp(f,0.,1.);
-   vec3 fc=mix(uFogB,uFogA,pow(max(dot(vd,uSun),0.)*.5+.5,3.)); gl_FragColor.rgb=mix(gl_FragColor.rgb,fc,f); }
+   vec3 fc=mix(uFogB,uFogA,pow(max(dot(vd,uSun),0.)*.5+.5,3.)); ${det?'gl_FragColor.rgb=mix(gl_FragColor.rgb,vec3(dot(gl_FragColor.rgb,vec3(.3,.59,.11))),.15*smoothstep(80.,520.,d)*(1.-uNtT)); f=max(f,(1.-exp(-d*.0005))*(1.-uNtT));':''} gl_FragColor.rgb=mix(gl_FragColor.rgb,fc,f); }
 #include <dithering_fragment>`); }; return m; };
   // 3段の光
   const gc=document.createElement('canvas'); gc.width=3; gc.height=1; { const x=gc.getContext('2d'); [[0,90],[1,178],[2,255]].forEach(([i,v])=>{ x.fillStyle=`rgb(${v},${v},${v})`; x.fillRect(i,0,1,1); }); }
   const gmap=new T.CanvasTexture(gc); gmap.minFilter=gmap.magFilter=T.NearestFilter; gmap.colorSpace=T.NoColorSpace;
-  const gMat=patch(new T.MeshToonMaterial({vertexColors:true,gradientMap:gmap}),0,1);
+  const gcG=document.createElement('canvas'); gcG.width=3; gcG.height=1; { const x=gcG.getContext('2d'); [[0,180],[1,215],[2,255]].forEach(([i,v])=>{ x.fillStyle=`rgb(${v},${v},${v})`; x.fillRect(i,0,1,1); }); }
+  const gmapG=new T.CanvasTexture(gcG); gmapG.minFilter=gmapG.magFilter=T.NearestFilter; gmapG.colorSpace=T.NoColorSpace; // 草原の影は浅く（ブレワイの草原のように、影でも明るい）
+  const gMat=patch(new T.MeshToonMaterial({vertexColors:true,gradientMap:gmapG}),0,1);
   { const ob=gMat.onBeforeCompile; gMat.onBeforeCompile=sh=>{ ob(sh);
     sh.vertexShader='attribute float aGr;\nvarying float vGr;\n'+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n vGr=aGr;');
     sh.fragmentShader='varying float vGr;\n'+sh.fragmentShader.replace('#include <opaque_fragment>',`#include <opaque_fragment>
@@ -4824,7 +4826,7 @@ async function pLookOpen(){
    vec2 vd=normalize(vWP.xz-cameraPosition.xz), la=vec2(-vd.y,vd.x); float ch=max(1.5,cameraPosition.y-vWP.y), lat=dot(vWP.xz,la), dep=dot(vWP.xz,vd);
    float px=dd/700., st=vn(vec2(lat*1.25/max(1.,px),dep*ch/(1.7*dd))*1.)*.6+vn(vec2(lat*2.9/max(1.,px)+11.,dep*ch/(1.1*dd)))*.4, sk=mix(.5,st,1.-smoothstep(260.,900.,dd));
    float cl=vn(vWP.xz*.42+3.)*.6+vn(vWP.xz*.11+7.)*.4;
-   gl_FragColor.rgb=mix(gl_FragColor.rgb,gl_FragColor.rgb*(.85+.3*sk)*(.9+.2*cl)*mix(1.02,.97,gz),im); }`); }; }
+   gl_FragColor.rgb=mix(gl_FragColor.rgb,gl_FragColor.rgb*(.92+.16*sk)*(.94+.12*cl)*mix(1.02,.97,gz),im); }`); }; }
   const chunkRoot=new T.Group(), farG=new T.Group(); scene.add(chunkRoot,farG);
   // ---- 光 ----
   const sun=new T.DirectionalLight(day>.1?c3(lerpA([255,246,232],[255,190,130],eve)):c3(RED?[236,128,116]:[150,176,236]),day>.1?2.2:1.2); scene.add(sun.target); sun.castShadow=true; sun.shadow.mapSize.set(2048,2048);
@@ -5077,7 +5079,7 @@ async function pLookOpen(){
   const GB=(()=>{ const g=new T.PlaneGeometry(2.6,1.6).translate(0,.8,0); const n=g.attributes.normal.array; for(let i=0;i<n.length;i+=3){ n[i]=0; n[i+1]=1; n[i+2]=0; } return g; })();
   // 層：f＝草の順番のうち何割を使うか（遠くほど少なく、そのぶん板を K 倍に横長に）、a〜b＝受け持つ距離、fi/fo＝受け渡しの幅
   const GLAY=[{nm:'near',f:.32,K:1,a:0,b:84,N:12000,mv:12,mg:8},{nm:'mid',f:.1,K:4,a:56,b:250,N:26000,mv:24,mg:14},{nm:'far',f:.04,K:8,a:236,b:GR,N:46000,mv:50,mg:28}];
-  const mkGM=Ly=>{ const gm=patch(new T.MeshToonMaterial({map:gtx,alphaTest:.5,gradientMap:gmap,color:wet?0xd8e8d0:0xffffff}),Ly.K===1?.18:0,1), ob=gm.onBeforeCompile, K=Ly.K.toFixed(1), fa=Ly.a.toFixed(1), fb=Ly.b.toFixed(1);
+  const mkGM=Ly=>{ const gm=patch(new T.MeshToonMaterial({map:gtx,alphaTest:.5,gradientMap:gmapG,color:wet?0xd8e8d0:0xffffff}),Ly.K===1?.18:0,1), ob=gm.onBeforeCompile, K=Ly.K.toFixed(1), fa=Ly.a.toFixed(1), fb=Ly.b.toFixed(1);
     gm.onBeforeCompile=sh=>{ ob(sh);
       const band=(Ly.a>0?'smoothstep('+fa+','+(Ly.a+12).toFixed(1)+',dd)':'1.')+'*(1.-smoothstep('+(Ly.b-12).toFixed(1)+','+fb+',dd))';
       sh.vertexShader='attribute float aRk;\nvarying float vVis, vDd;\n'+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n vVis=1.; vDd=0.;\n#ifdef USE_INSTANCING\n { vec3 ip=instanceMatrix[3].xyz; float dd=distance(ip.xz,cameraPosition.xz); vDd=dd; vVis=step(aRk,'+Ly.f.toFixed(3)+')*'+band+';\n'
@@ -5085,10 +5087,12 @@ async function pLookOpen(){
         :' float s=length(instanceMatrix[0].xyz), hs=length(instanceMatrix[1].xyz); vec2 tc=normalize(cameraPosition.xz-ip.xz+vec2(.001)); vec3 rt=vec3(tc.y,0.,-tc.x); vec3 w=rt*position.x*'+K+'*s+vec3(0.,position.y*hs-.1*'+K+',0.); transformed=inverse(mat3(instanceMatrix))*w;\n')
         +' if(vVis<=0.) transformed*=0.; }\n#endif')+'';
       if(Ly.K>1) sh.vertexShader=sh.vertexShader.replace('#include <uv_vertex>','#include <uv_vertex>\n#ifdef USE_MAP\n vMapUv.x*='+K+';\n#endif');
-      sh.fragmentShader='varying float vVis, vDd;\n'+sh.fragmentShader.replace('void main() {','void main() {\n if(vVis<fract(sin(dot(floor(gl_FragCoord.xy),vec2(12.9898,78.233)))*43758.5453)) discard;')
+      sh.fragmentShader='varying float vVis, vDd;\n'+sh.fragmentShader.replace('void main() {','void main() {\n float gTip=0.;\n if(vVis<fract(sin(dot(floor(gl_FragCoord.xy),vec2(12.9898,78.233)))*43758.5453)) discard;')
         // テクスチャは形（透け）と根元→先の明暗だけに使い、色は地面と同じ。遠くでは透けの切り捨てを甘くして、葉が痩せて地面が透けるのを防ぐ
-        .replace('#include <map_fragment>','#ifdef USE_MAP\n { vec4 tc=texture2D(map,vMapUv); vec2 tq=vMapUv*128.; float lod=max(0.,.5*log2(max(dot(dFdx(tq),dFdx(tq)),dot(dFdy(tq),dFdy(tq))))); diffuseColor.a*=tc.a*(1.+lod*.32); diffuseColor.rgb*=mix(.86,1.1,fract(vMapUv.y)); }\n#endif')
-        .replace('#include <alphatest_fragment>','if(diffuseColor.a<.5) discard;'); }; gm.customProgramCacheKey=()=>'grass-'+Ly.nm; return gm; }; // 層ごとに別のシェーダーとして作らせる（同じ形の関数だと使い回されてしまう）
+        .replace('#include <map_fragment>','#ifdef USE_MAP\n { vec4 tc=texture2D(map,vMapUv); vec2 tq=vMapUv*128.; float lod=max(0.,.5*log2(max(dot(dFdx(tq),dFdx(tq)),dot(dFdy(tq),dFdy(tq))))); diffuseColor.a*=tc.a*(1.+lod*.32); gTip=smoothstep(.2,1.,fract(vMapUv.y)); }\n#endif')
+        .replace('#include <alphatest_fragment>','if(diffuseColor.a<.5) discard;')
+        .replace('#include <color_fragment>','#include <color_fragment>\n diffuseColor.rgb=mix(diffuseColor.rgb,mix(diffuseColor.rgb*1.25,vec3(.95,.95,.5),.22),gTip*'+(Ly.K===1?'1.':'.6')+');')
+        .replace('#include <dithering_fragment>','#include <dithering_fragment>\n { float kt=pow(max(dot(normalize(vWP-cameraPosition),uSun),0.),3.); gl_FragColor.rgb+=vec3(1.,.96,.78)*.3*kt*gTip*gTip*(1.-uNtT); }'); }; gm.customProgramCacheKey=()=>'grass-'+Ly.nm; return gm; }; // 層ごとに別のシェーダーとして作らせる（同じ形の関数だと使い回されてしまう）
   const gLay=Ly=>{ const g=(Ly.K===1?GG:GB).clone(), rk=new T.InstancedBufferAttribute(new Float32Array(Ly.N),1); g.setAttribute('aRk',rk); const m=new T.InstancedMesh(g,mkGM(Ly),Ly.N); m.receiveShadow=true; m.frustumCulled=false; m.count=0; scene.add(m); return Object.assign({m,rk,Ma:new Float32Array(Ly.N*16),Ca:new Float32Array(Ly.N*3),Ra:new Float32Array(Ly.N),at:null,job:null},Ly); };
   const GL=GLAY.map(gLay), gCells=new Map(); L.gl=GL;
   // マスの草：順番どおりに必要な数だけ作り足す（同じマスは何度作っても同じ場所・同じ順番）
