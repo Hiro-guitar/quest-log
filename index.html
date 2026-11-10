@@ -3403,7 +3403,7 @@ document.addEventListener('keydown',e=>{
 const PATH_H0=4*60, PATH_H1=28*60, SNAP=15, pCardX=118, PZOOM=[.55,1,1.7];
 let pZoom=1, PX=PZOOM[1], pathBoot=false;
 // 旅の世界は一枚の大きな地図：日ごとにその続きの部分を見る（前の日の焚き火の場所＝次の日の目覚めの場所）
-let pOff=0;
+let pOff=0; let pPoiLast=null;
 // 1日の道は「起きてから休むまで」：起きた時刻が道のはじまり（目覚めの焚き火）、休んだ時刻が終わり（焚き火）。
 // 寝ている間は進まないので、前の日の焚き火の場所から次の日がそのまま始まる（道は1本につながったまま）
 const P_WAKE=5*60, P_BED=22*60, P_EPOCH='2026-10-01';
@@ -4425,11 +4425,11 @@ function pMapArt(k,H){
     tower:'<g class="mp-ic sk"><path d="M0-10 4.2-3.6H-4.2Z"/><path d="M-5.6-2.4H5.6V-.6H1.6L4.8 2.6 0 9-4.8 2.6-1.6-.6H-5.6Z"/><circle cy="-5.6" r=".9" class="dt"/></g>',
     shrine:'<g class="mp-ic shr"><rect x="-5.6" y="-5.6" width="11.2" height="11.2" rx="2" transform="rotate(45)"/><path d="M-2.6 3V-.4Q-2.6-3 0-3 2.6-3 2.6-.4V3H1.1V-.2Q1.1-1.5 0-1.5-1.1-1.5-1.1-.2V3Z"/></g>',
     ruin:''};
-  let pois=''; for(let c=c0;c<=c1;c++){ const r=pRng('po'+c,5); for(let v=c*CW+r()*120;v<(c+1)*CW;v+=130+r()*150){ const y=v2y(v), bp=pBiome(W/2,y), t=bp[0]>.4?(r()<.6?'shrine':'ruin'):bp[1]>.4?(P_BIOMES?['ruin','ruin','ruin','shrine','tower','village'][Math.floor(r()*6)]:['shrine','shrine','tower','ruin'][Math.floor(r()*4)]):['village','village','stable','stable','tower','ruin','shrine','shrine'][Math.floor(r()*8)], side=r()<.5?-1:1, d1=40+r()*50, d2=40+r()*30, q1=r(), q2=r();
+  let pois=''; const poiOut=[]; pPoiLast={off:pOff,PX,list:poiOut}; /* 見渡す（3D）でも同じ祠・塔を置けるように覚えておく */ for(let c=c0;c<=c1;c++){ const r=pRng('po'+c,5); for(let v=c*CW+r()*120;v<(c+1)*CW;v+=130+r()*150){ const y=v2y(v), bp=pBiome(W/2,y), t=bp[0]>.4?(r()<.6?'shrine':'ruin'):bp[1]>.4?(P_BIOMES?['ruin','ruin','ruin','shrine','tower','village'][Math.floor(r()*6)]:['shrine','shrine','tower','ruin'][Math.floor(r()*4)]):['village','village','stable','stable','tower','ruin','shrine','shrine'][Math.floor(r()*8)], side=r()<.5?-1:1, d1=40+r()*50, d2=40+r()*30, q1=r(), q2=r();
     let x=pRX(y)+side*d1; if(x<20||x>W-90) x=pRX(y)-side*d2; if(x<14||x>W-20||nearWater(x,y,8)||pCastleAt(x,v)||pVolcLava(x,v)) continue; if(P_DESERT){ const dso=pDesertAt(v); if(dso&&!dso.clr(x,v,70)) continue; }
     const sx=pRX(y-10), mx=(sx+x)/2+(q1-.5)*30, my=y-4+(q2-.5)*30; let wet=false; for(let t=0;t<=1;t+=.05){ const u=1-t, qx=u*u*sx+2*u*t*mx+t*t*x, qy=u*u*(y-10)+2*u*t*my+t*t*(y+4); if(!dry(qx,qy)){ wet=true; break; } }
     if(!wet) trails+=`<path class="mp-trail" d="M${sx.toFixed(1)} ${(y-10).toFixed(1)}Q${mx.toFixed(1)} ${my.toFixed(1)} ${x.toFixed(1)} ${(y+4).toFixed(1)}"/>`;
-    if(ic[t]) pois+=`<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)})">${ic[t]}</g>`; labs.push([ic[t]?x+14:x-10,y+4,pNm('po'+c+','+Math.round(v),t),'poi',ic[t]?x:null]); } }
+    poiOut.push({t,x,v,name:pNm('po'+c+','+Math.round(v),t)});     if(ic[t]) pois+=`<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)})">${ic[t]}</g>`; labs.push([ic[t]?x+14:x-10,y+4,pNm('po'+c+','+Math.round(v),t),'poi',ic[t]?x:null]); } }
   // 遠くへ向かう小道（水辺に着いたらそこで終わる）
   for(let c=c0;c<=c1;c++){ const r=pRng('tl'+c,5); if(r()>.7) continue; const y=v2y(c*CW+r()*CW), sx=pRX(y), ex=sx<W/2?W+10:-10, ey=y+(r()-.5)*260, jit=[...Array(16)].map(()=>(r()-.5)*24); let dd=`M${sx.toFixed(1)} ${y.toFixed(1)}`, px=sx, py=y, n=0;
     for(let t=1;t<=8;t++){ const xx=sx+(ex-sx)*t/8+jit[t*2-2], yy=y+(ey-y)*t/8+jit[t*2-1]; let ok=true; for(let f=.1;f<=1;f+=.1) if(!dry(px+(xx-px)*f,py+(yy-py)*f)){ ok=false; break; } if(!ok) break; dd+=`L${xx.toFixed(1)} ${yy.toFixed(1)}`; px=xx; py=yy; n++; }
@@ -4725,6 +4725,14 @@ function pWorld(k){ pSeedRoad(k); const key=k+'|'+pOff.toFixed(4); if(pWorldMemo
   // 溶岩の場所：地図で溶岩（橙・紅）の所。まわり4点も見て、ふちを少しなだらかに（0〜1）
   const lvG=new Map(), lvPt=(i,j)=>{ const kk=i*100003+j; let r=lvG.get(kk); if(r===undefined){ const x=i*8, y=j*8; r=FBI!=null?(nz(x,y,380,31)*.7+nz(x,y,120,32)*.3>.3?1:0):(typeof pVolcLava==='function'&&pVolcLava(uOf(x),vAt(y))?1:0); lvG.set(kk,r); if(lvG.size>200000) lvG.clear(); } return r; },
     volcLavaF=(x,y)=>{ const fx=x/8, fy=y/8, i=Math.floor(fx), j=Math.floor(fy), a=fx-i, b=fy-j; return (lvPt(i,j)*(1-a)+lvPt(i+1,j)*a)*(1-b)+(lvPt(i,j+1)*(1-a)+lvPt(i+1,j+1)*a)*b; };
+  // 川：旅程の地図と同じ流れ・同じ幅で、地面を水の高さまで彫る（地図の川は地形の絵にだけ彫ってあり、こちらの地面には無かった）
+  let RVG=null; const rvGrid=()=>{ if(RVG) return RVG; RVG={g:new Map(),CS:2500,win:[]}; let rv=[]; const sv=[PX,pOff]; try{ PX=PX0; pOff=off; rv=pRivers(pm2y(PATH_H1)+10).filter(r=>!r.lava);
+      /* 地図と同じ決まりで橋の場所を決める：川が道にいちばん近づく所（4ドット以内）に、川幅ぶんの橋 */ rv.forEach(R=>{ let bd=1e9,bi=0; R.P.forEach(([x,y],i)=>{ const dd=Math.abs(x-pRX(y)); if(dd<bd){ bd=dd; bi=i; } }); if(bd<4){ const yc=R.P[bi][1]/PX0*KM, hw=(R.ws[bi]/2+3)/PX0*KM; RVG.win.push([yc-hw,yc+hw]); } }); }catch(_){ } PX=sv[0]; pOff=sv[1];
+    rv.forEach(r=>{ const P=r.P.map(([x,yp])=>[x*KM,yp/PX0*KM]), w=r.ws.map(q=>q/2*KM); for(let i=0;i<P.length-1;i++){ const sg=[P[i][0],P[i][1],P[i+1][0],P[i+1][1],w[i],w[i+1]], m=Math.max(w[i],w[i+1])+120, CS=RVG.CS;
+      for(let a=Math.floor((Math.min(sg[0],sg[2])-m)/CS);a<=Math.floor((Math.max(sg[0],sg[2])+m)/CS);a++) for(let b=Math.floor((Math.min(sg[1],sg[3])-m)/CS);b<=Math.floor((Math.max(sg[1],sg[3])+m)/CS);b++){ const kk=a*100003+b; let L2=RVG.g.get(kk); if(!L2) RVG.g.set(kk,L2=[]); L2.push(sg); } } }); return RVG; };
+  const rivK=(x,y)=>{ const G=rvGrid(), L2=G.g.get(Math.floor(x/G.CS)*100003+Math.floor(y/G.CS)); if(!L2) return -1e9; let best=-1e9; for(const [ax,ay,bx,by,w0,w1] of L2){ const dx=bx-ax, dy=by-ay, ll=dx*dx+dy*dy||1, t=Math.max(0,Math.min(1,((x-ax)*dx+(y-ay)*dy)/ll)), d=Math.hypot(x-ax-dx*t,y-ay-dy*t), k=w0+(w1-w0)*t-d; if(k>best) best=k; } return best; }; /* 川の中なら岸からの距離（正）、外なら負 */
+  const inWin=y=>{ for(const [a,b] of rvGrid().win) if(y>a&&y<b) return true; return false; };
+  const rivCarve=(x,y,e)=>{ const k=rivK(x,y); if(k<-90) return e; const tg=-1.4-Math.min(5,Math.max(0,k)/60), d=Math.abs(x-rX(y)), keep=d<110&&!inWin(y)?sm(110,50,d):0; /* 橋のない所で道が川に沿うときは、道ぞいを岸として残す */ return e+(Math.min(e,tg)-e)*sm(-90,0,k)*(1-keep); };
   const raw=(x,y,nl)=>{ const u=uOf(x), v=vAt(y), h=macro(u,v), b=bAt(x,y), [bv,bd,bw,bs]=b, e0=elevM(h);
     const rough=(.55+.9*sm(P_SEA+.05,.6,h))*(1+.6*bv+.4*bs-.6*bw-.4*bd), dry=sm(2,45,Math.abs(e0));
     let e=e0+rough*dry*(42*nz(x,y,2300,3)+18*nz(x,y,560,9)+5*nz(x,y,140,4)+1.3*nz(x,y,34,7));
@@ -4737,11 +4745,15 @@ function pWorld(k){ pSeedRoad(k); const key=k+'|'+pOff.toFixed(4); if(pWorldMemo
     if(bv>.3){ const lv=volcLavaF(x,y), kv=sm(.3,.6,bv), m=nz(x,y,300,21)*.65+nz(x,y,110,22)*.35-sm(0,.5,lv)*.3, H=16+26*(.5+.5*nz(x,y,900,23)), t=sm(.04,.11,m), st=Math.floor(t*3.999)/3, tt=st+(t*3.999-Math.floor(t*3.999))/3*sm(.0,.25,t*3.999-Math.floor(t*3.999));
       e+=kv*H*(t*.35+tt*.65)*(1+.12*nz(x,y,40,24));
       if(lv>0&&!nl) e-=4.5*sm(.05,.6,lv)*kv; }
-    return e0<0?Math.min(e,e0*.6-.6):Math.max(e,.5+e0*.3); };
+    return rivCarve(x,y,e0<0?Math.min(e,e0*.6-.6):Math.max(e,.5+e0*.3)); };
   const rhC=new Map(), rhJ=j=>{ let r=rhC.get(j); if(r===undefined){ let a=0,c=0; for(let q=-8;q<=8;q++){ const yy=j*12+q*18, w=1-Math.abs(q)/9; a+=raw(rX(yy),yy)*w; c+=w; } r=Math.max(2.5,a/c); rhC.set(j,r); } return r; },
     roadH=y=>{ const f=y/12, j=Math.floor(f), t=f-j, p0=rhJ(j-1), p1=rhJ(j), p2=rhJ(j+1), p3=rhJ(j+2); return p1+.5*t*(p2-p0+t*(2*p0-5*p1+4*p2-p3+t*(3*(p1-p2)+p3-p0))); }; // 12ごとの高さの間をなめらかにつなぐ（坂で道が段々にならない）
   const lavaH=(x,y)=>{ const d=Math.abs(x-rX(y)), lv=volcLavaF(x,y), kv=sm(.3,.6,bAt(x,y)[0]); return hAt(x,y)+4.5*sm(.05,.6,lv)*kv*(d<60?1-sm(60,12,d):1)-1.4; }; // 溶岩の面の高さ：谷を埋めて、まわりより少し低く
-  const hFn0=(x,y)=>{ const d=Math.abs(x-rX(y)); let e=raw(x,y); if(d<60){ e+=(roadH(y)-e)*sm(60,12,d); } return e; };
+  // 橋：道が川を渡る所（地図で橋のある所）。橋の上は地面を道の高さに盛らず、下を水のまま残す。橋の面は道より高く、両端はなだらかに上がる
+  let BRS=null; const brSpans=()=>{ if(BRS) return BRS; BRS=[]; for(const [a,b] of rvGrid().win){ let y0=null, y1=null; for(let y=a;y<=b;y+=20) if(rivK(rX(y),y)>-25){ if(y0==null) y0=y; y1=y; } if(y0!=null) BRS.push([y0-40,y1+40]); } return BRS; }; /* 橋は、地図の橋の範囲のうち実際に水の上にかかる所（両端に少し陸）*/
+  const brF=y=>{ for(const [a,b] of brSpans()) if(y>a-60&&y<b+60) return sm(a-60,a+10,y)*sm(b+60,b-10,y); return 0; };
+  const deckH=y=>{ const r=roadH(y), b=brF(y); return r+(Math.max(r,11)-r)*b; };
+  const hFn0=(x,y)=>{ const d=Math.abs(x-rX(y)); let e=raw(x,y); if(d<60){ e+=(roadH(y)-e)*sm(60,12,d)*(1-brF(y)); } return e; };
   // 見つけるもの（記念物）の足もとは平らにならす（急な斜面で片側が浮かないように）
   let padOn=false; const padNear=(x,y,m)=>{ if(!padOn) return false; const n0=Math.floor((y-120-m)/LG), n1=Math.floor((y+120+m)/LG)+1; for(let n=Math.max(0,n0);n<=n1;n++){ const s2=dSpot(n); if(Math.hypot(x-s2.x,y-s2.yy)<s2.rad*1.1+16+m) return true; } return false; }; const hFn=(x,y)=>{ let e=hFn0(x,y); if(!padOn) return e; const n0=Math.floor((y-120)/LG), n1=Math.floor((y+120)/LG)+1;
     for(let n=Math.max(0,n0);n<=n1;n++){ const s2=dSpot(n), R0=s2.rad*1.1, dd=Math.hypot(x-s2.x,y-s2.yy); if(dd>R0+16) continue; if(s2.e0===undefined) s2.e0=hFn0(s2.x,s2.yy); e+=(s2.e0-e)*sm(R0+16,R0,dd); } return e; };
@@ -4768,7 +4780,7 @@ function pWorld(k){ pSeedRoad(k); const key=k+'|'+pOff.toFixed(4); if(pWorldMemo
   padOn=true;
   // 見つけるもの（記念物）のまわりには木・岩・小物・草を置かない（重なって見えないように）
   const nearMon=(x,y,pad)=>{ const n0=Math.max(0,Math.floor((y-140)/LG)-1), n1=Math.floor((y+140)/LG)+1; for(let n=n0;n<=n1;n++){ const s2=dSpot(n); if(Math.hypot(x-s2.x,y-s2.yy)<s2.rad+pad) return true; } return false; };
-  const w={k,KM,ST,W,vAt,uOf,pn,nz,sm,mir,macro,bAt,bName,elevM,roadU,rMean,rX,raw,roadH,hFn,hTile,hAt,TL,colAt,lin,mix,C,LG,dSpot,nearMon,padNear,volcLavaF,lavaH,FBI};
+  const w={k,KM,ST,W,vAt,uOf,pn,nz,sm,mir,macro,bAt,bName,elevM,roadU,rMean,rX,raw,roadH,hFn,hTile,hAt,rivK,brSpans,brF,deckH,TL,colAt,lin,mix,C,LG,dSpot,nearMon,padNear,volcLavaF,lavaH,FBI};
   pWorldMemo.set(key,w); return w; }
 /* ---------- 見渡す：今いる場所に立って、道の先の世界を眺める（WebGL） ---------- */
 // ブレワイの景色に寄せて：地上の目の高さから水平に近く見る。遠くは青白くかすみ（太陽の側は明るく）、谷には低い霧。
@@ -4792,7 +4804,7 @@ async function pLookOpen(){
   // 大きな地形（山・湖・雪山・火山・砂漠・湿原）は地図と同じ計算、そこへ足もとの起伏・岩山の尾根・砂丘・道の細かな曲がりを足す。
   // 近くは細かい区画を馬の前後に作っては捨て、遠くは粗い地形で地平線まで描く
   const CL=540, LAT=900, HS=118;
-  const WD=pWorld(k), {KM,ST,vAt,uOf,pn,nz,macro,bAt,bName,elevM,roadU,rMean,rX,raw,roadH,hFn,hTile,hAt,TL,FBI,dSpot,LG,nearMon,padNear,volcLavaF,lavaH}=WD;
+  const WD=pWorld(k), {KM,ST,vAt,uOf,pn,nz,macro,bAt,bName,elevM,roadU,rMean,rX,raw,roadH,hFn,hTile,hAt,TL,FBI,dSpot,LG,nearMon,padNear,volcLavaF,lavaH,rivK,brSpans,brF,deckH}=WD;
   const u0=pRX(pm2y(nowM)), OX=u0*KM;
   const elev=e=>e; // 高さはもう見渡すの単位
   const mx0=rX(y0), b0=bAt(mx0,y0);
@@ -5045,10 +5057,22 @@ async function pLookOpen(){
   const rtx=new T.CanvasTexture(rcv); rtx.wrapS=T.ClampToEdgeWrapping; rtx.wrapT=T.RepeatWrapping; rtx.colorSpace=T.SRGBColorSpace; rtx.anisotropy=4;
   const roadMat=patch(new T.MeshToonMaterial({map:rtx,gradientMap:gmap,side:T.DoubleSide,transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2}));
   const roadFor=(tileG,yA,yB,P)=>{ const WD=13, NU=7, Pp=[], Uv=[], I=[]; let n=0; for(let y=yA;y<=yB+.1;y+=3){ const x=rX(y), dx=rX(y+2)-rX(y-2), l=Math.hypot(dx,4)||1, ax=4/l, ay=dx/l;
-      for(let q=0;q<NU;q++){ const t=q/(NU-1)-.5, px=x+t*WD*ax, py=y-t*WD*ay; Pp.push(X(px),Math.max(-.2,hAt(px,py))+.25,Z(py)); Uv.push(q/(NU-1),(y-yA)/P*Math.round(P/30)); }
-      if(n) for(let q=0;q<NU-1;q++){ const a=(n-1)*NU+q, b=a+1, c=a+NU, e=c+1; I.push(a,c,b,b,c,e); } n++; }
+      for(let q=0;q<NU;q++){ const t=q/(NU-1)-.5, px=x+t*WD*ax, py=y-t*WD*ay; Pp.push(X(px),Math.max(-.2,hW(px,py))+.25-.4*brF(py),Z(py)); /* 橋の上では土の道を石の面の下に隠す */ Uv.push(q/(NU-1),(y-yA)/P*Math.round(P/30)); }
+      if(n&&brF(y)<.6&&brF(y-3)<.6) for(let q=0;q<NU-1;q++){ const a=(n-1)*NU+q, b=a+1, c=a+NU, e=c+1; I.push(a,c,b,b,c,e); } n++; } /* 橋の上は土の道を描かない（石の面を見せる）*/
     const g=new T.BufferGeometry(); g.setAttribute('position',new T.Float32BufferAttribute(Pp,3)); g.setAttribute('uv',new T.Float32BufferAttribute(Uv,2)); g.setIndex(I); g.computeVertexNormals();
     const m=new T.Mesh(g,roadMat); m.receiveShadow=true; m.renderOrder=1; tileG.add(m); };
+  // 石の橋（ブレワイのハイリア大橋のような）：白っぽい切り石の、同じ形のアーチがずっと続く橋。橋脚の根元は水に沈み、両側に低い石の欄干。両端は道の高さから少しずつ上がる
+  const bridgeFor=(G,yA,yB)=>{ const Pp=[]; for(const [a,b] of brSpans()){ const y0=Math.max(a-60,yA), y1=Math.min(b+60,yB); if(y1<=y0) continue;
+      const prof=y=>{ const x=rX(y), dx=rX(y+2)-rX(y-2), l=Math.hypot(dx,4)||1, ax=4/l, ay=dx/l, dk=deckH(y), PS=40, sp=((y-a)%PS+PS)%PS, wet=hAt(x,y)<.6&&brF(y)>.98;
+        let sf=-4; if(wet&&sp>7){ const t=(sp-7)/(PS-7)*2-1; sf=.6+(dk-2.2-.6)*Math.sqrt(Math.max(0,1-t*t)); }
+        const cs=[[-6.8,dk+.2],[-6.8,dk+1.3],[-7.7,dk+1.3],[-7.7,dk-.5],[-7.5,dk-.5],[-7.5,sf],[7.5,sf],[7.5,dk-.5],[7.7,dk-.5],[7.7,dk+1.3],[6.8,dk+1.3],[6.8,dk+.2],[-6.8,dk+.2]]; /* 最後は橋の面（石だたみ）*/
+        return cs.map(([o,h])=>[X(x+o*ax),h,Z(y-o*ay)]); };
+      /* 欄干の親柱：一定の間隔で、少し高く太い角柱 */ for(let y=Math.ceil((y0-a)/10)*10+a;y<=y1;y+=10){ if(brF(y)<.3) continue; const x=rX(y), dx=rX(y+2)-rX(y-2), l=Math.hypot(dx,4)||1, ax=4/l, ay=dx/l, dk=deckH(y);
+        for(const sd of [-1,1]){ const o=sd*7.25, cx=x+o*ax, cy=y-o*ay, hx=.75, hy=.75, lo=dk+.2, hi=dk+2.1, cn=[[-hx,-hy],[hx,-hy],[hx,hy],[-hx,hy]].map(([u,v])=>[X(cx+u*ax+v*ay*0),Z(cy-u*ay+v)]);
+          for(let q=0;q<4;q++){ const A=cn[q], B=cn[(q+1)%4]; Pp.push(A[0],lo,A[1],B[0],lo,B[1],A[0],hi,A[1],A[0],hi,A[1],B[0],lo,B[1],B[0],hi,B[1]); } Pp.push(cn[0][0],hi,cn[0][1],cn[2][0],hi,cn[2][1],cn[1][0],hi,cn[1][1],cn[0][0],hi,cn[0][1],cn[3][0],hi,cn[3][1],cn[2][0],hi,cn[2][1]); } }
+      let pv=prof(y0); for(let y=y0+2;y<=y1+.01;y+=2){ const cu=prof(y); for(let q=0;q<cu.length-1;q++){ const A=pv[q], B=pv[q+1], C2=cu[q], D=cu[q+1]; Pp.push(...A,...C2,...B,...B,...C2,...D); } pv=cu; } }
+    if(!Pp.length) return; const g=new T.BufferGeometry(); g.setAttribute('position',new T.Float32BufferAttribute(Pp,3)); g.computeVertexNormals();
+    const m=new T.Mesh(g,memo('brM',()=>patch(new T.MeshToonMaterial({color:c3([196,190,174]),gradientMap:gmap2,side:T.DoubleSide}),0,1))); m.castShadow=m.receiveShadow=true; G.add(m); };
   // ---- 道しるべ：光の柱と名前の札。今いる所は青い光 ----
   const beam=(x,y,col,h2,w)=>{ const e=Math.max(0,hAt(x,y)), m=new T.Mesh(new T.CylinderGeometry(w*.6,w,h2,10,1,true),new T.MeshBasicMaterial({color:col,transparent:true,opacity:.5,depthWrite:false,blending:T.AdditiveBlending,fog:false})); m.position.set(X(x),e+h2/2,Z(y)); scene.add(m); return e; };
   const label=(txt,sub,col)=>{ const c=document.createElement('canvas'), x=c.getContext('2d'), F='600 30px "Hiragino Sans","Noto Sans JP",sans-serif'; x.font=F; const w=Math.max(x.measureText(txt).width,sub?x.measureText(sub).width*.8:0)+36; c.width=Math.ceil(w); c.height=sub?92:58; x.translate(c.width,0); x.scale(-1,1); // 画面ごと左右を返すので、文字は先に裏返しておく
@@ -5371,13 +5395,13 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
     }
   };
   // ---- 区画：馬の前後に、1分ぶんずつの細かい地面と、そこに乗る道・木・岩・水を作っては捨てる ----
-  const SL=0, sh=()=>0, rXw=rX, hW=hAt;
+  const SL=0, sh=()=>0, rXw=rX, hW=(x,y)=>{ const b=brF(y); return b>0&&Math.abs(x-rX(y))<7.6?Math.max(hAt(x,y),deckH(y)):hAt(x,y); }; /* 橋の上は橋の面の高さ */
   const chunks=new Map(); let cJob=null;
   const chunkGen=function*(ci){ const yA=ci*CL, yB=yA+CL, P=CL, rc=rX(yA+CL/2), XA=Math.round((rc-LAT)/ST)*ST, XB=XA+2*LAT, nx=(XB-XA)/ST+1, ny=P/ST+1, G=new T.Group(), br0=pRng('ch'+ci,8);
     for(let tj=Math.floor(yA/TL);tj<=Math.floor(yB/TL);tj++){ for(let ti=Math.floor(XA/TL);ti<=Math.floor(XB/TL);ti++) hTile(ti,tj); yield; }
     const near=mkGround(XA,XB,yA,yB,ST,(x,y)=>hAt(x,y),(x,y)=>bAt(x,y),true); yield;
     const gN=new T.Mesh(near,[gMat,gMatSk]); gN.receiveShadow=true; gN.castShadow=true; G.add(gN);
-    waterFor(G,yA,yB,XA,XB); roadFor(G,yA,yB,P); yield;
+    waterFor(G,yA,yB,XA,XB); roadFor(G,yA,yB,P); bridgeFor(G,yA,yB); yield;
     treesFor(G,yA,P,XA,XB,near,nx,.16,pRng('tr'+ci,4)); yield;
     rocksFor(G,yA,P,XA,XB,near,nx,ny,.42,pRng('rk'+ci,6)); near.attributes.color.needsUpdate=true; yield;
     propsFor(G,yA,P,XA,XB,FBI!=null?BIO:bName(bAt(rc,yA+CL/2)),.42,br0);
@@ -6094,11 +6118,36 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
     rm.forEach(o=>{ o.parent.remove(o); o.geometry.dispose(); });
     for(const {m,gs} of by.values()){ let n=0; gs.forEach(x=>n+=x.attributes.position.count); const P=new Float32Array(n*3), N=new Float32Array(n*3), DD=new Float32Array(n*6); let o2=0; gs.forEach(x=>{ P.set(x.attributes.position.array,o2*3); N.set(x.attributes.normal.array,o2*3); DD.set(x.userData.dir,o2*6); o2+=x.attributes.position.count; x.dispose(); });
       let ge=new T.BufferGeometry(); ge.setAttribute('position',new T.BufferAttribute(P,3)); ge.setAttribute('normal',new T.BufferAttribute(N,3)); let mm=m; const wr=weather(ge,m); if(wr){ ge=wr[0]; mm=wr[1]; if(ge.attributes.position.count===n){ const ib=new T.InterleavedBuffer(DD,6); ge.setAttribute('aDir',new T.InterleavedBufferAttribute(ib,3,0)); ge.setAttribute('aCtr',new T.InterleavedBufferAttribute(ib,3,3)); } } const me=new T.Mesh(ge,mm); me.castShadow=me.receiveShadow=true; g.add(me); } };
-  if(/lkshot/.test(location.search)){ L.DK=DK; L.bake=bake; L.hW=hW; L.OX=OX; L.y0=y0; L.RK=RK; L.X=X; L.Z=Z; L.hAt=hAt; L.dSpot=dSpot; L.getPy=()=>py; L.uOf=uOf; L.vAt=vAt; L.macro=macro; L.elevM=elevM; L.pVA=typeof pVolcAt==="function"?pVolcAt:null; L.bAt=bAt; L.padNear=padNear; L.hFn=hFn; L.raw=raw; L.animSteam=animSteam; L.mapV=m=>[pm2y(m)/PX+pOff,pRX(pm2y(m)),pOff,PATH_H0]; L.pVL=typeof pVolcLava==="function"?pVolcLava:null; L.vLF=volcLavaF; L.rX=rX; L.regenRing=()=>{ { const g=farGen(py+600); let r; while(!(r=g.next()).done); setFar(r.value); } const g=ringGen(py); let r; while(!(r=g.next()).done); setRing(r.value); }; }
+  if(/lkshot/.test(location.search)){ L.G={pRivers,pm2y,PATH_H1,pRX,PXf:()=>PX,offf:()=>pOff,WD}; L.DK=DK; L.bake=bake; L.hW=hW; L.OX=OX; L.y0=y0; L.RK=RK; L.X=X; L.Z=Z; L.hAt=hAt; L.dSpot=dSpot; L.getPy=()=>py; L.uOf=uOf; L.vAt=vAt; L.macro=macro; L.elevM=elevM; L.pVA=typeof pVolcAt==="function"?pVolcAt:null; L.bAt=bAt; L.padNear=padNear; L.hFn=hFn; L.raw=raw; L.animSteam=animSteam; L.mapV=m=>[pm2y(m)/PX+pOff,pRX(pm2y(m)),pOff,PATH_H0]; L.pVL=typeof pVolcLava==="function"?pVolcLava:null; L.vLF=volcLavaF; L.rX=rX; L.regenRing=()=>{ { const g=farGen(py+600); let r; while(!(r=g.next()).done); setFar(r.value); } const g=ringGen(py); let r; while(!(r=g.next()).done); setRing(r.value); }; }
   const putDisc=py=>{ const n0=Math.max(0,Math.floor((py-260)/LG)-1), n1=Math.floor((py+1500)/LG); let built=0;
     for(const [n,o] of disc) if(n<n0||n>n1){ scene.remove(o.g); o.g.traverse(m=>{ if(m.geometry) m.geometry.dispose(); }); disc.delete(n); }
     for(let n=n0;n<=n1;n++){ if(disc.has(n)) continue; if(built++&&L.started) break; const s=dSpot(n), g=new T.Group(); DK[s.tp][1](g); bake(g); g.scale.setScalar(s.SC); let e=hW(s.x,s.yy); if(s.nm==='小さな池') e=Math.min(e,hW(s.x+12,s.yy),hW(s.x-12,s.yy),hW(s.x,s.yy+12),hW(s.x,s.yy-12))+.3; g.position.set(X(s.x),Math.max(-.2,e)-.15,Z(s.yy)); g.rotation.y=s.nm==='道しるべ'?(s.sg>0?-1.5708:1.5708):s.sg*.3; scene.add(g); disc.set(n,{g,s,seen:false}); }
     for(const [n,o] of disc){ if(!o.seen&&o.s.yy-py<110&&o.s.yy-py>-20&&(()=>{ const v=o.g.position.clone(); v.y+=8; v.project(cam); return Math.abs(v.x)<.85&&v.z<1&&o.g.position.distanceTo(cam.position)<150; })()){ o.seen=true; findEl.textContent=o.s.nm; findEl.classList.remove('on'); void findEl.offsetWidth; findEl.classList.add('on'); } } };
+  // 祠と塔（地図の祠・シーカータワーと同じ場所・同じ時刻）：地図ではかなり遠くにあるが、見渡すでは見える所（道から少し離れた丘の上）に置く
+  //  祠：暗い石の八角の台に、すぼまった石の本体と張り出した屋根。すき間の線と入口の前の台がオレンジに光る（ブレワイの、まだ入っていない祠）
+  //  塔：岩の台から、光る線の入った中央の柱と、それを囲む4本の脚と横桁の骨組みが高くのび、てっぺんに四角い展望台と丸い端末
+  { const L2=pPoiLast&&pPoiLast.list||[], gM=new T.MeshBasicMaterial({color:c3([255,138,40]).multiplyScalar(1.7)}), mSl=tm([96,100,114]), mSl2=tm([120,122,130]), mStn=tm([118,114,106]),
+      gSp=s0=>{ const sp=new T.Sprite(new T.SpriteMaterial({map:vGlowTex,color:0xffb060,transparent:true,opacity:.75,blending:T.AdditiveBlending,depthWrite:false,fog:false})); sp.scale.setScalar(s0); return sp; },
+      beam=(g,m,a,b,r)=>{ const A=new T.Vector3(...a), B=new T.Vector3(...b), d=B.clone().sub(A), o=mk(new T.CylinderGeometry(r,r,d.length(),6),m); o.position.copy(A).add(B).multiplyScalar(.5); o.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),d.normalize()); g.add(o); },
+      shrine=()=>{ const g=new T.Group(); g.add(mk(new T.CylinderGeometry(10.4,11,.6,8),mStn,0,.3,0)); g.add(mk(new T.CylinderGeometry(9,9.6,1.2,8),mSl2,0,1.1,0));
+        g.add(mk(new T.CylinderGeometry(4.4,5.3,5.2,8),mSl,0,4.3,0)); g.add(mk(new T.CylinderGeometry(7.2,7.4,.6,8),mSl2,0,7.1,0)); g.add(mk(new T.ConeGeometry(6.4,4.6,8),mSl,0,9.7,0)); g.add(mk(new T.CylinderGeometry(.5,1.1,1.4,8),mSl2,0,12.5,0));
+        for(const [r,y] of [[5.05,2.6],[4.7,5.6],[7.45,7.1]]){ const t=new T.Mesh(new T.TorusGeometry(r,.13,4,8),gM); t.rotation.x=Math.PI/2; t.rotation.z=Math.PI/8; t.position.y=y; g.add(t); }
+        for(let q=0;q<8;q++){ if(q===2) continue; const a=q/8*6.283+Math.PI/8, b=new T.Mesh(new T.BoxGeometry(.22,2.8,.14),gM); b.position.set(Math.cos(a)*4.95,4.1,Math.sin(a)*4.95); b.rotation.y=-a+Math.PI/2; g.add(b); }
+        const dr=mk(new T.BoxGeometry(2.6,3.8,.6),tm([20,22,28]),0,3.6,4.75); g.add(dr); const fr=new T.Mesh(new T.BoxGeometry(3.1,.18,.2),gM); fr.position.set(0,5.6,5.05); g.add(fr);
+        g.add(mk(new T.CylinderGeometry(.45,.7,1.5,6),mSl2,0,2.4,8)); const tp=new T.Mesh(new T.CylinderGeometry(.55,.55,.2,6),gM); tp.position.set(0,3.2,8); g.add(tp);
+        const sp=gSp(16); sp.position.y=8; g.add(sp); return g; },
+      tower=()=>{ const g=new T.Group(), H=140, lw=y=>15-6*y/H; g.add(mk(new T.CylinderGeometry(19,24,8,8),mStn,0,0,0)); g.add(mk(new T.CylinderGeometry(9,10,6,8),mSl2,0,6,0)); g.add(mk(new T.BoxGeometry(7,H,7),mSl,0,4+H/2,0));
+        for(const [x,z,ry] of [[3.56,0,0],[-3.56,0,0],[0,3.56,1],[0,-3.56,1]]){ for(const o of [-1.4,1.4]){ const b=new T.Mesh(new T.BoxGeometry(ry?.22:.12,H-10,ry?.12:.22),gM); b.position.set(x+(ry?o:0),6+H/2,z+(ry?0:o)); g.add(b); } }
+        for(const [sx,sz] of [[1,1],[1,-1],[-1,1],[-1,-1]]) beam(g,mSl2,[sx*15,3,sz*15],[sx*9,4+H,sz*9],1.3);
+        const lv=[]; for(let y=14;y<H;y+=14) lv.push(y); lv.forEach((y,q)=>{ const w=lw(y), C4=[[w,w],[w,-w],[-w,-w],[-w,w]]; for(let e=0;e<4;e++){ const a=C4[e], b=C4[(e+1)%4]; beam(g,mSl2,[a[0],y,a[1]],[b[0],y,b[1]],.6); if(q<lv.length-1){ const y2=lv[q+1], w2=lw(y2), a2=[a[0]/w*w2,a[1]/w*w2], b2=[b[0]/w*w2,b[1]/w*w2]; beam(g,mSl2,[a[0],y,a[1]],[b2[0],y2,b2[1]],.32); beam(g,mSl2,[b[0],y,b[1]],[a2[0],y2,a2[1]],.32); } }
+          for(const [sx,sz] of [[1,1],[1,-1],[-1,1],[-1,-1]]) beam(g,mSl2,[sx*w,y,sz*w],[sx*3.5,y,sz*3.5],.4); });
+        g.add(mk(new T.BoxGeometry(28,2.6,28),mSl2,0,5+H,0)); g.add(mk(new T.BoxGeometry(24,2.2,24),mSl,0,2.8+H,0)); for(const [x,z,w,d] of [[0,13.6,28,.9],[0,-13.6,28,.9],[13.6,0,.9,28],[-13.6,0,.9,28]]) g.add(mk(new T.BoxGeometry(w,1.6,d),mSl,x,7.1+H,z));
+        for(const [x,z,w,d] of [[0,14.05,28.2,.12],[0,-14.05,28.2,.12],[14.05,0,.12,28.2],[-14.05,0,.12,28.2]]){ const b=new T.Mesh(new T.BoxGeometry(w,.32,d),gM); b.position.set(x,5+H,z); g.add(b); }
+        g.add(mk(new T.CylinderGeometry(5,5.6,1.2,10),mSl2,0,6.8+H,0)); g.add(mk(new T.SphereGeometry(4.4,14,8,0,6.283,0,1.57),mSl,0,7.4+H,0)); const ring=new T.Mesh(new T.TorusGeometry(4.5,.22,4,20),gM); ring.rotation.x=Math.PI/2; ring.position.y=8.2+H; g.add(ring); g.add(mk(new T.ConeGeometry(.7,5,6),mSl2,0,13.5+H,0));
+        const sp=gSp(46); sp.position.y=H+10; g.add(sp); return g; };
+    const v0=vAt(0); L2.forEach((p,i)=>{ if(p.t!=='shrine'&&p.t!=='tower') return; const y=(p.v-v0)*KM; if(y<-3000||y>(PATH_H1-PATH_H0+30)*KM) return; const r=pRng('lkpoi'+Math.round(p.v),3), sd=p.x>=WD.roadU(p.v)?1:-1;
+      let best=null; for(let t=0;t<14&&!best;t++){ const d=(p.t==='tower'?340:200)+r()*(p.t==='tower'?220:220), yy=y+(r()-.5)*120, x=rX(yy)+sd*d, R=p.t==='tower'?20:12; const es=[hAt(x,yy),hAt(x+R,yy),hAt(x-R,yy),hAt(x,yy+R),hAt(x,yy-R)]; if(Math.min(...es)>.8&&!nearMon(x,yy,R+6)&&!(BIO==='volc'&&volcLavaF(x,yy)>.05)) best=[x,yy,Math.min(...es)]; }
+      if(!best) return; const g=p.t==='tower'?tower():shrine(); g.position.set(X(best[0]),best[2]-.4,Z(best[1])); g.rotation.y=Math.atan2(rX(best[1])-best[0],0)*0+(sd>0?-1.5708:1.5708); scene.add(g); }); }
   const animDisc=(t,dt)=>{ for(const [,o] of disc){ const u=o.g.userData; if(u.mill) u.mill.rotation.z+=dt*.8; if(u.fire){ u.fire.scale.set(1+Math.sin(t*13)*.12,1+Math.sin(t*9+1)*.2,1+Math.cos(t*11)*.12); u.fire.children.forEach(c=>{ if(c.isSprite){ const p=c.userData.ph||0; c.material.rotation=Math.sin(t*5+p)*.12; c.material.opacity=.8+.2*Math.sin(t*17+p*3); } }); } if(u.deer) u.deer.forEach((n,q)=>{ n.rotation.x=.9*Math.max(0,Math.sin(t*.5+q*2.1)); }); if(u.steam) u.steam.forEach(st=>animSteam(st,t)); } };
   const tmC=new Map(), btm=c=>{ const k2=c.join(); if(!tmC.has(k2)) tmC.set(k2,patch(new T.MeshToonMaterial({color:c3(c),gradientMap:gmap}))); return tmC.get(k2); };
   // 鳥：ブレワイの図鑑・設定画・飛んでいる姿を見て、種類ごとに体・頭・翼・尾・脚を一から作り、飛び方も別々に作る（形の使い回しはしない）
