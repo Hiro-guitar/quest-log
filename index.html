@@ -2610,6 +2610,13 @@ function paintBg(){
   bgNow=ph;
 }
 paintBg(); setInterval(paintBg,60*1000); setInterval(()=>{ const t=$('sensor'); if(t&&t.dataset.m!==String(new Date().getMinutes())) wxRender(); },1000); setInterval(wxFetch,10*60*1000); setTimeout(wxFetch,500); document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible'){ wxRender(); wxFetch(); } }); setTimeout(()=>{ if(shrineGet()) shrineShow(); },600); window.addEventListener('resize',()=>{ clearTimeout(paintBg._r); paintBg._r=setTimeout(paintBg,300); });
+// ホーム画面のアプリは閉じずに戻ると、前に開いたときの古いページのまま続くことがある。戻ったとき・ときどき、公開中のページが新しくなっていないか確かめ、新しければ読み直す（入力中や画面を重ねて開いているときは待つ）
+{ const docT=Date.parse(document.lastModified)||0; let busy=false;
+  const verCheck=async()=>{ if(busy||document.hidden||location.protocol!=='https:'||!docT) return; busy=true; try{
+      const r=await fetch(location.pathname+'?vc='+Date.now(),{method:'HEAD',cache:'no-store'}), lm=Date.parse(r.headers.get('last-modified')||'');
+      if(r.ok&&lm&&lm>docT+5000){ const ae=document.activeElement, typing=ae&&/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName); if(!typing){ location.reload(); return; } }
+    }catch(_){} busy=false; };
+  document.addEventListener('visibilitychange',()=>{ if(!document.hidden) setTimeout(verCheck,300); }); addEventListener('pageshow',e=>{ if(e.persisted) setTimeout(verCheck,300); }); setInterval(verCheck,10*60*1000); setTimeout(verCheck,4000); }
 // 景色の写真を端末に保存しておき、次からはすぐ表示する
 if('serviceWorker' in navigator && location.protocol==='https:'){
   navigator.serviceWorker.register('sw.js').then(()=>navigator.serviceWorker.ready).then(r=>{
