@@ -5355,10 +5355,12 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
         im.count=m; im.castShadow=im.receiveShadow=true; tileG.add(im); } }
     }
     if(BIO==='desert'){
-      // サボテンと枯れた茂み
-      const cac=memo('cac',()=>mergeG([new T.CylinderGeometry(.45,.5,5,8).translate(0,2.5,0),new T.SphereGeometry(.45,8,6).translate(0,5,0),br(0,2.2,0,1.1,2.4,0,.3,.3),new T.CylinderGeometry(.3,.3,1.6,8).translate(1.1,3.2,0),new T.SphereGeometry(.3,8,6).translate(1.1,4,0),br(0,3,0,-1,3.2,0,.28,.28),new T.CylinderGeometry(.28,.28,1.2,8).translate(-1,3.8,0),new T.SphereGeometry(.28,8,6).translate(-1,4.4,0)]));
-      scat(cac,bt([92,136,70]),110,()=>{ const [x,y]=nearRoad(12,210); return far(x,y,10)?[x,y,.8+br0()*.6,1,br0()*6.28,-.2]:null; });
-      scat(memo('bushG',()=>new T.IcosahedronGeometry(1,1)),memo('bushM',()=>patch(new T.MeshToonMaterial({color:c3([176,152,98]),gradientMap:gmap}),.1)),320,()=>{ const [x,y]=nearRoad(7,210); return far(x,y,7)?[x,y,.5+br0()*.9,.6,br0()*6.28,0]:null; });
+      // ブレワイのゲルド砂漠：背の高いサボテンはなく、ほぼ砂丘だけ。ところどころにエレキの実のなる丸いサボテン（平たい玉がいくつも重なった低い株）が数株ずつかたまって生え、乾いた草の小さな株がまばらにある
+      const cacG=memo('cac2',()=>mergeG([[0,.55,0,.75],[.55,.35,.3,.55],[-.5,.32,-.2,.5],[.15,1.25,.1,.5],[-.25,1.05,.35,.42],[.45,.95,-.35,.4],[0,1.75,-.05,.36]].map(([x,y,z,r])=>new T.SphereGeometry(r,10,7).scale(1,.78,.92).translate(x,y,z))));
+      const fruG=memo('cfru',()=>mergeG([[.12,2.06,0,.17],[-.3,1.36,.52,.15],[.6,1.2,-.42,.15]].map(([x,y,z,r])=>new T.SphereGeometry(r,8,6).translate(x,y,z))));
+      const CL0=[]; for(let k=0;k<4;k++){ const [cx,cy]=nearRoad(14,200); const n=2+Math.floor(br0()*3); for(let q=0;q<n;q++){ const a=br0()*6.28, d=1.5+br0()*5; CL0.push([cx+Math.cos(a)*d,cy+Math.sin(a)*d,.7+br0()*.5,1,br0()*6.28,-.15]); } }
+      { let i=0; scat(cacG,bt([96,134,78]),CL0.length,()=>{ const c=CL0[i++]; return c&&far(c[0],c[1],8)?c:null; }); i=0; scat(fruG,bt([238,200,72]),CL0.length,()=>{ const c=CL0[i++]; return c&&far(c[0],c[1],8)?c:null; }); }
+      scat(memo('bushG',()=>new T.IcosahedronGeometry(1,1)),memo('bushM',()=>patch(new T.MeshToonMaterial({color:c3([176,152,98]),gradientMap:gmap}),.1)),60,()=>{ const [x,y]=nearRoad(7,210); return far(x,y,7)?[x,y,.35+br0()*.5,.5,br0()*6.28,0]:null; });
     }
   };
   // ---- 区画：馬の前後に、1分ぶんずつの細かい地面と、そこに乗る道・木・岩・水を作っては捨てる ----
