@@ -5060,6 +5060,8 @@ async function pLookOpen(){
   // 栗毛にクリーム色の長いたてがみと尾。影は2段でくっきり（ブレワイのような塗り）
   const gc2=document.createElement('canvas'); gc2.width=2; gc2.height=1; { const x=gc2.getContext('2d'); x.fillStyle='rgb(150,150,150)'; x.fillRect(0,0,1,1); x.fillStyle='#fff'; x.fillRect(1,0,1,1); }
   const gmap2=new T.CanvasTexture(gc2); gmap2.minFilter=gmap2.magFilter=T.NearestFilter; gmap2.colorSpace=T.NoColorSpace;
+  const gcS=document.createElement('canvas'); gcS.width=4; gcS.height=1; { const x=gcS.getContext('2d'); [[0,120],[1,150],[2,215],[3,255]].forEach(([i,v])=>{ x.fillStyle=`rgb(${v},${v},${v})`; x.fillRect(i,0,1,1); }); }
+  const gmapS=new T.CanvasTexture(gcS); gmapS.minFilter=gmapS.magFilter=T.LinearFilter; gmapS.colorSpace=T.NoColorSpace; /* 岩用：段にならず、なめらかに明るさが移る。影でも真っ暗にならない */
   // 筒の面の向きが内側を向く所があるので、両面を描く（向こう側が透けて見えないように）
   const tm=(c)=>patch(new T.MeshToonMaterial({color:c3(c),gradientMap:gmap2,side:T.DoubleSide}));
   // 馬と乗り手の質感：やわらかい2段の光（境目はなめらか）、毛並みのつや（輪郭がうっすら明るい）、
@@ -5409,6 +5411,15 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
   const rockG=(r,seed)=>{ const rr=pRng('rk'+seed,3), g=new T.IcosahedronGeometry(r,3), P=g.attributes.position, cuts=[]; for(let q=0;q<14;q++){ const n=new T.Vector3(rr()*2-1,rr()*1.6-.5,rr()*2-1).normalize(); cuts.push([n,r*(.5+rr()*.32)]); }
     const v=new T.Vector3(); for(let i=0;i<P.count;i++){ v.fromBufferAttribute(P,i); for(const [n,d] of cuts){ const k=v.dot(n); if(k>d) v.addScaledVector(n,d-k); } v.multiplyScalar(1+.04*(pNoise(v.x*.9+seed,v.z*.9+v.y*.4)-.5)); P.setXYZ(i,v.x,v.y,v.z); }
     const ng=g.toNonIndexed(); ng.computeVertexNormals(); return ng; };
+  // ブレワイ風の砂岩の塊：角ばった面ではなく、丸くふくらんだ大きなかたまり。上ほど張り出し（下がえぐれる）、横に地層のくびれが走る。くぼみと下向きの面は焦げ茶、張り出しと上面は明るい黄土色（頂点色）
+  const sandG=(r,seed,o={})=>{ const rr=pRng('sd'+seed,3), g=new T.SphereGeometry(r,64,44), P=g.attributes.position, v=new T.Vector3(), N=P.count, D=new Float32Array(N), ox=rr()*60, oz=rr()*60, uc=o.uc??.2, st=o.st??.035, lump=o.lump??.24, li=c=>c.map(q=>Math.pow(q/255,2.2)), c0=li(o.c0||[204,136,80]), c1=li(o.c1||[96,54,30]), c2=li(o.c2||[230,166,100]);
+    const n3=(x,y,z)=>pNoise(x+ox,z+y*.71+oz)+pNoise(y*1.3-z*.4+oz,x*.8-z*.6+ox)-1;
+    for(let i=0;i<N;i++){ v.fromBufferAttribute(P,i).divideScalar(r); const h=v.y; let f=1+lump*n3(v.x*1.5,v.y*1.5,v.z*1.5)+lump*.22*n3(v.x*3.3+5,v.y*3.3,v.z*3.3)+.02*n3(v.x*9,v.y*9,v.z*9);
+      f*=1+uc*h; { const w=Math.sin(h*r*1.9+n3(v.x*2,0,v.z*2)*2.2); f*=1+st*Math.sign(w)*Math.pow(Math.abs(w),.35); } f=Math.max(.35,f); D[i]=f; v.multiplyScalar(r*f); if(v.y<-r*.55) v.y=-r*.55; if(o.top!==0&&v.y>r*.62) v.y=r*.62+(v.y-r*.62)*.6; P.setXYZ(i,v.x,v.y,v.z); }
+    g.computeVertexNormals(); const Nn=g.attributes.normal, C=new Float32Array(N*3);
+    for(let i=0;i<N;i++){ const ny=Nn.getY(i), y=P.getY(i), t=Math.min(1,Math.max(0,(D[i]-.8)/.45)), sh=Math.min(1,Math.max(0,.15+t*.75+ny*.35)), band=.5+.5*Math.sin(y*2.1+n3(P.getX(i)*.3,0,P.getZ(i)*.3)*3), hi=Math.max(0,ny-.55)*1.6;
+      for(let k=0;k<3;k++){ let c=c1[k]+(c0[k]-c1[k])*sh; c+=(c2[k]-c)*Math.min(1,band*.28*sh+hi*.6); C[i*3+k]=c; } }
+    g.setAttribute('color',new T.BufferAttribute(C,3)); return g; };
   const Bx=(w,h,d,m,x,y,z)=>mk((m===mStone||m===mDark||m===mSand2)?chBox(w,h,d):new T.BoxGeometry(w,h,d),m,x,y,z), Cy=(rt,rb,h,m,x,y,z,sg=10)=>mk(new T.CylinderGeometry(rt,rb,h,sg),m,x,y,z), Sp=(r,m,x,y,z,d=1)=>mk(new T.IcosahedronGeometry(r,d),m,x,y,z);
   // 葉の房（記念物の木用）：でこぼこの扁平な球と、表面に貼った葉の板。色は上が明るい黄緑、下と内が暗い青緑。法線は木全体の丸みに寄せてやわらかく
   const crown=(cl,C0,base,seed)=>{ const lr=pRng('crown'+seed,3), v=new T.Vector3(), Pm=[], Nm=[], Cm=[], Pl=[], Nl=[], Cl=[], Ul=[], ys=cl.map(c=>c[1]), yLo=Math.min(...ys)-2, yHi=Math.max(...ys)+2;
@@ -5876,8 +5887,9 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
         const ne=Math.round(R*1.1); for(let q=0;q<ne;q++){ const a=r()*6.283, d=Math.sqrt(r())*R*.8, st=mkSteam(x+Math.cos(a)*d,y+.05,z+Math.sin(a)*d,{n:6,H:2+r()*1.8,s0:2.4+r()*.9,grow:2.4,op:.22,per:8+r()*5,wind:1.2,r:.8}); g.add(st); sts.push(st); } }
       /* 上の湯船から真ん中の湯船へこぼれる湯（白く泡立つ流れ） */
       { const P1=PO[0], P2=PO[1], ux=P2[0]-P1[0], uz=P2[1]-P1[1], L2=Math.hypot(ux,uz), nx=ux/L2, nz=uz/L2, a=Math.atan2(nz,nx), e1=fR(P1[2],P1[4],P1[5])(a); const sx=P1[0]+nx*(e1-.3), sz=P1[1]+nz*(e1-.3), len=2.8, hh=P1[3]-P2[3]; const st=mkSteam(sx+nx*len,P2[3]+.1,sz+nz*len,{n:8,H:4,s0:1.6,grow:3,op:.45,per:4.5,wind:.8,r:.4}); g.add(st); sts.push(st); }
-      for(const [x,z,rd,dark] of [[2.8,2.4,1.5,1],[-1.2,3.6,.7,0],[3.8,-1.6,.55,0],[10.8,7,.6,1]]){ const rk=mk(rockG(rd,190+x*3|0),dark?mBo2:mBo,x,.45,z); rk.scale.y=.75; rk.rotation.y=r()*6; g.add(rk); }
-      for(const [a,d,rd,sy] of [[3.6,13.2,3.4,1.4],[4.3,13.8,2.8,1.9],[2.9,13.6,2.4,1.25],[5.1,12.8,2.2,1.6],[1.6,14,2.0,1.15]]){ const rk=mk(rockG(rd,200+a*10|0),a>4?mCl2:mCl,Math.cos(a)*d,rd*.45,Math.sin(a)*d); rk.scale.y=sy; rk.rotation.y=r()*6; g.add(rk); }
+      const mSd=patch(new T.MeshToonMaterial({vertexColors:true,gradientMap:gmapS}),0,1); { const ob=mSd.onBeforeCompile; mSd.onBeforeCompile=sh=>{ ob(sh); sh.fragmentShader=sh.fragmentShader.replace('#include <opaque_fragment>',`{ vec3 q=vWP; float hz=(q.x+q.z)*.7071, wy=q.y+vn(vec2(hz*.12,q.y*.2))*1.6, lay=vn(vec2(hz*.09,wy*2.2))*.65+vn(vec2(hz*.22+7.,wy*5.5))*.35, ln=smoothstep(.58,.72,lay)*(1.-smoothstep(.72,.9,lay)), drp=vn(vec2(hz*1.7+q.x*.4,q.y*.12+3.)), big=vn(q.xz*.18+q.y*.11)*.6+vn(vec2(hz*.5,q.y*.5)+4.)*.4; vec3 nW=normalize(cross(dFdx(vWP),dFdy(vWP))); float tp=smoothstep(.55,.85,abs(nW.y)), tc=vn(q.xz*.55+3.)*.6+vn(q.xz*1.7)*.4; outgoingLight*=mix((.8+.3*big)*(1.-.15*ln)*(.9+.16*drp),(.78+.34*tc)*(.85+.25*big),tp); }
+#include <opaque_fragment>`); }; mSd.customProgramCacheKey=()=>'sandR2'; } const mSd2=patch(new T.MeshToonMaterial({vertexColors:true,gradientMap:gmapS}),0,1); for(const [x,z,rd] of [[2.8,2.4,1.4],[-1.2,3.6,.7],[3.8,-1.6,.55],[10.8,7,.6]]){ const rk=mk(sandG(rd,190+x*3|0,{c0:[176,170,156],c1:[96,92,86],c2:[214,210,198],uc:0,st:0,lump:.16}),mSd2,x,.3,z); rk.scale.y=.7; rk.rotation.y=r()*6; g.add(rk); keeps.push(rk); }
+      for(let [a,d,rd,sy] of [[3.5,12.6,4.2,1.25],[4.2,13,3.8,1.6],[2.85,12.8,3.4,1.15],[4.95,12.6,3.2,1.45],[1.9,13,3.0,1.05],[5.6,12.8,2.8,1.3],[1.2,13.4,2.6,1.2]]){ for(let it=0;it<20&&PO.some(([px,pz,R])=>Math.hypot(Math.cos(a)*d-px,Math.sin(a)*d-pz)<R+rd*.85);it++) d+=.4; const rk=mk(sandG(rd,200+a*10|0),mSd,Math.cos(a)*d,rd*.2,Math.sin(a)*d); rk.scale.y=sy; rk.rotation.y=r()*6; g.add(rk); keeps.push(rk); }
       for(const [x,z] of [[-1.5,-.5],[-4.6,-8.4]]){ const st=mkSteam(x,.8,z,{n:10,H:8,s0:1.3,grow:3.5,op:.22,per:6+r()*2,wind:.55,r:.5}); g.add(st); sts.push(st); }
       g.userData.keeps=[...keeps,...sts]; g.userData.steam=sts; },'volc'],
     // 雪山
