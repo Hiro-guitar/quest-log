@@ -5061,18 +5061,51 @@ async function pLookOpen(){
       if(n&&brF(y)<.6&&brF(y-3)<.6) for(let q=0;q<NU-1;q++){ const a=(n-1)*NU+q, b=a+1, c=a+NU, e=c+1; I.push(a,c,b,b,c,e); } n++; } /* 橋の上は土の道を描かない（石の面を見せる）*/
     const g=new T.BufferGeometry(); g.setAttribute('position',new T.Float32BufferAttribute(Pp,3)); g.setAttribute('uv',new T.Float32BufferAttribute(Uv,2)); g.setIndex(I); g.computeVertexNormals();
     const m=new T.Mesh(g,roadMat); m.receiveShadow=true; m.renderOrder=1; tileG.add(m); };
+  // ブレワイ風の質感（橋・祠・塔）：本物の石の写真（stone.jpg）を面の向きに合わせて貼り、種類ごとに模様を足す。
+  //  橋：切り石の目地（段ごとにずれる）、上面は大きな敷石、水ぎわの黒ずみと緑の水あか、雨だれ、上面の苔
+  //  祠・塔：赤銅色の古い石。祠は根元の渦巻きの浮き彫りの溝、上の細い回路の線、正面の紋がオレンジに光る。塔は柱一面の格子の窓が光る
+  let shTexV=null; const shTex=()=>{ if(!shTexV){ shTexV=new T.TextureLoader().load('stone.jpg'); shTexV.wrapS=shTexV.wrapT=T.RepeatWrapping; shTexV.colorSpace=T.NoColorSpace; shTexV.anisotropy=4; } return shTexV; };
+  const SH_FS={
+    br:`{ float S=.16; float tx=texture2D(uStn,p.zy*S).r*aw.x+texture2D(uStn,p.xz*S+.37).r*aw.y+texture2D(uStn,p.xy*S+.71).r*aw.z, tb=texture2D(uStn,p.zy*S*.22+.13).r*aw.x+texture2D(uStn,p.xz*S*.22+.5).r*aw.y+texture2D(uStn,p.xy*S*.22+.29).r*aw.z;
+      vec3 c=diffuseColor.rgb*(.55+.6*tx)*(.82+.36*tb);
+      if(aw.y>.5){ vec2 q=p.xz; float rw=floor(q.y/1.7), fx=fract((q.x+rw*1.1)/2.6), fy=fract(q.y/1.7), md=min(min(fx,1.-fx)*2.6,min(fy,1.-fy)*1.7); c*=(.8+.3*hh(vec2(floor((q.x+rw*1.1)/2.6),rw)))*(1.-.5*(1.-smoothstep(.04,.13,md))); float mo=smoothstep(.55,.8,vn(q*.35)+.25*tb)*.55+(1.-smoothstep(.04,.2,md))*smoothstep(.4,.7,vn(q*.9))*.6; c=mix(c,vec3(.2,.27,.1)*(.7+.6*tx),clamp(mo,0.,1.)*.4); }
+      else { float h=abs(wn.x)>abs(wn.z)?p.z:p.x, rw=floor(p.y/.85), fx=fract((h+rw*.95)/1.9), fy=fract(p.y/.85), md=min(min(fx,1.-fx)*1.9,min(fy,1.-fy)*.85); c*=(.84+.24*hh(vec2(floor((h+rw*.95)/1.9),rw)))*(1.-.32*(1.-smoothstep(.03,.09,md)));
+        c*=1.-.25*smoothstep(.45,.8,vn(vec2(h*1.6,p.y*.07)))*smoothstep(-1.,4.,p.y); c=mix(c*vec3(.55,.6,.5),c,smoothstep(-.6,2.2,p.y)); c=mix(c,vec3(.17,.25,.12)*(.6+.8*tx),(1.-smoothstep(-.2,1.6,p.y))*.55);
+        c=mix(c,vec3(.2,.28,.1)*(.7+.6*tx),smoothstep(.7,.85,vn(vec2(h*.5,p.y*.4))+.2*tb)*.35); }
+      diffuseColor.rgb=c; }`,
+    shr:`{ float S=.3; float tx=texture2D(uStn,p.zy*S).r*aw.x+texture2D(uStn,p.xz*S+.37).r*aw.y+texture2D(uStn,p.xy*S+.71).r*aw.z, tb=texture2D(uStn,p.zy*.07+.13).r*aw.x+texture2D(uStn,p.xz*.07+.5).r*aw.y+texture2D(uStn,p.xy*.07+.29).r*aw.z;
+      vec3 c=diffuseColor.rgb*(.5+.7*tx)*(.8+.4*tb); float an=atan(p.x,p.z), sk=1.-smoothstep(4.2,6.,p.y);
+      vec2 q=vec2(an*3.4,p.y*.95); q+=vec2(vn(q*.8+1.),vn(q*.8+5.))*1.6; float n=vn(q*1.15)+.55*vn(q*2.4+3.1), f=abs(fract(n*2.6)-.5), ln=1.-smoothstep(.03,.07,f), rope=smoothstep(.11,.2,f)*(1.-smoothstep(.3,.42,f));
+      c*=mix(1.,.55+.75*rope,sk); gGlow+=ln*sk*step(.5,vn(q*.7+7.)+.2);
+      float up=smoothstep(4.,6.,p.y)*(1.-smoothstep(15.6,16.,p.y)), ca=abs(fract(an/.785+.5)-.5), vl=(1.-smoothstep(.012,.03,ca))*step(.45,vn(vec2(an*2.,p.y*.35)+2.)), hl=(1.-smoothstep(.02,.05,abs(fract(p.y*.55)-.5)))*step(.62,vn(vec2(an*6.,floor(p.y*.55))));
+      gGlow+=(vl+hl*.8)*up*.9; c*=1.-.25*(vl+hl)*up;
+      float fr=step(0.,p.z)*(1.-smoothstep(1.8,2.2,abs(p.x))), d=length(vec2(p.x,p.y-13.6)); gGlow+=fr*((1.-smoothstep(.05,.13,abs(d-1.05)))+(1.-smoothstep(.25,.35,d))+(1.-smoothstep(.04,.1,abs(p.x)))*step(d,1.)*0.);
+      c=mix(c,c*vec3(.7,.75,.6),(1.-smoothstep(0.,1.5,p.y))*.6);
+      diffuseColor.rgb=c; }`,
+    pad:`{ float r=length(p.xz), a=atan(p.x,p.z); vec3 c=diffuseColor.rgb*(.75+.4*texture2D(uStn,p.xz*.4).r); float g=(1.-smoothstep(.05,.12,abs(r-2.45)))+(1.-smoothstep(.04,.1,abs(r-1.7)))+(1.-smoothstep(.04,.1,abs(r-.9)))*step(.0,sin(a*3.))+(1.-smoothstep(.04,.1,abs(fract(a*.955+r*.6)-.5)))*step(r,1.6)*step(.95,r);
+      gGlow+=g*step(.2,wn.y); diffuseColor.rgb=c; }`,
+    twr:`{ float S=.3; float tx=texture2D(uStn,p.zy*S).r*aw.x+texture2D(uStn,p.xz*S+.37).r*aw.y+texture2D(uStn,p.xy*S+.71).r*aw.z; vec3 c=diffuseColor.rgb*(.5+.7*tx);
+      float h=abs(wn.x)>abs(wn.z)?p.z:p.x, cx=floor(h/.95), cy=floor(p.y/1.25), fx=fract(h/.95), fy=fract(p.y/1.25), on=step(.3,hh(vec2(cx,cy)))*(1.-smoothstep(3.6,3.9,abs(h)))*step(aw.y,.5), inr=smoothstep(.12,.18,min(fx,1.-fx))*smoothstep(.1,.16,min(fy,1.-fy));
+      c*=mix(1.,.45,(1.-inr)*step(aw.y,.5)*(1.-smoothstep(3.6,3.9,abs(h)))); gGlow+=on*inr*(.6+.5*hh(vec2(cx+3.,cy))); diffuseColor.rgb=c; }`,
+    bz:`{ float S=.3; float tx=texture2D(uStn,p.zy*S).r*aw.x+texture2D(uStn,p.xz*S+.37).r*aw.y+texture2D(uStn,p.xy*S+.71).r*aw.z, tb=texture2D(uStn,p.zy*.06).r*aw.x+texture2D(uStn,p.xz*.06+.5).r*aw.y+texture2D(uStn,p.xy*.06+.29).r*aw.z;
+      vec3 c=diffuseColor.rgb*(.5+.7*tx)*(.8+.4*tb); float an=atan(p.x,p.z), e=abs(fract(an*1.9+p.y*.15)-.5); c*=1.-.3*(1.-smoothstep(.02,.06,e))*step(aw.y,.6); diffuseColor.rgb=c; }`};
+  const shMat=(kind,col,glow)=>memo('sh_'+kind+col,()=>{ const m=patch(new T.MeshToonMaterial({color:c3(col),gradientMap:gmapS,side:T.DoubleSide}),0,0), ob=m.onBeforeCompile;
+    m.onBeforeCompile=sh=>{ ob(sh); sh.uniforms.uStn={value:shTex()}; sh.uniforms.uGlw={value:c3(glow||[255,140,40]).multiplyScalar(2.4)};
+      sh.vertexShader='varying vec3 vLP, vWN2;\n'+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n vLP=position;').replace('#include <beginnormal_vertex>','#include <beginnormal_vertex>\n vWN2=normalize(objectNormal);');
+      sh.fragmentShader='varying vec3 vLP, vWN2; uniform sampler2D uStn; uniform vec3 uGlw;\n'+sh.fragmentShader.replace('#include <color_fragment>','#include <color_fragment>\n float gGlow=0.; { vec3 wn=normalize(vWN2), p=vLP; vec3 aw=pow(abs(wn),vec3(4.)); aw/=aw.x+aw.y+aw.z;\n'+SH_FS[kind]+'\n }').replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\n totalEmissiveRadiance+=uGlw*clamp(gGlow,0.,1.5);'); };
+    m.customProgramCacheKey=()=>'sh'+kind; return m; });
   // 石の橋（ブレワイのハイリア大橋のような）：白っぽい切り石の、同じ形のアーチがずっと続く橋。橋脚の根元は水に沈み、両側に低い石の欄干。両端は道の高さから少しずつ上がる
   const bridgeFor=(G,yA,yB)=>{ const Pp=[]; for(const [a,b] of brSpans()){ const y0=Math.max(a-60,yA), y1=Math.min(b+60,yB); if(y1<=y0) continue;
       const prof=y=>{ const x=rX(y), dx=rX(y+2)-rX(y-2), l=Math.hypot(dx,4)||1, ax=4/l, ay=dx/l, dk=deckH(y), PS=40, sp=((y-a)%PS+PS)%PS, wet=hAt(x,y)<.6&&brF(y)>.98;
         let sf=-4; if(wet&&sp>7){ const t=(sp-7)/(PS-7)*2-1; sf=.6+(dk-2.2-.6)*Math.sqrt(Math.max(0,1-t*t)); }
         const cs=[[-6.8,dk+.2],[-6.8,dk+1.3],[-7.7,dk+1.3],[-7.7,dk-.5],[-7.5,dk-.5],[-7.5,sf],[7.5,sf],[7.5,dk-.5],[7.7,dk-.5],[7.7,dk+1.3],[6.8,dk+1.3],[6.8,dk+.2],[-6.8,dk+.2]]; /* 最後は橋の面（石だたみ）*/
         return cs.map(([o,h])=>[X(x+o*ax),h,Z(y-o*ay)]); };
-      /* 欄干の親柱：一定の間隔で、少し高く太い角柱 */ for(let y=Math.ceil((y0-a)/10)*10+a;y<=y1;y+=10){ if(brF(y)<.3) continue; const x=rX(y), dx=rX(y+2)-rX(y-2), l=Math.hypot(dx,4)||1, ax=4/l, ay=dx/l, dk=deckH(y);
-        for(const sd of [-1,1]){ const o=sd*7.25, cx=x+o*ax, cy=y-o*ay, hx=.75, hy=.75, lo=dk+.2, hi=dk+2.1, cn=[[-hx,-hy],[hx,-hy],[hx,hy],[-hx,hy]].map(([u,v])=>[X(cx+u*ax+v*ay*0),Z(cy-u*ay+v)]);
+      /* 欄干の親柱：一定の間隔で、少し高く太い角柱 */ for(let y=Math.ceil((y0-a)/4.4)*4.4+a;y<=y1;y+=4.4){ if(brF(y)<.3) continue; const x=rX(y), dx=rX(y+2)-rX(y-2), l=Math.hypot(dx,4)||1, ax=4/l, ay=dx/l, dk=deckH(y);
+        for(const sd of [-1,1]){ const o=sd*7.25, cx=x+o*ax, cy=y-o*ay, hx=.45, hy=1.1, lo=dk+.2, hi=dk+2.25, cn=[[-hx,-hy],[hx,-hy],[hx,hy],[-hx,hy]].map(([u,v])=>[X(cx+u*ax+v*ay*0),Z(cy-u*ay+v)]);
           for(let q=0;q<4;q++){ const A=cn[q], B=cn[(q+1)%4]; Pp.push(A[0],lo,A[1],B[0],lo,B[1],A[0],hi,A[1],A[0],hi,A[1],B[0],lo,B[1],B[0],hi,B[1]); } Pp.push(cn[0][0],hi,cn[0][1],cn[2][0],hi,cn[2][1],cn[1][0],hi,cn[1][1],cn[0][0],hi,cn[0][1],cn[3][0],hi,cn[3][1],cn[2][0],hi,cn[2][1]); } }
       let pv=prof(y0); for(let y=y0+2;y<=y1+.01;y+=2){ const cu=prof(y); for(let q=0;q<cu.length-1;q++){ const A=pv[q], B=pv[q+1], C2=cu[q], D=cu[q+1]; Pp.push(...A,...C2,...B,...B,...C2,...D); } pv=cu; } }
     if(!Pp.length) return; const g=new T.BufferGeometry(); g.setAttribute('position',new T.Float32BufferAttribute(Pp,3)); g.computeVertexNormals();
-    const m=new T.Mesh(g,memo('brM',()=>patch(new T.MeshToonMaterial({color:c3([196,190,174]),gradientMap:gmap2,side:T.DoubleSide}),0,1))); m.castShadow=m.receiveShadow=true; G.add(m); };
+    const m=new T.Mesh(g,shMat('br',[184,178,160])); m.castShadow=m.receiveShadow=true; G.add(m); };
   // ---- 道しるべ：光の柱と名前の札。今いる所は青い光 ----
   const beam=(x,y,col,h2,w)=>{ const e=Math.max(0,hAt(x,y)), m=new T.Mesh(new T.CylinderGeometry(w*.6,w,h2,10,1,true),new T.MeshBasicMaterial({color:col,transparent:true,opacity:.5,depthWrite:false,blending:T.AdditiveBlending,fog:false})); m.position.set(X(x),e+h2/2,Z(y)); scene.add(m); return e; };
   const label=(txt,sub,col)=>{ const c=document.createElement('canvas'), x=c.getContext('2d'), F='600 30px "Hiragino Sans","Noto Sans JP",sans-serif'; x.font=F; const w=Math.max(x.measureText(txt).width,sub?x.measureText(sub).width*.8:0)+36; c.width=Math.ceil(w); c.height=sub?92:58; x.translate(c.width,0); x.scale(-1,1); // 画面ごと左右を返すので、文字は先に裏返しておく
@@ -6129,22 +6162,22 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
   { const L2=pPoiLast&&pPoiLast.list||[], gM=new T.MeshBasicMaterial({color:c3([255,138,40]).multiplyScalar(1.7)}), mSl=tm([96,100,114]), mSl2=tm([120,122,130]), mStn=tm([118,114,106]),
       gSp=s0=>{ const sp=new T.Sprite(new T.SpriteMaterial({map:vGlowTex,color:0xffb060,transparent:true,opacity:.75,blending:T.AdditiveBlending,depthWrite:false,fog:false})); sp.scale.setScalar(s0); return sp; },
       beam=(g,m,a,b,r)=>{ const A=new T.Vector3(...a), B=new T.Vector3(...b), d=B.clone().sub(A), o=mk(new T.CylinderGeometry(r,r,d.length(),6),m); o.position.copy(A).add(B).multiplyScalar(.5); o.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),d.normalize()); g.add(o); },
-      shrine=()=>{ const g=new T.Group(); g.add(mk(new T.CylinderGeometry(10.4,11,.6,8),mStn,0,.3,0)); g.add(mk(new T.CylinderGeometry(9,9.6,1.2,8),mSl2,0,1.1,0));
-        g.add(mk(new T.CylinderGeometry(4.4,5.3,5.2,8),mSl,0,4.3,0)); g.add(mk(new T.CylinderGeometry(7.2,7.4,.6,8),mSl2,0,7.1,0)); g.add(mk(new T.ConeGeometry(6.4,4.6,8),mSl,0,9.7,0)); g.add(mk(new T.CylinderGeometry(.5,1.1,1.4,8),mSl2,0,12.5,0));
-        for(const [r,y] of [[5.05,2.6],[4.7,5.6],[7.45,7.1]]){ const t=new T.Mesh(new T.TorusGeometry(r,.13,4,8),gM); t.rotation.x=Math.PI/2; t.rotation.z=Math.PI/8; t.position.y=y; g.add(t); }
-        for(let q=0;q<8;q++){ if(q===2) continue; const a=q/8*6.283+Math.PI/8, b=new T.Mesh(new T.BoxGeometry(.22,2.8,.14),gM); b.position.set(Math.cos(a)*4.95,4.1,Math.sin(a)*4.95); b.rotation.y=-a+Math.PI/2; g.add(b); }
-        const dr=mk(new T.BoxGeometry(2.6,3.8,.6),tm([20,22,28]),0,3.6,4.75); g.add(dr); const fr=new T.Mesh(new T.BoxGeometry(3.1,.18,.2),gM); fr.position.set(0,5.6,5.05); g.add(fr);
-        g.add(mk(new T.CylinderGeometry(.45,.7,1.5,6),mSl2,0,2.4,8)); const tp=new T.Mesh(new T.CylinderGeometry(.55,.55,.2,6),gM); tp.position.set(0,3.2,8); g.add(tp);
-        const sp=gSp(16); sp.position.y=8; g.add(sp); return g; },
-      tower=()=>{ const g=new T.Group(), H=140, lw=y=>15-6*y/H; g.add(mk(new T.CylinderGeometry(19,24,8,8),mStn,0,0,0)); g.add(mk(new T.CylinderGeometry(9,10,6,8),mSl2,0,6,0)); g.add(mk(new T.BoxGeometry(7,H,7),mSl,0,4+H/2,0));
-        for(const [x,z,ry] of [[3.56,0,0],[-3.56,0,0],[0,3.56,1],[0,-3.56,1]]){ for(const o of [-1.4,1.4]){ const b=new T.Mesh(new T.BoxGeometry(ry?.22:.12,H-10,ry?.12:.22),gM); b.position.set(x+(ry?o:0),6+H/2,z+(ry?0:o)); g.add(b); } }
-        for(const [sx,sz] of [[1,1],[1,-1],[-1,1],[-1,-1]]) beam(g,mSl2,[sx*15,3,sz*15],[sx*9,4+H,sz*9],1.3);
-        const lv=[]; for(let y=14;y<H;y+=14) lv.push(y); lv.forEach((y,q)=>{ const w=lw(y), C4=[[w,w],[w,-w],[-w,-w],[-w,w]]; for(let e=0;e<4;e++){ const a=C4[e], b=C4[(e+1)%4]; beam(g,mSl2,[a[0],y,a[1]],[b[0],y,b[1]],.6); if(q<lv.length-1){ const y2=lv[q+1], w2=lw(y2), a2=[a[0]/w*w2,a[1]/w*w2], b2=[b[0]/w*w2,b[1]/w*w2]; beam(g,mSl2,[a[0],y,a[1]],[b2[0],y2,b2[1]],.32); beam(g,mSl2,[b[0],y,b[1]],[a2[0],y2,a2[1]],.32); } }
-          for(const [sx,sz] of [[1,1],[1,-1],[-1,1],[-1,-1]]) beam(g,mSl2,[sx*w,y,sz*w],[sx*3.5,y,sz*3.5],.4); });
-        g.add(mk(new T.BoxGeometry(28,2.6,28),mSl2,0,5+H,0)); g.add(mk(new T.BoxGeometry(24,2.2,24),mSl,0,2.8+H,0)); for(const [x,z,w,d] of [[0,13.6,28,.9],[0,-13.6,28,.9],[13.6,0,.9,28],[-13.6,0,.9,28]]) g.add(mk(new T.BoxGeometry(w,1.6,d),mSl,x,7.1+H,z));
-        for(const [x,z,w,d] of [[0,14.05,28.2,.12],[0,-14.05,28.2,.12],[14.05,0,.12,28.2],[-14.05,0,.12,28.2]]){ const b=new T.Mesh(new T.BoxGeometry(w,.32,d),gM); b.position.set(x,5+H,z); g.add(b); }
-        g.add(mk(new T.CylinderGeometry(5,5.6,1.2,10),mSl2,0,6.8+H,0)); g.add(mk(new T.SphereGeometry(4.4,14,8,0,6.283,0,1.57),mSl,0,7.4+H,0)); const ring=new T.Mesh(new T.TorusGeometry(4.5,.22,4,20),gM); ring.rotation.x=Math.PI/2; ring.position.y=8.2+H; g.add(ring); g.add(mk(new T.ConeGeometry(.7,5,6),mSl2,0,13.5+H,0));
-        const sp=gSp(46); sp.position.y=H+10; g.add(sp); return g; };
+      sqT=(H,rf,sa=44,sy=36)=>{ const ge=new T.CylinderGeometry(1,1,H,sa,sy,true).translate(0,H/2,0), P=ge.attributes.position; for(let i=0;i<P.count;i++){ const x=P.getX(i), y=P.getY(i), z=P.getZ(i), a=Math.atan2(x,z), k=1/Math.pow(Math.pow(Math.abs(Math.cos(a)),4)+Math.pow(Math.abs(Math.sin(a)),4),.25), r=rf(y/H)*(1+(k-1)*.75); P.setXYZ(i,Math.sin(a)*r,y,Math.cos(a)*r); } ge.computeVertexNormals(); return ge; },
+      shrine=()=>{ const g=new T.Group(), mS=shMat('shr',[156,118,84]), mB=shMat('bz',[150,116,84]), H=16;
+        g.add(mk(new T.CylinderGeometry(9.5,10.2,.7,40),shMat('br',[170,164,148]),0,.1,0));
+        g.add(mk(sqT(H,t=>1.45+3.5*Math.pow(1-t,1.7)+1.9*Math.pow(1-Math.min(1,t/.3),2.2)),mS,0,.2,0));
+        g.add(mk(new T.SphereGeometry(1.5,16,8,0,6.283,0,1.4),mB,0,H+.15,0)); g.add(mk(new T.ConeGeometry(.5,1.6,10),mB,0,H+1.6,0));
+        const dr=mk(new T.BoxGeometry(2.4,3.4,1.6),shMat('twr',[86,70,56]),0,1.95,4.55); g.add(dr); const ar=mk(new T.CylinderGeometry(1.2,1.2,1.6,16,1,false,0,Math.PI),shMat('bz',[86,70,56]),0,3.65,4.4); ar.rotation.z=Math.PI/2; ar.rotation.y=Math.PI/2; g.add(ar);
+        const pad=mk(new T.CylinderGeometry(2.7,2.8,.35,40),shMat('pad',[120,96,74]),0,.55,8.6); g.add(pad); const sp=gSp(14); sp.position.set(0,9,0); sp.material.opacity=.45; g.add(sp); return g; },
+      tower=()=>{ const g=new T.Group(), H=140, mT=shMat('twr',[120,92,68]), mB=shMat('bz',[150,112,78]);
+        g.add(mk(new T.CylinderGeometry(9,12,7,24),mB,0,1.5,0)); g.add(mk(new T.CylinderGeometry(14,16,1.6,32),shMat('br',[170,164,148]),0,-.2,0));
+        for(let q=0;q<4;q++){ const a=q*1.5708+.785; beam(g,mB,[Math.sin(a)*5,6,Math.cos(a)*5],[Math.sin(a)*12,.5,Math.cos(a)*12],1.6); }
+        g.add(mk(new T.BoxGeometry(8.4,H,8.4),mT,0,4+H/2,0)); for(const [sx,sz] of [[1,1],[1,-1],[-1,1],[-1,-1]]) g.add(mk(new T.BoxGeometry(1.2,H,1.2),mB,sx*4.25,4+H/2,sz*4.25));
+        for(let y=30;y<H-10;y+=30) for(const r of [0,Math.PI]){ const sh=mk(new T.SphereGeometry(2.6,14,10),mB,Math.sin(r)*4.9,4+y,Math.cos(r)*4.9); sh.scale.set(1.2,1.6,.45); sh.rotation.y=r; g.add(sh); }
+        const bowl=new T.LatheGeometry([[3.2,-9],[5,-6],[9,-2.5],[14.5,.2],[17,1.4],[17.6,2.6],[16.6,3.1],[15.8,2.2]].map(([x,y])=>new T.Vector2(x,y)),40); g.add(mk(bowl,mB,0,4+H,0)); g.add(mk(new T.CylinderGeometry(15.8,15.8,.5,40),mB,0,6.4+H,0));
+        for(let q=0;q<3;q++){ const a=q*2.094+.5, P0=[Math.sin(a)*11,6.6+H,Math.cos(a)*11], P1=[Math.sin(a)*7.5,15+H,Math.cos(a)*7.5], P2=[Math.sin(a)*1.6,22+H,Math.cos(a)*1.6]; beam(g,mB,P0,P1,.9); beam(g,mB,P1,P2,.8); }
+        g.add(mk(new T.ConeGeometry(3.2,11,12),mB,0,25+H,0)); const band=new T.Mesh(new T.CylinderGeometry(2.75,2.95,1,16,1,true),gM); band.position.y=22.5+H; g.add(band); g.add(mk(new T.CylinderGeometry(2.2,2.6,2.2,16),mT,0,8.2+H,0));
+        const sp=gSp(38); sp.position.y=H+20; sp.material.opacity=.5; g.add(sp); return g; };
     const v0=vAt(0); L2.forEach((p,i)=>{ if(p.t!=='shrine'&&p.t!=='tower') return; const y=(p.v-v0)*KM; if(y<-3000||y>(PATH_H1-PATH_H0+30)*KM) return; const r=pRng('lkpoi'+Math.round(p.v),3), sd=p.x>=WD.roadU(p.v)?1:-1;
       let best=null; for(let t=0;t<14&&!best;t++){ const d=(p.t==='tower'?340:200)+r()*(p.t==='tower'?220:220), yy=y+(r()-.5)*120, x=rX(yy)+sd*d, R=p.t==='tower'?20:12; const es=[hAt(x,yy),hAt(x+R,yy),hAt(x-R,yy),hAt(x,yy+R),hAt(x,yy-R)]; if(Math.min(...es)>.8&&!nearMon(x,yy,R+6)&&!(BIO==='volc'&&volcLavaF(x,yy)>.05)) best=[x,yy,Math.min(...es)]; }
       if(!best) return; const g=p.t==='tower'?tower():shrine(); g.position.set(X(best[0]),best[2]-.4,Z(best[1])); g.rotation.y=Math.atan2(rX(best[1])-best[0],0)*0+(sd>0?-1.5708:1.5708); scene.add(g); }); }
