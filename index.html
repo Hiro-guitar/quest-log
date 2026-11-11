@@ -5104,6 +5104,21 @@ async function pLookOpen(){
   //  祠・塔：赤銅色の古い石。祠は根元の渦巻きの浮き彫りの溝、上の細い回路の線、正面の紋がオレンジに光る。塔は柱一面の格子の窓が光る
   let shTexV=null; const shTex=()=>{ if(!shTexV){ shTexV=new T.TextureLoader().load('stone.jpg'); shTexV.wrapS=shTexV.wrapT=T.RepeatWrapping; shTexV.colorSpace=T.NoColorSpace; shTexV.anisotropy=4; } return shTexV; };
   const SH_FS={
+    /* しっくい：大きなむら、雨だれの筋、下ほど泥はね・苔で暗い。表面は写真の石の質感をうすく */
+    pl:`{ float tx=texture2D(uStn,p.zy*.09).r*aw.x+texture2D(uStn,p.xz*.09+.37).r*aw.y+texture2D(uStn,p.xy*.09+.71).r*aw.z; float h=abs(wn.x)>abs(wn.z)?p.z:p.x;
+      vec3 c=diffuseColor.rgb*(.86+.2*tx)*(.92+.14*vn(vec2(h,p.y)*.35)); c*=1.-.12*smoothstep(.5,.9,vn(vec2(h*2.2,p.y*.12)))*smoothstep(1.,6.,p.y);
+      c=mix(c*vec3(.72,.7,.6),c,smoothstep(1.,3.2,p.y+.6*vn(vec2(h*.8,0.)))); c=mix(c,vec3(.36,.42,.26)*(.8+.4*tx),(1.-smoothstep(.4,2.,p.y))*.35); diffuseColor.rgb=c; }`,
+    /* 瓦：横の段（同じ高さ＝同じ段）と、段ごとにずれた縦の継ぎ目。焼きむら、白っぽい地衣類、苔 */
+    tl:`{ float tx=texture2D(uStn,p.xz*.25).r; float rw=floor(p.y/.32), u=(p.x+p.z)*1.0+rw*.5, fx=fract(u/1.0), fy=fract(p.y/.32);
+      vec3 c=diffuseColor.rgb*(.8+.3*hh(vec2(floor(u),rw)))*(.85+.25*tx); c*=.72+.28*smoothstep(0.,.55,fy); c*=1.-.3*(1.-smoothstep(.03,.1,min(fx,1.-fx)));
+      c=mix(c,vec3(.72,.7,.62),smoothstep(.8,.95,vn(vec2(u*.6,p.y*1.4)))*.25); c=mix(c,vec3(.3,.38,.2),smoothstep(.78,.92,vn(vec2(u*.3+5.,p.y*.8)))*.4); diffuseColor.rgb=c; }`,
+    /* 木：長い木目、板の継ぎ目、雨ざらしの灰色がかったむら */
+    wd:`{ float L=abs(wn.y)>.6?p.x+p.z:(abs(wn.x)>abs(wn.z)?p.z:p.x); vec2 q=abs(wn.y)>.6?vec2(p.x*.2,p.z*3.):vec2(L*3.,p.y*.25);
+      float gr=vn(q*vec2(1.,1.))*.6+vn(q*vec2(2.3,2.1)+3.)*.4, tx=texture2D(uStn,vec2(L,p.y)*.18).r; vec3 c=diffuseColor.rgb*(.72+.42*gr)*(.85+.2*tx);
+      c*=1.-.25*(1.-smoothstep(.02,.07,abs(fract(L*.9)-.5)*2.))*step(.3,abs(wn.y)); c=mix(c,vec3(.48,.46,.42)*(.7+.5*gr),.18+.2*vn(vec2(L,p.y)*.3)); diffuseColor.rgb=c; }`,
+    /* 布：日に焼けたむら、細かな織り目、すそほど汚れ */
+    cl:`{ float tx=texture2D(uStn,(p.xy+p.zy)*.12).r; vec3 c=diffuseColor.rgb*(.85+.22*vn((p.xz+p.y)*.4))*(.92+.12*tx); float wv=.5+.5*sin((p.x+p.z)*14.)*sin(p.y*14.); c*=.94+.08*wv;
+      c=mix(c*vec3(.7,.66,.58),c,smoothstep(-.5,2.5,p.y-floor(p.y/6.)*6.)); c*=1.-.14*smoothstep(.6,.9,vn(vec2(p.x+p.z,p.y)*.6)); diffuseColor.rgb=c; }`,
     br:`{ float S=.16; float tx=texture2D(uStn,p.zy*S).r*aw.x+texture2D(uStn,p.xz*S+.37).r*aw.y+texture2D(uStn,p.xy*S+.71).r*aw.z, tb=texture2D(uStn,p.zy*S*.22+.13).r*aw.x+texture2D(uStn,p.xz*S*.22+.5).r*aw.y+texture2D(uStn,p.xy*S*.22+.29).r*aw.z;
       vec3 c=diffuseColor.rgb*(.55+.6*tx)*(.82+.36*tb);
       if(aw.y>.5){ vec2 q=p.xz; float rw=floor(q.y/1.7), fx=fract((q.x+rw*1.1)/2.6), fy=fract(q.y/1.7), md=min(min(fx,1.-fx)*2.6,min(fy,1.-fy)*1.7); c*=(.8+.3*hh(vec2(floor((q.x+rw*1.1)/2.6),rw)))*(1.-.5*(1.-smoothstep(.04,.13,md))); float mo=smoothstep(.55,.8,vn(q*.35)+.25*tb)*.55+(1.-smoothstep(.04,.2,md))*smoothstep(.4,.7,vn(q*.9))*.6; c=mix(c,vec3(.2,.27,.1)*(.7+.6*tx),clamp(mo,0.,1.)*.4); }
@@ -6229,7 +6244,7 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
     const stable=()=>{ /* ブレワイの馬宿：木組みの正面に3つのアーチの入口（中央は赤い幕、左右は灯り）、上に看板。軒には黄土色の布の幕（波形のすそ、馬の模様の帯）。
          屋根は暗いオリーブ色の布の天幕で、中央から高い木組みの柱が伸び、てっぺんに板で組んだ大きな馬の頭（歯をむいた口、丸い目、後ろへ広がる板のたてがみ）。
          頭からは三角旗の綱が地面へ。横に板屋根の差し掛け、まわりに柵の馬場、木箱、樽、鍋と焚き火、ひし形模様の小さな天幕 */
-      const g=new T.Group(), r=pRng('stbl',3), W=tm([132,94,56]), Wd=tm([92,62,38]), Wl=tm([164,124,78]), Oc=tm([206,164,78]), Oc2=tm([178,132,58]), Ol=tm([116,112,72]), Ol2=tm([96,92,60]), Rd=tm([158,52,40]), Gn=tm([96,150,80]), Wt=tm([236,228,206]), Dk=tm([40,30,24]);
+      const g=new T.Group(), r=pRng('stbl',3), W=shMat('wd',[140,100,62]), Wd=shMat('wd',[100,68,42]), Wl=shMat('wd',[172,132,86]), Oc=shMat('cl',[212,170,84]), Oc2=shMat('cl',[184,138,62]), Ol=shMat('cl',[122,118,76]), Ol2=shMat('cl',[100,96,62]), Rd=shMat('cl',[164,56,44]), Gn=shMat('cl',[100,154,84]), Wt=tm([236,228,206]), Dk=tm([40,30,24]);
       const Lt=new T.MeshBasicMaterial({color:c3([255,196,110])});
       const FW=30, FD=24, WH=9, R0=15; /* 正面の幅、奥行き、壁の高さ */
       /* 正面の壁：3つのアーチ */ g.add(Bx(FW,WH,1,Wl,0,WH/2,FD/2));
@@ -6271,7 +6286,7 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
     const putParts=(cx,cy,parts,rot)=>{ const out=[], nf=POIF.length; parts.forEach(([nm,ox,oz,sc,ry])=>{ const ca=Math.cos(rot), sa=Math.sin(rot), px=cx+ox*ca-oz*sa, py=cy+ox*sa+oz*ca; const es=[hAt(px,py),hAt(px+8,py),hAt(px-8,py),hAt(px,py+8),hAt(px,py-8)], lo=Math.min(...es); const sv=POIF.splice(nf); const bad=lo<.8||nearMon(px,py,10); POIF.push(...sv); if(bad) return; /* 同じ村の部品どうしはよけない */ const g=typeof nm==='function'?nm():dkPart(nm,sc); POIF.push([px,py,30*sc/2.4]); g.position.set(X(px),lo-.3,Z(py)); g.rotation.y=ry; g.userData.poi='part'; scene.add(g); out.push(g); }); return out; };
     /* ハテノ村の家：クリーム色のしっくい壁、下は積み石の腰壁、四隅は切り石。赤茶の瓦の切妻屋根（深い軒、瓦の段、棟瓦）、屋根窓、
        青灰の鎧戸のついた窓、木の扉と庇、煙突。まわりに青緑のつぼ。丸い塔の家（とんがりの瓦屋根）もまじる */
-    const vM=()=>memo('vM',()=>({ St:tm([232,214,176]), St2:tm([216,196,158]), Sn:tm([150,142,128]), Sn2:tm([122,116,104]), Rf:tm([170,98,72]), Rf2:tm([140,80,60]), Rf3:tm([186,116,86]), Wd:tm([100,70,46]), Sh:tm([82,96,112]), Gl:tm([60,64,72]), Pt:tm([70,150,150]), Wn:new T.MeshBasicMaterial({color:c3([250,214,150])}) }));
+    const vM=()=>memo('vM',()=>({ St:shMat('pl',[234,216,180]), St2:shMat('pl',[218,198,160]), Sn:shMat('br',[168,160,144]), Sn2:shMat('br',[150,144,130]), Rf:shMat('tl',[176,100,72]), Rf2:shMat('tl',[150,84,62]), Rf3:shMat('tl',[186,116,86]), Wd:shMat('wd',[112,80,52]), Sh:shMat('wd',[88,102,118]), Gl:tm([60,64,72]), Pt:tm([70,150,150]), Wn:new T.MeshBasicMaterial({color:c3([250,214,150])}) }));
     const hHouse=(r,big)=>{ const M=vM(), g=new T.Group(), L=big?17+r()*5:11+r()*4, D=big?10+r()*2:8+r()*2, H=big?9:6.5, BH=1.6, P=big?5:4;
       g.add(Bx(L,H,D,M.St,0,H/2,0)); g.add(Bx(L+.3,BH,D+.3,M.Sn,0,BH/2,0)); /* しっくい壁と積み石の腰壁 */
       for(let q=0;q<Math.floor(L*2);q++) for(const sz of [-1,1]) g.add(Bx(.9+r()*.6,.45+r()*.25,.25,r()<.5?M.Sn:M.Sn2,-L/2+.5+q*.5+(r()-.5)*.2,.3+r()*(1.1+.9*(.5+.5*Math.sin(q*.7))),sz*(D/2+.18))); /* 腰壁の上はでこぼこ */
@@ -6297,17 +6312,41 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
     const BHt=()=>1.6+1.4;
     const village=(cx,cy,r)=>{ /* ハテノ村のように：道の両側に家が並び、丸い塔の家、井戸、柵、外れの丘に風車 */ const out=[], rot=r()*6.283, ca=Math.cos(rot), sa=Math.sin(rot), nf=POIF.length;
       const put=(g,ox,oz,ry,rad)=>{ const px=cx+ox*ca-oz*sa, py=cy+ox*sa+oz*ca; const es=[hAt(px,py),hAt(px+rad,py),hAt(px-rad,py),hAt(px,py+rad),hAt(px,py-rad)], lo=Math.min(...es); const sv=POIF.splice(nf); const bad=lo<.8||nearMon(px,py,rad*.6); POIF.push(...sv); if(bad) return; g.position.set(X(px),lo-.4,Z(py)); g.rotation.y=ry-rot; g.userData.poi='part'; scene.add(g); POIF.push([px,py,rad]); out.push(g); };
-      const n=5+Math.floor(r()*3); for(let q=0;q<n;q++){ const side=q%2?1:-1, x=-36+q*14+(r()-.5)*4, z=side*(13+r()*5); put(q===2?tHouse(r):hHouse(r,r()<.5),x,z,side>0?Math.PI:0,12); }
+      POIF.push([cx,cy,55]); /* 村の中には木を生やさない */ const n=5+Math.floor(r()*3); for(let q=0;q<n;q++){ const side=q%2?1:-1, x=-36+q*14+(r()-.5)*4, z=side*(13+r()*5); put(q===2?tHouse(r):hHouse(r,r()<.5),x,z,side>0?Math.PI:0,12); }
       for(let q=0;q<2;q++){ const x=(r()-.5)*60, z=(r()<.5?-1:1)*(34+r()*8); put(hHouse(r,false),x,z,(z>0?Math.PI:0)+(r()-.5)*.5,10); }
       { const q2=DK.findIndex(d=>d[0]==='古い井戸'); if(q2>=0){ const wg=new T.Group(); DK[q2][1](wg); bake(wg); wg.scale.setScalar(2.2); put(wg,4,0,r()*6,5); } }
       { const q2=DK.findIndex(d=>d[0]==='丘の風車'); if(q2>=0){ const wg=new T.Group(); DK[q2][1](wg); bake(wg); wg.scale.setScalar(2.6); put(wg,70+r()*20,(r()-.5)*50,r()*6,14); } }
       return out; };
-    const ruin=(cx,cy,r)=>putParts(cx,cy,[['古い柱の遺跡',0,0,2.6,r()*6],['崩れた石の門',34,(r()-.5)*20,2.4,r()*6],['崩れた城壁の門',-30,18+(r()-.5)*10,2.2,r()*6]],r()*6.283); /* 名前つきの遺跡：柱の遺跡に、崩れた門と城壁 */
+    /* ハイラルの平原の遺跡（ブレワイの砦跡・集落跡）：屋根の落ちた灰緑の石の建物の殻がいくつも。壁の上端はぎざぎざに崩れて段々に低くなり、
+       アーチの窓と入口が開く。壁にはつたと苔の筋、上には草。足もとは砂利の地面、まわりに崩れた石のかけら、ぼろぼろの赤い旗の立つ高い柱 */
+    const rM=()=>memo('rM',()=>({ S1:shMat('br',[150,156,140]), S2:shMat('br',[150,156,140]), S3:shMat('br',[150,156,140]), Ms:tm([88,120,60]), Ms2:tm([106,138,70]), Gv:tm([176,166,140]), Pl:tm([96,80,64]), Bn:tm([150,58,52]) }));
+    const ruinWall=(g,r,x0,z0,ang,len,H,wins,M)=>{ /* 壁：幅1の柱を並べ、上端は崩れ、窓（アーチ）の所は穴をあける */ const n=Math.max(2,Math.round(len)), ca=Math.cos(ang), sa=Math.sin(ang), T2=1.7;
+      const b0=r()*.45, b1=r()<.5?r()*.5:0, nt=[]; for(let k=0;k<1+Math.floor(r()*2);k++) nt.push([r(),.08+r()*.18,.25+r()*.45]); const ph=r()*9; /* 崩れ：両端が段々に低く、ところどころ大きく欠ける */
+      for(let q=0;q<n;q++){ const t=(q+.5)/n, xl=-len/2+len*t; let h=H*(1-b0*Math.pow(1-t,2)*1.4-b1*Math.pow(t,2)*1.4)*(.95+.05*Math.sin(t*7+ph)); for(const [c,w,dp] of nt){ const d=Math.abs(t-c)/w; if(d<1) h*=1-dp*(d<.5?1:2*(1-d)); } h=Math.max(.8,Math.round(h/1.05)*1.05);
+        let segs=[[0,h]]; for(const [wx,wy,ww,wh] of wins){ const dx=xl-wx; if(Math.abs(dx)<ww/2){ const top=wy+wh+Math.sqrt(Math.max(0,(ww/2)**2-dx*dx)); const ns=[]; for(const [a,b] of segs){ if(b<=wy||a>=top){ ns.push([a,b]); continue; } if(a<wy) ns.push([a,wy]); if(b>top) ns.push([top,b]); } segs=ns; } }
+        for(const [a,b] of segs){ if(b-a<.15) continue; const px=x0+ca*xl, pz=z0+sa*xl; const o=Bx(len/n+.04,b-a,T2,(q+Math.round(a))%3?M.S1:M.S2,px,(a+b)/2,pz); o.rotation.y=-ang; g.add(o);
+          if(b>=h-.01&&r()<.45){ const c2=Bx(len/n+.06,.12,T2*.8,r()<.5?M.Ms:M.Ms2,px,b+.05,pz); c2.rotation.y=-ang; g.add(c2); } } /* 上の草 */
+        if(r()<.12){ const hs=h*(.3+.5*r()), st=Bx(.5+r()*.5,hs,.08,M.Ms,x0+ca*xl,h-hs/2,z0+sa*xl); st.rotation.y=-ang; st.position.x+=-sa*(T2/2+.05)*(r()<.5?1:-1); st.position.z+=ca*(T2/2+.05); g.add(st); } } /* つたの筋 */
+      }; /* 石積みの目地は質感で */
+    const ruinShell=(r,M)=>{ const g=new T.Group(), Lx=12+r()*12, Lz=9+r()*8, H=9+r()*6; const win=(len)=>{ const w=[]; const nw=Math.floor(len/5); for(let q=0;q<nw;q++) if(r()<.75) w.push([-len/2+len*(q+.5)/nw,r()<.25?0:H*.3,1.8+r()*.8,r()<.25?2.6:1.6]); return w; };
+      ruinWall(g,r,0,-Lz/2,0,Lx,H,win(Lx),M); ruinWall(g,r,0,Lz/2,0,Lx,H*(.6+.4*r()),win(Lx),M); ruinWall(g,r,-Lx/2,0,Math.PI/2,Lz,H*(.5+.5*r()),win(Lz),M); if(r()<.75) ruinWall(g,r,Lx/2,0,Math.PI/2,Lz,H*(.3+.7*r()),win(Lz),M);
+      if(r()<.5){ const ix=(r()-.5)*Lx*.5; ruinWall(g,r,ix,0,Math.PI/2,Lz*.9,H*.6,[[0,0,2,2.4]],M); } /* 中の仕切り壁 */
+      for(let q=0;q<10;q++){ const a=r()*6.283, d=Math.max(Lx,Lz)*(.4+.5*r()), sz=.6+r()*1.3, o=Bx(sz*1.4,sz,sz,r()<.5?M.S1:M.S2,Math.cos(a)*d,sz/2-.1,Math.sin(a)*d); o.rotation.set(r()*.4,r()*3,r()*.4); g.add(o); } /* 崩れた石 */
+      
+      bake(g); return [g,Math.max(Lx,Lz)*.7]; };
+    const banner=(r,M)=>{ const g=new T.Group(), h=16+r()*6; g.add(Cy(.25,.35,h,M.Pl,0,h/2,0,6)); g.add(Bx(2.6,.25,.25,M.Pl,1.1,h-.6,0)); for(let q=0;q<7;q++){ const w=1.5-q*.12, o=Bx(w,1.1,.08,M.Bn,1+(r()-.5)*.3,h-1.4-q*1.05,(r()-.5)*.2); o.rotation.z=(r()-.5)*.25; g.add(o); } for(let q=0;q<3;q++){ const o=Bx(.25,2+r()*2,.06,M.Bn,.4+q*.6,h-9.5-r(),0); g.add(o); } bake(g); return g; };
+    const ruin=(cx,cy,r)=>{ const M=rM(), out=[], rot=r()*6.283, ca=Math.cos(rot), sa=Math.sin(rot), nf=POIF.length;
+      const put=(g,ox,oz,ry,rad)=>{ const px=cx+ox*ca-oz*sa, py=cy+ox*sa+oz*ca; const es=[hAt(px,py),hAt(px+rad,py),hAt(px-rad,py),hAt(px,py+rad),hAt(px,py-rad)], lo=Math.min(...es); const sv=POIF.splice(nf); const bad=lo<.8||nearMon(px,py,rad*.6); POIF.push(...sv); if(bad) return; g.position.set(X(px),lo-.25,Z(py)); g.rotation.y=ry-rot; g.userData.poi='part'; scene.add(g); POIF.push([px,py,rad]); out.push(g); };
+      POIF.push([cx,cy,62]); /* 遺跡の敷地には木を生やさない */ const n=4+Math.floor(r()*3); for(let q=0;q<n;q++){ const a=q/n*6.283+r()*.5, d=q?28+r()*18:0, [sg,rad]=ruinShell(r,M); put(sg,Math.cos(a)*d,Math.sin(a)*d,r()<.5?0:Math.PI/2+(r()-.5)*.2,rad); }
+      for(let q=0;q<2;q++){ const a=r()*6.283; put(banner(r,M),Math.cos(a)*(14+r()*20),Math.sin(a)*(14+r()*20),r()*6,2); }
+      { const q2=DK.findIndex(d=>d[0]==='古い柱の遺跡'); if(q2>=0){ const pg=new T.Group(); DK[q2][1](pg); bake(pg); pg.scale.setScalar(2.2); put(pg,55,(r()-.5)*30,r()*6,12); } }
+      return out; };
     const v0=vAt(0); const PT={shrine:[200,12,1400],stable:[70,26,900],village:[300,80,1600],ruin:[230,45,1400]}; L2.forEach((p,i)=>{ if(p.t!=='tower'&&!PT[p.t]) return; const y=(p.v-v0)*KM; if(y<-3000||y>(PATH_H1-PATH_H0+30)*KM) return; const r=pRng('lkpoi'+Math.round(p.v),3), sd=p.x>=WD.roadU(p.v)?1:-1;
       if(p.t==='tower'){ /* 塔は地図と同じ場所（道から遠く離れた所）に建て、遠くからでも見える目印にする。動かすのは毎こま（animDisc） */ const xt=rX(y)+(p.x-WD.roadU(p.v))*KM, g=tower(); scene.add(g); (scene.userData.ft=scene.userData.ft||[]).push({g,x:xt,y,h:Math.max(0,hAt(xt,y))}); return; }
       /* 道から近い所から順に、川・湖・遺跡にかからない所を探す。だめなら少しずつ遠く、それでもだめなら道の反対側（塔は高いので遠くても見える） */ const TW=false, [D0,R,dMax]=PT[p.t]; let best=null; for(let t=0;t<64&&!best;t++){ const st=t%32, s2=t<32?sd:-sd, d=D0*(1+st*.12)+r()*160*(st<10?1:.4), yy=y+(r()-.5)*(st<10?120:st*260), x=rX(yy)+s2*Math.min(dMax,d); const es=[hAt(x,yy),hAt(x+R,yy),hAt(x-R,yy),hAt(x,yy+R),hAt(x,yy-R)]; if(Math.min(...es)>.8&&!nearMon(x,yy,R+6)&&!(BIO==='volc'&&volcLavaF(x,yy)>.05)) best=[x,yy,Math.min(...es)]; }
       if(p.t==='village'||p.t==='ruin'){ if(best) (p.t==='village'?village:ruin)(best[0],best[1],r); return; } /* 村・遺跡は部品ごとにその場の地面へ */
       let isl=null; if(!best){ /* 陸がない（道が大きな川・湖に沿う）ときは、水の中の岩の島に建てる */ const xi=rX(y)+sd*(TW?600:300), Ri=TW?44:15; isl=[xi,y,Ri]; best=[xi,y,1.2]; } const g=p.t==='stable'?stable():shrine(); if(TW) g.scale.setScalar(1.75); /* ブレワイの塔は人の60倍ほどの高さで、遠くからでも目印になる */ if(isl){ const ig=new T.CylinderGeometry(isl[2],isl[2]*1.25,10,18,2), IP=ig.attributes.position; for(let q=0;q<IP.count;q++){ const a2=Math.atan2(IP.getX(q),IP.getZ(q)), f=1+.12*Math.sin(a2*3+1)+.07*Math.sin(a2*7); IP.setX(q,IP.getX(q)*f); IP.setZ(q,IP.getZ(q)*f); } ig.computeVertexNormals(); scene.add(mk(ig,mStn,X(isl[0]),-3.6,Z(isl[1]))); } g.position.set(X(best[0]),best[2]-.4,Z(best[1])); POIF.push([best[0],best[1],p.t==='stable'?50:20]); g.rotation.y=best[0]>rX(best[1])?-1.5708:1.5708; g.userData.poi=p.t; scene.add(g); }); }
+  { /* 名前つきの場所を置く前に作った足もとの区画は、木や岩が重なるので作り直す */ const bad=new Set(); for(const q of POIF){ for(let ci=Math.floor((q[1]-q[2]-20)/CL);ci<=Math.floor((q[1]+q[2]+20)/CL);ci++) bad.add(ci); } for(const ci of bad){ const G=chunks.get(ci); if(!G) continue; chunkRoot.remove(G); G.traverse(o=>{ if(o.geometry&&!o.isInstancedMesh) o.geometry.dispose(); }); chunks.delete(ci); } if(bad.size) updChunks(y0,true); }
   // ---- 城（ブレワイのハイラル城）：地図の湖の島に、地図と同じ配置で。灰白の石の城壁が幾重にも島を巡り、角ごとに塔。
   //      中央の本丸は高い壁と四隅の丸塔、その上に細く高い尖塔。屋根は暗い青灰のとがり屋根。遠くの地平にそびえて見える ----
   if(typeof pCastle==='function'){ const v0c=vAt(0), vA=vAt(-3000), vB=vAt((PATH_H1-PATH_H0+30)*KM);
