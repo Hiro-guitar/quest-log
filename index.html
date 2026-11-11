@@ -4970,26 +4970,34 @@ async function pLookOpen(){
       sh.fragmentShader='varying float vLava;\n'+sh.fragmentShader.replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\n totalEmissiveRadiance+=vec3(1.,.13,0.)*smoothstep(.15,.7,vLava)*(.3+.6*uNtT);')
         .replace('float f=1.-exp(-d*uFogD);','float f=min(.72,1.-exp(-d*uFogD*mix(.5,.04,smoothstep(0.,2500.,vWP.y))))*(1.-.6*smoothstep(.3,.8,vLava)*uNtT);'); };
     m.customProgramCacheKey=()=>'volcLM'; return m; })();
-  // ---- 遠くの雪山（ブレワイのヘブラ山地）：地図の雪山の頂ごとに、けわしくとがった峰をそびえさせる。
-  //      上半分は雪におおわれ、急な面と谷筋だけ黒い岩がのぞく。尾根は雪が低くまで残り、谷は岩が高くまで出る ----
-  const snowGeo=(()=>{ const NA=96, NH=40, P=[], C=[], I=[], sr=pRng('hebra',3), ph=sr()*6, nr=4+Math.floor(sr()*2);
-    for(let j=0;j<=NH;j++){ const h=j/NH; for(let i=0;i<=NA;i++){ const a=i/NA*6.2832;
-      const rid=Math.pow(Math.abs(Math.cos(a*nr*.5+ph)),.6), jag=.5*Math.sin(a*11+h*7+ph)+.3*Math.sin(a*23-h*13)+.2*Math.sin(a*41+h*29);
-      let r=Math.pow(1-h,1.05)*(.42+.85*rid)*(1+.16*jag*(1-h*.6)), y=h*(1+.07*jag*(1-h)); if(h>.8) r*=1-.35*pSm(.8,1,h)*(.5+.5*Math.sin(a*3+ph));
-      const ox=.12*h*Math.cos(ph), oz=.12*h*Math.sin(ph); /* 頂は少し片寄る */
-      P.push(Math.cos(a)*r+ox,y,Math.sin(a)*r+oz);
-      const line=.36+.12*rid-.1*(.5+.5*Math.sin(a*7+ph*2))+.04*jag, sn=pSm(line-.03,line+.03,h)*(1-.55*pSm(.55,.95,Math.abs(Math.sin(a*13+h*5+ph))*(1-rid)));
-      const st=pSm(.35,.8,Math.abs(Math.sin(a*19+h*31+ph))*Math.abs(Math.sin(a*7-h*11)))*pSm(.3,.7,h)*(1-rid*.6), sn2=sn*(1-.8*st), rk=.2+.06*rid, k=.9+.1*rid; C.push(rk+(.96-rk)*sn2*k,rk+.02+(.98-rk-.02)*sn2*k,rk+.08+(1.-rk-.08)*sn2*k); } }
-    for(let j=0;j<NH;j++) for(let i=0;i<NA;i++){ const a=j*(NA+1)+i, b=a+1, c=a+NA+1, d=c+1; I.push(a,c,b,b,c,d); }
-    const g=new T.BufferGeometry(); g.setAttribute('position',new T.Float32BufferAttribute(P,3)); g.setAttribute('color',new T.Float32BufferAttribute(C,3)); g.setIndex(I); g.computeVertexNormals(); return g; })();
-  const snowMat=(()=>{ const m=patch(new T.MeshLambertMaterial({vertexColors:true})), ob=m.onBeforeCompile; m.onBeforeCompile=sh=>{ ob(sh);
-      sh.fragmentShader=sh.fragmentShader.replace('float f=1.-exp(-d*uFogD);','float f=min(.32,1.-exp(-d*uFogD*mix(.5,.04,smoothstep(0.,2500.,vWP.y))));'); };
+  // ---- 遠くの雪山（ブレワイのヘブラ山地）：地図の雪山を、本物の山と同じく浸食された尾根と谷の地形として作る。
+  //      頂は地図の頂の位置、まわりは尾根が枝分かれするけわしい山なみ。雪はゆるい面と高い所に積もり、急な岩壁と谷筋は岩がのぞく。
+  //      すそは針葉樹の暗い緑。遠いほど霞で青白くなる ----
+  const snowMat=(()=>{ const m=patch(new T.MeshLambertMaterial({vertexColors:true,side:T.DoubleSide})), ob=m.onBeforeCompile; m.onBeforeCompile=sh=>{ ob(sh);
+      sh.fragmentShader=sh.fragmentShader.replace('float f=1.-exp(-d*uFogD);','float f=min(.42,1.-exp(-d*uFogD*mix(.5,.04,smoothstep(0.,2500.,vWP.y))));'); };
     m.customProgramCacheKey=()=>'snowPkLM'; return m; })();
+  const snowMassif=o=>memo('snm'+o.c,()=>{ const N=240, E=o.RV*KM*1.15, ph=o.ph, P=[], C=[], I=[], RGa=[];
+    const pk=o.P.map(p=>[(p[0]-o.x)*KM,(p[1]-o.v)*KM,52000+260000*(p[2]-.04),Math.max(p[3]*KM*1.3,E*.15)]), Hmax=Math.max(...pk.map(p=>p[2]));
+    const rdg=(x,y,f0,oc,s0)=>{ let rg=0, amp=.5, f=f0, wt=1, sum=0; for(let k=0;k<oc;k++){ let n=1-Math.abs(2*pNoise(x*f+s0+k*7.1,y*f-k*3.3)-1); n=n*n*wt; wt=Math.min(1,n*1.9); rg+=n*amp; sum+=amp; amp*=.5; f*=2.03; } return rg/sum; };
+    const hgt=(x,z)=>{ const u=x/E, w=z/E, wx=u+.2*(pNoise(u*2.1+ph,w*2.1)-.5), wz=w+.2*(pNoise(u*2.1+ph+9,w*2.1+4)-.5), rr=Math.hypot(u,w);
+      let b=0; for(const p of pk){ const d=Math.hypot(wx*E-p[0],wz*E-p[1])/p[3]; b=Math.max(b,p[2]*Math.pow(Math.max(0,1-d/2.4),1.5)); }
+      b=Math.max(b,Hmax*.24*pSm(.9,.3,rr+.3*(pNoise(u*1.4+ph+3,w*1.4)-.5)));
+      const r1=rdg(wx,wz,2.4,4,ph), r2=rdg(wx+.31,wz-.17,11,5,ph+40); /* 大きな尾根と、斜面を刻む細かな谷筋 */
+      const hh=(b*(.35+.85*r1)+Hmax*.05*r1)*(.82+.3*r2)*pSm(1.,.78,rr); return [hh,r1*.6+r2*.4]; };
+    for(let j=0;j<=N;j++) for(let i=0;i<=N;i++){ const x=-E+2*E*i/N, z=-E+2*E*j/N, [hh,rg]=hgt(x,z); P.push(x,hh,-z); RGa.push(rg); }
+    for(let j=0;j<N;j++) for(let i=0;i<N;i++){ const a=j*(N+1)+i, b=a+1, c=a+N+1, d=c+1; I.push(a,c,b,b,c,d); }
+    const g=new T.BufferGeometry(); g.setAttribute('position',new T.Float32BufferAttribute(P,3)); g.setIndex(I); g.computeVertexNormals();
+    const nm=g.attributes.normal; for(let q=0;q<P.length/3;q++){ const x=P[q*3], y=P[q*3+1], z=-P[q*3+2], ny=Math.abs(nm.getY(q)), hn=y/Hmax, rg=RGa[q], n1=pNoise(x/E*7+ph,z/E*7);
+      /* 雪：高い所とゆるい面、尾根に積もる。急な岩壁と谷筋は岩が出る */
+      const sl=.26+.16*(n1-.5), sn=pSm(sl-.05,sl+.07,hn)*pSm(.3,.5,ny+.3*(rg-.4)), tr=pSm(.2,.08,hn)*pSm(.5,.7,ny);
+      let r=.26, gg=.26, bb=.29; r+=(.13-r)*tr; gg+=(.19-gg)*tr; bb+=(.16-bb)*tr;
+      const ao=.5+.6*pSm(.15,.75,rg); /* 谷の奥は暗く、尾根は明るい */
+      const a2=ao+(1-ao)*sn*.6; C.push((r+(1.-r)*sn)*a2,(gg+(1.-gg)*sn)*a2,(bb+(1.-bb)*sn)*Math.min(1,a2*1.06)); }
+    g.setAttribute('color',new T.Float32BufferAttribute(C,3)); return [g,Hmax]; });
   const placeSnowPk=(cy,list)=>{ if(typeof pSnowAt!=='function') return; const cx=rX(cy), seen=new Set();
     for(let yy=cy-120000;yy<cy+420000;yy+=3000){ const o=pSnowAt(vAt(yy)); if(!o||seen.has(o.c)) continue; seen.add(o.c);
-      o.P.forEach((pk,q)=>{ const wx=pk[0]*KM, wy=(pk[1]-vAt(0))*KM, dx=wx-cx, dy=wy-cy, R=Math.hypot(dx,dy); if(R<30000) return;
-        const Hm=34000+160000*(pk[2]-.04), D=Math.min(R*.85,30000), sc=D/R, H=Hm*sc, gp=new T.Group(); gp.position.set(X(cx+dx/R*D),-H*.12,Z(cy+dy/R*D)); gp.rotation.y=o.c*1.7+q*2.3; farG.add(gp); list.push(gp);
-        const mt=new T.Mesh(snowGeo,snowMat); mt.scale.set(H*(.55+.15*Math.sin(q*3.1)),H,H*(.55+.15*Math.cos(q*2.3))); gp.add(mt); if(!q){ const bs=new T.Mesh(snowGeo,snowMat); bs.scale.set(H*1.9,H*.42,H*1.2); bs.rotation.y=1.1; gp.add(bs); } /* 峰をつなぐ低い山なみ */ }); } };
+      const dx=o.x*KM-cx, dy=(o.v-vAt(0))*KM-cy, R=Math.hypot(dx,dy); if(R<o.RV*KM*.75) continue; /* 近い雪山は足もとの地形で見せる */
+      const [geo,Hmax]=snowMassif(o), D=Math.min(R*.85,30000), sc=D/R, mt=new T.Mesh(geo,snowMat); mt.scale.setScalar(sc); mt.position.set(X(cx+dx/R*D),-Hmax*sc*.03,Z(cy+dy/R*D)); mt.receiveShadow=false; farG.add(mt); list.push(mt); } };
   const smokeTex=(()=>{ const c=document.createElement('canvas'); c.width=c.height=128; const x=c.getContext('2d'); for(let q=0;q<7;q++){ const cx=40+Math.random()*48, cy=40+Math.random()*48, rr=26+Math.random()*30, g=x.createRadialGradient(cx,cy,0,cx,cy,rr); g.addColorStop(0,'rgba(255,255,255,.55)'); g.addColorStop(1,'rgba(255,255,255,0)'); x.fillStyle=g; x.fillRect(0,0,128,128); } return new T.CanvasTexture(c); })();
   let vGlow=[]; const placeVGlow=cy=>{ vGlow.forEach(s=>{ farG.remove(s); }); vGlow=[]; if(typeof pVolcAt!=='function') return; const cx=rX(cy), seen=new Set();
     placeSnowPk(cy,vGlow); /* 雪山も火山と同じく遠くからそびえて見える */
