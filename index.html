@@ -4970,8 +4970,29 @@ async function pLookOpen(){
       sh.fragmentShader='varying float vLava;\n'+sh.fragmentShader.replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\n totalEmissiveRadiance+=vec3(1.,.13,0.)*smoothstep(.15,.7,vLava)*(.3+.6*uNtT);')
         .replace('float f=1.-exp(-d*uFogD);','float f=min(.72,1.-exp(-d*uFogD*mix(.5,.04,smoothstep(0.,2500.,vWP.y))))*(1.-.6*smoothstep(.3,.8,vLava)*uNtT);'); };
     m.customProgramCacheKey=()=>'volcLM'; return m; })();
+  // ---- 遠くの雪山（ブレワイのヘブラ山地）：地図の雪山の頂ごとに、けわしくとがった峰をそびえさせる。
+  //      上半分は雪におおわれ、急な面と谷筋だけ黒い岩がのぞく。尾根は雪が低くまで残り、谷は岩が高くまで出る ----
+  const snowGeo=(()=>{ const NA=96, NH=40, P=[], C=[], I=[], sr=pRng('hebra',3), ph=sr()*6, nr=4+Math.floor(sr()*2);
+    for(let j=0;j<=NH;j++){ const h=j/NH; for(let i=0;i<=NA;i++){ const a=i/NA*6.2832;
+      const rid=Math.pow(Math.abs(Math.cos(a*nr*.5+ph)),.6), jag=.5*Math.sin(a*11+h*7+ph)+.3*Math.sin(a*23-h*13)+.2*Math.sin(a*41+h*29);
+      let r=Math.pow(1-h,1.05)*(.42+.85*rid)*(1+.16*jag*(1-h*.6)), y=h*(1+.07*jag*(1-h)); if(h>.8) r*=1-.35*pSm(.8,1,h)*(.5+.5*Math.sin(a*3+ph));
+      const ox=.12*h*Math.cos(ph), oz=.12*h*Math.sin(ph); /* 頂は少し片寄る */
+      P.push(Math.cos(a)*r+ox,y,Math.sin(a)*r+oz);
+      const line=.36+.12*rid-.1*(.5+.5*Math.sin(a*7+ph*2))+.04*jag, sn=pSm(line-.03,line+.03,h)*(1-.55*pSm(.55,.95,Math.abs(Math.sin(a*13+h*5+ph))*(1-rid)));
+      const st=pSm(.35,.8,Math.abs(Math.sin(a*19+h*31+ph))*Math.abs(Math.sin(a*7-h*11)))*pSm(.3,.7,h)*(1-rid*.6), sn2=sn*(1-.8*st), rk=.2+.06*rid, k=.9+.1*rid; C.push(rk+(.96-rk)*sn2*k,rk+.02+(.98-rk-.02)*sn2*k,rk+.08+(1.-rk-.08)*sn2*k); } }
+    for(let j=0;j<NH;j++) for(let i=0;i<NA;i++){ const a=j*(NA+1)+i, b=a+1, c=a+NA+1, d=c+1; I.push(a,c,b,b,c,d); }
+    const g=new T.BufferGeometry(); g.setAttribute('position',new T.Float32BufferAttribute(P,3)); g.setAttribute('color',new T.Float32BufferAttribute(C,3)); g.setIndex(I); g.computeVertexNormals(); return g; })();
+  const snowMat=(()=>{ const m=patch(new T.MeshLambertMaterial({vertexColors:true})), ob=m.onBeforeCompile; m.onBeforeCompile=sh=>{ ob(sh);
+      sh.fragmentShader=sh.fragmentShader.replace('float f=1.-exp(-d*uFogD);','float f=min(.32,1.-exp(-d*uFogD*mix(.5,.04,smoothstep(0.,2500.,vWP.y))));'); };
+    m.customProgramCacheKey=()=>'snowPkLM'; return m; })();
+  const placeSnowPk=(cy,list)=>{ if(typeof pSnowAt!=='function') return; const cx=rX(cy), seen=new Set();
+    for(let yy=cy-120000;yy<cy+420000;yy+=3000){ const o=pSnowAt(vAt(yy)); if(!o||seen.has(o.c)) continue; seen.add(o.c);
+      o.P.forEach((pk,q)=>{ const wx=pk[0]*KM, wy=(pk[1]-vAt(0))*KM, dx=wx-cx, dy=wy-cy, R=Math.hypot(dx,dy); if(R<30000) return;
+        const Hm=34000+160000*(pk[2]-.04), D=Math.min(R*.85,30000), sc=D/R, H=Hm*sc, gp=new T.Group(); gp.position.set(X(cx+dx/R*D),-H*.12,Z(cy+dy/R*D)); gp.rotation.y=o.c*1.7+q*2.3; farG.add(gp); list.push(gp);
+        const mt=new T.Mesh(snowGeo,snowMat); mt.scale.set(H*(.55+.15*Math.sin(q*3.1)),H,H*(.55+.15*Math.cos(q*2.3))); gp.add(mt); if(!q){ const bs=new T.Mesh(snowGeo,snowMat); bs.scale.set(H*1.9,H*.42,H*1.2); bs.rotation.y=1.1; gp.add(bs); } /* 峰をつなぐ低い山なみ */ }); } };
   const smokeTex=(()=>{ const c=document.createElement('canvas'); c.width=c.height=128; const x=c.getContext('2d'); for(let q=0;q<7;q++){ const cx=40+Math.random()*48, cy=40+Math.random()*48, rr=26+Math.random()*30, g=x.createRadialGradient(cx,cy,0,cx,cy,rr); g.addColorStop(0,'rgba(255,255,255,.55)'); g.addColorStop(1,'rgba(255,255,255,0)'); x.fillStyle=g; x.fillRect(0,0,128,128); } return new T.CanvasTexture(c); })();
   let vGlow=[]; const placeVGlow=cy=>{ vGlow.forEach(s=>{ farG.remove(s); }); vGlow=[]; if(typeof pVolcAt!=='function') return; const cx=rX(cy), seen=new Set();
+    placeSnowPk(cy,vGlow); /* 雪山も火山と同じく遠くからそびえて見える */
     for(let yy=cy-120000;yy<cy+420000;yy+=3000){ const o=pVolcAt(vAt(yy)); if(!o||seen.has(o.v)) continue; seen.add(o.v); const wx=o.x*KM, wy=(o.v-vAt(0))*KM, dx=wx-cx, dy=wy-cy, R=Math.hypot(dx,dy); if(R<30000) continue;
       // 見かけの大きさ：本当は高さ3万の山が R の先にあるように。置くのは手前の D（遠すぎると描かれないので）
       const Hm=40000, D=Math.min(R*.85,30000), s=D/R, H=Hm*s, gp=new T.Group(); gp.position.set(X(cx+dx/R*D),-H*.14,Z(cy+dy/R*D)); gp.rotation.y=o.v*.37; farG.add(gp); vGlow.push(gp);
