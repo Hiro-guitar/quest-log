@@ -6269,8 +6269,39 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
     /* 見つけるものの部品（家・風車・井戸・遺跡）を、地図の名前つきの場所の組み立てに使う */
     const dkPart=(nm,sc)=>{ const q=DK.findIndex(d=>d[0]===nm); const g=new T.Group(); if(q<0) return g; DK[q][1](g); bake(g); g.scale.setScalar(sc); return g; };
     const putParts=(cx,cy,parts,rot)=>{ const out=[], nf=POIF.length; parts.forEach(([nm,ox,oz,sc,ry])=>{ const ca=Math.cos(rot), sa=Math.sin(rot), px=cx+ox*ca-oz*sa, py=cy+ox*sa+oz*ca; const es=[hAt(px,py),hAt(px+8,py),hAt(px-8,py),hAt(px,py+8),hAt(px,py-8)], lo=Math.min(...es); const sv=POIF.splice(nf); const bad=lo<.8||nearMon(px,py,10); POIF.push(...sv); if(bad) return; /* 同じ村の部品どうしはよけない */ const g=typeof nm==='function'?nm():dkPart(nm,sc); POIF.push([px,py,30*sc/2.4]); g.position.set(X(px),lo-.3,Z(py)); g.rotation.y=ry; g.userData.poi='part'; scene.add(g); out.push(g); }); return out; };
-    const village=(cx,cy,r)=>{ /* 村（ハテノ村のように）：しっくい壁の家が井戸のまわりに集まり、外れの丘に風車 */ const P=[['古い井戸',0,0,2.4,r()*6]]; const n=4+Math.floor(r()*3); for(let q=0;q<n;q++){ const a=q/n*6.283+r()*.6, d=28+r()*26; P.push(['羊飼いの小屋',Math.cos(a)*d,Math.sin(a)*d,2.4,-a+1.5708+(r()-.5)*.4]); }
-      P.push(['丘の風車',70+r()*15,(r()-.5)*40,2.4,r()*6]); if(r()<.7) P.push(['りんごの木立',-60,(r()-.5)*30,2.2,r()*6]); return putParts(cx,cy,P,r()*6.283); };
+    /* ハテノ村の家：クリーム色のしっくい壁、下は積み石の腰壁、四隅は切り石。赤茶の瓦の切妻屋根（深い軒、瓦の段、棟瓦）、屋根窓、
+       青灰の鎧戸のついた窓、木の扉と庇、煙突。まわりに青緑のつぼ。丸い塔の家（とんがりの瓦屋根）もまじる */
+    const vM=()=>memo('vM',()=>({ St:tm([232,214,176]), St2:tm([216,196,158]), Sn:tm([150,142,128]), Sn2:tm([122,116,104]), Rf:tm([170,98,72]), Rf2:tm([140,80,60]), Rf3:tm([186,116,86]), Wd:tm([100,70,46]), Sh:tm([82,96,112]), Gl:tm([60,64,72]), Pt:tm([70,150,150]), Wn:new T.MeshBasicMaterial({color:c3([250,214,150])}) }));
+    const hHouse=(r,big)=>{ const M=vM(), g=new T.Group(), L=big?17+r()*5:11+r()*4, D=big?10+r()*2:8+r()*2, H=big?9:6.5, BH=1.6, P=big?5:4;
+      g.add(Bx(L,H,D,M.St,0,H/2,0)); g.add(Bx(L+.3,BH,D+.3,M.Sn,0,BH/2,0)); /* しっくい壁と積み石の腰壁 */
+      for(let q=0;q<Math.floor(L*2);q++) for(const sz of [-1,1]) g.add(Bx(.9+r()*.6,.45+r()*.25,.25,r()<.5?M.Sn:M.Sn2,-L/2+.5+q*.5+(r()-.5)*.2,.3+r()*(1.1+.9*(.5+.5*Math.sin(q*.7))),sz*(D/2+.18))); /* 腰壁の上はでこぼこ */
+      for(const [sx,sz] of [[-1,-1],[1,-1],[-1,1],[1,1]]) for(let y=BH;y<H;y+=.9) g.add(Bx(.7+(y*7%2)*.3,.8,.7+(1-(y*7%2))*.3,M.Sn,sx*(L/2-.2),y+.4,sz*(D/2-.2))); /* 隅石 */
+      /* 切妻の三角壁 */ for(const sx of [-1,1]){ const tri=new T.Shape([new T.Vector2(-D/2,0),new T.Vector2(D/2,0),new T.Vector2(0,P)]), tg=new T.ShapeGeometry(tri), tw=mk(tg,M.St,sx*L/2,H,0); tw.rotation.y=sx*Math.PI/2; g.add(tw); }
+      /* 屋根：瓦の段を重ねる */ const sl=Math.hypot(D/2+1.2,P), ang=Math.atan2(P,D/2+1.2), RL=L+2.2;
+      for(const sz of [-1,1]){ const n=Math.ceil(sl/.7); for(let q=0;q<n;q++){ const t=(q+.5)/n, y=H-.25+P*(1-t)*(1)+(t*0), z=sz*(D/2+1.2)*t; const rw=Bx(RL,.32,sl/n+.12,q%2?M.Rf:M.Rf2,0,H+P*(1-t)-.1,z); rw.rotation.x=sz*ang; g.add(rw); }
+        for(let q=0;q<Math.floor(RL/.9);q++){ const rw=Bx(.1,.34,sl,M.Rf2,-RL/2+.45+q*.9,H+P/2,sz*(D/2+1.2)/2+.0); rw.rotation.x=sz*ang; rw.position.y+=.08; g.add(rw); } /* 瓦のすじ */
+        for(let q=0;q<Math.floor(L/2);q++) g.add(Bx(.35,.35,1.4,M.Wd,-L/2+1+q*2,H-.25,sz*(D/2+.6))); } /* 垂木の先 */
+      g.add(Bx(RL+.3,.45,.7,M.Rf3,0,H+P+.15,0)); /* 棟瓦 */
+      if(big) for(const x of [-L*.22,L*.22]){ const dz=D/2*.45; g.add(Bx(2.4,2,2.4,M.St,x,H+P*.5+.6,dz)); const dr=Bx(2.9,.35,2.9,M.Rf,x,H+P*.5+1.8,dz); dr.rotation.x=.5; g.add(dr); g.add(Bx(1,1.1,.1,M.Gl,x,H+P*.5+.7,dz+1.22)); } /* 屋根窓 */
+      /* 窓と鎧戸 */ const win=(x,y,z,sz)=>{ g.add(Bx(1.4,1.5,.15,M.Gl,x,y,z+sz*.06)); g.add(Bx(1.6,.18,.3,M.Wd,x,y-.85,z+sz*.12)); g.add(Bx(1.6,.18,.25,M.Wd,x,y+.83,z+sz*.1)); for(const k of [-1,1]) g.add(Bx(.7,1.6,.16,M.Sh,x+k*1.1,y,z+sz*.14)); };
+      const nw=Math.max(2,Math.floor(L/4.2)); for(const sz of [-1,1]) for(let q=0;q<nw;q++){ const x=-L/2+L*(q+.5)/nw; if(sz>0&&Math.abs(x)<1.8) continue; win(x,BH+2.2,sz*D/2,sz); if(big) win(x+.8,BH+5.4,sz*D/2,sz); }
+      /* 扉と庇・灯り */ g.add(Bx(2,3.2,.2,M.Wd,0,BH+1.6-BH+.1+1.5,D/2+.08)); g.add(Bx(3.2,.25,1.6,M.Wd,0,4.4,D/2+.8)); { const pr=Bx(3.6,.3,2,M.Rf,0,4.7,D/2+.9); pr.rotation.x=.3; g.add(pr); } g.add(Bx(.4,.5,.4,M.Wn,1.6,3.6,D/2+.3));
+      /* 煙突 */ g.add(Bx(1.2,P+2.5,1.2,M.Sn,L/2-2.4,H+(P+2.5)/2-.6,-D/4)); g.add(Bx(1.6,.4,1.6,M.Sn2,L/2-2.4,H+P+1.9,-D/4));
+      /* つぼ */ for(let q=0;q<3+Math.floor(r()*3);q++){ const pt=Sp(.55,M.Pt,L/2-1.2-q*1.25,.55,D/2+1,1); pt.scale.set(1,1.25,1); g.add(pt); }
+      bake(g); return g; };
+    const tHouse=(r)=>{ const M=vM(), g=new T.Group(), R=3.6+r()*.8, H=11+r()*4; g.add(Cy(R,R+.2,H,M.St,0,H/2,0,18)); g.add(Cy(R+.25,R+.4,1.8,M.Sn,0,.9,0,18));
+      const rf=mk(new T.ConeGeometry(R+1.6,4.2,18),M.Rf,0,H+2.1,0); g.add(rf); for(let q=0;q<5;q++){ const y=.3+q*.75, rr=(R+1.6)*(1-y/4.2)+.04; const rg=mk(new T.CylinderGeometry(rr-.12,rr,.2,18,1,true),M.Rf2,0,H+y,0); g.add(rg); } /* 瓦の段（屋根の面に沿う） */
+      for(let q=0;q<6;q++){ const a=q/6*6.283; g.add(Bx(.6,.9,.6,M.Wd,Math.cos(a)*(R+.1),H-.4,Math.sin(a)*(R+.1))); } /* 軒下の梁 */
+      g.add(Bx(1.3,1.5,.2,M.Gl,0,H-3,R+.02)); g.add(Bx(2,2.8,.2,M.Wd,0,BHt(),R+.05)); { const bal=Bx(3,.3,1.6,M.Wd,R-.2,H*.6,0); bal.rotation.y=Math.PI/2; g.add(bal); }
+      bake(g); return g; };
+    const BHt=()=>1.6+1.4;
+    const village=(cx,cy,r)=>{ /* ハテノ村のように：道の両側に家が並び、丸い塔の家、井戸、柵、外れの丘に風車 */ const out=[], rot=r()*6.283, ca=Math.cos(rot), sa=Math.sin(rot), nf=POIF.length;
+      const put=(g,ox,oz,ry,rad)=>{ const px=cx+ox*ca-oz*sa, py=cy+ox*sa+oz*ca; const es=[hAt(px,py),hAt(px+rad,py),hAt(px-rad,py),hAt(px,py+rad),hAt(px,py-rad)], lo=Math.min(...es); const sv=POIF.splice(nf); const bad=lo<.8||nearMon(px,py,rad*.6); POIF.push(...sv); if(bad) return; g.position.set(X(px),lo-.4,Z(py)); g.rotation.y=ry-rot; g.userData.poi='part'; scene.add(g); POIF.push([px,py,rad]); out.push(g); };
+      const n=5+Math.floor(r()*3); for(let q=0;q<n;q++){ const side=q%2?1:-1, x=-36+q*14+(r()-.5)*4, z=side*(13+r()*5); put(q===2?tHouse(r):hHouse(r,r()<.5),x,z,side>0?Math.PI:0,12); }
+      for(let q=0;q<2;q++){ const x=(r()-.5)*60, z=(r()<.5?-1:1)*(34+r()*8); put(hHouse(r,false),x,z,(z>0?Math.PI:0)+(r()-.5)*.5,10); }
+      { const q2=DK.findIndex(d=>d[0]==='古い井戸'); if(q2>=0){ const wg=new T.Group(); DK[q2][1](wg); bake(wg); wg.scale.setScalar(2.2); put(wg,4,0,r()*6,5); } }
+      { const q2=DK.findIndex(d=>d[0]==='丘の風車'); if(q2>=0){ const wg=new T.Group(); DK[q2][1](wg); bake(wg); wg.scale.setScalar(2.6); put(wg,70+r()*20,(r()-.5)*50,r()*6,14); } }
+      return out; };
     const ruin=(cx,cy,r)=>putParts(cx,cy,[['古い柱の遺跡',0,0,2.6,r()*6],['崩れた石の門',34,(r()-.5)*20,2.4,r()*6],['崩れた城壁の門',-30,18+(r()-.5)*10,2.2,r()*6]],r()*6.283); /* 名前つきの遺跡：柱の遺跡に、崩れた門と城壁 */
     const v0=vAt(0); const PT={shrine:[200,12,1400],stable:[70,26,900],village:[300,80,1600],ruin:[230,45,1400]}; L2.forEach((p,i)=>{ if(p.t!=='tower'&&!PT[p.t]) return; const y=(p.v-v0)*KM; if(y<-3000||y>(PATH_H1-PATH_H0+30)*KM) return; const r=pRng('lkpoi'+Math.round(p.v),3), sd=p.x>=WD.roadU(p.v)?1:-1;
       if(p.t==='tower'){ /* 塔は地図と同じ場所（道から遠く離れた所）に建て、遠くからでも見える目印にする。動かすのは毎こま（animDisc） */ const xt=rX(y)+(p.x-WD.roadU(p.v))*KM, g=tower(); scene.add(g); (scene.userData.ft=scene.userData.ft||[]).push({g,x:xt,y,h:Math.max(0,hAt(xt,y))}); return; }
