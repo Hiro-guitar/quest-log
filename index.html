@@ -4983,14 +4983,17 @@ async function pLookOpen(){
       sh.fragmentShader=sh.fragmentShader.replace('float f=1.-exp(-d*uFogD);','float f=min(.42,1.-exp(-d*uFogD*mix(.5,.04,smoothstep(0.,2500.,vWP.y))));'); };
     m.customProgramCacheKey=()=>'snowPkLM'; return m; })();
   const snowMassif=o=>memo('snm'+o.c,()=>{ const N=240, E=o.RV*KM*1.15, ph=o.ph, P=[], C=[], I=[], RGa=[];
-    const pk=o.P.map(p=>[(p[0]-o.x)*KM,(p[1]-o.v)*KM,52000+260000*(p[2]-.04),Math.max(p[3]*KM*1.3,E*.15)]), Hmax=Math.max(...pk.map(p=>p[2]));
+    const pk=o.P.map(p=>[(p[0]-o.x)*KM,(p[1]-o.v)*KM,52000+260000*(p[2]-.04),Math.max(p[3]*KM*1.3,E*.15)]), Hmax=Math.max(...pk.map(p=>p[2])); const LKa=[], GL=(o.G||[]).map(g=>{ const Q=g.Q.map(q=>[(q[0]-o.x)*KM,(q[1]-o.v)*KM,q[2]*KM]); let x0=1e12,x1=-1e12,z0=1e12,z1=-1e12; Q.forEach(q=>{ x0=Math.min(x0,q[0]-q[2]*1.7); x1=Math.max(x1,q[0]+q[2]*1.7); z0=Math.min(z0,q[1]-q[2]*1.7); z1=Math.max(z1,q[1]+q[2]*1.7); }); return {Q,trib:g.trib,L:g.L,bb:[x0,x1,z0,z1]}; });
     const rdg=(x,y,f0,oc,s0)=>{ let rg=0, amp=.5, f=f0, wt=1, sum=0; for(let k=0;k<oc;k++){ let n=1-Math.abs(2*pNoise(x*f+s0+k*7.1,y*f-k*3.3)-1); n=n*n*wt; wt=Math.min(1,n*1.9); rg+=n*amp; sum+=amp; amp*=.5; f*=2.03; } return rg/sum; };
     const hgt=(x,z)=>{ const u=x/E, w=z/E, wx=u+.2*(pNoise(u*2.1+ph,w*2.1)-.5), wz=w+.2*(pNoise(u*2.1+ph+9,w*2.1+4)-.5), rr=Math.hypot(u,w);
       let b=0; for(const p of pk){ const d=Math.hypot(wx*E-p[0],wz*E-p[1])/p[3]; b=Math.max(b,p[2]*Math.pow(Math.max(0,1-d/2.4),1.5)); }
       b=Math.max(b,Hmax*.24*pSm(.9,.3,rr+.3*(pNoise(u*1.4+ph+3,w*1.4)-.5)));
       const r1=rdg(wx,wz,2.4,4,ph), r2=rdg(wx+.31,wz-.17,11,5,ph+40); /* 大きな尾根と、斜面を刻む細かな谷筋 */
-      const hh=(b*(.35+.85*r1)+Hmax*.05*r1)*(.82+.3*r2)*pSm(1.,.78,rr); return [hh,r1*.6+r2*.4]; };
-    for(let j=0;j<=N;j++) for(let i=0;i<=N;i++){ const x=-E+2*E*i/N, z=-E+2*E*j/N, [hh,rg]=hgt(x,z); P.push(x,hh,-z); RGa.push(rg); }
+      let hh=(b*(.35+.85*r1)+Hmax*.05*r1)*(.82+.3*r2)*pSm(1.,.78,rr), lk=0;
+      /* 氷河谷（地図と同じ道すじ）：U字の谷を刻み、谷底は平らな雪原。下の端は湖 */ for(const g of GL){ if(x<g.bb[0]||x>g.bb[1]||z<g.bb[2]||z>g.bb[3]) continue; let best=1e9, bi=0; for(let i=0;i<g.Q.length;i++){ const d=Math.hypot(x-g.Q[i][0],z-g.Q[i][1])/g.Q[i][2]; if(d<best){ best=d; bi=i; } } if(best>1.6) continue;
+        const t=bi/g.Q.length, dk=g.trib?pSm(1,.6,t):pSm(0,.15,t), pr=Math.max(0,1-Math.pow(best/1.3,2.2))*dk, fl=Hmax*(.3*(1-t)+.03); if(pr>0&&hh>fl) hh=hh+(fl-hh)*Math.pow(pr,.7); if(g.L&&g.L[bi]&&best<.85) lk=1; }
+      if(lk) hh=Math.min(hh,Hmax*.01); return [hh,r1*.6+r2*.4,lk]; };
+    for(let j=0;j<=N;j++) for(let i=0;i<=N;i++){ const x=-E+2*E*i/N, z=-E+2*E*j/N, [hh,rg,lk]=hgt(x,z); P.push(x,hh,-z); RGa.push(rg); LKa.push(lk); }
     for(let j=0;j<N;j++) for(let i=0;i<N;i++){ const a=j*(N+1)+i, b=a+1, c=a+N+1, d=c+1; I.push(a,c,b,b,c,d); }
     const g=new T.BufferGeometry(); g.setAttribute('position',new T.Float32BufferAttribute(P,3)); g.setIndex(I); g.computeVertexNormals();
     const nm=g.attributes.normal; for(let q=0;q<P.length/3;q++){ const x=P[q*3], y=P[q*3+1], z=-P[q*3+2], ny=Math.abs(nm.getY(q)), hn=y/Hmax, rg=RGa[q], n1=pNoise(x/E*7+ph,z/E*7);
@@ -4998,7 +5001,7 @@ async function pLookOpen(){
       const sl=.26+.16*(n1-.5), sn=pSm(sl-.05,sl+.07,hn)*pSm(.3,.5,ny+.3*(rg-.4)), tr=pSm(.2,.08,hn)*pSm(.5,.7,ny);
       let r=.26, gg=.26, bb=.29; r+=(.13-r)*tr; gg+=(.19-gg)*tr; bb+=(.16-bb)*tr;
       const ao=.5+.6*pSm(.15,.75,rg); /* 谷の奥は暗く、尾根は明るい */
-      const a2=ao+(1-ao)*sn*.6; C.push((r+(1.-r)*sn)*a2,(gg+(1.-gg)*sn)*a2,(bb+(1.-bb)*sn)*Math.min(1,a2*1.06)); }
+      if(LKa[q]){ C.push(.30,.46,.58); continue; } /* 氷河湖 */ const a2=ao+(1-ao)*sn*.6; C.push((r+(1.-r)*sn)*a2,(gg+(1.-gg)*sn)*a2,(bb+(1.-bb)*sn)*Math.min(1,a2*1.06)); }
     g.setAttribute('color',new T.Float32BufferAttribute(C,3)); return [g,Hmax]; });
   const placeSnowPk=(cy,list)=>{ if(typeof pSnowAt!=='function') return; const cx=rX(cy), seen=new Set();
     for(let yy=cy-120000;yy<cy+420000;yy+=3000){ const o=pSnowAt(vAt(yy)); if(!o||seen.has(o.c)) continue; seen.add(o.c);
