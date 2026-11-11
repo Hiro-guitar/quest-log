@@ -6226,26 +6226,46 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
         g.add(mk(new T.ConeGeometry(3.2,11,12),mB,0,25+H,0)); const band=new T.Mesh(new T.CylinderGeometry(2.75,2.95,1,16,1,true),gM); band.position.y=22.5+H; g.add(band); g.add(mk(new T.CylinderGeometry(2.2,2.6,2.2,16),mT,0,8.2+H,0));
         const sp=gSp(38); sp.position.y=H+20; sp.material.opacity=.5; g.add(sp); return g; };
     /* 馬宿（ブレワイの馬宿）：かまぼこ形の大きな布の天幕に木の骨組み。正面に大きな馬の頭の飾り（赤いたてがみ、手綱の帯）、横に柵で囲った馬場、木箱と旗 */
-    const stable=()=>{ const g=new T.Group(), r=pRng('stbl',3), mCan=tm([228,214,180]), mCan2=tm([196,170,128]), mWd=tm([104,74,48]), mWd2=tm([136,100,64]), mMane=tm([196,78,40]), mHd=tm([222,196,152]), mDk=tm([46,36,30]), mGr=tm([70,120,84]);
-      const L3=34, R3=10;
-      const roof=mk(new T.CylinderGeometry(R3,R3,L3,24,1,true,-Math.PI/2,Math.PI),mCan,0,2.2,0); roof.rotation.x=-Math.PI/2; roof.scale.set(1,1,1.25); g.add(roof); /* 天幕：かまぼこ形 */
-      for(let q=0;q<4;q++){ const z=-L3/2+3+q*(L3-6)/3, st=mk(new T.CylinderGeometry(R3+.06,R3+.06,2.2,24,1,true,-Math.PI/2,Math.PI),mCan2,0,2.2,z); st.rotation.x=-Math.PI/2; st.scale.set(1,1,1.25); g.add(st); } /* 色の帯 */
-      for(let q=0;q<7;q++){ const z=-L3/2+q*L3/6, rb=mk(new T.TorusGeometry(R3+.15,.32,5,20,Math.PI),mWd,0,2.2,z); rb.scale.set(1,1.25,1); g.add(rb); } /* 骨組み */
-      g.add(Bx(2*R3+.4,2.2,L3,mWd2,0,1.1,0)); /* 腰板 */
-      const bk=mk(new T.CircleGeometry(R3,20,0,Math.PI),mCan2,0,2.2,-L3/2); bk.scale.set(1,1.25,1); bk.rotation.y=Math.PI; g.add(bk);
-      /* 正面：入口と大きな馬の頭 */ const zf=L3/2; const fr=mk(new T.CircleGeometry(R3,20,0,Math.PI),mCan,0,2.2,zf); fr.scale.set(1,1.25,1); g.add(fr); g.add(Bx(7,7.5,.4,mDk,0,3.75,zf+.1)); g.add(Bx(8,.6,.6,mWd,0,7.6,zf+.2));
-      const hd=new T.Group(); hd.position.set(0,12,zf+.6); g.add(hd);
-      const nk=mk(new T.CylinderGeometry(2.2,3.0,10,14),mHd,0,0,0); nk.rotation.x=.3; hd.add(nk);
-      const he=mk(new T.CapsuleGeometry(2.3,5.5,6,14),mHd,0,4.4,3.4); he.rotation.x=1.95; he.scale.set(.95,1,1.05); hd.add(he); const mz=Sp(2.1,mHd,0,2.6,6.6,2); mz.scale.set(.95,.85,1); hd.add(mz); hd.add(Sp(.5,mDk,.9,2.2,8.4,1)); hd.add(Sp(.5,mDk,-.9,2.2,8.4,1));
-      for(const sx of [-1,1]){ const ea=mk(new T.ConeGeometry(.8,2.8,8),mHd,sx*1.3,8.2,1.4); ea.rotation.z=-sx*.25; ea.rotation.x=-.2; hd.add(ea); hd.add(Sp(.5,mDk,sx*1.95,5.6,3.6,1)); }
-      for(let q=0;q<11;q++){ const t=q/10, mn=mk(new T.ConeGeometry(.9,2.6,6),mMane,(r()-.5)*.3,-3.6+t*11.5,-2.4+t*1.8-.6*Math.sin(t*3)); mn.rotation.x=-1.9+(r()-.5)*.3; hd.add(mn); } /* 赤いたてがみ */
-      for(const [y2,z2,a2] of [[3.0,5.6,.35],[5.0,2.2,1.2]]){ const bd=mk(new T.TorusGeometry(2.25,.22,5,18),mWd,0,y2,z2); bd.rotation.x=a2; hd.add(bd); } /* 手綱の帯 */
-      /* 馬場の柵 */ const cx=R3+16, cw=13, cl=14; for(let x=-cw;x<=cw+.01;x+=4.3) for(const z of [-cl,cl]){ g.add(Bx(.5,3,.5,mWd,cx+x,1.5,z)); } for(let z=-cl;z<=cl+.01;z+=4.6) for(const x of [-cw,cw]){ if(x===-cw&&Math.abs(z)<4) continue; g.add(Bx(.5,3,.5,mWd,cx+x,1.5,z)); }
-      for(const y of [1.3,2.5]){ g.add(Bx(2*cw,.25,.25,mWd2,cx,y,-cl)); g.add(Bx(2*cw,.25,.25,mWd2,cx,y,cl)); g.add(Bx(.25,.25,2*cl,mWd2,cx+cw,y,0)); g.add(Bx(.25,.25,cl-4,mWd2,cx-cw,y,-(cl+4)/2)); g.add(Bx(.25,.25,cl-4,mWd2,cx-cw,y,(cl+4)/2)); }
-      for(let q=0;q<5;q++) g.add(Bx(1.8,1.8,1.8,mWd2,-R3-3+(r()-.5)*2,.9+(q>2?1.8:0),zf-4-q%3*2.2)); /* 木箱 */
-      g.add(Cy(.18,.2,14,mWd,-R3-1,7,zf+2,6)); const fl=Bx(.1,2.6,4.2,mGr,-R3-1,12.4,zf+4.1); g.add(fl); /* 旗 */
-      g.add(Bx(.4,1.6,10,mWd,R3+3,1.4,zf+4)); g.add(Bx(.4,.3,10,mWd,R3+3,2.3,zf+4)); /* 手綱かけ */
-      return g; };
+    const stable=()=>{ /* ブレワイの馬宿：木組みの正面に3つのアーチの入口（中央は赤い幕、左右は灯り）、上に看板。軒には黄土色の布の幕（波形のすそ、馬の模様の帯）。
+         屋根は暗いオリーブ色の布の天幕で、中央から高い木組みの柱が伸び、てっぺんに板で組んだ大きな馬の頭（歯をむいた口、丸い目、後ろへ広がる板のたてがみ）。
+         頭からは三角旗の綱が地面へ。横に板屋根の差し掛け、まわりに柵の馬場、木箱、樽、鍋と焚き火、ひし形模様の小さな天幕 */
+      const g=new T.Group(), r=pRng('stbl',3), W=tm([132,94,56]), Wd=tm([92,62,38]), Wl=tm([164,124,78]), Oc=tm([206,164,78]), Oc2=tm([178,132,58]), Ol=tm([116,112,72]), Ol2=tm([96,92,60]), Rd=tm([158,52,40]), Gn=tm([96,150,80]), Wt=tm([236,228,206]), Dk=tm([40,30,24]);
+      const Lt=new T.MeshBasicMaterial({color:c3([255,196,110])});
+      const FW=30, FD=24, WH=9, R0=15; /* 正面の幅、奥行き、壁の高さ */
+      /* 正面の壁：3つのアーチ */ g.add(Bx(FW,WH,1,Wl,0,WH/2,FD/2));
+      for(const [ax,aw,ah,cur] of [[0,7.4,7.4,1],[-9.4,5,6,0],[9.4,5,6,0]]){ g.add(Bx(aw,ah-aw/2,.4,cur?Dk:Lt,ax,(ah-aw/2)/2,FD/2+.35)); const ac=mk(new T.CircleGeometry(aw/2,16,0,Math.PI),cur?Dk:Lt,ax,ah-aw/2,FD/2+.36); g.add(ac);
+        const fr=mk(new T.TorusGeometry(aw/2+.3,.35,6,16,Math.PI),Wd,ax,ah-aw/2,FD/2+.6); g.add(fr); g.add(Bx(.7,ah-aw/2,.7,Wd,ax-aw/2-.3,(ah-aw/2)/2,FD/2+.6)); g.add(Bx(.7,ah-aw/2,.7,Wd,ax+aw/2+.3,(ah-aw/2)/2,FD/2+.6));
+        if(cur){ for(const sx of [-1,1]){ const c2=Bx(2.2,ah-.6,.25,Rd,ax+sx*2.4,(ah-.6)/2,FD/2+.5); g.add(c2); } g.add(Bx(aw,.8,.3,Rd,ax,ah-aw/2+aw/2-.5,FD/2+.5)); } }
+      /* 木組み：柱、梁、すじかい */ for(const x of [-FW/2,-6.2,6.2,FW/2]){ g.add(Bx(1,WH+3.2,1,W,x,(WH+3.2)/2,FD/2+.8)); g.add(Sp(.6,Wd,x,WH+3.3,FD/2+.8,0)); } g.add(Bx(FW+1,.8,.9,W,0,WH+.2,FD/2+.9)); g.add(Bx(FW+1,.6,.8,Wd,0,1,FD/2+.9));
+      for(const sx of [-1,1]){ const br=Bx(.45,6.5,.45,Wd,sx*(FW/2-2.2),WH-2.4,FD/2+1.1); br.rotation.z=sx*.75; g.add(br); }
+      /* 側面と背面：丸みのある壁（黄土の布）と柱 */ const sw=mk(new T.CylinderGeometry(R0,R0,WH,24,1,true,Math.PI*.5+.35,Math.PI*2-.7),Oc2,0,WH/2,0); sw.scale.set(1,1,FD/2/R0); g.add(sw);
+      for(let q=0;q<9;q++){ const a=Math.PI*.5+.35+q/8*(Math.PI*2-.7); g.add(Bx(.8,WH+1,.8,W,Math.sin(a)*R0,(WH+1)/2,Math.cos(a)*R0*FD/2/R0)); }
+      /* 軒の布の幕：黄土色の帯に馬の模様、波形のすそ */ const nv=40; for(let q=0;q<nv;q++){ const t=q/nv, a=t*6.283; let x=Math.sin(a)*(R0+.5), z=Math.cos(a)*(FD/2+.5); if(Math.abs(a-0)<.65||Math.abs(a-6.283)<.65){ x=(t<.5?t:t-1)*FW*2.6; z=FD/2+1.4; if(Math.abs(x)>FW/2+.5) continue; }
+        const pn=Bx(2.4,2,.2,Oc,x,WH+1.8,z); pn.rotation.y=Math.atan2(x,z); g.add(pn); const sc=mk(new T.CircleGeometry(1.2,8,Math.PI,Math.PI),Oc,x,WH+.8,z); sc.rotation.y=Math.atan2(x,z); g.add(sc); if(q%2) { const mk2=Bx(1.2,.5,.22,Oc2,x,WH+2.1,z+.02); mk2.rotation.y=Math.atan2(x,z); g.add(mk2); } }
+      /* 看板 */ g.add(Bx(8,2.4,.4,Oc,0,WH+3.6,FD/2+1.2)); g.add(Bx(8.6,.35,.5,Wd,0,WH+4.85,FD/2+1.2)); g.add(Bx(8.6,.35,.5,Wd,0,WH+2.35,FD/2+1.2)); for(let q=0;q<6;q++) g.add(Bx(.7,1.1,.1,Dk,-2.9+q*1.16,WH+3.6,FD/2+1.45));
+      /* 屋根：暗いオリーブの布の天幕、縫い目 */ const rf=mk(new T.ConeGeometry(R0+1.5,5,28,1,true),Ol,0,WH+2.6+2.5,0); rf.scale.set(1,1,(FD/2+1.5)/(R0+1.5)); g.add(rf); const seg=(a,b,t,m2)=>{ const d=b.clone().sub(a), o=Bx(t,t,d.length(),m2,(a.x+b.x)/2,(a.y+b.y)/2,(a.z+b.z)/2); o.lookAt(new T.Vector3().copy(b).add(g.position)); o.quaternion.setFromUnitVectors(new T.Vector3(0,0,1),d.normalize()); g.add(o); return o; };
+      for(let q=0;q<14;q++){ const a=q/14*6.283; seg(new T.Vector3(Math.sin(a)*(R0+1.45),WH+2.65,Math.cos(a)*(FD/2+1.45)),new T.Vector3(0,WH+7.1,0),.28,Ol2); } /* 屋根の縫い目 */
+      /* 柱の塔：4本の柱を組んだ高い木の塔、横木とすじかい、垂れた布 */ const T0=WH+5, T1=46; for(const [sx,sz] of [[-1,-1],[1,-1],[-1,1],[1,1]]){ const lg=Cy(.5,.6,T1-T0+4,W,sx*1.7,(T0+T1)/2+1,sz*1.7-1,6); lg.rotation.z=-sx*.03; lg.rotation.x=sz*.03; g.add(lg); }
+      for(let y=T0+2;y<T1;y+=4){ g.add(Bx(3.8,.35,.35,Wd,0,y,.7)); g.add(Bx(3.8,.35,.35,Wd,0,y,-2.7)); g.add(Bx(.35,.35,3.8,Wd,1.7,y,-1)); g.add(Bx(.35,.35,3.8,Wd,-1.7,y,-1)); const d2=Bx(.25,4.6,.25,Wd,0,y+2,.75); d2.rotation.z=.75; g.add(d2); }
+      g.add(Cy(2.2,3.4,T1-T0,Ol2,0,(T0+T1)/2,-1,10)); /* 布でくるんだ芯 */ for(let q=0;q<26;q++){ const y=T0+1+q*1.3, a=q*2.4, cl=[Oc,Ol,Gn,Oc2,W,Rd][q%6], ln=3+r()*3.5, fl=Bx(1.6+r(),ln,.14,cl,Math.cos(a)*3.1,y-ln/2+1.2,Math.sin(a)*3.1-1); fl.rotation.y=-a+1.5708; fl.rotation.z=(r()-.5)*.3; g.add(fl); } /* 垂れた布の切れ */
+      for(let q=0;q<10;q++){ const a=q/10*6.283; seg(new T.Vector3(Math.cos(a)*2.6,T0+2,Math.sin(a)*2.6-1),new T.Vector3(Math.cos(a)*(R0-2),WH+3,Math.sin(a)*(FD/2-2)),.5,q%2?Oc2:Ol); } /* 柱の根元から屋根へ張った布 */
+      /* 馬の頭：板で組んだ長い頭（前向き）、歯をむいた口、丸い目、耳、後ろへ扇に広がる板のたてがみ */ const hd=new T.Group(); hd.position.set(0,T1+5,1); hd.rotation.x=-.18; hd.scale.setScalar(1.55); g.add(hd);
+      const sk=mk(new T.CapsuleGeometry(3.1,7,6,12),W,0,0,2.5); sk.rotation.x=Math.PI/2; sk.scale.set(1,1.1,1); hd.add(sk); const tp=mk(new T.CylinderGeometry(3.5,2.7,11.4,10,1,true,-1.3,2.6),Oc2,0,.25,2.5); tp.rotation.x=Math.PI/2; hd.add(tp);
+      for(let q=0;q<6;q++){ const pl=Bx(.25,.2,11.6,Wd,Math.sin(-1.1+q*.44)*3.45,Math.cos(-1.1+q*.44)*3.0+.1,2.5); hd.add(pl); } /* 板のすじ */
+      { const mz=Sp(3,W,0,-1.3,9,2); mz.scale.set(1,.85,.75); hd.add(mz); const jw=Sp(2.6,Wd,0,-2.8,8.4,2); jw.scale.set(1,.6,.8); hd.add(jw); for(let q=0;q<7;q++){ const a=-.75+q*.25; hd.add(Bx(.55,.8,.3,Wt,Math.sin(a)*2.55,-1.75,8.6+Math.cos(a)*2.1)); hd.add(Bx(.55,.7,.3,Wt,Math.sin(a)*2.3,-2.55,8.4+Math.cos(a)*1.9)); } } /* 丸い鼻づらと歯 */
+      hd.add(Bx(6.6,.6,.8,Oc,0,.6,8.3)); for(const sx of [-1,1]){ hd.add(Sp(1.25,Wt,sx*2.9,1.4,4.6,1)); hd.add(Sp(.65,Dk,sx*3.6,1.4,4.8,1)); const ea=mk(new T.ConeGeometry(.9,3.4,4),W,sx*1.9,3.8,-1.2); ea.rotation.x=-.5; ea.rotation.z=-sx*.3; hd.add(ea); hd.add(Sp(.5,Rd,sx*1.2,-1,10.8,0)); } /* 目・耳・鼻輪 */
+      for(let q=0;q<9;q++){ const a=-1.0+q*.25, ln=7+r()*4+(Math.abs(a)<.4?3:0), pl=Bx(.9,.16,ln,q%3?W:Wl,0,0,0); const pv=new T.Group(); pv.position.set(0,2.4,-2.5); pv.rotation.set(-.95+.25*Math.cos(a*1.6),a*.75,0); pl.position.z=-ln/2; pv.add(pl); hd.add(pv); } /* たてがみ：後ろ上へ扇に広がる長い板 */
+      for(const z of [-1.5,1.5,4.5]){ const bd=mk(new T.CylinderGeometry(3.45-z*.06,3.45-z*.06,1.1,10,1,true),z>2?Rd:Oc,0,0,z+2.2); bd.rotation.x=Math.PI/2; hd.add(bd); } /* 頭の布の色帯 */
+      hd.add(Bx(.6,6.8,.6,Rd,0,-1.5,-3.6)); /* 首の帯 */
+      /* 三角旗の綱：頭から地面へ */ const A=new T.Vector3(1.2,T1+1,6), B=new T.Vector3(9,0,FD/2+12); for(let q=1;q<16;q++){ const t=q/16, p=A.clone().lerp(B,t); p.y-=Math.sin(t*Math.PI)*2.5; const pe=mk(new T.ConeGeometry(.55,1.5,3),[Gn,Oc,Rd][q%3],p.x,p.y-.8,p.z); pe.rotation.z=Math.PI; g.add(pe); }
+      { const cv=new T.CatmullRomCurve3([A,A.clone().lerp(B,.5).add(new T.Vector3(0,-2.5,0)),B]); g.add(mk(new T.TubeGeometry(cv,12,.08,4),Dk,0,0,0)); g.add(Cy(.3,.35,2,Wd,B.x,1,B.z,6)); }
+      /* 差し掛けの板屋根 */ for(const [x,z] of [[R0+7,-4],[R0+7,6]]) g.add(Cy(.35,.4,6.4,W,x,3.2,z,6)); { const pr=Bx(9,.5,13,Wl,R0+3.2,6.4,1); pr.rotation.z=.22; g.add(pr); } g.add(Bx(4,2,2,W,R0+6,1,-2)); g.add(Bx(2.2,2.2,2.2,Wl,R0+4,1.1,4));
+      /* 馬場の柵 */ const cx=-R0-15, cw=12, cl=13; for(let x=-cw;x<=cw+.01;x+=4) for(const z of [-cl,cl]) g.add(Cy(.25,.3,3.2,W,cx+x,1.6,z,6)); for(let z=-cl;z<=cl+.01;z+=4.3) for(const x of [-cw,cw]){ if(x===cw&&Math.abs(z)<4) continue; g.add(Cy(.25,.3,3.2,W,cx+x,1.6,z,6)); }
+      for(const y of [1.3,2.6]){ g.add(Bx(2*cw,.22,.22,Wl,cx,y,-cl)); g.add(Bx(2*cw,.22,.22,Wl,cx,y,cl)); g.add(Bx(.22,.22,2*cl,Wl,cx-cw,y,0)); g.add(Bx(.22,.22,cl-4,Wl,cx+cw,y,-(cl+4)/2)); g.add(Bx(.22,.22,cl-4,Wl,cx+cw,y,(cl+4)/2)); }
+      /* 木箱・樽・焚き火の鍋・小さな天幕 */ for(let q=0;q<4;q++) g.add(Bx(1.8,1.8,1.8,q%2?Wl:W,-FW/2-1.5+q%2*2,.9+(q>1?1.8:0),FD/2+2)); for(let q=0;q<3;q++) g.add(Cy(.8,.8,1.9,W,FW/2+2+q*1.8,.95,FD/2+2.5,10));
+      g.add(Cy(1,.8,1,Dk,4,1.2,FD/2+6,10)); g.add(Bx(.25,2.4,.25,Wd,2.8,1.2,FD/2+6)); g.add(Bx(.25,2.4,.25,Wd,5.2,1.2,FD/2+6)); g.add(mk(new T.ConeGeometry(.7,1.4,6),Lt,4,.5,FD/2+6));
+      { const tn=mk(new T.ConeGeometry(4,5,4),Wt,FW/2+9,2.5,FD/2+3); tn.rotation.y=.785; g.add(tn); for(let q=0;q<4;q++){ const st=mk(new T.ConeGeometry(4.02*(1-q*.22),1,4,1,true),Rd,FW/2+9,.5+q*1.1,FD/2+3); st.rotation.y=.785; g.add(st); } }
+      g.position.y=0; bake(g); return g; };
     /* 見つけるものの部品（家・風車・井戸・遺跡）を、地図の名前つきの場所の組み立てに使う */
     const dkPart=(nm,sc)=>{ const q=DK.findIndex(d=>d[0]===nm); const g=new T.Group(); if(q<0) return g; DK[q][1](g); bake(g); g.scale.setScalar(sc); return g; };
     const putParts=(cx,cy,parts,rot)=>{ const out=[], nf=POIF.length; parts.forEach(([nm,ox,oz,sc,ry])=>{ const ca=Math.cos(rot), sa=Math.sin(rot), px=cx+ox*ca-oz*sa, py=cy+ox*sa+oz*ca; const es=[hAt(px,py),hAt(px+8,py),hAt(px-8,py),hAt(px,py+8),hAt(px,py-8)], lo=Math.min(...es); const sv=POIF.splice(nf); const bad=lo<.8||nearMon(px,py,10); POIF.push(...sv); if(bad) return; /* 同じ村の部品どうしはよけない */ const g=typeof nm==='function'?nm():dkPart(nm,sc); POIF.push([px,py,30*sc/2.4]); g.position.set(X(px),lo-.3,Z(py)); g.rotation.y=ry; g.userData.poi='part'; scene.add(g); out.push(g); }); return out; };
