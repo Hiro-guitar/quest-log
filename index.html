@@ -4717,6 +4717,8 @@ function pWorld(k){ pSeedRoad(k); const key=k+'|'+pOff.toFixed(4); if(pWorldMemo
   const bUV=(u,v)=>{ const fx=u/BG, fy=v/BG, i=Math.floor(fx), j=Math.floor(fy), a=fx-i, b=fy-j, A=bG(i,j), B=bG(i+1,j), C2=bG(i,j+1), D=bG(i+1,j+1), o=new Float32Array(4); for(let c=0;c<4;c++) o[c]=(A[c]*(1-a)+B[c]*a)*(1-b)+(C2[c]*(1-a)+D[c]*a)*b; return o; };
   const FBI={volc:0,desert:1,wet:2,snow:3}[new URLSearchParams(location.search).get('lkbio')];
   const bAt=(x,y)=>{ if(FBI!=null){ const o=new Float32Array(4); o[FBI]=1; return o; } return bUV(uOf(x),vAt(y)); };
+  // 平原（ハイラル平原・風見の丘のような草原）：数kmにわたって木のない、ゆるやかにうねる草の野。緑の土地だけ（砂漠・雪・火山・湿原にはない）
+  const plF=(x,y,b)=>{ b=b||bAt(x,y); const g=sm(.3,.12,Math.max(b[0],b[1],b[2],b[3])); if(g<=0) return 0; return g*sm(.48,.56,pn(x,y,6500,17,5)*.85+pn(x,y,1400,23,8)*.15); };
   const bName=b=>{ let m=.35, r=''; ['volc','desert','wet','snow'].forEach((n,i)=>{ if(b[i]>m){ m=b[i]; r=n; } }); return r; };
   const elevM=h=>h>=P_SEA?(h-P_SEA)*EH:(h-P_SEA)*EH*.5;
   const roadU=v=>{ const sv=[PX,pOff]; PX=PX0; pOff=off; const r=pRX((v-off)*PX0); PX=sv[0]; pOff=sv[1]; return r; };
@@ -4734,9 +4736,9 @@ function pWorld(k){ pSeedRoad(k); const key=k+'|'+pOff.toFixed(4); if(pWorldMemo
   const inWin=y=>{ for(const [a,b] of rvGrid().win) if(y>a&&y<b) return true; return false; };
   const rivCarve=(x,y,e)=>{ const k=rivK(x,y); if(k<-90) return e; const tg=-1.4-Math.min(5,Math.max(0,k)/60), d=Math.abs(x-rX(y)), keep=d<110&&!inWin(y)?sm(110,50,d):0; /* 橋のない所で道が川に沿うときは、道ぞいを岸として残す */ return e+(Math.min(e,tg)-e)*sm(-90,0,k)*(1-keep); };
   const raw=(x,y,nl)=>{ const u=uOf(x), v=vAt(y), h=macro(u,v), b=bAt(x,y), [bv,bd,bw,bs]=b, e0=elevM(h);
-    const rough=(.55+.9*sm(P_SEA+.05,.6,h))*(1+.6*bv+.4*bs-.6*bw-.4*bd), dry=sm(2,45,Math.abs(e0));
-    let e=e0+rough*dry*(42*nz(x,y,2300,3)+18*nz(x,y,560,9)+5*nz(x,y,140,4)+1.3*nz(x,y,34,7));
-    e+=Math.max(0,h-.48)*1800*Math.pow(1-Math.abs(nz(x,y,2600,11)),3)*dry;
+    const rough=(.55+.9*sm(P_SEA+.05,.6,h))*(1+.6*bv+.4*bs-.6*bw-.4*bd), dry=sm(2,45,Math.abs(e0)), pl=plF(x,y,b), fl=1-.7*pl;
+    let e=e0+rough*dry*(42*nz(x,y,2300,3)+18*fl*nz(x,y,560,9)+5*fl*nz(x,y,140,4)+1.3*(1-.4*pl)*nz(x,y,34,7));
+    e+=Math.max(0,h-.48)*1800*Math.pow(1-Math.abs(nz(x,y,2600,11)),3)*dry*(1-.6*pl);
     e+=bd*dry*16*Math.pow(.5+.5*Math.sin(x*.012+Math.sin(y*.004)*2.2+pn(x,y,300,4,4)*3),2);
     // 火山のすそ野（オルディンのふもと）：起伏のある丘と、岩がむき出しの尾根・こぶ。平らな所はほとんどない
     if(bv>.1){ const kf=sm(.1,.45,bv)*dry*sm(20,130,Math.abs(x-rX(y))), rg=1-Math.abs(nz(x,y,420,41)), rg2=1-Math.abs(nz(x,y,160,44)), ko=nz(x,y,55,43);
@@ -4769,7 +4771,7 @@ function pWorld(k){ pSeedRoad(k); const key=k+'|'+pOff.toFixed(4); if(pWorldMemo
   const C={g1:lin([158,198,74]),g2:lin([136,182,66]),dry:lin([182,186,96]),rock:lin([150,140,135]),rock2:lin([112,104,100]),sand:lin([214,200,160]),snow:lin([235,240,250]),desert:lin([222,186,124]),dune:lin([196,150,96]),vrock:lin([170,124,96]),vash:lin([132,98,80]),wet:lin([78,104,58]),mud:lin([96,88,60]),bed:lin([60,90,96])};
   const mix=(a,b,t)=>[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t];
   const colAt=(x,y,e,nyy,b)=>{ const n1=pn(x,y,46,3), n2=pn(x,y,6,7,2), slope=1-nyy, [bv,bd,bw,bs]=b;
-    let c=mix(C.g1,C.g2,sm(.35,.7,n1)); c=mix(c,C.dry,sm(.62,.9,pn(x,y,90,1,5))*.45);
+    const pl=plF(x,y,b); let c=mix(C.g1,C.g2,sm(.35,.7,n1)*(1-pl*.5)+pl*.5); c=mix(c,C.dry,sm(.62,.9,pn(x,y,90,1,5))*.45*(1-.6*pl));
     if(bw>.05) c=mix(c,mix(C.wet,C.mud,n2*.6),bw);
     if(bd>.05) c=mix(c,mix(C.desert,C.dune,sm(.3,.8,n1)),bd);
     if(bv>.05) c=mix(c,mix(C.vrock,C.vash,n2),bv);
@@ -4786,7 +4788,7 @@ function pWorld(k){ pSeedRoad(k); const key=k+'|'+pOff.toFixed(4); if(pWorldMemo
   padOn=true;
   // 見つけるもの（記念物）のまわりには木・岩・小物・草を置かない（重なって見えないように）
   const POIF=[]; /* 地図の名前つきの場所（祠・馬宿・村・遺跡）の足もと：木や岩を置かない */ const nearMon=(x,y,pad)=>{ for(const q of POIF) if(Math.abs(y-q[1])<q[2]+pad&&Math.hypot(x-q[0],y-q[1])<q[2]+pad) return true; const n0=Math.max(0,Math.floor((y-140)/LG)-1), n1=Math.floor((y+140)/LG)+1; for(let n=n0;n<=n1;n++){ const s2=dSpot(n); if(Math.hypot(x-s2.x,y-s2.yy)<s2.rad+pad) return true; } return false; };
-  const w={k,KM,ST,W,vAt,uOf,pn,nz,sm,mir,macro,bAt,bName,elevM,roadU,rMean,rX,raw,roadH,hFn,hTile,hAt,rivK,brSpans,brCover,brSp,brF,deckH,TL,colAt,lin,mix,C,LG,dSpot,nearMon,POIF,padNear,volcLavaF,lavaH,FBI};
+  const w={k,plF,KM,ST,W,vAt,uOf,pn,nz,sm,mir,macro,bAt,bName,elevM,roadU,rMean,rX,raw,roadH,hFn,hTile,hAt,rivK,brSpans,brCover,brSp,brF,deckH,TL,colAt,lin,mix,C,LG,dSpot,nearMon,POIF,padNear,volcLavaF,lavaH,FBI};
   pWorldMemo.set(key,w); return w; }
 /* ---------- 見渡す：今いる場所に立って、道の先の世界を眺める（WebGL） ---------- */
 // ブレワイの景色に寄せて：地上の目の高さから水平に近く見る。遠くは青白くかすみ（太陽の側は明るく）、谷には低い霧。
@@ -4810,7 +4812,7 @@ async function pLookOpen(){
   // 大きな地形（山・湖・雪山・火山・砂漠・湿原）は地図と同じ計算、そこへ足もとの起伏・岩山の尾根・砂丘・道の細かな曲がりを足す。
   // 近くは細かい区画を馬の前後に作っては捨て、遠くは粗い地形で地平線まで描く
   const CL=540, LAT=900, HS=118;
-  const WD=pWorld(k), {KM,ST,vAt,uOf,pn,nz,macro,bAt,bName,elevM,roadU,rMean,rX,raw,roadH,hFn,hTile,hAt,TL,FBI,dSpot,LG,nearMon,POIF,padNear,volcLavaF,lavaH,rivK,brSpans,brCover,brSp,brF,deckH}=WD;
+  const WD=pWorld(k), {plF,KM,ST,vAt,uOf,pn,nz,macro,bAt,bName,elevM,roadU,rMean,rX,raw,roadH,hFn,hTile,hAt,TL,FBI,dSpot,LG,nearMon,POIF,padNear,volcLavaF,lavaH,rivK,brSpans,brCover,brSp,brF,deckH}=WD;
   const u0=pRX(pm2y(nowM)), OX=u0*KM;
   const elev=e=>e; // 高さはもう見渡すの単位
   const mx0=rX(y0), b0=bAt(mx0,y0);
@@ -5065,7 +5067,7 @@ async function pLookOpen(){
     const g=new T.BufferGeometry(); g.setAttribute('position',new T.Float32BufferAttribute(P,3)); g.setAttribute('normal',new T.Float32BufferAttribute(N,3)); g.setAttribute('color',new T.Float32BufferAttribute(C,3)); return g; })();
   const mR=patch(new T.MeshToonMaterial({color:0xffffff,gradientMap:gmap,vertexColors:true}),.15), mL=patch(new T.MeshToonMaterial({color:0xffffff,gradientMap:gmap,vertexColors:true,map:ltx,alphaTest:.4}),.15), mT=patch(new T.MeshToonMaterial({color:c3([116,110,82]),gradientMap:gmap})), mC=patch(new T.MeshToonMaterial({color:0xffffff,gradientMap:gmap,vertexColors:true}),.1); if(BIO==='snow'){ const ob=mC.onBeforeCompile; mC.onBeforeCompile=sh=>{ ob(sh); sh.vertexShader='varying float vUp;\n'+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n vUp=normal.y;'); sh.fragmentShader='varying float vUp;\n'+sh.fragmentShader.replace('#include <color_fragment>','#include <color_fragment>\n diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.93,.96,1.),smoothstep(.15,.45,vUp));'); }; }
   const treesFor=(tileG,yA,P,XA,XB,near,nx,fz,tR)=>{ const sp=[]; for(let q=0;q<26000*fz&&sp.length<3200*fz;q++){ const x=XA+tR()*(XB-XA), y=yA+tR()*P, f=pn(x,y,70,11,4); if(f<.55) continue; const e=hAt(x,y); if(e<1.5) continue; if(Math.abs(x-rX(y))<19||nearMon(x,y,5)) continue; if(nearMon(x,y,6)) continue;
-      const b=bAt(x,y), ftc=b[0]>.25; if(b[0]>.6||b[1]>.3||(ftc&&tR()<.55)) continue; if(BIO==='wet'&&tR()<.65) continue; const i=Math.round((x-XA)/ST), j=Math.round((y-yA)/ST); if(near.attributes.normal.array[(j*nx+i)*3+1]<.82) continue; const con=ftc||b[3]>.2||e>480; if(b[3]>.3&&e>900) continue; sp.push([x,y,e,con,(.85+tR()*.5)*(9+tR()*4)/10*1.4,tR()*6.28]); }
+      const b=bAt(x,y), ftc=b[0]>.25; if(b[0]>.6||b[1]>.3||(ftc&&tR()<.55)) continue; const pl=plF(x,y,b); if(pl>.02&&tR()<pl*.992) continue; /* 平原：木はほとんどなく、ぽつんと1本立つ大きな木だけ */ if(BIO==='wet'&&tR()<.65) continue; const i=Math.round((x-XA)/ST), j=Math.round((y-yA)/ST); if(near.attributes.normal.array[(j*nx+i)*3+1]<.82) continue; const con=ftc||b[3]>.2||e>480; if(b[3]>.3&&e>900) continue; sp.push([x,y,e,con&&pl<.5,(.85+tR()*.5)*(9+tR()*4)/10*1.4*(1+.7*pl),tR()*6.28]); }
     const nR=sp.filter(s=>!s[3]).length, iR=new T.InstancedMesh(canopy,mR,nR), iL=new T.InstancedMesh(leafCards,mL,nR), iT=new T.InstancedMesh(trunk,mT,nR), iC=new T.InstancedMesh(cone,mC,sp.length-nR), M=new T.Matrix4(), Q=new T.Quaternion(), V=new T.Vector3(), Sc=new T.Vector3(), up=new T.Vector3(0,1,0), cA=c3([128,172,60]), cB=c3([150,190,72]), cc2=new T.Color();
     let a=0,c=0; sp.forEach(([x,y,e,con,s,r])=>{ Q.setFromAxisAngle(up,r); Sc.set(s,s,s); V.set(X(x),e-.4,Z(y)); M.compose(V,Q,Sc); if(con){ iC.setMatrixAt(c,M); iC.setColorAt(c++,cc2.setRGB(.9+tR()*.2,.92+tR()*.16,.9+tR()*.14)); } else { iR.setMatrixAt(a,M); iL.setMatrixAt(a,M); iT.setMatrixAt(a,M); iR.setColorAt(a,cc2.copy(cA).lerp(cB,tR())); iL.setColorAt(a,cc2); a++; } });
     [iR,iL,iT,iC].forEach(m=>{ m.castShadow=true; m.receiveShadow=true; tileG.add(m); }); };
