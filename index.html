@@ -5126,12 +5126,18 @@ async function pLookOpen(){
   [mR,mL,mC].forEach(m=>{ const ob=m.onBeforeCompile; m.onBeforeCompile=sh=>{ ob(sh); sh.fragmentShader=sh.fragmentShader.replace('#include <lights_fragment_end>','#include <lights_fragment_end>\n reflectedLight.indirectDiffuse+=diffuseColor.rgb*vec3(.30,.36,.22);'); }; });
   if(/lkshot/.test(location.search)) L.TREE={canopy,leafCards,trunk,cone,mR,mL,mT,mC,BT,parts:v=>[[BT[v].canopy,mR],[BT[v].leafCards,mL],[BT[v].trunk,mT]]};
   // 木：丘や山の斜面は森がびっしり、平らな低地はまばら（森の濃さ forM）。道に近い木（RLm以内、近い順に上限まで）は本物の形、その外は本物を写した絵の板（遠くの森と同じ板）
-  const treeOK=(x,y,e,ny,b,f,r)=>{ /* 生える所の決まり（手前・遠く共通）。r＝乱数3つ */ const fm=forM(x,y,b,e,ny); if(f<.55-.33*fm||ny<.82-.14*fm) return null; const ftc=b[0]>.25; if(b[0]>.6||b[1]>.3||(ftc&&r[0]<.55)) return null; const pl=plF(x,y,b); if(pl>.02&&r[1]<pl*.992) return null; if(BIO==='wet'&&r[2]<.65) return null; if(b[3]>.3&&e>900) return null; return [fm,pl,ftc]; };
-  const treeKind=(e,b,fm,pl,ftc,r6,r7,r8)=>{ const con=(ftc||b[3]>.2||e>480||(e>240&&r8<fm*.55))&&(pl<.5||e>420), vi=con?4:pl>.5?(r6<.6?0:2):r6<.35?0:r6<.65?1:r6<.85?2:3; return [vi,(.85+r7*.5)*(9+r8*4)/10*1.4*(1+.5*pl)*(con?1:vi===3?1.25:1.1)]; };
+  const treeOK=(x,y,e,ny,b,f,r)=>{ /* 生える所の決まり（手前・遠く共通）。r＝乱数3つ。
+      木はばらまかず「木立」で生える：大小2つのまだら（70mと23m）の濃い所だけに木立ができ、間は開けた草地。森の濃い所ほど木立が広がってつながり、森になる。
+      縁は少しだけ欠けて、外ほど若い木（小さい）。平原は木立がほとんどなく、ときどき1本だけの大きな木 */
+    const fm=forM(x,y,b,e,ny); if(ny<.82-.14*fm) return null; const ftc=b[0]>.25; if(b[0]>.6||b[1]>.3) return null; if(b[3]>.3&&e>900) return null; const pl=plF(x,y,b);
+    const g=f*.64+pn(x,y,23,53,7)*.36, thr=.56-.34*fm+pl*.3+(BIO==='wet'?.08:0)+(ftc?.1:0);
+    if(g<thr){ if(pl>.4&&r[0]<.004*pl) return [fm,pl,ftc,1]; return null; } if(g<thr+.05&&r[1]>(g-thr)/.05) return null;
+    return [fm,pl,ftc,sm(thr,thr+.13,g)]; };
+  const treeKind=(x,y,e,b,fm,pl,ftc,r6,r7,r8,ed=1)=>{ /* 針葉樹か広葉樹かは、まとまった林ごとに決める（1本ずつ混ぜない）。高い所・寒い所・大きなまだらの「針葉樹の林」側は針葉樹。境目だけ少し混じる */ const cf=(e-340)/170+(pn(x,y,1300,47,5)-.5)*2.4+b[3]*6+(ftc?6:0), con=(cf+(r8-.5)*.18>0||e>520)&&(pl<.5||e>420), vi=con?4:pl>.5?(r6<.6?0:2):r6<.35?0:r6<.65?1:r6<.85?2:3; return [vi,(.85+r7*.5)*(9+r8*4)/10*1.4*(1+.5*pl)*(con?1:vi===3?1.25:1.1)*(.55+.45*ed)]; };
   const treesFor=(tileG,yA,P,XA,XB,near,nx,fz,tR)=>{ const all=[], RLm=190, NREAL=600;
-    for(let q=0;q<10800;q++){ const x=XA+tR()*(XB-XA), y=yA+tR()*P, f=pn(x,y,70,11,4), rr=[tR(),tR(),tR()], r6=tR(), r7=tR(), r8=tR(), rot=tR()*6.28; if(f<.22) continue; const e=hAt(x,y); if(e<1.5) continue; const dr=Math.abs(x-rX(y)); if(dr<19) continue;
+    for(let q=0;q<10800;q++){ const x=XA+tR()*(XB-XA), y=yA+tR()*P, f=pn(x,y,70,11,4), rr=[tR(),tR(),tR()], r6=tR(), r7=tR(), r8=tR(), rot=tR()*6.28; if(f<.02) continue; const e=hAt(x,y); if(e<1.5) continue; const dr=Math.abs(x-rX(y)); if(dr<19) continue;
       const i=Math.round((x-XA)/ST), j=Math.round((y-yA)/ST), ny=near.attributes.normal.array[(j*nx+i)*3+1], b=bAt(x,y), ok=treeOK(x,y,e,ny,b,f,rr); if(!ok) continue; if(nearMon(x,y,6)) continue;
-      const [vi,s]=treeKind(e,b,ok[0],ok[1],ok[2],r6,r7,r8); all.push([x,y,e,vi,s,rot,r7,dr]); if(all.length>=5200) break; }
+      const [vi,s]=treeKind(x,y,e,b,ok[0],ok[1],ok[2],r6,r7,r8,ok[3]); all.push([x,y,e,vi,s,rot,r7,dr]); if(all.length>=5200) break; }
     all.sort((a,b)=>a[7]-b[7]); const sp=[], im=[]; for(const t of all){ if(t[7]<RLm&&sp.length<NREAL) sp.push(t); else im.push(t); }
     const nC=sp.filter(s=>s[3]===4).length, iC=new T.InstancedMesh(cone,mC,Math.max(1,nC)), M=new T.Matrix4(), Q=new T.Quaternion(), V=new T.Vector3(), Sc=new T.Vector3(), up=new T.Vector3(0,1,0), cA=c3([128,172,60]), cB=c3([150,190,72]), cc2=new T.Color(); iC.count=nC;
     const IB=BT.map((b,vi)=>{ const n=sp.filter(s=>s[3]===vi).length; return n?{n,a:0,R:new T.InstancedMesh(b.canopy,mR,n),L:new T.InstancedMesh(b.leafCards,mL,n),T:new T.InstancedMesh(b.trunk,mT,n)}:null; });
@@ -5167,8 +5173,8 @@ async function pLookOpen(){
         return fx+fy<1?[H(a)+(H(b)-H(a))*fx+(H(c)-H(a))*fy,N(a)+(N(b)-N(a))*fx+(N(c)-N(a))*fy]:[H(e)+(H(c)-H(e))*(1-fx)+(H(b)-H(e))*(1-fy),N(e)+(N(c)-N(e))*(1-fx)+(N(b)-N(e))*(1-fy)]; };
       let work=0;
       for(let j=Math.floor((cy-R1)/CE);j<=Math.floor((cy+R1)/CE);j++) for(let i=Math.floor((cx-R1)/CE);i<=Math.floor((cx+R1)/CE);i++){ const d=Math.hypot((i+.5)*CE-cx,(j+.5)*CE-cy); if(d>R1) continue; const p=Math.min(1,1500/Math.max(d,1)), nT=Math.round(96*p); if(!nT) continue; const r=pRng('it'+k+'_'+i+'_'+j,3), bC=bAt((i+.5)*CE,(j+.5)*CE);
-        if(bC[0]>.6||bC[1]>.3) continue; for(let q=0;q<nT;q++){ const x=(i+r())*CE, y=(j+r())*CE, rr=[r(),r(),r()], r6=r(), r7=r(), r8=r(), f=pn(x,y,70,11,4); if(f<.22) continue; const dr=Math.abs(x-rX(y)); if(dr<19) continue; const g=gh(x,y); if(!g) continue; const e=g[0]+16*(dr<LAT+80); if(e<1.5) continue;
-          const ok=treeOK(x,y,e,g[1],bC,f,rr); if(!ok) continue; if(nearMon(x,y,6)) continue; const [vi,s0]=treeKind(e,bC,ok[0],ok[1],ok[2],r6,r7,r8);
+        if(bC[0]>.6||bC[1]>.3) continue; for(let q=0;q<nT;q++){ const x=(i+r())*CE, y=(j+r())*CE, rr=[r(),r(),r()], r6=r(), r7=r(), r8=r(), f=pn(x,y,70,11,4); if(f<.02) continue; const dr=Math.abs(x-rX(y)); if(dr<19) continue; const g=gh(x,y); if(!g) continue; const e=g[0]+16*(dr<LAT+80); if(e<1.5) continue;
+          const ok=treeOK(x,y,e,g[1],bC,f,rr); if(!ok) continue; if(nearMon(x,y,6)) continue; const [vi,s0]=treeKind(x,y,e,bC,ok[0],ok[1],ok[2],r6,r7,r8,ok[3]);
           out.push([vi,x,y,g[0],s0*Math.pow(1/p,.3),r7,Math.abs(x-rX((Math.floor(y/CL)+.5)*CL))]); }
         if(++work%40===0) yield; }
       return inst(out); };
