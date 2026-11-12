@@ -5126,10 +5126,44 @@ async function pLookOpen(){
   [mR,mL,mC].forEach(m=>{ const ob=m.onBeforeCompile; m.onBeforeCompile=sh=>{ ob(sh); sh.fragmentShader=sh.fragmentShader.replace('#include <lights_fragment_end>','#include <lights_fragment_end>\n reflectedLight.indirectDiffuse+=diffuseColor.rgb*vec3(.30,.36,.22);'); }; });
   if(/lkshot/.test(location.search)) L.TREE={canopy,leafCards,trunk,cone,mR,mL,mT,mC,BT,parts:v=>[[BT[v].canopy,mR],[BT[v].leafCards,mL],[BT[v].trunk,mT]]};
   // 木：丘や山の斜面は森がびっしり、平らな低地はまばら（森の濃さ forM）。道に近い木（RLm以内、近い順に上限まで）は本物の形、その外は本物を写した絵の板（遠くの森と同じ板）
+  // ---- 城下町（ブレワイのハイラル城下町の廃墟）：地図の城下町の範囲（城の南、湖の外の陸）に、本当の大きさで。
+  //   道はそのまま町の中を通る。通りの格子に沿って、2〜3階の石の家が並ぶ（切妻のスレート屋根、アーチの窓）。
+  //   多くは崩れて、屋根が落ちて壁だけ・角が欠けた家、石の山。ときどき見張りの塔。町の中は木がほとんどなく草が茂る ----
+  const TWN=(()=>{ const cache=new Map(), get=c=>{ if(!cache.has(c)) cache.set(c,typeof pCastle==='function'?pCastle(c):null); return cache.get(c); };
+    return (x,y)=>{ if(typeof P_CA==='undefined') return null; const v=vAt(y), c0=Math.floor(v/P_CA); for(let c=c0-1;c<=c0+1;c++){ const q=get(c); if(!q) continue; const k=q[3], m=q[5], lx=(uOf(x)-q[0])/k*m, lz=(v-q[1])/k; if(lz<180||lz>320||lx<-115||lx>115) continue; const e=Math.min(lz-196,304-lz,lx+100,100-lx); return sm(-5,5,e); } return 0; }; })();
+  const townFor=(()=>{ let M=null; const mats=()=>{ if(M) return M; const tex=kind=>{ const c=document.createElement('canvas'); c.width=c.height=256; const x=c.getContext('2d'), r=pRng('ttx'+kind,7);
+        if(kind==='roof'){ x.fillStyle='#48525e'; x.fillRect(0,0,256,256); for(let j=0;j<16;j++){ for(let i=0;i<8;i++){ const v=56+r()*32|0; x.fillStyle=`rgb(${v},${v+9},${v+20})`; x.fillRect(i*32+(j%2)*16,j*16,30,14); } x.fillStyle='rgba(18,22,28,.55)'; x.fillRect(0,j*16+13,256,3); } }
+        else { x.fillStyle='#b8b2a4'; x.fillRect(0,0,256,256); for(let j=0;j<16;j++) for(let i=0;i<6;i++){ const v=150+r()*55|0, w=44+r()*8; x.fillStyle=`rgb(${v},${v-4},${v-14})`; x.fillRect(i*44+(j%2)*22-6,j*16,w,15); } x.fillStyle='rgba(60,56,50,.4)'; for(let j=0;j<16;j++) x.fillRect(0,j*16+15,256,1);
+          for(let q=0;q<30;q++){ const px=r()*256, py=r()*256, g=x.createRadialGradient(px,py,0,px,py,14+r()*36); g.addColorStop(0,'rgba(84,100,58,.32)'); g.addColorStop(1,'rgba(84,100,58,0)'); x.fillStyle=g; x.fillRect(0,0,256,256); } /* 苔のしみ */
+          if(kind==='win') for(const wy of [44,172]) for(const wx of [64,192]){ x.fillStyle='#24262a'; x.fillRect(wx-11,wy,22,46); x.beginPath(); x.arc(wx,wy,11,Math.PI,0); x.fill(); x.fillStyle='rgba(235,230,215,.5)'; x.fillRect(wx-14,wy+46,28,5); x.strokeStyle='rgba(235,230,215,.35)'; x.lineWidth=3; x.beginPath(); x.arc(wx,wy,13,Math.PI,0); x.stroke(); } }
+        const t=new T.CanvasTexture(c); t.wrapS=t.wrapT=T.RepeatWrapping; t.colorSpace=T.SRGBColorSpace; t.anisotropy=4; return t; };
+      const mk=t=>patch(new T.MeshToonMaterial({map:t,vertexColors:true,gradientMap:gmap2,side:T.DoubleSide}));
+      M={win:mk(tex('win')),st:mk(tex('stone')),rf:mk(tex('roof'))}; M.win.userData.tile=8; M.st.userData.tile=5; M.rf.userData.tile=4; return M; };
+    const B=()=>({P:[],N:[],U:[],C:[]});
+    const quad=(b,tile,a,bq,c,d,n,y0,tint)=>{ /* 4点（反時計回り）の面を2つの三角に。模様は面の向きで貼る */ const hl=Math.hypot(n[0],n[2])||1; for(const v of [a,bq,c,a,c,d]){ b.P.push(v[0],v[1],v[2]); b.N.push(n[0],n[1],n[2]); if(Math.abs(n[1])>.75) b.U.push(v[0]/tile,v[2]/tile); else b.U.push((v[0]*-n[2]/hl+v[2]*n[0]/hl)/tile,v[1]/tile); const ao=(.66+.34*sm(0,3.5,v[1]-y0))*tint; b.C.push(ao,ao*.99,ao*.97); } };
+    const tri=(b,tile,a,bq,c,n,y0,tint)=>{ const hl=Math.hypot(n[0],n[2])||1; for(const v of [a,bq,c]){ b.P.push(v[0],v[1],v[2]); b.N.push(n[0],n[1],n[2]); b.U.push((v[0]*-n[2]/hl+v[2]*n[0]/hl)/tile,v[1]/tile); const ao=(.66+.34*sm(0,3.5,v[1]-y0))*tint; b.C.push(ao,ao*.99,ao*.97); } };
+    const box=(b,tile,cx,y0,cz,w,h,d,ry,tint=1)=>{ const ca=Math.cos(ry), sa=Math.sin(ry), L=(u,y,v)=>[cx+u*ca-v*sa,y,cz+u*sa+v*ca], R=(nu,nv)=>[nu*ca-nv*sa,0,nu*sa+nv*ca], u=w/2, v=d/2, y1=y0+h;
+      quad(b,tile,L(-u,y0,v),L(u,y0,v),L(u,y1,v),L(-u,y1,v),R(0,1),y0,tint); quad(b,tile,L(u,y0,-v),L(-u,y0,-v),L(-u,y1,-v),L(u,y1,-v),R(0,-1),y0,tint);
+      quad(b,tile,L(u,y0,v),L(u,y0,-v),L(u,y1,-v),L(u,y1,v),R(1,0),y0,tint); quad(b,tile,L(-u,y0,-v),L(-u,y0,v),L(-u,y1,v),L(-u,y1,-v),R(-1,0),y0,tint);
+      quad(b,tile,L(-u,y1,v),L(u,y1,v),L(u,y1,-v),L(-u,y1,-v),[0,1,0],y0,tint); };
+    const gable=(bw,br,tile,cx,y0,cz,w,d,h,ry,tint=1)=>{ /* 切妻：棟は w の向き。妻壁は石（bw）、屋根面はスレート（br）。軒の出 .5 */ const ca=Math.cos(ry), sa=Math.sin(ry), L=(u,y,v)=>[cx+u*ca-v*sa,y,cz+u*sa+v*ca], u=w/2+.4, v=d/2+.5, yt=y0+h, s=Math.hypot(h,v), nyy=v/s, nh=h/s, R=(nu,nv,ny)=>[nu*ca-nv*sa,ny,nu*sa+nv*ca];
+      quad(br,4,L(-u,y0-.15,v),L(u,y0-.15,v),L(u,yt,0),L(-u,yt,0),R(0,nh,nyy),y0,tint); quad(br,4,L(u,y0-.15,-v),L(-u,y0-.15,-v),L(-u,yt,0),L(u,yt,0),R(0,-nh,nyy),y0,tint);
+      tri(bw,tile,L(w/2,y0,d/2),L(w/2,y0,-d/2),L(w/2,yt,0),R(1,0,0),y0-4,tint); tri(bw,tile,L(-w/2,y0,-d/2),L(-w/2,y0,d/2),L(-w/2,yt,0),R(-1,0,0),y0-4,tint); };
+    return (G,yA,yB,XA,XB)=>{ let any=false; for(let y=yA;y<=yB;y+=CL/4) for(let x=XA;x<=XB;x+=(XB-XA)/6) if(TWN(x,y)>.05) any=true; if(!any) return; const MT=mats(), bW=B(), bS=B(), bR=B(), r=pRng('twn'+Math.round(yA),9), BX=58, BY=46;
+      for(let gy=Math.floor(yA/BY);gy<=Math.floor(yB/BY);gy++) for(let gx=Math.floor(XA/BX);gx<=Math.floor(XB/BX);gx++){ const bx0=gx*BX, by0=gy*BY, bcx=bx0+BX/2, bcy=by0+BY/2; if(bcy<yA||bcy>=yB) continue; const tw=TWN(bcx,bcy); if(tw<.3) continue; const rd=Math.abs(bcx-rX(bcy)); if(rd>380) continue; const rb=pRng('tb'+gx+'_'+gy,5);
+        /* 区画の4辺に家を並べる（通りに面して）。辺：0=南 1=北 2=西 3=東 */ for(let side=0;side<4;side++){ const alongX=side<2, len=alongX?BX-7:BY-7; let t=0; while(t<len-6){ const fw=8+rb()*5, dp=7.5+rb()*3.5, rr=rb(), fl=1+Math.floor(rb()*2.6), hh=fl*3.6+.4, tint=.84+rb()*.18;
+            const tc=t+fw/2-len/2; let hx, hy, ry; if(alongX){ hx=bcx+tc; hy=side===0?by0+3.5+dp/2:by0+BY-3.5-dp/2; ry=0; } else { hy=bcy+tc; hx=side===2?bx0+3.5+dp/2:bx0+BX-3.5-dp/2; ry=Math.PI/2; }
+            t+=fw+.2+rb()*.8; if(rr<.08) continue; /* 空き地 */ if(Math.abs(hx-rX(hy))<14+dp/2) continue; if(TWN(hx,hy)<.4) continue; if(brF&&brF(hy)>0&&Math.abs(hx-rX(hy))<40) continue;
+            const e1=hAt(hx-fw/2,hy), e2=hAt(hx+fw/2,hy), e3=hAt(hx,hy-dp/2), e4=hAt(hx,hy+dp/2), eMin=Math.min(e1,e2,e3,e4), eMax=Math.max(e1,e2,e3,e4); if(eMin<.6||eMax-eMin>4.5) continue; const X0=X(hx), Z0=Z(hy), y0=eMin-1.2, wv=alongX?fw:dp, dv=alongX?dp:fw, ryS=-ry;
+            if(rr<.32){ /* 屋根のある家：石の箱＋切妻 */ box(bW,8,X0,y0,Z0,wv,eMax-y0+hh,dv,ryS,tint); gable(bW,bR,8,X0,eMax+hh,Z0,alongX?fw:dp,alongX?dp:fw,Math.min(fw,dp)*.42,ryS+(alongX?0:0),tint); if(rb()<.3) box(bS,5,X0+(alongX?fw*.25:0),eMax+hh+.6,Z0+(alongX?0:fw*.25),.9,2.4,.9,ryS,tint*.9); }
+            else if(rr<.82){ /* 廃墟：壁だけ。4枚の壁の高さがばらばら、ところどころ欠ける */ const th=.55, H=eMax-y0+hh; const ws=[[0,dv/2-th/2,wv,th],[0,-dv/2+th/2,wv,th],[wv/2-th/2,0,th,dv],[-wv/2+th/2,0,th,dv]]; for(const [ou,ov,ww,dd] of ws){ if(rb()<.18) continue; const n=Math.max(1,Math.round(Math.max(ww,dd)/3)); for(let q=0;q<n;q++){ const f=(q+.5)/n-.5, su=ww>dd?f*ww:0, sv=ww>dd?0:f*dd, ca=Math.cos(ryS), sa=Math.sin(ryS), uu=ou+su, vv=ov+sv; box(bW,8,X0+uu*ca-vv*sa,y0,Z0+uu*sa+vv*ca,ww>dd?ww/n*1.02:th,H*(.35+.65*rb()),ww>dd?th:dd/n*1.02,ryS,tint); } } box(bS,5,X0,y0,Z0,wv*.6,eMin-y0+.5+rb()*.8,dv*.5,ryS+rb(),tint*.85); }
+            else { /* 石の山 */ for(let q=0;q<5;q++) box(bS,5,X0+(rb()-.5)*wv*.7,y0,Z0+(rb()-.5)*dv*.7,1.5+rb()*3,eMin-y0+.4+rb()*1.8,1.2+rb()*2.5,rb()*3,tint*.88); } } }
+        if(rb()<.07){ /* 見張りの塔 */ const tx=bx0+3.5+4, ty=by0+3.5+4; if(Math.abs(tx-rX(ty))>20){ const e=hAt(tx,ty); if(e>.6){ box(bW,8,X(tx),e-1.5,Z(ty),6,16.5,6,0,.92); box(bS,5,X(tx),e+15,Z(ty),7,1,7,0,.9); for(let q=0;q<8;q++){ const a=q/8*6.283; box(bS,5,X(tx)+Math.cos(a)*3.1,e+16,Z(ty)+Math.sin(a)*3.1,1,1.1,1,a,.9); } } } } }
+      for(const [b,m] of [[bW,MT.win],[bS,MT.st],[bR,MT.rf]]){ if(!b.P.length) continue; const ge=new T.BufferGeometry(); ge.setAttribute('position',new T.Float32BufferAttribute(b.P,3)); ge.setAttribute('normal',new T.Float32BufferAttribute(b.N,3)); ge.setAttribute('uv',new T.Float32BufferAttribute(b.U,2)); ge.setAttribute('color',new T.Float32BufferAttribute(b.C,3)); const me=new T.Mesh(ge,m); me.castShadow=me.receiveShadow=true; G.add(me); } }; })();
   const treeOK=(x,y,e,ny,b,f,r)=>{ /* 生える所の決まり（手前・遠く共通）。r＝乱数3つ。
       木はばらまかず「木立」で生える：大小2つのまだら（70mと23m）の濃い所だけに木立ができ、間は開けた草地。森の濃い所ほど木立が広がってつながり、森になる。
       縁は少しだけ欠けて、外ほど若い木（小さい）。平原は木立がほとんどなく、ときどき1本だけの大きな木 */
-    const fm=forM(x,y,b,e,ny); if(ny<.82-.14*fm) return null; const ftc=b[0]>.25; if(b[0]>.6||b[1]>.3) return null; if(b[3]>.3&&e>900) return null; const pl=plF(x,y,b);
+    const fm=forM(x,y,b,e,ny); if(ny<.82-.14*fm) return null; { const tw=TWN(x,y); if(tw>.05&&r[2]<tw*.97) return null; } /* 城下町の中は木がほとんどない */ const ftc=b[0]>.25; if(b[0]>.6||b[1]>.3) return null; if(b[3]>.3&&e>900) return null; const pl=plF(x,y,b);
     const g=f*.64+pn(x,y,23,53,7)*.36, thr=.56-.34*fm+pl*.3+(BIO==='wet'?.08:0)+(ftc?.1:0);
     if(g<thr){ if(pl>.4&&r[0]<.004*pl) return [fm,pl,ftc,1]; return null; } if(g<thr+.05&&r[1]>(g-thr)/.05) return null;
     return [fm,pl,ftc,sm(thr,thr+.13,g)]; };
@@ -5614,6 +5648,7 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
     waterFor(G,yA,yB,XA,XB); roadFor(G,yA,yB,P); bridgeFor(G,yA,yB); yield;
     treesFor(G,yA,P,XA,XB,near,nx,.16,pRng('tr'+ci,4)); yield;
     rocksFor(G,yA,P,XA,XB,near,nx,ny,.42,pRng('rk'+ci,6)); near.attributes.color.needsUpdate=true; yield;
+    townFor(G,yA,yB,XA,XB); yield;
     propsFor(G,yA,P,XA,XB,FBI!=null?BIO:bName(bAt(rc,yA+CL/2)),.42,br0);
     return G; };
   const addChunk=(ci,G)=>{ chunks.set(ci,G); chunkRoot.add(G); IMP.updChk([...chunks.keys()]); };
@@ -6522,19 +6557,7 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
       { const yy=Y+37.8; cyl(0,0,1.7,4.6,yy,mSt,8); cone(0,0,2.1,15,yy+4.6,mRf,8); cyl(0,0,.06,2.4,yy+19.4,mSt,4); }
       /* ⑦ 南の門（船着き場）と岩山を登る坂道 */ box(0,115,12,4,4,.5,mSt); rTower(-7,115,1.8,7.5,.5,true,0); rTower(7,115,1.8,7.5,.5,true,0); box(0,41,5,8,10,.5,mSt); rTower(-4,37,1.6,13,.5,true,0); rTower(4,37,1.6,13,.5,true,0);
       for(let q=0;q<9;q++) box(0,47-q*1.6,4.4,1.8,.6+q*1.2,.5,mSt);
-      /* ⑧ 城下町（地図の南、湖の外の陸）：地図と同じ格子の通り（東西3本・南北の通り）と北の弧の城壁。
-         通りの両側に2〜3階の石の家が軒を連ね、切妻屋根。半分ほどは屋根が落ちて壁だけ・角が欠けた廃墟。東の端に鐘楼のある教会、広場の井戸の塔 */
-      const street=(ax,az,bx,bz)=>{ const l=Math.hypot(bx-ax,bz-az), ry=Math.atan2(bz-az,bx-ax), ca=Math.cos(ry), sa=Math.sin(ry), nx=-sa, nz=ca; 
-        for(const sd of [-1,1]) for(let row=0;row<3;row++){ let t=1; const off=1.7+row*3.4; while(t<l-1.5){ const w=1.3+r9()*1.4, d=1.6+r9()*1.1, h=1.1+r9()*1.3-row*.15, x=ax+ca*(t+w/2)+nx*sd*(off+d/2), z=az+sa*(t+w/2)+nz*sd*(off+d/2), rr=r9();
-          if(rr<.1){ t+=w+.3; continue; } /* 空き地 */ if(rr<.55){ box(x,z,w,d,h+2,-2,mWin,ry,.84+r9()*.18); gable(x,z,w,d,d*.55,h,ry); }
-          else { /* 廃墟：壁が欠け、屋根はない */ const hh=h*(.55+.45*r9()); box(x-nx*sd*d*.4,z-nz*sd*d*.4,w,.25,hh*(.5+.5*r9())+2,-2,mWin,ry); box(x+nx*sd*d*.4,z+nz*sd*d*.4,w,.25,hh*(.4+.6*r9())+2,-2,mWin,ry); box(x+ca*w*.45,z+sa*w*.45,.25,d,hh*(.3+.7*r9())+2,-2,mWin,ry); }
-          t+=w+.12+r9()*.35; } } };
-      const ts=(ax,az,bx,bz)=>{ const l=Math.hypot(bx-ax,bz-az), s0=(4+6*r9())/l, s1=1-(4+6*r9())/l; street(ax+(bx-ax)*s0,az+(bz-az)*s0,ax+(bx-ax)*s1,az+(bz-az)*s1); };
-      for(const z of [215,250,285]) for(const [x0,x1] of [[-95,-38],[-32,32],[38,95]]) if(r9()<.85) ts(x0,z,x1,z);
-      for(const x of [-45,45]) ts(x,200,x,300); for(const x of [-90,90]) ts(x,215,x,270); street(0,166,0,206); street(0,230,0,298);
-      { const n=26; for(let q=0;q<n;q++){ const a=Math.PI*(1+(q+.5)/n), x=Math.cos(a)*70, z=228+Math.sin(a)*70*-1; if(Math.abs(x)<4) continue; wall(x,z,70*Math.PI/n*1.05,1.2,3.6,0,-a+Math.PI/2,r9()<.3); if(q%6===0) sTower(x,z,3,6.5,0,-a,false); } } /* 北の弧の城壁 */
-      { /* 教会：身廊と鐘楼 */ box(82,206,9,16,6,0,mWin); gable(82,206,16,9,5,6,Math.PI/2); sTower(82,196,4.2,13,0,0,true); }
-      { sTower(72.5,232.5,3,7,0,0,true); /* 広場の塔 */ }
+      /* ⑧ 城下町は足もとの区画で本当の大きさで作る（townFor）。ここ（遠景の城）には置かない */
       cBake(inner); g.traverse(o=>{ if(o.isMesh){ o.castShadow=false; o.receiveShadow=false; } }); return g; };
     /* 材質ごとにまとめる。模様の貼り方は面の向きで決め（壁は横と高さ、上の面は水平）、色は下ほど暗く（古びて汚れた石）、岩山は崖と草で塗り分け */
     const cBake=root=>{ root.updateMatrixWorld(true); const inv=new T.Matrix4().copy(root.matrixWorld).invert(), by=new Map(), V=new T.Vector3(), N=new T.Vector3(), NM=new T.Matrix3();
