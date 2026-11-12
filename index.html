@@ -5035,23 +5035,57 @@ async function pLookOpen(){
   const hsh=(x,y,z)=>{ const v=Math.sin(x*12.99+y*78.23+z*37.72)*43758.55; return v-Math.floor(v); };
   // 葉の塊：でこぼこにした扁平な球。上ほど明るく、下ほど暗い青緑
   // 房の中心（全体の丸み）。法線は房の丸みと木全体の丸みの間にして、ブレワイのようにやわらかい陰影に
-  const CC=new T.Vector3(0,7.9,0), LOBES=[[2.6,0,9.0,0,.55],[2.1,2.7,8.0,.6,.5],[2.2,-2.5,8.1,-.7,.5],[2.0,.5,7.9,2.6,.5],[2.0,-.4,8.2,-2.7,.5],[1.7,1.9,9.5,-1.7,.6],[1.6,-1.8,9.3,1.6,.6]];
-  const lobe=(r,x,y,z,fl)=>{ const g=new T.IcosahedronGeometry(r,1), p=g.attributes.position, v=new T.Vector3();
-    for(let k2=0;k2<p.count;k2++){ v.fromBufferAttribute(p,k2); const n=v.clone().normalize(), w=1+(hsh(Math.round(v.x*4),Math.round(v.y*4),Math.round(v.z*4))-.5)*.28; v.copy(n).multiplyScalar(r*w); if(v.y<0) v.y*=fl; p.setXYZ(k2,v.x+x,v.y+y,v.z+z); }
-    const q=g, qp=q.attributes.position, N=[], C=[], c0=new T.Vector3(x,y,z); for(let k2=0;k2<qp.count;k2++){ v.fromBufferAttribute(qp,k2); const a=v.clone().sub(c0).normalize(), b=v.clone().sub(CC).normalize(), n=a.multiplyScalar(.45).add(b.multiplyScalar(.55)).normalize(); N.push(n.x,n.y,n.z); const t=Math.min(1,Math.max(0,(v.y-6.2)/4.4)); C.push(.48+.52*t,.6+.4*t,.7+.3*t); }
-    q.setAttribute('normal',new T.Float32BufferAttribute(N,3)); q.setAttribute('color',new T.Float32BufferAttribute(C,3)); return q; };
-  // 葉の板：房の表面に小さな葉の塊を貼り、輪郭をふさふさに（表と裏を別の面にして、法線は木全体の丸み）
-  const lcv=document.createElement('canvas'); lcv.width=128; lcv.height=128; { const x=lcv.getContext('2d'); { const gd=x.createRadialGradient(64,64,0,64,64,44); gd.addColorStop(0,'rgb(236,236,236)'); gd.addColorStop(1,'rgb(214,214,214)'); x.fillStyle=gd; x.beginPath(); x.arc(64,64,42,0,6.3); x.fill(); } for(let q=0;q<140;q++){ const a=rng()*6.28, d=30+Math.sqrt(rng())*26, px=64+Math.cos(a)*d, py=64+Math.sin(a)*d, l=7+rng()*7, c=210+rng()*45|0; x.fillStyle=`rgb(${c},${c},${c})`; x.save(); x.translate(px,py); x.rotate(rng()*6.28); x.beginPath(); x.moveTo(-l,0); x.quadraticCurveTo(0,-l*.45,l,0); x.quadraticCurveTo(0,l*.45,-l,0); x.fill(); x.restore(); } }
-  const ltx=new T.CanvasTexture(lcv); ltx.colorSpace=T.SRGBColorSpace;
-  const leafCards=(()=>{ const P=[], U=[], N=[], C=[], lr=pRng('leafc',3), v=new T.Vector3();
-    LOBES.forEach(([r,x,y,z])=>{ for(let q=0;q<6;q++){ const th=lr()*6.28, ph=Math.acos(1-lr()*1.35), d=new T.Vector3(Math.sin(ph)*Math.cos(th),Math.cos(ph),Math.sin(ph)*Math.sin(th)), c=new T.Vector3(x,y,z).addScaledVector(d,r*.82), sz=1.3+lr()*.9;
-      const tq=new T.Quaternion().setFromUnitVectors(new T.Vector3(0,0,1),d), roll=new T.Quaternion().setFromAxisAngle(d,lr()*6.28); tq.premultiply(roll);
-      const cs=[[-1,-1,0,0],[1,-1,1,0],[1,1,1,1],[-1,1,0,1]].map(([a,b,u,w])=>{ const pnt=new T.Vector3(a*sz,b*sz,0).applyQuaternion(tq).add(c); return [pnt,u,w]; });
-      for(const tri of [[0,1,2],[0,2,3],[0,2,1],[0,3,2]]) for(const k2 of tri){ const [pnt,u,w]=cs[k2]; P.push(pnt.x,pnt.y,pnt.z); U.push(u,w); v.copy(pnt).sub(CC).normalize(); N.push(v.x,v.y,v.z); const t=Math.min(1,Math.max(0,(pnt.y-6.2)/4.4)); C.push(.48+.52*t,.6+.4*t,.7+.3*t); } } });
-    const g=new T.BufferGeometry(); g.setAttribute('position',new T.Float32BufferAttribute(P,3)); g.setAttribute('uv',new T.Float32BufferAttribute(U,2)); g.setAttribute('normal',new T.Float32BufferAttribute(N,3)); g.setAttribute('color',new T.Float32BufferAttribute(C,3)); return g; })();
-  const canopy=mergeG(LOBES.map(a=>lobe(...a)),true);
-  const br=(x0,y0,z0,x1,y1,z1,r0,r1)=>{ const A=new T.Vector3(x0,y0,z0), B=new T.Vector3(x1,y1,z1), d=B.clone().sub(A), L=d.length(), g=new T.CylinderGeometry(r1,r0,L,6).translate(0,L/2,0); g.applyQuaternion(new T.Quaternion().setFromUnitVectors(new T.Vector3(0,1,0),d.normalize())); g.translate(x0,y0,z0); return g; };
-  const trunk=mergeG([new T.CylinderGeometry(.5,.8,5.2,7).translate(0,2.6,0),new T.CylinderGeometry(.85,1.05,.6,7).translate(0,.3,0),br(0,4.6,0,2.4,7.4,.5,.44,.2),br(0,4.4,0,-2.3,7.5,-.6,.44,.2),br(0,4.8,0,.4,7.5,2.3,.38,.18),br(0,5,0,-.3,7.8,-2.4,.36,.17),br(0,5,0,.1,8.4,.1,.42,.25),br(2.4,7.4,.5,3.4,8.6,1.2,.2,.1),br(-2.3,7.5,-.6,-3.2,8.5,-1.4,.2,.1)]);
+  // ---- 広葉樹（ブレワイの平原の木を見ながら作り直し）----
+  //  幹：灰色がかったオリーブの樹皮に縦の筋と苔。根元は根が張って広がり、少し曲がって立つ。途中で3〜4本の太い枝に分かれ、枝はさらに細い枝へ
+  //  葉：枝の先ごとに葉の房。房は1枚ずつ形のわかる葉の集まり（切り抜き）で、輪郭がぎざぎざ。上は明るい黄緑、下と内側は暗い青緑
+  //  4つの形：横に広い傘の木／丸い木／幹の高い木／若い木
+  for(let q=0;q<700;q++) rng(); // 前の葉の絵が使っていた乱数の分（ほかの物の並びを変えない）
+  const ltx=(()=>{ const cv=document.createElement('canvas'); cv.width=cv.height=256; const x=cv.getContext('2d'), r=pRng('leaf2',5), L=[];
+    for(let q=0;q<300;q++){ const a=r()*6.28, d=Math.pow(r(),.5)*108; L.push([a,d]); } L.sort((p,q)=>q[1]-p[1]);
+    for(const [a,d] of L){ const px=128+Math.cos(a)*d, py=128+Math.sin(a)*d*.92, l=10+r()*7, w=l*(.38+r()*.12), an=a+(r()-.5)*1.4, c=Math.round(150+105*(.35+.65*(d/104))*(.75+.25*r()));
+      x.save(); x.translate(px,py); x.rotate(an); x.fillStyle=`rgb(${c},${c},${c})`; x.beginPath(); x.moveTo(-l*.15,0); x.quadraticCurveTo(l*.35,-w,l,0); x.quadraticCurveTo(l*.35,w,-l*.15,0); x.fill();
+      x.strokeStyle='rgba(60,60,60,.22)'; x.lineWidth=1; x.beginPath(); x.moveTo(0,0); x.lineTo(l*.85,0); x.stroke(); x.restore(); }
+    const t=new T.CanvasTexture(cv); t.colorSpace=T.SRGBColorSpace; return t; })();
+  const barkTx=(()=>{ const cv=document.createElement('canvas'); cv.width=128; cv.height=256; const x=cv.getContext('2d'), r=pRng('bark',7); x.fillStyle='rgb(150,146,120)'; x.fillRect(0,0,128,256);
+    for(let q=0;q<260;q++){ const px=r()*128, py=r()*256, w=1+r()*3.5, h=18+r()*80, dk=r()<.55, a=.18+r()*.32; x.fillStyle=dk?`rgba(86,84,70,${a})`:`rgba(186,182,156,${a})`; for(const o of [-128,0,128]) for(const p of [-256,0,256]) x.fillRect(px+o,py+p,w,h); }
+    for(let q=0;q<30;q++){ const px=r()*128, py=r()*256, rw=5+r()*14, rh=12+r()*46; for(const o of [-128,0,128]) for(const p of [-256,0,256]){ x.save(); x.translate(px+o,py+p); x.scale(rw/rh,1); const gd=x.createRadialGradient(0,0,0,0,0,rh); gd.addColorStop(0,'rgba(104,132,56,.8)'); gd.addColorStop(.6,'rgba(104,132,56,.35)'); gd.addColorStop(1,'rgba(104,132,56,0)'); x.fillStyle=gd; x.beginPath(); x.arc(0,0,rh,0,6.3); x.fill(); x.restore(); } }
+    const t=new T.CanvasTexture(cv); t.wrapS=t.wrapT=T.RepeatWrapping; t.colorSpace=T.SRGBColorSpace; return t; })();
+  const V3=(x,y,z)=>new T.Vector3(x,y,z);
+  // 曲がった管（幹・枝）：太さは元から先へ細く。根元は根の張り出し
+  const tTube=(pts,r0,r1,seg,flare,o)=>{ const n=pts.length, Ls=[0]; for(let i=1;i<n;i++) Ls.push(Ls[i-1]+pts[i].distanceTo(pts[i-1])); const len=Ls[n-1], rings=[];
+    for(let i=0;i<n;i++){ const t=pts[Math.min(n-1,i+1)].clone().sub(pts[Math.max(0,i-1)]).normalize(), a=Math.abs(t.y)<.9?V3(0,1,0):V3(1,0,0), nb=new T.Vector3().crossVectors(t,a).normalize(), bb=new T.Vector3().crossVectors(t,nb), f=Ls[i]/len, rr=r0+(r1-r0)*Math.pow(f,.8), ring=[];
+      for(let k=0;k<=seg;k++){ const an=k/seg*6.2832, dir=nb.clone().multiplyScalar(Math.cos(an)).addScaledVector(bb,Math.sin(an)); let r2=rr; if(flare){ const fl=Math.pow(Math.max(0,1-pts[i].y/1.3),2); r2*=1+flare*fl*(1+.45*Math.cos(an*5+.7)); }
+        ring.push([pts[i].clone().addScaledVector(dir,r2),dir,k/seg*2,Ls[i]*.16,f]); } rings.push(ring); }
+    for(let i=0;i<n-1;i++) for(let k=0;k<seg;k++){ const A=rings[i][k], B=rings[i][k+1], C2=rings[i+1][k+1], D=rings[i+1][k]; for(const q of [A,B,C2,A,C2,D]){ o.P.push(q[0].x,q[0].y,q[0].z); o.N.push(q[1].x,q[1].y,q[1].z); o.U.push(q[2],q[3]); const sh=1-.28*Math.min(1,Math.max(0,(q[0].y-o.y0)/(o.y1-o.y0))); o.C.push(sh,sh,sh); } } };
+  const tCurve=(p0,dir,len,bendUp,wob,r,k=5)=>{ const pts=[p0.clone()], d=dir.clone().normalize(); let p=p0.clone(); for(let i=1;i<=k;i++){ d.y+=bendUp/k; d.x+=(r()-.5)*wob; d.z+=(r()-.5)*wob; d.normalize(); p=p.clone().addScaledVector(d,len/k); pts.push(p); } return pts; };
+  const TRS=[ // [幹の高さ, 太さ, 枝の数, 枝の長さ, 枝の開き(度), 房の大きさ, 房の数の目安, 傾き]
+    {H:4.6,R:.62,nL:4,bl:4.4,op:62,cr:1.9,lean:.18},  // 横に広い傘の木（ハイラル平原の木）
+    {H:3.6,R:.55,nL:3,bl:3.4,op:48,cr:2.0,lean:.1},   // 丸い木
+    {H:6.4,R:.6,nL:3,bl:3.6,op:55,cr:1.8,lean:.08},   // 幹の高い木
+    {H:3.0,R:.3,nL:3,bl:2.4,op:40,cr:1.3,lean:.12}];  // 若い木
+  const mkBroad=vi=>{ const S=TRS[vi], r=pRng('btree'+vi,11), tr={P:[],N:[],U:[],C:[],y0:0,y1:S.H+S.bl}, tips=[];
+    const la=r()*6.28, lv=V3(Math.cos(la)*S.lean,1,Math.sin(la)*S.lean);
+    const tp=tCurve(V3(0,-.3,0),lv,S.H+.3,0,.12,r,6); tTube(tp,S.R,S.R*.72,7,1.0,tr); const top=tp[tp.length-1];
+    for(let i=0;i<S.nL;i++){ const az=(i+r()*.5)/S.nL*6.2832, op=(S.op+(r()-.5)*16)*Math.PI/180, d=V3(Math.cos(az)*Math.sin(op),Math.cos(op),Math.sin(az)*Math.sin(op)), st=tp[Math.max(2,tp.length-2-(i%2))].clone(), bl=S.bl*(.85+r()*.3);
+      const lp=tCurve(st,d,bl,.35,.25,r,4); tTube(lp,S.R*.62,S.R*.22,5,0,tr); tips.push([lp[lp.length-1],1]);
+      for(let j=0;j<2;j++){ const a2=az+(j?1:-1)*(.5+r()*.5), sd=V3(Math.cos(a2)*.8,.6+r()*.5,Math.sin(a2)*.8), s0=lp[Math.min(lp.length-1,2+j)]; r(), sp=tCurve(s0,sd,bl*(.45+r()*.25),.3,.3,r,2); tTube(sp,S.R*.24,S.R*.08,3,0,tr); tips.push([sp[sp.length-1],.8]); } }
+    tips.push([top.clone().add(V3(0,S.bl*.55,0)),1.05]);
+    // 房の中心：枝の先と、そのあいだを埋める房
+    const cl=[]; tips.forEach(([p,s])=>cl.push([p.clone(),S.cr*s*(.85+r()*.3)])); const ce=V3(0,0,0); cl.forEach(c=>ce.add(c[0])); ce.multiplyScalar(1/cl.length);
+    const nIn=Math.round(cl.length*.4); for(let i=0;i<nIn;i++){ const a=cl[Math.floor(r()*cl.length)][0], b=cl[Math.floor(r()*cl.length)][0], p=a.clone().lerp(b,.5).lerp(ce,.25); p.y+=S.cr*.35; cl.push([p,S.cr*(.8+r()*.3)]); }
+    let cR=0; cl.forEach(([p,s])=>{ cR=Math.max(cR,Math.hypot(p.x-ce.x,(p.y-ce.y)*1.4,p.z-ce.z)+s); }); const yLo=Math.min(...cl.map(c=>c[0].y-c[1]*.6)), yHi=Math.max(...cl.map(c=>c[0].y+c[1]*.8));
+    const shade=(p)=>{ const t=Math.min(1,Math.max(0,(p.y-yLo)/(yHi-yLo))), f=Math.min(1,Math.hypot(p.x-ce.x,(p.y-ce.y)*1.4,p.z-ce.z)/cR), ao=.42+.58*sm(.35,.95,f), tt=Math.pow(t,.8); return [(.3+.7*tt)*ao,(.44+.56*tt)*ao,(.56+.44*tt)*ao]; };
+    const bn=(p,d)=>{ const a=p.clone().sub(ce); a.y*=1.6; a.normalize(); return a.multiplyScalar(.7).addScaledVector(d,.3).normalize(); };
+    // 房の芯（すき間をうめる暗い塊）
+    const core={P:[],N:[],C:[]}; cl.forEach(([c,s])=>{ const g=new T.IcosahedronGeometry(s*.5,0).toNonIndexed(), p=g.attributes.position, v=new T.Vector3(); for(let k=0;k<p.count;k++){ v.fromBufferAttribute(p,k); if(v.y<0) v.y*=.6; v.x*=1.1; v.z*=1.1; const w=v.clone().add(c); const d=v.clone().normalize(); core.P.push(w.x,w.y,w.z); const n=bn(w,d); core.N.push(n.x,n.y,n.z); const sh=shade(w); core.C.push(sh[0]*.62,sh[1]*.66,sh[2]*.7); } });
+    // 葉の板：房の表面に、外を向いた葉の束を貼る（表と裏）
+    const cd={P:[],N:[],C:[],U:[]}; cl.forEach(([c,s])=>{ const nC=Math.round(7+s*1.8); for(let q=0;q<nC;q++){ const th=r()*6.28, ph=Math.acos(1-r()*1.55), d=V3(Math.sin(ph)*Math.cos(th),Math.cos(ph),Math.sin(ph)*Math.sin(th)), p0=c.clone().addScaledVector(d,s*.5), sz=s*(.68+r()*.3);
+      const tq=new T.Quaternion().setFromUnitVectors(V3(0,0,1),d.clone().lerp(V3(0,1,0),.25).normalize()); tq.premultiply(new T.Quaternion().setFromAxisAngle(d,r()*6.28));
+      const cs=[[-1,-1,0,0],[1,-1,1,0],[1,1,1,1],[-1,1,0,1]].map(([a,b,u,w])=>[V3(a*sz,b*sz,0).applyQuaternion(tq).add(p0),u,w]);
+      for(const tri of [[0,1,2],[0,2,3]]) for(const k2 of tri){ const [pt,u,w]=cs[k2]; cd.P.push(pt.x,pt.y,pt.z); cd.U.push(u,w); const n=bn(pt,d); cd.N.push(n.x,n.y,n.z); const sh=shade(pt); cd.C.push(...sh); } } });
+    const G=(o,uv)=>{ const g=new T.BufferGeometry(); g.setAttribute('position',new T.Float32BufferAttribute(o.P,3)); g.setAttribute('normal',new T.Float32BufferAttribute(o.N,3)); g.setAttribute('color',new T.Float32BufferAttribute(o.C,3)); if(uv) g.setAttribute('uv',new T.Float32BufferAttribute(o.U,2)); g.computeBoundingSphere(); return g; };
+    return {canopy:G(core),leafCards:G(cd,1),trunk:G(tr,1),tris:(core.P.length+cd.P.length+tr.P.length)/9}; };
+  const BT=[0,1,2,3].map(mkBroad), canopy=BT[0].canopy, leafCards=BT[0].leafCards, trunk=BT[0].trunk;
   // 針葉樹（ブレワイのトウヒのように）：細い幹に、垂れ下がった枝の房が段々に重なる。房は外の先ほど明るい黄緑がかった色、内と下は濃い青緑。
   //   輪郭は房のでこぼこでぎざぎざに。陰影は房の向きと木全体の丸みの間にして、やわらかく
   const cone=(()=>{ const gs=[], rr=pRng('fir',5), TI=7, TOP=12.6, P=[], N=[], C=[], v=new T.Vector3(), n=new T.Vector3(), m=new T.Vector3();
@@ -5065,12 +5099,17 @@ async function pLookOpen(){
         P.push(v.x,v.y,v.z); N.push(n.x,n.y,n.z);
         if(isT) C.push(.36,.31,.26); else { const lt=Math.min(1,.15+.55*rr2+.35*Math.max(0,n.y)+.15*ht); C.push(.13+.2*lt,.25+.27*lt,.22+.14*lt); } } });
     const g=new T.BufferGeometry(); g.setAttribute('position',new T.Float32BufferAttribute(P,3)); g.setAttribute('normal',new T.Float32BufferAttribute(N,3)); g.setAttribute('color',new T.Float32BufferAttribute(C,3)); return g; })();
-  const mR=patch(new T.MeshToonMaterial({color:0xffffff,gradientMap:gmap,vertexColors:true}),.15), mL=patch(new T.MeshToonMaterial({color:0xffffff,gradientMap:gmap,vertexColors:true,map:ltx,alphaTest:.4}),.15), mT=patch(new T.MeshToonMaterial({color:c3([116,110,82]),gradientMap:gmap})), mC=patch(new T.MeshToonMaterial({color:0xffffff,gradientMap:gmap,vertexColors:true}),.1); if(BIO==='snow'){ const ob=mC.onBeforeCompile; mC.onBeforeCompile=sh=>{ ob(sh); sh.vertexShader='varying float vUp;\n'+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n vUp=normal.y;'); sh.fragmentShader='varying float vUp;\n'+sh.fragmentShader.replace('#include <color_fragment>','#include <color_fragment>\n diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.93,.96,1.),smoothstep(.15,.45,vUp));'); }; }
+  const mR=patch(new T.MeshToonMaterial({color:0xffffff,gradientMap:gmap,vertexColors:true}),.15), mL=patch(new T.MeshToonMaterial({color:0xffffff,gradientMap:gmap,vertexColors:true,map:ltx,alphaTest:.4,side:T.DoubleSide}),.15), mT=patch(new T.MeshToonMaterial({color:0xffffff,gradientMap:gmap,map:barkTx,vertexColors:true})), mC=patch(new T.MeshToonMaterial({color:0xffffff,gradientMap:gmap,vertexColors:true}),.1); if(BIO==='snow'){ const ob=mC.onBeforeCompile; mC.onBeforeCompile=sh=>{ ob(sh); sh.vertexShader='varying float vUp;\n'+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n vUp=normal.y;'); sh.fragmentShader='varying float vUp;\n'+sh.fragmentShader.replace('#include <color_fragment>','#include <color_fragment>\n diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.93,.96,1.),smoothstep(.15,.45,vUp));'); }; }
+  // 葉は光を透かす：日陰側や逆光でも真っ黒にならず、くすんだ緑が残る（ブレワイの木の陰の側のように）
+  mT.onBeforeCompile=(ob=>sh=>{ ob(sh); sh.fragmentShader=sh.fragmentShader.replace('#include <lights_fragment_end>','#include <lights_fragment_end>\n reflectedLight.indirectDiffuse+=diffuseColor.rgb*vec3(.26,.27,.22);'); })(mT.onBeforeCompile);
+  [mR,mL].forEach(m=>{ const ob=m.onBeforeCompile; m.onBeforeCompile=sh=>{ ob(sh); sh.fragmentShader=sh.fragmentShader.replace('#include <lights_fragment_end>','#include <lights_fragment_end>\n reflectedLight.indirectDiffuse+=diffuseColor.rgb*vec3(.30,.36,.22);'); }; });
+  if(/lkshot/.test(location.search)) L.TREE={canopy,leafCards,trunk,cone,mR,mL,mT,mC,BT,parts:v=>[[BT[v].canopy,mR],[BT[v].leafCards,mL],[BT[v].trunk,mT]]};
   const treesFor=(tileG,yA,P,XA,XB,near,nx,fz,tR)=>{ const sp=[]; for(let q=0;q<26000*fz&&sp.length<3200*fz;q++){ const x=XA+tR()*(XB-XA), y=yA+tR()*P, f=pn(x,y,70,11,4); if(f<.55) continue; const e=hAt(x,y); if(e<1.5) continue; if(Math.abs(x-rX(y))<19||nearMon(x,y,5)) continue; if(nearMon(x,y,6)) continue;
-      const b=bAt(x,y), ftc=b[0]>.25; if(b[0]>.6||b[1]>.3||(ftc&&tR()<.55)) continue; const pl=plF(x,y,b); if(pl>.02&&tR()<pl*.992) continue; /* 平原：木はほとんどなく、ぽつんと1本立つ大きな木だけ */ if(BIO==='wet'&&tR()<.65) continue; const i=Math.round((x-XA)/ST), j=Math.round((y-yA)/ST); if(near.attributes.normal.array[(j*nx+i)*3+1]<.82) continue; const con=ftc||b[3]>.2||e>480; if(b[3]>.3&&e>900) continue; sp.push([x,y,e,con&&pl<.5,(.85+tR()*.5)*(9+tR()*4)/10*1.4*(1+.7*pl),tR()*6.28]); }
-    const nR=sp.filter(s=>!s[3]).length, iR=new T.InstancedMesh(canopy,mR,nR), iL=new T.InstancedMesh(leafCards,mL,nR), iT=new T.InstancedMesh(trunk,mT,nR), iC=new T.InstancedMesh(cone,mC,sp.length-nR), M=new T.Matrix4(), Q=new T.Quaternion(), V=new T.Vector3(), Sc=new T.Vector3(), up=new T.Vector3(0,1,0), cA=c3([128,172,60]), cB=c3([150,190,72]), cc2=new T.Color();
-    let a=0,c=0; sp.forEach(([x,y,e,con,s,r])=>{ Q.setFromAxisAngle(up,r); Sc.set(s,s,s); V.set(X(x),e-.4,Z(y)); M.compose(V,Q,Sc); if(con){ iC.setMatrixAt(c,M); iC.setColorAt(c++,cc2.setRGB(.9+tR()*.2,.92+tR()*.16,.9+tR()*.14)); } else { iR.setMatrixAt(a,M); iL.setMatrixAt(a,M); iT.setMatrixAt(a,M); iR.setColorAt(a,cc2.copy(cA).lerp(cB,tR())); iL.setColorAt(a,cc2); a++; } });
-    [iR,iL,iT,iC].forEach(m=>{ m.castShadow=true; m.receiveShadow=true; tileG.add(m); }); };
+      const b=bAt(x,y), ftc=b[0]>.25; if(b[0]>.6||b[1]>.3||(ftc&&tR()<.55)) continue; const pl=plF(x,y,b); if(pl>.02&&tR()<pl*.992) continue; /* 平原：木はほとんどなく、ぽつんと1本立つ大きな木だけ */ if(BIO==='wet'&&tR()<.65) continue; const i=Math.round((x-XA)/ST), j=Math.round((y-yA)/ST); if(near.attributes.normal.array[(j*nx+i)*3+1]<.82) continue; const con=ftc||b[3]>.2||e>480; if(b[3]>.3&&e>900) continue; const vr=tR(), vi=pl>.5?(vr<.6?0:2):vr<.35?0:vr<.65?1:vr<.85?2:3; sp.push([x,y,e,con&&pl<.5,(.85+tR()*.5)*(9+tR()*4)/10*1.4*(1+.5*pl)*(vi===3?1.15:1),tR()*6.28,vi]); }
+    const nC=sp.filter(s=>s[3]).length, iC=new T.InstancedMesh(cone,mC,nC), M=new T.Matrix4(), Q=new T.Quaternion(), V=new T.Vector3(), Sc=new T.Vector3(), up=new T.Vector3(0,1,0), cA=c3([128,172,60]), cB=c3([150,190,72]), cc2=new T.Color();
+    const IB=BT.map((b,vi)=>{ const n=sp.filter(s=>!s[3]&&s[6]===vi).length; return n?{n,a:0,R:new T.InstancedMesh(b.canopy,mR,n),L:new T.InstancedMesh(b.leafCards,mL,n),T:new T.InstancedMesh(b.trunk,mT,n)}:null; });
+    let c=0; sp.forEach(([x,y,e,con,s,r,vi])=>{ Q.setFromAxisAngle(up,r); Sc.set(s,s,s); V.set(X(x),e-.4,Z(y)); M.compose(V,Q,Sc); if(con){ iC.setMatrixAt(c,M); iC.setColorAt(c++,cc2.setRGB(.9+tR()*.2,.92+tR()*.16,.9+tR()*.14)); } else { const B=IB[vi], a=B.a++; B.R.setMatrixAt(a,M); B.L.setMatrixAt(a,M); B.T.setMatrixAt(a,M); B.R.setColorAt(a,cc2.copy(cA).lerp(cB,tR())); B.L.setColorAt(a,cc2); } });
+    const ms=[iC]; IB.forEach(B=>{ if(B) ms.push(B.R,B.L,B.T); }); ms.forEach(m=>{ m.castShadow=true; m.receiveShadow=true; tileG.add(m); }); };
   // ---- 足もとの草の板（カメラのまわり）----
   // ブレワイの草：細く長い葉が同じ向きに寄り、根もとはやや濃く、先は明るい黄緑
   // 草の絵：ブレワイの草原のように、細く長い葉をびっしり。どの葉も同じ向きに少し反る（色はつけず、形と透けだけ）
