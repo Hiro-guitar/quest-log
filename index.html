@@ -5139,6 +5139,9 @@ async function pLookOpen(){
   //   多くは崩れて、屋根が落ちて壁だけ・角が欠けた家、石の山。ときどき見張りの塔。町の中は木がほとんどなく草が茂る ----
   const TWN=(()=>{ const cache=new Map(), get=c=>{ if(!cache.has(c)) cache.set(c,typeof pCastle==='function'?pCastle(c):null); return cache.get(c); };
     return (x,y)=>{ if(typeof P_CA==='undefined') return null; const v=vAt(y), c0=Math.floor(v/P_CA); for(let c=c0-1;c<=c0+1;c++){ const q=get(c); if(!q) continue; const k=q[3], m=q[5], lx=(uOf(x)-q[0])/k*m, lz=(v-q[1])/k; if(lz<180||lz>320||lx<-115||lx>115) continue; const e=Math.min(lz-196,304-lz,lx+100,100-lx); return sm(-5,5,e); } return 0; }; })();
+  /* 城下町の通りの跡：家並みの間（区画の境、幅6m）と、町を抜ける大通り。STR＝石畳の残り具合（0〜1）、STOV＝草に埋もれた所 */
+  const STR=(x,y)=>{ const tw=TWN(x,y); if(!tw||tw<.05) return 0; const ux=((x%58)+58)%58, uy=((y%46)+46)%46, d=Math.min(ux,58-ux,uy,46-uy); return sm(3.3,2.5,d)*sm(.35,.6,tw)*sm(5,8,Math.abs(x-rX(y))); };
+  const STOV=(x,y)=>sm(.46,.68,pn(x,y,11,61,3)*.75+pn(x,y,4,67,5)*.25);
   // ---- 城下町の家（立体）：ブレワイのハイラルの家をもとに、絵ではなく形で作る。
   //   厚い壁に本当の窓の穴（奥に木の枠と十字の桟、外に板戸）、石の窓台とまぐさ、くぼんだ木の扉と石段、
   //   石の腰（少し張り出す）、角の隅石、2階の床の高さに木の梁、軒の出と垂木の先、厚みのある瓦屋根と棟、妻壁、石の煙突。
@@ -5265,7 +5268,28 @@ async function pLookOpen(){
         if(rb()<.07){ /* 見張りの塔：狭間つき */ const tx=bx0+7.5, ty=by0+7.5; if(Math.abs(tx-rX(ty))>20){ const e=hAt(tx,ty); if(e>.6){ put(IW,X(tx),e-1.5,Z(ty),6,16.5,6,0,.92); put(IS,X(tx),e+15,Z(ty),7,1,7,0,.9); for(let q=0;q<8;q++){ const a=q/8*6.283; put(IS,X(tx)+Math.cos(a)*3.1,e+16,Z(ty)+Math.sin(a)*3.1,1,1.1,1,a,.9); } } } } }
       { const hi=new T.Group(), lo=new T.Group(); if(HL.length) HOUSE.place(hi,HL); G.add(hi); G.add(lo); G.userData.lod={hi,lo}; hi.visible=false; var LOT=lo; } /* 立体の家は馬の近くの区画だけ。離れた区画は同じ場所に簡単な箱 */
       const M4=new T.Matrix4(), Q=new T.Quaternion(), V=new T.Vector3(), Sc=new T.Vector3(), up=new T.Vector3(0,1,0), cc=new T.Color();
-      for(const [A,geo,mat,GG] of [[IW,MT.gB,MT.win,G],[IS,MT.gB,MT.st,G],[IR,MT.gR,MT.rf,G],[LW,MT.gB,MT.winL,LOT],[LS,MT.gB,MT.stL,LOT],[LR,MT.gR,MT.rfL,LOT]]){ const n=A.length/8; if(!n) continue; const im=new T.InstancedMesh(geo,mat,n); for(let q=0;q<n;q++){ const o=q*8; Q.setFromAxisAngle(up,A[o+6]); V.set(A[o],A[o+1],A[o+2]); Sc.set(A[o+3],A[o+4],A[o+5]); M4.compose(V,Q,Sc); im.setMatrixAt(q,M4); im.setColorAt(q,cc.setScalar(A[o+7])); } im.castShadow=im.receiveShadow=true; GG.add(im); } }; })();
+      for(const [A,geo,mat,GG] of [[IW,MT.gB,MT.win,G],[IS,MT.gB,MT.st,G],[IR,MT.gR,MT.rf,G],[LW,MT.gB,MT.winL,LOT],[LS,MT.gB,MT.stL,LOT],[LR,MT.gR,MT.rfL,LOT]]){ const n=A.length/8; if(!n) continue; const im=new T.InstancedMesh(geo,mat,n); for(let q=0;q<n;q++){ const o=q*8; Q.setFromAxisAngle(up,A[o+6]); V.set(A[o],A[o+1],A[o+2]); Sc.set(A[o+3],A[o+4],A[o+5]); M4.compose(V,Q,Sc); im.setMatrixAt(q,M4); im.setColorAt(q,cc.setScalar(A[o+7])); } im.castShadow=im.receiveShadow=true;  GG.add(im); }
+      /* 通りの跡（石畳）：区画の境の通りと大通りに、地面にそって薄い面を敷く。石は1枚ずつ、欠けた所・草に埋もれた所は抜けて下の土や草が見える */
+      { const Pp=[], Uv=[], Aw=[], I=[]; const strip=(pts,nu,wFn,lift,ovK=1)=>{ const n0=Pp.length/3; let rows=0; for(const row of pts){ for(let q=0;q<nu;q++){ const [px,py]=row[q]; Pp.push(X(px),hAt(px,py)+lift,Z(py)); Uv.push(((px%1024)+1024)%1024,((py%1024)+1024)%1024); /* 大きな座標のままだと乱数が壊れて石が全部同じになる */ Aw.push(STOV(px,py)*ovK,wFn(px,py)); } rows++; }
+          for(let r2=1;r2<rows;r2++) for(let q=0;q<nu-1;q++){ const a=n0+(r2-1)*nu+q, b=a+1, c=a+nu, d=c+1; if(Aw[a*2+1]+Aw[b*2+1]+Aw[c*2+1]+Aw[d*2+1]<.05) continue; I.push(a,c,b,b,c,d); } };
+        const okY=y=>brF(y)<=0;
+        for(let gx=Math.ceil(XA/BX);gx<=Math.floor(XB/BX);gx++){ const x0=gx*BX, rows=[]; for(let y=yA;y<=yB+.01;y+=2){ if(!okY(y)){ if(rows.length) strip(rows.splice(0),5,STR,.2); continue; } const r=[]; for(let q=0;q<5;q++) r.push([x0+(q/4-.5)*6.4,y]); rows.push(r); } if(rows.length) strip(rows,5,STR,.2); }
+        for(let gy=Math.ceil(yA/BY);gy<=Math.floor(yB/BY);gy++){ const y1=gy*BY, rows=[]; if(!okY(y1)) continue; for(let x=XA;x<=XB+.01;x+=2){ const r=[]; for(let q=0;q<5;q++) r.push([x,y1+(q/4-.5)*6.4]); rows.push(r); } strip(rows,5,STR,.2); }
+        { const rows=[]; const mw=(x,y)=>{ const t=TWN(x,y)||0; return t<.05?0:sm(.35,.6,t)*sm(7.2,5.6,Math.abs(x-rX(y))); }; for(let y=yA;y<=yB+.01;y+=2){ if(!okY(y)){ if(rows.length) strip(rows.splice(0),7,mw,.32,.35); continue; } const x=rX(y), r=[]; for(let q=0;q<7;q++) r.push([x+(q/6-.5)*14,y]); rows.push(r); } if(rows.length) strip(rows,7,mw,.32,.35); } /* 大通りは人が通るので草に埋もれにくい（欠けた所は土の道） */
+        if(I.length){ const g=new T.BufferGeometry(); g.setAttribute('position',new T.Float32BufferAttribute(Pp,3)); g.setAttribute('uvS',new T.Float32BufferAttribute(Uv,2)); g.setAttribute('aOw',new T.Float32BufferAttribute(Aw,2)); g.setIndex(I); g.computeVertexNormals(); const m=new T.Mesh(g,MT.street||(MT.street=mkStreet())); m.receiveShadow=true; m.renderOrder=2; /* 大通りの土の道より後に描いて、石を上に見せる */ G.add(m); } } };
+    function mkStreet(){ const m=patch(new T.MeshToonMaterial({gradientMap:gmap2,side:T.DoubleSide,transparent:true,polygonOffset:true,polygonOffsetFactor:-3,polygonOffsetUnits:-3})), ob=m.onBeforeCompile; m.onBeforeCompile=sh=>{ ob(sh);
+        sh.vertexShader='attribute vec2 uvS, aOw; varying vec2 vS, vOw;\n'+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n vS=uvS; vOw=aOw;');
+        sh.fragmentShader=sh.fragmentShader.replace('void main() {','varying vec2 vS, vOw;\nfloat hs2(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }\nvoid main() {').replace('#include <map_fragment>',`{ vec2 p=vS; float rh=.78, row=floor(p.y/rh), sw=.95+.5*hs2(vec2(row,1.)), off=hs2(vec2(row,3.))*2., col=floor((p.x+off)/sw); vec2 id=vec2(col,row), f=vec2(fract((p.x+off)/sw),fract(p.y/rh));
+          float r=hs2(id); /* 石1枚ずつ：欠けた石、草に埋もれた所の石、通りの縁の石は抜ける */
+          float cl=vn(p*.32+11.); if(r<.13||hs2(id+5.3)<vOw.x*1.3-.2+smoothstep(.58,.78,cl)*.85||hs2(id+9.1)>vOw.y*1.15) discard; /* 欠けた石はかたまって抜ける */
+          float jt=min(min(f.x,1.-f.x)*sw,min(f.y,1.-f.y)*rh);
+          float h1=hs2(id+1.7); vec3 c=mix(mix(vec3(.42,.41,.38),vec3(.62,.60,.55),h1),vec3(.62,.55,.45),step(.7,hs2(id+4.4))*.6)*(.8+.3*vn(p*1.9+r*9.)); c*=.82+.18*smoothstep(.75,.25,cl); c=mix(c,vec3(.40,.33,.25),.35*smoothstep(.4,.8,vn(p*1.1+7.))); /* 石ごとに色・すり減り、土のよごれ */
+          c=mix(c,vec3(.33,.40,.20),.5*smoothstep(.55,.82,vn(p*.6+3.)));  /* 苔のしみ */
+          c*=.72+.28*smoothstep(.0,.11,jt); if(jt<.045) c=mix(vec3(.24,.29,.15),vec3(.27,.23,.18),hs2(id+2.)); /* 目地は土と苔 */
+          if(hs2(id+7.7)<.18){ float cr=abs((f.x-.5)*sw-(f.y-.5)*rh*(hs2(id+6.1)*2.-1.)*1.6-(hs2(id+8.3)-.5)*.3); c*=mix(.55,1.,smoothstep(.012,.035,cr)); } /* ひびの入った石 */
+          diffuseColor.rgb*=c; }`); };
+      m.customProgramCacheKey=()=>'street1'; return m; }
+  })();
   const treeOK=(x,y,e,ny,b,f,r)=>{ /* 生える所の決まり（手前・遠く共通）。r＝乱数3つ。
       木はばらまかず「木立」で生える：大小2つのまだら（70mと23m）の濃い所だけに木立ができ、間は開けた草地。森の濃い所ほど木立が広がってつながり、森になる。
       縁は少しだけ欠けて、外ほど若い木（小さい）。平原は木立がほとんどなく、ときどき1本だけの大きな木 */
@@ -5607,7 +5631,7 @@ async function pLookOpen(){
     if(c.q>=need||c.q>=GPC) return c; if(!c.ex){ const cy=(iy+.5)*GCS, a=Math.max(0,Math.floor((cy-60)/LG)-1); c.ex=[]; for(let q=a;q<a+3;q++){ const s2=dSpot(q), ring={'石の環':[6.2,1.6],'キノコの輪':[5.1,.9]}[s2.nm]; c.ex.push(ring?[s2.x,s2.yy,(ring[0]+ring[1])*s2.SC,(ring[0]-ring[1])*s2.SC]:[s2.x,s2.yy,{'花畑':s2.rad*.55,'鹿の群れ':s2.rad*.6}[s2.nm]||s2.rad+1,0]); } }
     while(c.q<need&&c.q<GPC){ const r=c.r, rank=c.q/GPC, x=(ix+r())*GCS, y=(iy+r())*GCS, rot=r()*6.28, s0=r(), v0=r(), v1=r(); c.q++;
       if(!c.G){ c.G=[]; for(let gj=0;gj<5;gj++) for(let gi=0;gi<5;gi++){ const gx2=(ix+gi/4)*GCS, gy2=(iy+gj/4)*GCS, e2=hAt(gx2,gy2), b2=bAt(gx2,gy2), sx2=hAt(gx2+3,gy2)-hAt(gx2-3,gy2), sy2=hAt(gx2,gy2+3)-hAt(gx2,gy2-3), ny2=6/Math.hypot(sx2,sy2,6); c.G.push({b:b2,ny:ny2,ok:!(b2[0]>.2||b2[1]>.25||b2[3]>.3)&&ny2>=.8&&snAt(gx2,gy2,e2,ny2,b2)<.3,col:colAt(gx2,gy2,e2,ny2,b2,1)}); } }
-      const gp=c.G[Math.round((y/GCS-iy)*4)*5+Math.round((x/GCS-ix)*4)]; if(!gp.ok) continue; const e=hAt(x,y); if(e<2.6) continue; { const dr=Math.abs(x-rX(y)); if(dr<5.2||(dr<8&&v1<(8-dr)/2.8)) continue; } if(c.ex.some(([ex2,ey,R,Ri])=>{ const d=Math.hypot(x-ex2,y-ey); return d<R&&d>=Ri; })) continue; if(RK.some(([rx2,ry2,rs])=>Math.abs(ry2-y)<rs*1.1&&Math.hypot(rx2-x,ry2-y)<rs*1.05)) continue;
+      const gp=c.G[Math.round((y/GCS-iy)*4)*5+Math.round((x/GCS-ix)*4)]; if(!gp.ok) continue; const e=hAt(x,y); if(e<2.6) continue; { const dr=Math.abs(x-rX(y)); if(dr<5.2||(dr<8&&v1<(8-dr)/2.8)) continue; } { const sw=Math.max(STR(x,y),Math.abs(x-rX(y))<7.5?sm(.35,.6,TWN(x,y)||0):0); if(sw>.02&&v1<sw*(1-STOV(x,y))*1.15) continue; } /* 石畳の上は草が少ない（草に埋もれた所だけ生える） */ if(c.ex.some(([ex2,ey,R,Ri])=>{ const d=Math.hypot(x-ex2,y-ey); return d<R&&d>=Ri; })) continue; if(RK.some(([rx2,ry2,rs])=>Math.abs(ry2-y)<rs*1.1&&Math.hypot(rx2-x,ry2-y)<rs*1.05)) continue;
       const cc=gp.col; Q.setFromAxisAngle(up,rot); const s=.8+s0*.4, hA=.6+.9*sm(.25,.75,pNoise(x/150+3.1,y/150+7.7)); Sc.set(s,s*(.9+v0*.25)*hA,s); /* 場所によって背の高い草むら・低い草地 */ V.set(X(x),e-.1,Z(y)); M.compose(V,Q,Sc); for(const v of M.elements) c.P.push(v); const vb=.95+v0*.1; c.C.push(cc[0]*vb,cc[1]*vb,cc[2]*vb); c.R.push(rank); }
     return c; };
   // 並べ直し：層ごとに、受け持つ距離の草だけを入れる（少し余裕をもって。細かい出し入れはシェーダーで）
