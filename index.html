@@ -5059,10 +5059,10 @@ async function pLookOpen(){
     for(let i=0;i<n-1;i++) for(let k=0;k<seg;k++){ const A=rings[i][k], B=rings[i][k+1], C2=rings[i+1][k+1], D=rings[i+1][k]; for(const q of [A,B,C2,A,C2,D]){ o.P.push(q[0].x,q[0].y,q[0].z); o.N.push(q[1].x,q[1].y,q[1].z); o.U.push(q[2],q[3]); const sh=1-.28*Math.min(1,Math.max(0,(q[0].y-o.y0)/(o.y1-o.y0))); o.C.push(sh,sh,sh); } } };
   const tCurve=(p0,dir,len,bendUp,wob,r,k=5)=>{ const pts=[p0.clone()], d=dir.clone().normalize(); let p=p0.clone(); for(let i=1;i<=k;i++){ d.y+=bendUp/k; d.x+=(r()-.5)*wob; d.z+=(r()-.5)*wob; d.normalize(); p=p.clone().addScaledVector(d,len/k); pts.push(p); } return pts; };
   const TRS=[ // [幹の高さ, 太さ, 枝の数, 枝の長さ, 枝の開き(度), 房の大きさ, 房の数の目安, 傾き]
-    {H:4.6,R:.62,nL:4,bl:4.4,op:62,cr:1.9,lean:.18},  // 横に広い傘の木（ハイラル平原の木）
-    {H:3.6,R:.55,nL:3,bl:3.4,op:48,cr:2.0,lean:.1},   // 丸い木
-    {H:6.4,R:.6,nL:3,bl:3.6,op:55,cr:1.8,lean:.08},   // 幹の高い木
-    {H:3.0,R:.3,nL:3,bl:2.4,op:40,cr:1.3,lean:.12}];  // 若い木
+    {H:6.6,R:.64,nL:4,bl:4.6,op:50,cr:1.9,lean:.18},  // 横に広い傘の木（ハイラル平原の木）
+    {H:5.2,R:.56,nL:3,bl:3.6,op:40,cr:2.1,lean:.1},   // 丸い木
+    {H:8.4,R:.62,nL:3,bl:3.8,op:48,cr:1.85,lean:.08},   // 幹の高い木
+    {H:4.4,R:.32,nL:3,bl:2.6,op:36,cr:1.35,lean:.12}];  // 若い木
   const mkBroad=vi=>{ const S=TRS[vi], r=pRng('btree'+vi,11), tr={P:[],N:[],U:[],C:[],y0:0,y1:S.H+S.bl}, tips=[];
     const la=r()*6.28, lv=V3(Math.cos(la)*S.lean,1,Math.sin(la)*S.lean);
     const tp=tCurve(V3(0,-.3,0),lv,S.H+.3,0,.12,r,6); tTube(tp,S.R,S.R*.72,7,1.0,tr); const top=tp[tp.length-1];
@@ -5079,7 +5079,7 @@ async function pLookOpen(){
     // 房の芯（すき間をうめる暗い塊）
     const core={P:[],N:[],C:[]}; cl.forEach(([c,s])=>{ const g=new T.IcosahedronGeometry(s*.42,0).toNonIndexed(), p=g.attributes.position, v=new T.Vector3(); for(let k=0;k<p.count;k++){ v.fromBufferAttribute(p,k); if(v.y<0) v.y*=.6; v.x*=1.1; v.z*=1.1; const w=v.clone().add(c); const d=v.clone().normalize(); core.P.push(w.x,w.y,w.z); const n=bn(w,d); core.N.push(n.x,n.y,n.z); const sh=shade(w); core.C.push(sh[0]*.62,sh[1]*.66,sh[2]*.7); } });
     // 葉の板：房の表面に、外を向いた葉の束を貼る（表と裏）
-    const cd={P:[],N:[],C:[],U:[]}; cl.forEach(([c,s])=>{ const nC=Math.round(7+s*1.8); for(let q=0;q<nC;q++){ const th=r()*6.28, ph=Math.acos(1-r()*1.8), d=V3(Math.sin(ph)*Math.cos(th),Math.cos(ph),Math.sin(ph)*Math.sin(th)), p0=c.clone().addScaledVector(d,s*.5), sz=s*(.68+r()*.3);
+    const cd={P:[],N:[],C:[],U:[]}; cl.forEach(([c,s])=>{ const nC=Math.round(7+s*1.8); for(let q=0;q<nC;q++){ const th=r()*6.28, ph=Math.acos(1-r()*1.65), d=V3(Math.sin(ph)*Math.cos(th),Math.cos(ph),Math.sin(ph)*Math.sin(th)), p0=c.clone().addScaledVector(d,s*.5), sz=s*(.68+r()*.3);
       const tq=new T.Quaternion().setFromUnitVectors(V3(0,0,1),d.clone().lerp(V3(0,1,0),.25).normalize()); tq.premultiply(new T.Quaternion().setFromAxisAngle(d,r()*6.28));
       const cs=[[-1,-1,0,0],[1,-1,1,0],[1,1,1,1],[-1,1,0,1]].map(([a,b,u,w])=>[V3(a*sz,b*sz,0).applyQuaternion(tq).add(p0),u,w]);
       for(const tri of [[0,1,2],[0,2,3]]) for(const k2 of tri){ const [pt,u,w]=cs[k2]; cd.P.push(pt.x,pt.y,pt.z); cd.U.push(u,w); const n=bn(pt,d); cd.N.push(n.x,n.y,n.z); const sh=shade(pt); cd.C.push(...sh); } } });
@@ -5114,7 +5114,7 @@ async function pLookOpen(){
   [mR,mL,mC].forEach(m=>{ const ob=m.onBeforeCompile; m.onBeforeCompile=sh=>{ ob(sh); sh.fragmentShader=sh.fragmentShader.replace('#include <lights_fragment_end>','#include <lights_fragment_end>\n reflectedLight.indirectDiffuse+=diffuseColor.rgb*vec3(.30,.36,.22);'); }; });
   if(/lkshot/.test(location.search)) L.TREE={canopy,leafCards,trunk,cone,mR,mL,mT,mC,BT,parts:v=>[[BT[v].canopy,mR],[BT[v].leafCards,mL],[BT[v].trunk,mT]]};
   const treesFor=(tileG,yA,P,XA,XB,near,nx,fz,tR)=>{ const sp=[]; for(let q=0;q<26000*fz&&sp.length<3200*fz;q++){ const x=XA+tR()*(XB-XA), y=yA+tR()*P, f=pn(x,y,70,11,4); if(f<.55) continue; const e=hAt(x,y); if(e<1.5) continue; if(Math.abs(x-rX(y))<19||nearMon(x,y,5)) continue; if(nearMon(x,y,6)) continue;
-      const b=bAt(x,y), ftc=b[0]>.25; if(b[0]>.6||b[1]>.3||(ftc&&tR()<.55)) continue; const pl=plF(x,y,b); if(pl>.02&&tR()<pl*.992) continue; /* 平原：木はほとんどなく、ぽつんと1本立つ大きな木だけ */ if(BIO==='wet'&&tR()<.65) continue; const i=Math.round((x-XA)/ST), j=Math.round((y-yA)/ST); if(near.attributes.normal.array[(j*nx+i)*3+1]<.82) continue; const con=ftc||b[3]>.2||e>480; if(b[3]>.3&&e>900) continue; const vr=tR(), vi=pl>.5?(vr<.6?0:2):vr<.35?0:vr<.65?1:vr<.85?2:3; sp.push([x,y,e,con&&pl<.5,(.85+tR()*.5)*(9+tR()*4)/10*1.4*(1+.5*pl)*(vi===3?1.15:1),tR()*6.28,vi]); }
+      const b=bAt(x,y), ftc=b[0]>.25; if(b[0]>.6||b[1]>.3||(ftc&&tR()<.55)) continue; const pl=plF(x,y,b); if(pl>.02&&tR()<pl*.992) continue; /* 平原：木はほとんどなく、ぽつんと1本立つ大きな木だけ */ if(BIO==='wet'&&tR()<.65) continue; const i=Math.round((x-XA)/ST), j=Math.round((y-yA)/ST); if(near.attributes.normal.array[(j*nx+i)*3+1]<.82) continue; const con=ftc||b[3]>.2||e>480; if(b[3]>.3&&e>900) continue; const vr=tR(), vi=pl>.5?(vr<.6?0:2):vr<.35?0:vr<.65?1:vr<.85?2:3; sp.push([x,y,e,con&&pl<.5,(.85+tR()*.5)*(9+tR()*4)/10*1.4*(1+.5*pl)*(con&&pl<.5?1:vi===3?1.25:1.1),tR()*6.28,vi]); }
     const nC=sp.filter(s=>s[3]).length, iC=new T.InstancedMesh(cone,mC,nC), M=new T.Matrix4(), Q=new T.Quaternion(), V=new T.Vector3(), Sc=new T.Vector3(), up=new T.Vector3(0,1,0), cA=c3([128,172,60]), cB=c3([150,190,72]), cc2=new T.Color();
     const IB=BT.map((b,vi)=>{ const n=sp.filter(s=>!s[3]&&s[6]===vi).length; return n?{n,a:0,R:new T.InstancedMesh(b.canopy,mR,n),L:new T.InstancedMesh(b.leafCards,mL,n),T:new T.InstancedMesh(b.trunk,mT,n)}:null; });
     let c=0; sp.forEach(([x,y,e,con,s,r,vi])=>{ Q.setFromAxisAngle(up,r); Sc.set(s,s,s); V.set(X(x),e-.4,Z(y)); M.compose(V,Q,Sc); if(con){ iC.setMatrixAt(c,M); iC.setColorAt(c++,cc2.setRGB(.9+tR()*.2,.92+tR()*.16,.9+tR()*.14)); } else { const B=IB[vi], a=B.a++; B.R.setMatrixAt(a,M); B.L.setMatrixAt(a,M); B.T.setMatrixAt(a,M); B.R.setColorAt(a,cc2.copy(cA).lerp(cB,tR())); B.L.setColorAt(a,cc2); } });
