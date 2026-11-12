@@ -4770,7 +4770,8 @@ function pWorld(k){ pSeedRoad(k); const key=k+'|'+pOff.toFixed(4); if(pWorldMemo
   const lin=c=>c.map(v=>Math.pow(v/255,2.2));
   const C={g1:lin([158,198,74]),g2:lin([136,182,66]),dry:lin([182,186,96]),rock:lin([150,140,135]),rock2:lin([112,104,100]),sand:lin([214,200,160]),snow:lin([235,240,250]),desert:lin([222,186,124]),dune:lin([196,150,96]),vrock:lin([170,124,96]),vash:lin([132,98,80]),wet:lin([78,104,58]),mud:lin([96,88,60]),bed:lin([60,90,96])};
   const mix=(a,b,t)=>[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t];
-  const colAt=(x,y,e,nyy,b)=>{ const n1=pn(x,y,46,3), n2=pn(x,y,6,7,2), slope=1-nyy, [bv,bd,bw,bs]=b;
+  const snAt=(x,y,e,nyy,b,n1)=>{ n1=n1==null?pn(x,y,46,3):n1; return Math.max(b[3]*.9,sm(520,760,e+n1*60)*(1-sm(.15,.4,b[0])))*(1-sm(.55,.8,1-nyy)*.5); };
+  const colAt=(x,y,e,nyy,b,gr)=>{ const n1=pn(x,y,46,3), n2=pn(x,y,6,7,2), slope=1-nyy, [bv,bd,bw,bs]=b;
     const pl=plF(x,y,b); let c=mix(C.g1,C.g2,sm(.35,.7,n1)*(1-pl*.5)+pl*.5); c=mix(c,C.dry,sm(.62,.9,pn(x,y,90,1,5))*.45*(1-.6*pl));
     if(bw>.05) c=mix(c,mix(C.wet,C.mud,n2*.6),bw);
     if(bd>.05) c=mix(c,mix(C.desert,C.dune,sm(.3,.8,n1)),bd);
@@ -4778,7 +4779,7 @@ function pWorld(k){ pSeedRoad(k); const key=k+'|'+pOff.toFixed(4); if(pWorldMemo
     if(e<2.4&&e>-1) c=mix(c,C.sand,(1-bv)*sm(2.4,.5,e)*.85);
     c=mix(c,mix(C.rock,C.rock2,n2),sm(.3,.52,slope)*(1-bv));
     if(bv>.3){ const sb=.5+.5*Math.sin(e*.9+n1*2.5), strata=mix(lin([182,122,88]),lin([122,80,62]),sb*.8+n2*.2); c=mix(c,strata,sm(.22,.45,slope)*sm(.3,.6,bv)); if(e<1.2) c=mix(c,lin([52,40,36]),sm(1.2,-.4,e)*sm(.3,.6,bv)); }
-    { const sn=Math.max(bs*.9,sm(520,760,e+n1*60)*(1-sm(.15,.4,bv)))*(1-sm(.55,.8,slope)*.5); if(sn>.02) c=mix(c,C.snow,Math.min(1,sn*1.2)); }
+    { const sn=snAt(x,y,e,nyy,b,n1); if(sn>.02) c=gr?mix(c,C.dry,Math.min(1,sn*2.2)*.7):mix(c,C.snow,Math.min(1,sn*1.2)); } /* 草には雪の白を混ぜない（雪が薄い所は冬枯れの色に） */
     if(e<-.3) c=mix(c,bv>.3?lin([40,30,28]):C.bed,sm(-.3,-4,e));
     const v=.92+.16*n2; return [c[0]*v,c[1]*v,c[2]*v]; };
   // 見つけるもの：約260ごとに1つ。場所と種類は地図の場所で決まる
@@ -4788,7 +4789,7 @@ function pWorld(k){ pSeedRoad(k); const key=k+'|'+pOff.toFixed(4); if(pWorldMemo
   padOn=true;
   // 見つけるもの（記念物）のまわりには木・岩・小物・草を置かない（重なって見えないように）
   const POIF=[]; /* 地図の名前つきの場所（祠・馬宿・村・遺跡）の足もと：木や岩を置かない */ const nearMon=(x,y,pad)=>{ for(const q of POIF) if(Math.abs(y-q[1])<q[2]+pad&&Math.hypot(x-q[0],y-q[1])<q[2]+pad) return true; const n0=Math.max(0,Math.floor((y-140)/LG)-1), n1=Math.floor((y+140)/LG)+1; for(let n=n0;n<=n1;n++){ const s2=dSpot(n); if(Math.hypot(x-s2.x,y-s2.yy)<s2.rad+pad) return true; } return false; };
-  const w={k,plF,KM,ST,W,vAt,uOf,pn,nz,sm,mir,macro,bAt,bName,elevM,roadU,rMean,rX,raw,roadH,hFn,hTile,hAt,rivK,brSpans,brCover,brSp,brF,deckH,TL,colAt,lin,mix,C,LG,dSpot,nearMon,POIF,padNear,volcLavaF,lavaH,FBI};
+  const w={k,plF,KM,ST,W,vAt,uOf,pn,nz,sm,mir,macro,bAt,bName,elevM,roadU,rMean,rX,raw,roadH,hFn,hTile,hAt,rivK,brSpans,brCover,brSp,brF,deckH,TL,colAt,snAt,lin,mix,C,LG,dSpot,nearMon,POIF,padNear,volcLavaF,lavaH,FBI};
   pWorldMemo.set(key,w); return w; }
 /* ---------- 見渡す：今いる場所に立って、道の先の世界を眺める（WebGL） ---------- */
 // ブレワイの景色に寄せて：地上の目の高さから水平に近く見る。遠くは青白くかすみ（太陽の側は明るく）、谷には低い霧。
@@ -4819,7 +4820,7 @@ async function pLookOpen(){
   L.dbg={bAt,rX,raw,hFn,y0,KM,nowM,isT,k,jd:pJDay(),retM};
   const BIO=bName(b0); L.BIO=BIO;
   const X=x=>x-OX, Z=y=>-(y-y0), lin=c=>c.map(v=>Math.pow(v/255,2.2));
-  const {C,mix,colAt}=WD;
+  const {C,mix,colAt,snAt}=WD;
   // 草の生える地面は、草と同じ色に塗っておく（遠くで草の本数が減っても、草原の色のまま。近づいても色が変わらず「生えてくる」ように見えない）
   const grW=(x,y,e,ny,b)=>(e<1||b[0]>.2||b[1]>.25||b[3]>.3)?0:sm(.78,.86,ny)*sm(5,9,Math.abs(x-rX(y)));
   const colG=(x,y,e,ny,b)=>{ const c=colAt(x,y,e,ny,b), g=0; if(g<=0) return c; return [c[0]*(1-.45*g),c[1]*(1-.17*g),c[2]*(1-.7*g)]; };
@@ -5401,7 +5402,7 @@ async function pLookOpen(){
   const gCell=(ix,iy,need)=>{ const key=ix+'_'+iy; let c=gCells.get(key); if(!c){ c={r:pRng('g'+k+'_'+key,5),q:0,P:[],C:[],R:[],ex:null}; gCells.set(key,c); }
     if(c.q>=need||c.q>=GPC) return c; if(!c.ex){ const cy=(iy+.5)*GCS, a=Math.max(0,Math.floor((cy-60)/LG)-1); c.ex=[]; for(let q=a;q<a+3;q++){ const s2=dSpot(q), ring={'石の環':[6.2,1.6],'キノコの輪':[5.1,.9]}[s2.nm]; c.ex.push(ring?[s2.x,s2.yy,(ring[0]+ring[1])*s2.SC,(ring[0]-ring[1])*s2.SC]:[s2.x,s2.yy,{'花畑':s2.rad*.55,'鹿の群れ':s2.rad*.6}[s2.nm]||s2.rad+1,0]); } }
     while(c.q<need&&c.q<GPC){ const r=c.r, rank=c.q/GPC, x=(ix+r())*GCS, y=(iy+r())*GCS, rot=r()*6.28, s0=r(), v0=r(), v1=r(); c.q++;
-      if(!c.G){ c.G=[]; for(let gj=0;gj<5;gj++) for(let gi=0;gi<5;gi++){ const gx2=(ix+gi/4)*GCS, gy2=(iy+gj/4)*GCS, e2=hAt(gx2,gy2), b2=bAt(gx2,gy2), sx2=hAt(gx2+3,gy2)-hAt(gx2-3,gy2), sy2=hAt(gx2,gy2+3)-hAt(gx2,gy2-3), ny2=6/Math.hypot(sx2,sy2,6); c.G.push({b:b2,ny:ny2,ok:!(b2[0]>.2||b2[1]>.25||b2[3]>.3)&&ny2>=.8,col:colAt(gx2,gy2,e2,ny2,b2)}); } }
+      if(!c.G){ c.G=[]; for(let gj=0;gj<5;gj++) for(let gi=0;gi<5;gi++){ const gx2=(ix+gi/4)*GCS, gy2=(iy+gj/4)*GCS, e2=hAt(gx2,gy2), b2=bAt(gx2,gy2), sx2=hAt(gx2+3,gy2)-hAt(gx2-3,gy2), sy2=hAt(gx2,gy2+3)-hAt(gx2,gy2-3), ny2=6/Math.hypot(sx2,sy2,6); c.G.push({b:b2,ny:ny2,ok:!(b2[0]>.2||b2[1]>.25||b2[3]>.3)&&ny2>=.8&&snAt(gx2,gy2,e2,ny2,b2)<.3,col:colAt(gx2,gy2,e2,ny2,b2,1)}); } }
       const gp=c.G[Math.round((y/GCS-iy)*4)*5+Math.round((x/GCS-ix)*4)]; if(!gp.ok) continue; const e=hAt(x,y); if(e<2.6) continue; { const dr=Math.abs(x-rX(y)); if(dr<5.2||(dr<8&&v1<(8-dr)/2.8)) continue; } if(c.ex.some(([ex2,ey,R,Ri])=>{ const d=Math.hypot(x-ex2,y-ey); return d<R&&d>=Ri; })) continue; if(RK.some(([rx2,ry2,rs])=>Math.abs(ry2-y)<rs*1.1&&Math.hypot(rx2-x,ry2-y)<rs*1.05)) continue;
       const cc=gp.col; Q.setFromAxisAngle(up,rot); const s=.8+s0*.4, hA=.6+.9*sm(.25,.75,pNoise(x/150+3.1,y/150+7.7)); Sc.set(s,s*(.9+v0*.25)*hA,s); /* 場所によって背の高い草むら・低い草地 */ V.set(X(x),e-.1,Z(y)); M.compose(V,Q,Sc); for(const v of M.elements) c.P.push(v); const vb=.95+v0*.1; c.C.push(cc[0]*vb,cc[1]*vb,cc[2]*vb); c.R.push(rank); }
     return c; };
