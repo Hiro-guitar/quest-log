@@ -6462,31 +6462,77 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
       if(p.t==='village'||p.t==='ruin'){ if(best) (p.t==='village'?village:ruin)(best[0],best[1],r); return; } /* 村・遺跡は部品ごとにその場の地面へ */
       let isl=null; if(!best){ /* 陸がない（道が大きな川・湖に沿う）ときは、水の中の岩の島に建てる */ const xi=rX(y)+sd*(TW?600:300), Ri=TW?44:15; isl=[xi,y,Ri]; best=[xi,y,1.2]; } const g=p.t==='stable'?stable():shrine(); if(TW) g.scale.setScalar(1.75); /* ブレワイの塔は人の60倍ほどの高さで、遠くからでも目印になる */ if(isl){ const ig=new T.CylinderGeometry(isl[2],isl[2]*1.25,10,18,2), IP=ig.attributes.position; for(let q=0;q<IP.count;q++){ const a2=Math.atan2(IP.getX(q),IP.getZ(q)), f=1+.12*Math.sin(a2*3+1)+.07*Math.sin(a2*7); IP.setX(q,IP.getX(q)*f); IP.setZ(q,IP.getZ(q)*f); } ig.computeVertexNormals(); scene.add(mk(ig,mStn,X(isl[0]),-3.6,Z(isl[1]))); } g.position.set(X(best[0]),best[2]-.4,Z(best[1])); POIF.push([best[0],best[1],p.t==='stable'?50:20]); g.rotation.y=best[0]>rX(best[1])?-1.5708:1.5708; g.userData.poi=p.t; scene.add(g); }); }
   { /* 名前つきの場所を置く前に作った足もとの区画は、木や岩が重なるので作り直す */ const bad=new Set(); for(const q of POIF){ for(let ci=Math.floor((q[1]-q[2]-20)/CL);ci<=Math.floor((q[1]+q[2]+20)/CL);ci++) bad.add(ci); } for(const ci of bad){ const G=chunks.get(ci); if(!G) continue; chunkRoot.remove(G); G.traverse(o=>{ if(o.geometry&&(!o.isInstancedMesh||o.userData.own)) o.geometry.dispose(); }); chunks.delete(ci); IMP.updChk([...chunks.keys()]); } if(bad.size) updChunks(y0,true); }
-  // ---- 城（ブレワイのハイラル城）：地図の湖の島に、地図と同じ配置で。灰白の石の城壁が幾重にも島を巡り、角ごとに塔。
-  //      中央の本丸は高い壁と四隅の丸塔、その上に細く高い尖塔。屋根は暗い青灰のとがり屋根。遠くの地平にそびえて見える ----
+  // ---- 城（ブレワイのハイラル城）：地図の湖の島に、地図と同じ配置で。
+  //   実物をもとに：島の中央に段々の岩山がそびえ、その上に城が建つ。外は地図どおりの城壁の輪（狭間つき）と塔。
+  //   岩山の中ほどの段にも城壁と塔。頂上には切妻屋根の大広間の棟がいくつも並び、四隅に丸い塔（小さな見張り塔つき）。
+  //   中央の本殿（サンクタム）は四角→八角→細い八角と段々に細くなり、各段の角に小尖塔、いちばん上に細く高い尖塔。
+  //   石は灰白（古びて下ほど暗い）、屋根は暗い青灰のスレート。ところどころ屋根や壁が崩れている。遠くからは段々に高まる影 ----
   if(typeof pCastle==='function'){ const v0c=vAt(0), vA=vAt(-3000), vB=vAt((PATH_H1-PATH_H0+30)*KM);
-    const cM=(c,cap)=>{ const m=patch(new T.MeshLambertMaterial({color:c3(c),side:T.DoubleSide})), ob=m.onBeforeCompile; m.onBeforeCompile=sh=>{ ob(sh); sh.fragmentShader=sh.fragmentShader.replace('float f=1.-exp(-d*uFogD);','float f=min('+cap+',1.-exp(-d*uFogD));'); }; m.customProgramCacheKey=()=>'cast'+c+cap; return m; };
-    const mW=cM([188,184,172],.55), mW2=cM([160,156,146],.55), mR=cM([62,70,88],.55), mRk=cM([112,104,92],.55);
-    const build=(q0)=>{ const [cx,cv,c,k,ph,m]=q0, g=new T.Group(), inner=new T.Group(); g.add(inner); const S=k*KM; inner.scale.set(S,1,S); /* 地図の向き（左右反転 m、下が先）は部品の位置で直す（縮尺を負にすると陰影が裏返る） */ const r9=pRng('lkcs'+c,9);
-      const box=(x,z,w,d,h,y0,mat,ry=0)=>{ const o=new T.Mesh(new T.BoxGeometry(w,h,d),mat); o.position.set(x*m,y0+h/2,-z); o.rotation.y=-m*ry; inner.add(o); return o; };
-      const cyl=(x,z,r,h,y0,mat,sg=12)=>{ const o=new T.Mesh(new T.CylinderGeometry(r,r,h,sg),mat); o.position.set(x*m,y0+h/2,-z); inner.add(o); return o; };
-      const cone=(x,z,r,h,y0,mat,sg=12)=>{ const o=new T.Mesh(new T.ConeGeometry(r,h,sg),mat); o.position.set(x*m,y0+h/2,-z); inner.add(o); return o; };
-      const tower=(x,z,r,h,y0,sq)=>{ (sq?box(x,z,r*2,r*2,h,y0,mW):cyl(x,z,r,h,y0,mW)); const rf=cone(x,z,r*1.25,h*.32,y0+h,mR,sq?4:12); if(sq) rf.rotation.y=.785; };
-      /* 島の岩の台地 */ const isl=new T.Mesh(new T.CylinderGeometry(72,96,1600,28,1),mRk); isl.position.set(0,-400,0); inner.add(isl);
-      /* 城壁の輪と塔（地図の弧と同じ） */ const walls=[[-54,-10,-34,44,52,0],[54,-16,44,42,52,1],[-88,18,-52,74,86,0],[88,14,54,72,86,1],[-24,-64,24,-62,64,1],[-40,92,40,90,90,0]];
+    const cTex=(kind)=>{ const c=document.createElement('canvas'); c.width=c.height=256; const x=c.getContext('2d'), r=pRng('ctx'+kind,7);
+      if(kind==='roof'){ x.fillStyle='#4a5462'; x.fillRect(0,0,256,256); for(let j=0;j<16;j++){ for(let i=0;i<8;i++){ const v=60+r()*30|0; x.fillStyle=`rgb(${v},${v+10},${v+22})`; x.fillRect(i*32+(j%2)*16,j*16,30,14); } x.fillStyle='rgba(20,24,30,.55)'; x.fillRect(0,j*16+13,256,3); } }
+      else { x.fillStyle='#bdb8ab'; x.fillRect(0,0,256,256); for(let j=0;j<16;j++) for(let i=0;i<6;i++){ const v=165+r()*45|0, w=44+r()*8; x.fillStyle=`rgb(${v},${v-3},${v-12})`; x.fillRect(i*44+(j%2)*22-6,j*16,w,15); } x.fillStyle='rgba(70,66,60,.35)'; for(let j=0;j<16;j++) x.fillRect(0,j*16+15,256,1);
+        for(let q=0;q<26;q++){ const g=x.createRadialGradient(r()*256,r()*256,0,r()*256,r()*256,20+r()*40); g.addColorStop(0,'rgba(90,96,70,.25)'); g.addColorStop(1,'rgba(90,96,70,0)'); x.fillStyle=g; x.fillRect(0,0,256,256); }
+        if(kind==='win'){ /* 縦長でアーチの窓、2段×2列 */ for(const wy of [40,168]) for(const wx of [64,192]){ x.fillStyle='#2a2c30'; x.fillRect(wx-9,wy,18,44); x.beginPath(); x.arc(wx,wy,9,Math.PI,0); x.fill(); x.fillStyle='rgba(255,255,255,.18)'; x.fillRect(wx-12,wy+44,24,4); } } }
+      const t=new T.CanvasTexture(c); t.wrapS=t.wrapT=T.RepeatWrapping; t.colorSpace=T.SRGBColorSpace; t.anisotropy=4; return t; };
+    const cM=(tex,c,cap,tile)=>{ const m=patch(new T.MeshLambertMaterial({color:c3(c),map:tex,vertexColors:true,side:T.DoubleSide})), ob=m.onBeforeCompile; m.onBeforeCompile=sh=>{ ob(sh); sh.fragmentShader=sh.fragmentShader.replace('float f=1.-exp(-d*uFogD);','float f=min('+cap+',1.-exp(-d*uFogD));'); }; m.customProgramCacheKey=()=>'cast2'+c+cap+tile; m.userData.tile=tile; return m; };
+    const tS=cTex('stone'), tWn=cTex('win'), tRf=cTex('roof');
+    const mSt=cM(tS,[196,198,206],.55,7), mWin=cM(tWn,[196,198,206],.55,7), mRf=cM(tRf,[255,255,255],.55,5), mRk=cM(null,[255,255,255],.55,1);
+    const build=(q0)=>{ const [cx,cv,c,k,ph,m]=q0, g=new T.Group(), inner=new T.Group(); g.add(inner); const S=k*KM; inner.scale.set(S,S,S); /* 長さはすべて地図の単位（縦も同じ縮尺） */ const r9=pRng('lkcs'+c,9);
+      const put=(geo,mat,x,y,z,ry=0,tint=1)=>{ const o=new T.Mesh(geo,mat); o.position.set(x*m,y,-z); o.rotation.y=-m*ry; o.userData.tint=tint; inner.add(o); return o; };
+      const box=(x,z,w,d,h,y0,mat,ry=0,tint)=>put(new T.BoxGeometry(w,h,d),mat,x,y0+h/2,z,ry,tint);
+      const cyl=(x,z,r,h,y0,mat,sg=12,r2)=>put(new T.CylinderGeometry(r,r2==null?r:r2,h,sg),mat,x,y0+h/2,z);
+      const cone=(x,z,r,h,y0,mat,sg=12,ry=0)=>put(new T.ConeGeometry(r,h,sg),mat,x,y0+h/2,z,ry);
+      const gable=(x,z,w,d,h,y0,ry=0)=>{ /* 切妻屋根：棟が w の向き */ const s=new T.Shape(); s.moveTo(-d/2-.15,0); s.lineTo(0,h); s.lineTo(d/2+.15,0); s.lineTo(-d/2-.15,0); const ge=new T.ExtrudeGeometry(s,{depth:w+.3,bevelEnabled:false}); ge.translate(0,0,-(w+.3)/2); ge.rotateY(Math.PI/2); return put(ge,mRf,x,y0,z,ry); };
+      const merlons=(x,z,len,th,y0,ry,mh=.55)=>{ /* 狭間（ギザギザ）：壁の上に凸を並べる */ const n=Math.max(2,Math.floor(len/1.1)); for(let q=0;q<n;q++){ const t=(q+.5)/n-.5, ca=Math.cos(ry), sa=Math.sin(ry); box(x+ca*t*len,z+sa*t*len,len/n*.55,th,mh,y0,mSt,ry); } };
+      const wall=(x,z,len,th,h,y0,ry,ruin)=>{ if(ruin){ /* 崩れた壁：上がガタガタ */ const n=Math.max(2,Math.round(len/2.2)); for(let q=0;q<n;q++){ const t=(q+.5)/n-.5, ca=Math.cos(ry), sa=Math.sin(ry), hh=h*(.35+.65*r9()); box(x+ca*t*len,z+sa*t*len,len/n*1.02,th,hh,y0,mSt,ry,.92+r9()*.1); } return; }
+        box(x,z,len,th,h,y0,mSt,ry,.94+r9()*.08); merlons(x,z,len,th*1.05,y0+h,ry); };
+      const rTower=(x,z,r,h,y0,roof=true,tur=0)=>{ /* 丸い塔：上に張り出しの帯、とがり屋根（なければ狭間）、小さな見張り塔 */ cyl(x,z,r,h,y0,h>r*3?mWin:mSt,14,r*1.04); cyl(x,z,r*1.14,r*.35,y0+h-r*.35,mSt,14);
+        if(roof){ cone(x,z,r*1.24,r*3.4,y0+h,mRf,14); cyl(x,z,.08*r,r*.9,y0+h+r*3.3,mSt,4); } else { const n=Math.max(6,Math.round(r*4)); for(let q=0;q<n;q++){ const a=q/n*6.283; box(x+Math.cos(a)*r*1.05,z+Math.sin(a)*r*1.05,r*.42,r*.3,r*.3,y0+h,mSt,a+1.571); } }
+        for(let q=0;q<tur;q++){ const a=r9()*6.283, ty=y0+h*(.62+.25*r9()), rr=r*.32; cyl(x+Math.cos(a)*r*1.12,z+Math.sin(a)*r*1.12,rr,rr*2.6,ty,mSt,8,rr*.5); cone(x+Math.cos(a)*r*1.12,z+Math.sin(a)*r*1.12,rr*1.25,rr*3.2,ty+rr*2.6,mRf,8); } };
+      const sTower=(x,z,s,h,y0,ry=0,roof=true)=>{ box(x,z,s,s,h,y0,mWin,ry); box(x,z,s*1.14,s*1.14,s*.18,y0+h-s*.18,mSt,ry); if(roof){ const rf=cone(x,z,s*.82,s*2.2,y0+h,mRf,4,ry+.785); } else merlons(x,z,s*1.1,s*1.1,y0+h,ry,s*.18); };
+      const pinn=(x,z,y0,s)=>{ box(x,z,s*.5,s*.5,s*1.6,y0,mSt); cone(x,z,s*.42,s*2.6,y0+s*1.6,mRf,6); };
+      /* ① 島の岩の台地（地図の大きさ） */ const isl=put(new T.CylinderGeometry(78,98,24,40,1),mRk,0,-11.5,0); isl.userData.rock=1;
+      /* ② 中央の岩山：段々の崖。角度ごとに出入りがあり、上の面は草（色は頂点の色で） */ { const prof=[[47,0],[46,2],[41,3.4],[39.5,9.4],[33.5,10.6],[32,16.4],[26.5,17.6],[25.8,18.3],[0,18.3]], seg=120, P=[], ix=[];
+        const wob=a=>1+.09*Math.sin(a*3+1.3)+.06*Math.sin(a*7+.4)+.035*Math.sin(a*13+2);
+        for(let i=0;i<=seg;i++){ const a=i/seg*6.283, w=wob(a); for(const [rr,yy] of prof){ const j=pn(Math.cos(a)*rr*9,Math.sin(a)*rr*9+yy*30,40,61,3)*.6+pn(a*900,yy*60,55,67,4)*.4, cr=(rr&&yy>0&&yy<18)?1+.11*(j-.5)+.05*Math.sin(a*41+yy):1; /* 崖の縦のひだ */ P.push(Math.cos(a)*rr*w*cr,yy+(rr&&yy>0&&yy<18?(j-.5)*1.3:0),Math.sin(a)*rr*w*cr); } }
+        const np=prof.length; for(let i=0;i<seg;i++) for(let j=0;j<np-1;j++){ const a=i*np+j, b=a+np; ix.push(a,b,a+1,a+1,b,b+1); }
+        const ge=new T.BufferGeometry(); ge.setAttribute('position',new T.Float32BufferAttribute(P,3)); ge.setIndex(ix); ge.computeVertexNormals(); const o=put(ge,mRk,0,0,0); o.userData.rock=1; }
+      /* ③ 外の城壁の輪と塔（地図の弧と同じ）。ところどころ崩れている */ const walls=[[-54,-10,-34,44,52,0],[54,-16,44,42,52,1],[-88,18,-52,74,86,0],[88,14,54,72,86,1],[-24,-64,24,-62,64,1],[-40,92,40,90,90,0]];
       for(const [ax,ay,bx,by,r,sw] of walls){ const l=Math.hypot(bx-ax,by-ay), mx=(ax+bx)/2, my=(ay+by)/2, hh=Math.sqrt(Math.max(0,r*r-l*l/4)), nx=-(by-ay)/l, ny=(bx-ax)/l; let C=null,a0=0,da=0;
         for(const sg of [1,-1]){ const c2x=mx+nx*hh*sg, c2y=my+ny*hh*sg, b0=Math.atan2(ay-c2y,ax-c2x), b1=Math.atan2(by-c2y,bx-c2x); let d2=b1-b0; if(sw){ while(d2<0) d2+=6.2832; } else { while(d2>0) d2-=6.2832; } if(Math.abs(d2)<Math.PI){ C=[c2x,c2y]; a0=b0; da=d2; } } if(!C) continue;
-        const n=Math.max(2,Math.round(Math.abs(da)*r/7)); for(let q=0;q<n;q++){ const a=a0+da*(q+.5)/n, x=C[0]+Math.cos(a)*r, y=C[1]+Math.sin(a)*r, sl=Math.abs(da)*r/n; box(x,y,sl*1.05,1.8,3200,0,mW2,-a+Math.PI/2); }
-        const nt=Math.max(1,Math.round(Math.abs(da)*r/22)); for(let q=0;q<=nt;q++){ const a=a0+da*q/nt; tower(C[0]+Math.cos(a)*r,C[1]+Math.sin(a)*r,q===0||q===nt?1.9:1.4,q===0||q===nt?8200:6200,0,!(q===0||q===nt)); }
-        for(const t of [.33,.68]){ const a=a0+da*t, px=C[0]+Math.cos(a)*r, py=C[1]+Math.sin(a)*r, to=Math.hypot(px,py)||1, bx2=px-px/to*10, by2=py-py/to*10, w=7+r9()*5, d=5+r9()*3, h=4200+r9()*2600; box(bx2,by2,w,d,h,0,mW,-a); const rf=new T.Mesh(new T.ConeGeometry(Math.hypot(w,d)/2,h*.35,4),mR); rf.position.set(bx2*m,h+h*.175,-by2); rf.rotation.y=-m*(-a)+.785; rf.scale.set(1,1,d/w); inner.add(rf); } }
-      /* 本丸（地図の1.5倍の四角）：高い壁、四隅の丸塔、六角の塔2つ、前後の長い棟、中央の尖塔 */ const K=1.5;
-      box(0,0,30*K,30*K,12000,0,mW); for(const [sx,sy] of [[-1,-1],[1,-1],[-1,1],[1,1]]) tower(sx*16*K,sy*16*K,1.9*K,19000,0,false);
-      for(const [hx,hy] of [[-10.5,-8.2],[10.5,-8.2],[-10.5,8.2],[10.5,8.2]]){ cyl(hx*K,hy*K,2.4*K,21000,0,mW,6); cone(hx*K,hy*K,3.1*K,7500,21000,mR,6); }
-      box(0,-28*K,9*K,18*K,9000,0,mW); cone(0,-28*K,7*K,3600,9000,mR,4).rotation.y=.785; cone(0,30*K,7*K,3400,8000,mR,4).rotation.y=.785;
-      box(0,30*K,9*K,24*K,8000,0,mW); cyl(0,0,3.6*K,32000,0,mW,8); cone(0,0,4.6*K,14000,32000,mR,8); box(0,0,11*K,11*K,22000,0,mW2); cone(0,0,8*K,6000,22000,mR,4); /* 中央の天守と尖塔 */ /* 中央の天守と尖塔 */
-      /* 船着き場と南の門 */ box(0,115,12,4,3000,0,mW2); tower(-7,115,1.8,6000,0,false); tower(7,115,1.8,6000,0,false);
-      /* 城下町（南）：崩れた石の家々 */ for(let q=0;q<26;q++){ const bx=(r9()-.5)*170, by=200+r9()*95, h=600+r9()*900; if(Math.abs(bx)<8) continue; box(bx,by,8+r9()*8,6+r9()*5,h,0,r9()<.5?mW2:mW,(r9()-.5)*.2); if(r9()<.5) box(bx,by,3,3,h+500,0,mW2); }
-      bake(g); /* 部品を材質ごとにまとめて軽く */ g.traverse(o=>{ if(o.isMesh){ o.castShadow=false; o.receiveShadow=false; } }); return g; };
+        const n=Math.max(2,Math.round(Math.abs(da)*r/3.2)); for(let q=0;q<n;q++){ const a=a0+da*(q+.5)/n, x=C[0]+Math.cos(a)*r, y=C[1]+Math.sin(a)*r, sl=Math.abs(da)*r/n*1.03; wall(x,y,sl,1.3,3.4,.5,-a+Math.PI/2,r9()<.16); }
+        const nt=Math.max(1,Math.round(Math.abs(da)*r/16)); for(let q=0;q<=nt;q++){ const a=a0+da*q/nt, x=C[0]+Math.cos(a)*r, y=C[1]+Math.sin(a)*r; if(q===0||q===nt) rTower(x,y,2.1,9.5,.5,true,1); else sTower(x,y,3,6.2,.5,-a,r9()<.5); } }
+      /* ④ 岩山の中ほどの段（高さ7）の城壁と塔、段の上の建物 */ for(let q=0;q<22;q++){ const a=q/22*6.283, rr=36.5*(1+.09*Math.sin(a*3+1.3)+.06*Math.sin(a*7+.4)), x=Math.cos(a)*rr, z=Math.sin(a)*rr; if(z>30&&Math.abs(x)<7) continue; wall(x,z,rr*6.283/22*1.04,1.1,2.8,10.6,-a+Math.PI/2,r9()<.12); if(q%3===0) rTower(x,z,1.8,7+r9()*4,10.6,true,r9()<.5?1:0); }
+      for(let q=0;q<10;q++){ const a=r9()*6.283, rr=31+r9()*2.5, x=Math.cos(a)*rr, z=Math.sin(a)*rr, w=4+r9()*4, h=2.5+r9()*2; if(z>26&&Math.abs(x)<8) continue; box(x,z,w,3,h,10.7,mWin,-a+Math.PI/2); if(r9()<.8) gable(x,z,w,3,1.8,10.7+h,-a+Math.PI/2); }
+      /* ⑤ 頂上（高さ12.2）：大広間の棟、四隅の丸い塔、中ほどの六角の塔 */ const Y=18.3;
+      const halls=[[0,-15,20,8,9.5,0],[0,13,16,8,8.5,0],[-13.5,0,8,17,10,0],[13.5,0,8,17,10,0],[-8,-21,9,5,6,0],[9,18,7,5,5.5,0]];
+      for(const [x,z,w,d,h] of halls){ box(x,z,w,d,h,Y,mWin); if(w>=d) gable(x,z,w,d,d*.62,Y+h,0); else gable(x,z,d,w,w*.62,Y+h,Math.PI/2);
+        for(const sx of [-1,1]) for(const sz of [-1,1]) pinn(x+sx*w/2,z+sz*d/2,Y+h,.7); /* 棟の角の小尖塔 */
+        const nb=Math.floor(Math.max(w,d)/4); for(let q=0;q<nb;q++){ const t=(q+.5)/nb-.5; if(w>=d){ for(const sz of [-1,1]) box(x+t*w,z+sz*(d/2+.45),.7,.9,h*.82,Y,mSt); } else { for(const sx of [-1,1]) box(x+sx*(w/2+.45),z+t*d,.9,.7,h*.82,Y,mSt); } } } /* 控え壁 */
+      [[-1,-1,23],[1,-1,19],[-1,1,16],[1,1,21]].forEach(([sx,sz,th])=>rTower(sx*19,sz*(sz<0?21:18),2.4,th,Y,true,2));
+      for(const [hx,hz] of [[-8.5,-8],[8.5,-8],[-8.5,8],[8.5,8]]){ const th=hz<0?20:15; cyl(hx,hz,1.6,th,Y,mWin,6); cyl(hx,hz,1.9,.6,Y+th-.6,mSt,6); cone(hx,hz,2.1,6.5,Y+th,mRf,6); cyl(hx,hz,.08,1.6,Y+th+6.3,mSt,4); }
+      /* ⑤' 本殿を囲む二段目の棟：全体が中央へ段々に高まる形（遠くからは三角の影）。棟の上にとがった小尖塔がびっしり */
+      for(const [x,z,w,d,h] of [[0,-8.6,15,5,13.5],[0,8.6,15,5,12.5],[-8.6,0,5,13,13],[8.6,0,5,13,14]]){ box(x,z,w,d,h,Y,mWin); if(w>=d) gable(x,z,w,d,d*.7,Y+h,0); else gable(x,z,d,w,w*.7,Y+h,Math.PI/2); }
+      for(let q=0;q<34;q++){ const a=r9()*6.283, rr=7+r9()*12, x=Math.cos(a)*rr, z=Math.sin(a)*rr*1.05, by=Y+(rr<11?13:8.5)+r9()*1.5, sh=1.5+r9()*5, sw=.45+r9()*.35; box(x,z,sw,sw,sh,by,mSt); cone(x,z,sw*.85,sw*5+r9()*2,by+sh,mRf,6); }
+      /* ⑥ 本殿（サンクタム）：四角→八角→細い八角→鐘楼→尖塔。段ごとに角の小尖塔、根元に飛び梁 */
+      box(0,0,11,11,15,Y,mWin); merlons(0,-5.6,11,.6,Y+15,0); merlons(0,5.6,11,.6,Y+15,0); merlons(-5.6,0,11,.6,Y+15,Math.PI/2); merlons(5.6,0,11,.6,Y+15,Math.PI/2);
+      for(const [sx,sz] of [[-1,-1],[1,-1],[-1,1],[1,1]]){ pinn(sx*5.2,sz*5.2,Y+15,1.1); const fb=box(sx*7.2,sz*7.2,.7,.7,6,Y+3,mSt,0); fb.rotation.z=-m*sx*.5; fb.rotation.x=sz*.5; }
+      { const yy=Y+15; cyl(0,0,4.4,12,yy,mWin,8); cyl(0,0,4.8,.8,yy+11.4,mSt,8); for(let q=0;q<8;q++){ const a=q/8*6.283+.39; pinn(Math.cos(a)*4.5,Math.sin(a)*4.5,yy+12,.75); } }
+      { const yy=Y+27.2; cyl(0,0,2.7,10,yy,mWin,8,3); cyl(0,0,3.1,.6,yy+9.6,mSt,8); for(let q=0;q<8;q++){ const a=q/8*6.283; pinn(Math.cos(a)*2.9,Math.sin(a)*2.9,yy+10.2,.5); } }
+      { const yy=Y+37.8; cyl(0,0,1.7,4.6,yy,mSt,8); cone(0,0,2.1,15,yy+4.6,mRf,8); cyl(0,0,.06,2.4,yy+19.4,mSt,4); }
+      /* ⑦ 南の門（船着き場）と岩山を登る坂道 */ box(0,115,12,4,4,.5,mSt); rTower(-7,115,1.8,7.5,.5,true,0); rTower(7,115,1.8,7.5,.5,true,0); box(0,41,5,8,10,.5,mSt); rTower(-4,37,1.6,13,.5,true,0); rTower(4,37,1.6,13,.5,true,0);
+      for(let q=0;q<9;q++) box(0,47-q*1.6,4.4,1.8,.6+q*1.2,.5,mSt);
+      /* ⑧ 城下町（南）：石の家と切妻屋根。半分ほどは屋根が落ちて壁だけ */ for(let q=0;q<46;q++){ const bx=(r9()-.5)*170, by=200+r9()*95, w=3+r9()*4, d=2.6+r9()*2.4, h=1.6+r9()*1.6, ry=(r9()-.5)*.25; if(Math.abs(bx)<8) continue; if(r9()<.5){ box(bx,by,w,d,h,0,mWin,ry); gable(bx,by,w,d,d*.6,h,ry); } else wall(bx,by,w,d*.4,h*1.2,0,ry,true); }
+      cBake(inner); g.traverse(o=>{ if(o.isMesh){ o.castShadow=false; o.receiveShadow=false; } }); return g; };
+    /* 材質ごとにまとめる。模様の貼り方は面の向きで決め（壁は横と高さ、上の面は水平）、色は下ほど暗く（古びて汚れた石）、岩山は崖と草で塗り分け */
+    const cBake=root=>{ root.updateMatrixWorld(true); const inv=new T.Matrix4().copy(root.matrixWorld).invert(), by=new Map(), V=new T.Vector3(), N=new T.Vector3(), NM=new T.Matrix3();
+      root.traverse(o=>{ if(!o.isMesh) return; const ge=o.geometry.index?o.geometry.toNonIndexed():o.geometry.clone(), M=new T.Matrix4().multiplyMatrices(inv,o.matrixWorld); ge.applyMatrix4(M); const mt=o.material, k=mt.uuid; if(!by.has(k)) by.set(k,{m:mt,P:[],Nn:[],U:[],C:[]}); const B=by.get(k), p=ge.attributes.position, nn=ge.attributes.normal, tl=mt.userData.tile||7, ti=o.userData.tint||1, rock=o.userData.rock;
+        for(let i=0;i<p.count;i++){ const x=p.getX(i), y=p.getY(i), z=p.getZ(i), nx=nn.getX(i), ny=nn.getY(i), nz=nn.getZ(i); B.P.push(x,y,z); B.Nn.push(nx,ny,nz);
+          if(Math.abs(ny)>.75) B.U.push(x/tl,z/tl); else { const hl=Math.hypot(nx,nz)||1; B.U.push((x*-nz/hl+z*nx/hl)/tl,y/tl); }
+          if(rock){ const n1=pn(x*9,z*9+y*20,30,71,2), gr=y>.6&&ny>.62?sm(.62,.85,ny):0, st=.5+.5*Math.sin(y*2.1+n1*3); let cr=.3+.1*st+.08*n1, cg=.29+.09*st+.07*n1, cb=.27+.07*st+.05*n1; cr+=(.3-cr)*gr; cg+=(.4-cg)*gr; cb+=(.2-cb)*gr; B.C.push(cr,cg,cb); }
+          else { const ao=(.7+.3*sm(-.5,5,y-(o.position.y-(o.geometry.parameters&&o.geometry.parameters.height?o.geometry.parameters.height/2:0))))*ti; B.C.push(ao,ao*.99,ao*.97); } } });
+      const rm=[]; root.traverse(o=>{ if(o.isMesh) rm.push(o); }); rm.forEach(o=>{ o.parent.remove(o); o.geometry.dispose(); });
+      for(const {m:mt,P,Nn,U,C} of by.values()){ const ge=new T.BufferGeometry(); ge.setAttribute('position',new T.Float32BufferAttribute(P,3)); ge.setAttribute('normal',new T.Float32BufferAttribute(Nn,3)); ge.setAttribute('uv',new T.Float32BufferAttribute(U,2)); ge.setAttribute('color',new T.Float32BufferAttribute(C,3)); root.add(new T.Mesh(ge,mt)); } };
     for(let c=Math.floor(vA/P_CA)-1;c<=Math.floor(vB/P_CA)+1;c++){ const q0=pCastle(c); if(!q0) continue; const x=q0[0]*KM, y=(q0[1]-v0c)*KM; if(y<-400000||y>(PATH_H1-PATH_H0+30)*KM+400000) continue;
       const g=build(q0); g.userData.poi='castle'; scene.add(g); (scene.userData.ft=scene.userData.ft||[]).push({g,x,y,h:-200,fix:1,H0:1,B:1,far:1}); } }
 
