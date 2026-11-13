@@ -1096,6 +1096,9 @@ function sample(){
     {id:c,title:'市場調査をする',type:'challenge',parentId:a,rank:2,deadline:d(14),reward:'',memo:'',steps:[st('似たサービスを5つ調べる'),st('気づいたことをメモする')],accepted:false,done:false,created:now-1}
   ]};
 }
+// 素材の写真の古い版（v2〜v6）が端末の保存領域をいっぱいにしていたので消す（いっぱいだと記録が保存できない）
+(function(){ try{ const ks=[]; for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(/^questlog-matph-v[0-6]:/.test(k)) ks.push(k); } ks.forEach(k=>localStorage.removeItem(k)); }catch(e){} })();
+function lsPut(k,v){ try{ localStorage.setItem(k,v); return true; }catch(e){} try{ const ks=[]; for(let i=0;i<localStorage.length;i++){ const x=localStorage.key(i); if(x&&x.startsWith('questlog-matph-')) ks.push(x); } ks.forEach(x=>localStorage.removeItem(x)); localStorage.setItem(k,v); return true; }catch(e){ return false; } }
 function load(){
   try{const s=JSON.parse(localStorage.getItem(KEY)); if(s&&Array.isArray(s.quests)) return s;}catch(e){}
   return sample();
@@ -1123,7 +1126,7 @@ function migrate(){
   });
 }
 migrate(); save();
-function save(){ moveDoToSteps(); sortAllSteps(); if(window.__qlReady) stamp(); try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){} if(window.__qlReady){ syncScan(); schedulePush(); } }
+function save(){ moveDoToSteps(); sortAllSteps(); if(window.__qlReady) stamp(); if(!lsPut(KEY,JSON.stringify(state))&&!save.warned){ save.warned=1; setTimeout(()=>toast('この端末の保存領域がいっぱいで、記録を保存できない'),500); } if(window.__qlReady){ syncScan(); schedulePush(); } }
 
 let bulkSel=null;
 let tab='list', selId=null, editing=false, showCleared=false, miniOpen=false, listCat='today', dayView=ymd(), pickSid=null;
@@ -3174,7 +3177,7 @@ function wakeOpen(edit){ wakeEdit=!!edit; const H=hm(), t=ymd(), sd=(H.sleep||{}
     ${yb==null?`<div class="wk-b">ゆうべ焚き火で休んだ刻（わかれば）<input type="time" id="wkB"></div>`:''}
     <div class="wk-acts"><button class="btn primary" data-act="wkok">この刻に目覚めた</button>${edit?`<button class="btn ghost" data-act="wkx">やめる</button><button class="wk-s" data-act="wkdel">記録を消す</button>`:`<button class="btn ghost" data-act="wkx">まだ眠りの中</button><button class="wk-s" data-act="wkskip">今日は記さない</button>`}</div></div>`;
   $('wake').classList.add('show'); }
-function wakeCheck(){ if(wakeLater||!wakeDue()) return; if($('moon').classList.contains('show')) return; wakeOpen(false); }
+function wakeCheck(){ if(sync.url&&!syncLoaded) return; const W=$('wake'); if(W&&W.classList.contains('show')&&!wakeEdit&&!wakeDue()){ W.classList.remove('show'); return; } if(wakeLater||!wakeDue()) return; if($('moon').classList.contains('show')) return; wakeOpen(false); }
 function wakeAct(a,b){
   if(a==='wkq'){ const m=pnow()-(+b.dataset.v); $('wkT').value=pHM(Math.max(0,m)); document.querySelectorAll('.wk-q button').forEach(x=>x.classList.toggle('on',x===b)); return; }
   if(a==='wkx'){ wakeLater=true; $('wake').classList.remove('show'); return; }
@@ -7173,44 +7176,48 @@ function fingerprint(st){ return JSON.stringify([(st.quests||[]).map(q=>q.id+':'
 function applyState(ns){
   state=ns; if(!Array.isArray(state.quests)) state.quests=[];
   migrate(); qSigs=null; qFS={}; stamp();
-  try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}
+  lsPut(KEY,JSON.stringify(state));
   syncScan();
   if(selId&&!findQ(selId)){ selId=null; editing=false; }
   if(editing){ renderLv(); renderHud(); renderTabs(); renderList(); } else render();
   if(window.__qlReady&&(carryOver()+moveDoToSteps())){ save(); render(); }
 }
-let pushT=null, pushing=false, pushAgain=false;
-function schedulePush(ms=1500){ if(!sync.url) return; clearTimeout(pushT); pushT=setTimeout(pushData,ms); }
+let pushT=null, pushing=false, pushAgain=false, syncLoaded=false;
+function schedulePush(ms=1500){ if(!sync.url||!syncLoaded) return; clearTimeout(pushT); pushT=setTimeout(pushData,ms); }
 async function pushData(){
-  if(!sync.url) return; if(pushing){ pushAgain=true; return; }
+  if(!sync.url) return; if(!syncLoaded){ loadData(); return; } if(pushing){ pushAgain=true; return; }
   pushing=true;
   try{
-    const j=await gas({action:'save',data:{...state,_rev:(sync.rev||0)+1},baseRev:sync.rev||0});
+    const j=await gas({action:'save',data:{...state,_rev:(sync.rev||0)+1,_v:APP_V},baseRev:sync.rev||0});
     if(j.conflict){ sync.rev=j.rev; saveSync(); applyState(mergeStates(state,j.data||{})); pushAgain=true; }
     else { sync.rev=j.rev; sync.dataAt=Date.now(); sync.err=''; saveSync(); refreshStatus(); }
   }catch(err){ sync.err=String(err.message||err); saveSync(); refreshStatus(); clearTimeout(pushT); pushT=setTimeout(pushData,30000); }
   finally{ pushing=false; if(pushAgain){ pushAgain=false; schedulePush(300); } }
 }
+const APP_V=20261113;
 async function loadData(){
   if(!sync.url||pushing) return;
   try{
     const j=await gas({action:'load'});
     if(sync.err){ sync.err=''; saveSync(); refreshStatus(); }
-    if(!j.data){ schedulePush(100); return; }
-    if(j.rev===sync.rev) return;
+    if(!j.data){ syncLoaded=true; schedulePush(100); return; }
+    // 同じ番号でも、この画面で最初の1回は必ず合わせる（端末に残っていた古い中身をそのまま送らないため）
+    if(j.rev===sync.rev&&syncLoaded) return;
+    // 新しい版の画面が書いたデータを、古い版の画面が受け取ったら、合わせずに読み込み直す（古い版は知らない記録を落としてしまう）
+    if((j.data._v||0)>APP_V){ let n=0; try{ n=+sessionStorage.getItem('ql-vreload')||0; sessionStorage.setItem('ql-vreload',n+1); }catch(e){} if(n<2){ location.reload(); return; } toast('古い版の画面です。開き直してください'); return; }
     // 読んでいる途中にほかの端末が保存すると、中身は古いのに番号だけ新しくなることがある。そのときは番号を進めずに読み直す
     const torn=j.data._rev&&j.data._rev!==j.rev;
     const m=state.pristine ? {...j.data,pristine:false} : mergeStates(state,j.data);
     if(torn) setTimeout(loadData,2500); else { sync.rev=j.rev; sync.dataAt=Date.now(); saveSync(); }
     const needPush=fingerprint(m)!==fingerprint(j.data);
     const changed=fingerprint(m)!==fingerprint(state);
-    applyState(m);
+    applyState(m); syncLoaded=true; setTimeout(wakeCheck,300);
     if(changed) toast('もう一つのシーカーストーンの記録を写した');
     if(needPush) schedulePush(200);
   }catch(e){}
 }
 setInterval(()=>{ if(ymd()!==carryDay) runCarry(); pCarry(); if(document.visibilityState==='visible') loadData(); },30000);
-document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible'){ if(ymd()!==carryDay) runCarry(); pCarry(); loadData(); setTimeout(wakeCheck,400); } else wakeLater=false; });
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible'){ if(ymd()!==carryDay) runCarry(); pCarry(); loadData().then(()=>setTimeout(wakeCheck,200)); } else wakeLater=false; });
 
 // #q=ID で開いたら、そのチャレンジを表示
 (function(){ const m=location.hash.match(/^#q=([\w-]+)/); const q=m&&findQ(m[1]); if(q){ selId=q.id; tab='list'; listCat=q.type; } if(m){ try{ history.replaceState(null,'',location.pathname+location.search); }catch(e){} } })();
@@ -7219,7 +7226,7 @@ stamp(); window.__qlReady=true;
 render(); if(moveDoToSteps()){ save(); render(); } if(trImport()){ state.pristine=false; save(); render(); } runCarry(); pCarry(); if(trUniMig()) render(); { let n=0; bkAll().forEach(B=>{ if(!B.rq&&B.title&&B.pages){ bkSyncQ(B.id); n++; } }); if(n){ save(); render(); } } if(pBackfill()) render(); setTimeout(wakeCheck,600);
 // 起動して少ししたら、今日の地図を裏で描いておく（開いたときに待たないように）
 setTimeout(()=>{ try{ const w=+localStorage.getItem('ql-pw'); if(!w) return; const sv=pW; pW=w; pTerAsk(pJDay(),pm2y(PATH_H1)+10,false); pTerPrefetch(pJDay()); pW=sv; }catch(e){} },400);
-if(sync.url){ syncScan(); flush(); loadData().then(pull); }
+if(sync.url){ syncScan(); flush(); loadData().then(()=>{ pull(); setTimeout(wakeCheck,200); }); }
 })();
 </script>
 </body>
