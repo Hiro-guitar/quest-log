@@ -3429,7 +3429,10 @@ let pW=380;
 // 札の横の道の幅（札が下にずれても道とかぶらないよう、少し下まで見る）と、広く空いている側
 const pSpan=y=>{ let a=1e9,b=-1e9; for(let yy=y-20;yy<=y+110;yy+=10){ const x=pRX(yy); if(x<a) a=x; if(x>b) b=x; } return [a,b]; };
 const pSide=y=>{ const [a,b]=pSpan(y); return (pW-b)>=a?'r':'l'; };
-const pRX=y=>{ const q=y/PX+pOff, R=[4.1,1.3,2.2,1.05], c=pW/2, A=pW/2-34; return Math.max(30,Math.min(pW-30,c+A*(.62*Math.sin(q/(150*R[3])+R[0])+.28*Math.sin(q/61+R[1])+.1*Math.sin(q/27+R[2])))); };
+// 砂漠の像の遺跡（すり鉢）がある所では、道が輪の中（中央の祭壇の横）を通り抜ける
+let pRXin=false;
+const pRX=y=>{ const x0=pRX0(y); if(!P_DESERT||pRXin) return x0; const v=y/PX+pOff; let o; pRXin=true; try{ o=pDesertAt(v); } finally{ pRXin=false; } if(!o||!o.pit) return x0; const P=o.pit, w=pSm(P.r*2.8,P.r*.55,Math.abs(v-P.v)); if(w<=0) return x0; const side=x0>=P.x?1:-1; return x0+(P.x+side*P.r*.3-x0)*w; };
+const pRX0=y=>{ const q=y/PX+pOff, R=[4.1,1.3,2.2,1.05], c=pW/2, A=pW/2-34; return Math.max(30,Math.min(pW-30,c+A*(.62*Math.sin(q/(150*R[3])+R[0])+.28*Math.sin(q/61+R[1])+.1*Math.sin(q/27+R[2])))); };
 let pathSheet=false, pathPick=false;
 let puSel=null; // まとめて置く工程を選んでいる途中 {q, ids:Set}
 let pathSel=null, pathScrolled=null, pathDrag=null, pathFocus=null;
@@ -3770,7 +3773,7 @@ function pDesert(c){ const key=c+'|'+(pW|0); if(pDsMemo.has(key)) return pDsMemo
       for(let i=0;i<nd;i++){ const a=r()*6.28, d=Math.sqrt(r())*.95*RV; DN.push({x:x+Math.cos(a)*d/.95,v:v+Math.sin(a)*d/.62,L:(.1+.14*r())*RV,B:(.05+.05*r())*RV,t:wa+(r()-.5)*.35,h:.03+.02*r()}); }
       // 小さな岩の瘤
       const nk=3+Math.floor(r()*4); for(let i=0;i<nk;i++){ const a=r()*6.28, d=Math.sqrt(r())*.85*RV; K.push({x:x+Math.cos(a)*d/.95,v:v+Math.sin(a)*d/.62,r:(.02+.02*r())*RV}); }
-      const rdx=(px,pv)=>Math.abs(px-pRX((pv-pOff)*PX)), inW=(px,m)=>px>m&&px<W-m;
+      const rdx=(px,pv)=>Math.abs(px-pRX0((pv-pOff)*PX)), inW=(px,m)=>px>m&&px<W-m;
       // 遺跡（東ゲルド遺跡）：すり鉢の窪地を7体の像が内向きに囲む（道のすぐ先に縁が来る所：見渡すでも見える）
       let pit=null; if(r()<.65){ for(let t=0;t<30&&!pit;t++){ const a=r()*6.28, d=(.3+.35*r())*RV, px=x+Math.cos(a)*d/.95, pv=v+Math.sin(a)*d/.62; if(rdx(px,pv)>.16*RV&&rdx(px,pv)<.28*RV&&inW(px,.16*RV)) pit={x:px,v:pv,r:.13*RV,a0:r()*6.28,gap:Math.floor(r()*8),ph:r()*20}; } }
       // オアシス：池をヤシの群れが囲む（道が近くを通る）。池のない小さなオアシスも
@@ -6831,29 +6834,29 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
     for(let c=Math.floor(vA/P_DC)-1;c<=Math.floor(vB/P_DC)+1;c++){ const ds=pDesert(c); if(!ds) continue; const r=pRng('lkds'+c,5);
       if(ds.pit){ const P2=ds.pit, cx=P2.x*KM, cy=(P2.v-v0)*KM, RR=P2.r*.8*KM, H=3900*(P2.r/40);
         for(let i=0;i<8;i++){ const a=P2.a0+i*Math.PI/4; const gapS=i===P2.gap;
-          const aj=a+(r()-.5)*.08, px=cx+Math.cos(aj)*RR, py=cy+Math.sin(aj)*RR, g=gapS?heroP[3].clone():statue(i); g.rotation.y=Math.atan2(cx-px,-(cy-py)); const gp=new T.Group(); gp.add(g); g.scale.setScalar(H*(.92+.16*r())); scene.add(gp); (scene.userData.ft=scene.userData.ft||[]).push({g:gp,x:px,y:py,h:Math.max(0,hAt(px,py)),fix:1,H0:1,B:1}); }
+          let aj=a+(r()-.5)*.08; for(let t=0;t<12&&Math.abs(cx+Math.cos(aj)*RR-rX(cy+Math.sin(aj)*RR))<H*.75;t++) aj+=(Math.cos(aj)*(cy+Math.sin(aj)*RR-cy)>=0?1:-1)*.03; /* 道（輪の中を通る）の上に像を建てない */ const px=cx+Math.cos(aj)*RR, py=cy+Math.sin(aj)*RR, g=gapS?heroP[3].clone():statue(i); g.rotation.y=Math.atan2(cx-px,-(cy-py)); const gp=new T.Group(); gp.add(g); g.scale.setScalar(H*(.92+.16*r())); scene.add(gp); (scene.userData.ft=scene.userData.ft||[]).push({g:gp,x:px,y:py,h:Math.max(0,hAt(px,py)),fix:1,H0:1,B:1}); }
         /* ---- 輪の内側の遺跡（東ゲルド遺跡）：地形のすり鉢の段（縁・0.76・0.6・0.43）に合わせて、
            外の崩れた環状の城壁と門、段ごとの石の擁壁と欄干、像のあいだから底へ下りる大階段と敷石の道、
            底の中央に三段の円い祭壇（彫りの輪・八角の紋・柱とオベリスク）、ところどころ砂に埋もれる ---- */
         { const R0=P2.r*KM, hc=Math.max(0,hAt(cx,cy)), g=new T.Group(), rp=pRng('lkplz'+c,13), Hs=H; const ph=P2.a0;
           const mS=mkSand([214,182,136],'pa',.9,1/Hs), mD=mkSand([150,118,84],'pd',.9,1/Hs), mL=mkSand([232,204,158],'pl',.9,1/Hs), mG=mkSand([96,170,176],'pg',.9,1/Hs);
-          const hW2=(x,y)=>Math.max(0,hAt(x,y))-hc;
+          const hW2=(x,y)=>Math.max(0,hAt(x,y))-hc, onRd=(x,y,m)=>Math.abs(x-rX(y))<m;
           const at=(rho,a)=>{ const x=cx+Math.cos(a)*rho*R0, y=cy+Math.sin(a)*rho*R0; return [x,y,hW2(x,y)]; };
           const put=(geo,m,x,y,yy,ry=0,rx=0,rz=0)=>{ const o=new T.Mesh(geo,m); o.position.set(x-cx,yy,-(y-cy)); o.rotation.set(rx,ry,rz); g.add(o); return o; };
           const blk=(w,h,d,m,x,y,yy,ry,rx,rz)=>put(new T.BoxGeometry(w,h,d),m,x,y,yy+h/2,ry,rx,rz);
           const tang=a=>-a+Math.PI/2; /* 円周に沿う向き（three の y 回転） */
           /* ① 外の環状の城壁（縁の少し外）：崩れて途切れ、上はぎざぎざ。ところどころ控え壁と狭間 */
-          { const rho=.9, n=96; for(let i=0;i<n;i++){ if(rp()<.28) continue; const a=ph+i/n*6.2832, a2=ph+(i+1)/n*6.2832, [x1,y1,h1]=at(rho,a), [x2,y2,h2]=at(rho,a2), L=Math.hypot(x2-x1,y2-y1)*1.02, hb=Math.min(h1,h2)-Hs*.03, hh=Hs*(.12+.12*rp())*(rp()<.3?.45:1);
+          { const rho=.9, n=96; for(let i=0;i<n;i++){ const a=ph+i/n*6.2832, a2=ph+(i+1)/n*6.2832, [x1,y1,h1]=at(rho,a), [x2,y2,h2]=at(rho,a2); if(onRd((x1+x2)/2,(y1+y2)/2,Hs*.45)){ /* 道が通る所は城壁が切れて、両脇に門の塔 */ for(const [xx,yy,hh0] of [[x1,y1,h1],[x2,y2,h2]]){ if(onRd(xx,yy,Hs*.2)) continue; blk(Hs*.12,Hs*.42,Hs*.12,mS,xx,yy,hh0-Hs*.03,Math.atan2(-(y2-y1),x2-x1)); blk(Hs*.14,Hs*.02,Hs*.14,mD,xx,yy,hh0+Hs*.39,Math.atan2(-(y2-y1),x2-x1)); } continue; } if(rp()<.28) continue; const L=Math.hypot(x2-x1,y2-y1)*1.02, hb=Math.min(h1,h2)-Hs*.03, hh=Hs*(.12+.12*rp())*(rp()<.3?.45:1);
               blk(L,hh+Hs*.03,Hs*.07,mS,(x1+x2)/2,(y1+y2)/2,hb,Math.atan2(-(y2-y1),x2-x1)); blk(L*1.01,Hs*.012,Hs*.075,mD,(x1+x2)/2,(y1+y2)/2,hb+hh*.7,Math.atan2(-(y2-y1),x2-x1));
               if(rp()<.5){ const k=3+Math.floor(rp()*3); for(let q=0;q<k;q++){ const t=(q+.5)/k, xm=x1+(x2-x1)*t, ym=y1+(y2-y1)*t; blk(L/k*.45,Hs*.03,Hs*.072,mS,xm,ym,hb+hh+Hs*.03-.001,Math.atan2(-(y2-y1),x2-x1)); } }
               if(i%6===0){ const [xb,yb]=at(rho+.012,a); blk(Hs*.06,hh*.8,Hs*.05,mS,xb,yb,hb,Math.atan2(-(y2-y1),x2-x1)); } } }
           /* ② 像と像のあいだの門：二本の太い柱と梁、梁の上に三角の飾り。いくつかは梁が落ちて柱だけ */
-          for(let i=0;i<8;i++){ const a=ph+(i+.5)*Math.PI/4, [x,y,h]=at(.84,a), ry=tang(a), fall=rp()<.35; for(const s of [-1,1]){ const xx=x+Math.cos(a+Math.PI/2)*s*Hs*.16, yy=y+Math.sin(a+Math.PI/2)*s*Hs*.16, hp=Hs*(fall&&s>0?.18:.36);
+          for(let i=0;i<8;i++){ const a=ph+(i+.5)*Math.PI/4, [x,y,h]=at(.84,a), ry=tang(a), fall=rp()<.35; if(onRd(x,y,Hs*.35)) continue; for(const s of [-1,1]){ const xx=x+Math.cos(a+Math.PI/2)*s*Hs*.16, yy=y+Math.sin(a+Math.PI/2)*s*Hs*.16, hp=Hs*(fall&&s>0?.18:.36);
               blk(Hs*.075,Hs*.04,Hs*.075,mS,xx,yy,h-Hs*.02,ry); put(new T.CylinderGeometry(Hs*.026,Hs*.03,hp,16),mS,xx,yy,h+Hs*.02+hp/2); blk(Hs*.06,Hs*.02,Hs*.06,mD,xx,yy,h+Hs*.02+hp,ry); }
             if(!fall){ blk(Hs*.42,Hs*.045,Hs*.07,mS,x,y,h+Hs*.4,ry); blk(Hs*.44,Hs*.012,Hs*.074,mD,x,y,h+Hs*.395,ry); const tri=put(new T.CylinderGeometry(0,Hs*.1,Hs*.07,3),mS,x,y,h+Hs*.48,ry,0,0); tri.scale.set(1,1,.35); }
             else { const o=blk(Hs*.4,Hs*.045,Hs*.07,mS,x+Math.cos(a)*Hs*.1,y+Math.sin(a)*Hs*.1,h,ry+.4); } }
           /* ③ 段ごとの擁壁（地形の段の高さに合わせる）と欄干 */
-          for(const rho of [.76,.6,.43]){ const n=rho>.7?84:rho>.5?66:48; for(let i=0;i<n;i++){ const a=ph+i/n*6.2832, a2=ph+(i+1)/n*6.2832; const [x1,y1]=at(rho,a), [x2,y2]=at(rho,a2), xm=(x1+x2)/2, ym=(y1+y2)/2, am=(a+a2)/2;
+          for(const rho of [.76,.6,.43]){ const n=rho>.7?84:rho>.5?66:48; for(let i=0;i<n;i++){ const a=ph+i/n*6.2832, a2=ph+(i+1)/n*6.2832; const [x1,y1]=at(rho,a), [x2,y2]=at(rho,a2), xm=(x1+x2)/2, ym=(y1+y2)/2, am=(a+a2)/2; if(onRd(xm,ym,Hs*.3)) continue;
               const [,,ho]=at(rho+.025,am), [,,hi]=at(rho-.03,am), top=Math.max(ho,hi+Hs*.02), L=Math.hypot(x2-x1,y2-y1)*1.03, ry=Math.atan2(-(y2-y1),x2-x1); if(rp()<.08) continue;
               blk(L,top-hi+Hs*.02,Hs*.05,mS,xm,ym,hi-Hs*.02,ry); blk(L*1.005,Hs*.008,Hs*.056,mD,xm,ym,hi+(top-hi)*.55,ry); blk(L*1.01,Hs*.012,Hs*.07,mS,xm,ym,top,ry);
               if(rp()<.7){ const k=4; for(let q=0;q<k;q++){ const t=(q+.5)/k; blk(Hs*.012,Hs*.05,Hs*.012,mS,x1+(x2-x1)*t,y1+(y2-y1)*t,top+Hs*.012,ry); } blk(L*.98,Hs*.01,Hs*.022,mS,xm,ym,top+Hs*.06,ry); } } }
@@ -6869,9 +6872,32 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
             for(let q=0;q<8;q++){ const a=ph+(q+.5)*Math.PI/4, xx=cx+Math.cos(a)*.074*R0, y2=cy+Math.sin(a)*.074*R0, hp=Hs*(q%3===1?.06:.13); put(new T.CylinderGeometry(Hs*.016,Hs*.019,hp,14),mS,xx,y2,yy+hp/2); if(hp>Hs*.1) blk(Hs*.04,Hs*.012,Hs*.04,mD,xx,y2,yy+hp,0); }
             for(let q=0;q<4;q++){ const a=ph+q*Math.PI/2+Math.PI/4, xx=cx+Math.cos(a)*.2*R0, y2=cy+Math.sin(a)*.2*R0, h2=hW2(xx,y2); blk(Hs*.07,Hs*.03,Hs*.07,mS,xx,y2,h2-Hs*.01,a); const ob=put(new T.CylinderGeometry(Hs*.012,Hs*.03,Hs*.32,4),mS,xx,y2,h2+Hs*.02+Hs*.16,a+Math.PI/4); put(new T.ConeGeometry(Hs*.017,Hs*.04,4),mD,xx,y2,h2+Hs*.36,a+Math.PI/4); if(q===2){ ob.rotation.z=1.25; ob.position.y=h2+Hs*.03; } } }
           /* ⑥ 崩れた石と、段を埋める砂の吹きだまり */
-          for(let q=0;q<140;q++){ const rho=.2+rp()*.7, a=rp()*6.283, [x,y,h]=at(rho,a), s=Hs*(.01+rp()*.035); blk(s,s*.7,s*1.3,rp()<.3?mD:mS,x,y,h-s*.2,rp()*3,rp()*.4,rp()*.4); }
-          for(let q=0;q<22;q++){ const rho=.3+rp()*.62, a=rp()*6.283, [x,y,h]=at(rho,a); const d=put(new T.SphereGeometry(1,16,8),mL,x,y,h-Hs*.004,rp()*3); d.scale.set(Hs*(.25+rp()*.35),Hs*(.025+rp()*.03),Hs*(.12+rp()*.15)); }
+          for(let q=0;q<140;q++){ const rho=.2+rp()*.7, a=rp()*6.283, [x,y,h]=at(rho,a), s=Hs*(.01+rp()*.035); if(onRd(x,y,Hs*.12)) continue; blk(s,s*.7,s*1.3,rp()<.3?mD:mS,x,y,h-s*.2,rp()*3,rp()*.4,rp()*.4); }
+          for(let q=0;q<22;q++){ const rho=.3+rp()*.62, a=rp()*6.283, [x,y,h]=at(rho,a); if(onRd(x,y,Hs*.3)) continue; const d=put(new T.SphereGeometry(1,16,8),mL,x,y,h-Hs*.004,rp()*3); d.scale.set(Hs*(.25+rp()*.35),Hs*(.025+rp()*.03),Hs*(.12+rp()*.15)); }
           g.traverse(o=>{ if(o.isMesh) o.castShadow=o.receiveShadow=true; }); bake(g); const gp=new T.Group(); gp.add(g); scene.add(gp); (scene.userData.ft=scene.userData.ft||[]).push({g:gp,x:cx,y:cy,h:hc,fix:1,H0:1,B:1,far:1}); }
+        /* ---- 輪の中を通る道の両側：遺跡の参道。溝つきの柱の列（折れた柱・倒れた柱）、道をまたぐ崩れたアーチ、道を向いた小さな英傑像、道ばたの敷石と崩れた石。
+           像の大きさ（地図の縮尺）では遠すぎるので、道ぞいは人の大きさで、走りながら遺跡の中にいるとわかるように ---- */
+        { const R0=P2.r*KM, mA=mkSand([214,182,136],'va',.9,1/24), mAD=mkSand([150,118,84],'vd',.9,1/24), mAL=mkSand([232,204,158],'vl',.9,1/24), ra=pRng('lkav'+c,17);
+          const colG=(h,br)=>{ const cg=new T.CylinderGeometry(1.5,1.62,h,18,3), p=cg.attributes.position; for(let i=0;i<p.count;i++){ const a=Math.atan2(p.getZ(i),p.getX(i)), k=1-.09*Math.max(0,Math.cos(a*9)); p.setX(i,p.getX(i)*k); p.setZ(i,p.getZ(i)*k); if(br&&p.getY(i)>h/2-.01) p.setY(i,p.getY(i)-h*.18*Math.abs(Math.sin(a*2.1+h))); } cg.computeVertexNormals(); return cg; };
+          let seg=null; const ra0=ra;
+          const add=(geo,m,x,y,yy,ry=0,rx=0,rz=0,sc)=>{ const o=new T.Mesh(geo,m); o.position.set(X(x),yy,Z(y)); o.rotation.set(rx,ry,rz); if(sc) o.scale.set(...sc); seg.add(o); return o; };
+          /* 4kmずつに分け、近づいてから作る（開くのが遅くならないように） */
+          const y0a=cy-R0*.92, y1a=cy+R0*.92; for(let sy=y0a;sy<y1a;sy+=4000){ const sy0=sy; (scene.userData.lazy=scene.userData.lazy||[]).push({y:sy0+2000,build:()=>{ seg=new T.Group(); const ra=pRng('lkav'+c+'_'+Math.round(sy0),17); let n=Math.round((sy0-y0a)/150);
+          for(let y=sy0;y<Math.min(sy0+4000,y1a);y+=150){ const xr=rX(y), dd=Math.hypot(xr-cx,y-cy)/R0; if(dd>.88) continue;
+            const dx=(rX(y+5)-rX(y-5))/10, nx=1/Math.hypot(1,dx), ny=-dx*nx, ry=Math.atan2(dx,1); n++;
+            for(const sd of [-1,1]){ const off=24+ra()*3, x=xr+sd*off*nx, yy=y+sd*off*ny, h=Math.max(0,hAt(x,yy)), kind=ra();
+              add(new T.BoxGeometry(4.4,1.4,4.4),mA,x,yy,h+.3,ry); add(new T.BoxGeometry(3.8,.6,3.8),mAD,x,yy,h+1.2,ry);
+              if(kind<.62){ const hc2=14+ra()*6; add(colG(hc2,0),mA,x,yy,h+1.5+hc2/2,ry); add(new T.BoxGeometry(4,1,4),mA,x,yy,h+1.5+hc2+.5,ry); add(new T.CylinderGeometry(2.2,1.6,1.2,16),mAD,x,yy,h+1.5+hc2-.2,ry); }
+              else if(kind<.88){ const hc2=4+ra()*7; add(colG(hc2,1),mA,x,yy,h+1.5+hc2/2,ry); const a=ra()*6.28; for(let q=0;q<3;q++) add(new T.BoxGeometry(1.2+ra()*1.5,.8+ra(),1.4+ra()),q?mA:mAD,x+Math.cos(a+q)*4,yy+Math.sin(a+q)*4,h+.2,ra()*3,ra()*.4,ra()*.4); }
+              else { /* 倒れた柱：胴がいくつかに割れて道と反対側へ転がる */ const a=Math.atan2(sd*ny,sd*nx)+(ra()-.5)*.8; for(let q=0;q<3;q++){ const L2=4.5+ra()*2, d0=3+q*5.4; add(colG(L2,0),mA,x+Math.cos(a)*d0,yy+Math.sin(a)*d0,h+1.3,0,0,0).quaternion.setFromUnitVectors(new T.Vector3(0,1,0),new T.Vector3(Math.cos(a),(ra()-.5)*.15,-Math.sin(a)).normalize()); } }
+              if(ra()<.5){ /* 道ばたの敷石（割れて、砂に埋もれかける） */ for(let q=0;q<4;q++){ const t=(ra()-.5)*120, w2=6+ra()*8; add(new T.BoxGeometry(w2,.5,4+ra()*5),ra()<.3?mAD:mA,xr+sd*(9+ra()*10)*nx+dx*t*0,y+t,Math.max(0,hAt(xr+sd*12*nx,y+t))+.05,ry+(ra()-.5)*.15); } }
+              if(n%10===0){ /* 道を向いた小さな英傑像（高さ約30m） */ const xs=xr+sd*40*nx, ys=y+sd*40*ny, hs=Math.max(0,hAt(xs,ys)), st=heroP[(n/10|0)%3].clone(); st.scale.setScalar(30); st.position.set(X(xs),hs-.3,Z(ys)); st.rotation.y=sd>0?-Math.PI/2+ry:Math.PI/2+ry; seg.add(st); } }
+            if(n%5===2){ /* 道をまたぐアーチ：太い角柱2本と梁、上に三角の飾り。半分は崩れて梁が落ちている */ const brk=ra()<.45, h=Math.max(0,hAt(xr,y));
+              for(const sd of [-1,1]){ const x=xr+sd*15*nx, yy=y+sd*15*ny, hp=brk&&sd>0?9+ra()*5:26; add(new T.BoxGeometry(5,hp,5),mA,x,yy,h+hp/2,ry); add(new T.BoxGeometry(6,1.2,6),mAD,x,yy,h+.6,ry); if(!brk||sd<0) add(new T.BoxGeometry(6.2,1,6.2),mAD,x,yy,h+hp-.4,ry); }
+              if(!brk){ add(new T.BoxGeometry(36,3.2,5.4),mA,xr,y,h+27.6,ry); add(new T.BoxGeometry(37,.8,5.8),mAD,xr,y,h+26.2,ry); const tr=add(new T.CylinderGeometry(0,9,6,3),mA,xr,y,h+32.2,ry+Math.PI/2); tr.scale.set(1,1,.3); }
+              else { const o=add(new T.BoxGeometry(22,3.2,5.4),mA,xr+9*nx,y+9*ny+8,h+1.6,ry+.5,0,.06); } } }
+          seg.traverse(o=>{ if(o.isMesh) o.castShadow=o.receiveShadow=true; }); bake(seg); scene.add(seg); seg=null; } }); } }
+
       }
       if(ds.oa){ /* オアシス：地図の池の、道に近い側。池とヤシの林、商人の天幕 */ const A=ds.oa, y=(A.v-v0)*KM, sd=A.x>=WD.roadU(A.v)?1:-1; if(y<-3000||y>(PATH_H1-PATH_H0+30)*KM) continue; let best=null;
         for(let t=0;t<40&&!best;t++){ const d=260*(1+t*.1)+r()*120, yy=y+(r()-.5)*(200+t*120), x=rX(yy)+sd*d; const es=[hAt(x,yy),hAt(x+60,yy),hAt(x-60,yy),hAt(x,yy+60),hAt(x,yy-60)]; if(Math.min(...es)>.8&&!nearMon(x,yy,70)) best=[x,yy,Math.min(...es)]; }
@@ -6879,7 +6905,7 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
           const pp=[]; for(let k=0;k<26;k++){ const a=r()*6.283, d=48+r()*55; pp.push([cx+Math.cos(a)*d,cy+Math.sin(a)*d]); }
           const ca=Math.atan2(0,rX(cy)-cx); for(let k=0;k<2;k++){ const a=ca+(k-.5)*.7, px=cx+Math.cos(a)*92, py=cy+Math.sin(a)*92, e=hAt(px,py), q2=DK.findIndex(z=>z[0]==='旅人の野営地'); if(e<.8||q2<0) continue; const tg=new T.Group(); DK[q2][1](tg); bake(tg); tg.scale.setScalar(2.4); tg.position.set(X(px),e-.3,Z(py)); tg.rotation.y=r()*6; scene.add(tg); }
           pp.forEach(([px,py])=>{ const e=hAt(px,py); if(e<.8) return; const p=palm(22+r()*14,r); p.position.set(X(px),e-.3,Z(py)); p.rotation.y=r()*6; p.userData.poi='palm'; scene.add(p); }); POIF.push([cx,cy,130]); } } } }
-  const animDisc=(t,dt)=>{ { const ft=scene.userData.ft; if(ft) for(const f of ft){ /* 遠い塔：本当の距離では点になってしまうので、見かけの高さに下限をつけ、カメラの見える範囲（3万）までに引き寄せて同じ見え方で描く */ const cp=cam.position, dx=X(f.x)-cp.x, dz=Z(f.y)-cp.z, d=Math.hypot(dx,dz)||1, k=Math.min(d,30000)/d, Hd=f.fix?f.H0:Math.max(245,Math.min(d*.03,900)); /* 3万より先は本当の距離どおり小さくなり、10万（約2時間ぶん）より先は見えない */ f.g.visible=d<(f.far?400000:f.fix?130000:100000); f.g.position.set(cp.x+dx*k,cp.y+(f.h-.4-cp.y)*k,cp.z+dz*k); f.g.scale.setScalar(Hd/(f.B||140)*k); } } for(const [,o] of disc){ const u=o.g.userData; if(u.mill) u.mill.rotation.z+=dt*.8; if(u.fire){ u.fire.scale.set(1+Math.sin(t*13)*.12,1+Math.sin(t*9+1)*.2,1+Math.cos(t*11)*.12); u.fire.children.forEach(c=>{ if(c.isSprite){ const p=c.userData.ph||0; c.material.rotation=Math.sin(t*5+p)*.12; c.material.opacity=.8+.2*Math.sin(t*17+p*3); } }); } if(u.deer) u.deer.forEach((n,q)=>{ n.rotation.x=.9*Math.max(0,Math.sin(t*.5+q*2.1)); }); if(u.steam) u.steam.forEach(st=>animSteam(st,t)); } };
+  const animDisc=(t,dt)=>{ { const lz=scene.userData.lazy; if(lz&&lz.length){ const yc=y0-cam.position.z; for(let i=0;i<lz.length;i++){ if(Math.abs(lz[i].y-yc)<9000){ const it=lz.splice(i,1)[0]; it.build(); break; } } } } { const ft=scene.userData.ft; if(ft) for(const f of ft){ /* 遠い塔：本当の距離では点になってしまうので、見かけの高さに下限をつけ、カメラの見える範囲（3万）までに引き寄せて同じ見え方で描く */ const cp=cam.position, dx=X(f.x)-cp.x, dz=Z(f.y)-cp.z, d=Math.hypot(dx,dz)||1, k=Math.min(d,30000)/d, Hd=f.fix?f.H0:Math.max(245,Math.min(d*.03,900)); /* 3万より先は本当の距離どおり小さくなり、10万（約2時間ぶん）より先は見えない */ f.g.visible=d<(f.far?400000:f.fix?130000:100000); f.g.position.set(cp.x+dx*k,cp.y+(f.h-.4-cp.y)*k,cp.z+dz*k); f.g.scale.setScalar(Hd/(f.B||140)*k); } } for(const [,o] of disc){ const u=o.g.userData; if(u.mill) u.mill.rotation.z+=dt*.8; if(u.fire){ u.fire.scale.set(1+Math.sin(t*13)*.12,1+Math.sin(t*9+1)*.2,1+Math.cos(t*11)*.12); u.fire.children.forEach(c=>{ if(c.isSprite){ const p=c.userData.ph||0; c.material.rotation=Math.sin(t*5+p)*.12; c.material.opacity=.8+.2*Math.sin(t*17+p*3); } }); } if(u.deer) u.deer.forEach((n,q)=>{ n.rotation.x=.9*Math.max(0,Math.sin(t*.5+q*2.1)); }); if(u.steam) u.steam.forEach(st=>animSteam(st,t)); } };
   const tmC=new Map(), btm=c=>{ const k2=c.join(); if(!tmC.has(k2)) tmC.set(k2,patch(new T.MeshToonMaterial({color:c3(c),gradientMap:gmap}))); return tmC.get(k2); };
   // 鳥：ブレワイの図鑑・設定画・飛んでいる姿を見て、種類ごとに体・頭・翼・尾・脚を一から作り、飛び方も別々に作る（形の使い回しはしない）
   const bFmC=new Map(), bFm=c=>{ const k2=c.join(); if(!bFmC.has(k2)) bFmC.set(k2,patch(new T.MeshToonMaterial({color:c3(c),gradientMap:gmap}))); return bFmC.get(k2); };
