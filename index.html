@@ -838,6 +838,7 @@ body{background:#050607}
 .lk-x i{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#efe6cc;color:#222;font-style:normal;font-size:12px;font-weight:700}
 .lk-find{position:absolute;left:0;right:0;top:34%;text-align:center;font-size:24px;letter-spacing:.2em;color:#f6f0dc;text-shadow:0 1px 3px rgba(0,0,0,.8);opacity:0;pointer-events:none;font-weight:600;will-change:opacity;transform:translateZ(0)}
 .lk-find.on{animation:lkFind 4.2s ease forwards}
+.lk-tag{position:absolute;left:0;top:0;padding:2px 8px;font-size:12px;letter-spacing:.08em;color:#f3e7c6;background:rgba(20,14,6,.55);border-radius:3px;white-space:nowrap;pointer-events:none;opacity:0;will-change:transform,opacity;text-shadow:0 1px 2px rgba(0,0,0,.6)}
 .lk-find::before,.lk-find::after{content:'';display:block;width:140px;height:1px;margin:8px auto;background:linear-gradient(90deg,transparent,rgba(246,240,220,.8),transparent)}
 @keyframes lkFind{0%{opacity:0}15%{opacity:1}75%{opacity:1}100%{opacity:0}}
 .sl-btns{position:absolute;right:10px;top:10px;z-index:4;display:flex;gap:6px}.sl-btns .sl-look{position:static}
@@ -6546,7 +6547,9 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
   const putDisc=py=>{ const n0=Math.max(0,Math.floor((py-260)/LG)-1), n1=Math.floor((py+1500)/LG); let built=0;
     for(const [n,o] of disc) if(n<n0||n>n1){ scene.remove(o.g); o.g.traverse(m=>{ if(m.geometry) m.geometry.dispose(); }); disc.delete(n); }
     for(let n=n0;n<=n1;n++){ if(disc.has(n)) continue; if(built++&&L.started) break; const s=dSpot(n), g=new T.Group(); DK[s.tp][1](g); bake(g); g.scale.setScalar(s.SC); let e=hW(s.x,s.yy); if(s.nm==='小さな池') e=Math.min(e,hW(s.x+12,s.yy),hW(s.x-12,s.yy),hW(s.x,s.yy+12),hW(s.x,s.yy-12))+.3; g.position.set(X(s.x),Math.max(-.2,e)-.15,Z(s.yy)); g.rotation.y=s.nm==='道しるべ'?(s.sg>0?-1.5708:1.5708):s.sg*.3; scene.add(g); disc.set(n,{g,s,seen:false}); }
-    for(const [n,o] of disc){ if(!o.seen&&o.s.yy-py<110&&o.s.yy-py>-20&&(()=>{ const v=o.g.position.clone(); v.y+=8; v.project(cam); return Math.abs(v.x)<.85&&v.z<1&&o.g.position.distanceTo(cam.position)<150; })()){ o.seen=true; findEl.textContent=o.s.nm; findEl.classList.remove('on'); void findEl.offsetWidth; findEl.classList.add('on'); } } };
+    for(const [n,o] of disc){ if(!o.seen&&o.s.yy-py<110&&o.s.yy-py>-20&&(()=>{ const v=o.g.position.clone(); v.y+=8; v.project(cam); return Math.abs(v.x)<.85&&v.z<1&&o.g.position.distanceTo(cam.position)<150; })()){ o.seen=true; /* 名前は物のそばに小さく出す（真ん中に大きくは出さない） */ const el=document.createElement('div'); el.className='lk-tag'; el.textContent=o.s.nm; ov.appendChild(el); const bb=new T.Box3().setFromObject(o.g); o.tag={el,t:0,top:bb.max.y}; } }
+    for(const [n,o] of disc){ const tg=o.tag; if(!tg) continue; tg.t+=1/60; const v=o.g.position.clone(); v.y=tg.top+1.5; v.project(cam); const off=v.z>1||Math.abs(v.x)>1.05||Math.abs(v.y)>1.05; if(tg.t>7||off&&tg.t>.5){ tg.el.remove(); o.tag=null; continue; }
+      tg.el.style.transform=`translate(${(.5-v.x*.5)*ov.clientWidth}px,${(-v.y*.5+.5)*ov.clientHeight}px) translate(-50%,-100%)`; tg.el.style.opacity=String(Math.min(1,tg.t/.6,Math.max(0,(7-tg.t)/1.2))); } };
   // 祠と塔（地図の祠・シーカータワーと同じ場所・同じ時刻）：地図ではかなり遠くにあるが、見渡すでは見える所（道から少し離れた丘の上）に置く
   //  祠：暗い石の八角の台に、すぼまった石の本体と張り出した屋根。すき間の線と入口の前の台がオレンジに光る（ブレワイの、まだ入っていない祠）
   //  塔：岩の台から、光る線の入った中央の柱と、それを囲む4本の脚と横桁の骨組みが高くのび、てっぺんに四角い展望台と丸い端末
@@ -7081,7 +7084,7 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
     const cy2=hY+off, cpE=cp-.85*slS, cpP=Math.max(cpE,3*rad); let dd=dist;
     for(let it=0;it<10;it++){ cam.position.set(tgt.x-Math.sin(cy2)*Math.cos(cpP)*dd,tgt.y+Math.sin(cpP)*dd,tgt.z-Math.cos(cy2)*Math.cos(cpP)*dd); let gc=Math.max(0,hW(cam.position.x+OX,y0-cam.position.z))+1.2, ok=cam.position.y>=gc; for(let q=1;q<5&&ok;q++){ const f=q/5, xx=tgt.x+(cam.position.x-tgt.x)*f, zz=tgt.z+(cam.position.z-tgt.z)*f, yy=tgt.y+(cam.position.y-tgt.y)*f; if(yy<Math.max(0,hW(xx+OX,y0-zz))+.6) ok=false; } if(ok) break; if(dd*.85<Math.min(dist,9)){ cam.position.y=gc; break; } dd*=.85; }
     cam.lookAt(tgt); if(cpE<cpP) cam.rotateX(Math.min(cpP-cpE,40*rad)*.9);
-    U.uFogH.value=g-5; sun.target.position.set(tgt.x+Math.sin(cy2)*200,0,tgt.z+Math.cos(cy2)*200); sun.position.copy(sun.target.position).addScaledVector(sd,900); sky.position.copy(cam.position); seaP.position.set(cam.position.x,-1.2,cam.position.z); };
+    U.uFogH.value=g-5; /* 影の範囲は馬のいる高さに合わせ、見ている向きへ少しだけ寄せる（後ろや横を向いても馬の影が範囲から外れないように） */ sun.target.position.set(tgt.x+Math.sin(cy2)*110,tgt.y-3.6,tgt.z+Math.cos(cy2)*110); sun.position.copy(sun.target.position).addScaledVector(sd,900); sky.position.copy(cam.position); seaP.position.set(cam.position.x,-1.2,cam.position.z); };
   // 指でなぞって見回す・ふたつの指で近く／遠く
   let tp=null, pin=null; const look=(dx,dy)=>{ off+=dx*.006; cp=Math.max(-32*rad,Math.min(55*rad,cp+dy*.004)); lastTouch=performance.now(); };
   cv.addEventListener('touchstart',e=>{ intro=false; if(e.touches.length===1) tp={x:e.touches[0].clientX,y:e.touches[0].clientY}; else if(e.touches.length===2){ tp=null; pin={d:Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY)}; } },{passive:true});
