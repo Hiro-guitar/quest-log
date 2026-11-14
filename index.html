@@ -4380,10 +4380,14 @@ function pMapArt(k,H){
       if(on&&y0==null) y0=y; if((!on||y===Y1)&&y0!=null){ if(y-y0>2){ let d=''; for(let yy=y0-4;yy<=y+4.01;yy+=2) d+=(d?'L':'M')+pRX(yy).toFixed(1)+' '+yy.toFixed(1); bridges+=`<path class="mp-bridge-o" d="${d}"/><path class="mp-bridge" d="${d}"/>`; } y0=null; } } } // 溶岩の舌にかかる橋
   pBridgeSvg=bridges; bridges='';
   // 山・湖の名前：世界に固定した格子で、まわりでいちばん高い所／低い所を探す
-  { const S=34, R4=4, gv0=Math.ceil((vA+40/PX)/S), gv1=Math.floor((vB-40/PX)/S), hAt=(gx,gv)=>pHgt(20+gx*S,v2y(gv*S)), nx=Math.floor((W-40)/S);
+  { const lkUsed=[], lkNames=new Set(), msUsed=[]; const S=34, R4=4, gv0=Math.ceil((vA+40/PX)/S), gv1=Math.floor((vB-40/PX)/S), hAt=(gx,gv)=>pHgt(20+gx*S,v2y(gv*S)), nx=Math.floor((W-40)/S);
     for(let gv=gv0;gv<=gv1;gv++) for(let gx=0;gx<=nx;gx++){ const h=hAt(gx,gv), x=20+gx*S, y=v2y(gv*S);
       if(h>.72&&[[-1,0],[1,0],[0,-1],[0,1]].every(([a,b])=>hAt(gx+a,gv+b)<=h)){ let top=true; for(let a=-R4;a<=R4&&top;a++) for(let b=-R4;b<=R4;b++){ if((a||b)&&hAt(gx+a,gv+b)>h){ top=false; break; } } if(top&&!pCastleAt(x,gv*S)&&pVolcW(x,gv*S)<.3) labs.push([x+8,y+4,pNm('mt'+gx+','+gv,pBiome(x,y)[0]>.5?'volc':pBiome(x,y)[3]>.5?'peak':'mount'),'mt']); }
-      if(h<P_SEA-.06){ let low=true; for(let a=-R4;a<=R4&&low;a++) for(let b=-R4;b<=R4;b++){ if((a||b)&&hAt(gx+a,gv+b)<h){ low=false; break; } } if(low) { const bq=pBiome(x,y); if(!(bq[2]>.5&&(gx+gv)%3)&&!pCastleAt(x,gv*S)) labs.push([x-20,y+4,pNm('lk'+gx+','+gv,bq[0]>.5?'lava':'lake'),'wt']); } } } }
+      if(h<P_SEA-.06){ let low=true; for(let a=-R4;a<=R4&&low;a++) for(let b=-R4;b<=R4;b++){ if((a||b)&&hAt(gx+a,gv+b)<h){ low=false; break; } } if(low) { const bq=pBiome(x,y), vv=gv*S;
+        /* 湖の名前は大きな湖だけ：湿地の小さな池・海には付けない。名前どうしは離し、同じ名前は2度出さない */
+        const oc=P_OC?pOceanAt(vv):null, inSea=oc&&pOceanT(x,vv,oc)>-1.5; let wn=0, tot=0; for(let a=-3;a<=3;a++) for(let b=-3;b<=3;b++){ if(a*a+b*b>9) continue; tot++; if(pHgt(x+a*8,y+b*8)<P_SEA) wn++; }
+        if((bq[2]>=.5||wn/tot>.2&&wn/tot<.7)&&!inSea&&!msUsed.some(([lx,ly])=>Math.hypot(lx-x,ly-y)<420)){ msUsed.push([x,y]); labs.push([x-20,y+4,pNm('ms'+Math.round(vv/400),'marsh'),'wt']); } /* 湿原は池ごとではなく、ひとまとめに1つの名前 */
+        if(bq[2]<.35&&!inSea&&wn/tot>.7&&!pCastleAt(x,vv)&&!lkUsed.some(([lx,ly])=>Math.hypot(lx-x,ly-y)<110)){ const nm=pNm('lk'+gx+','+gv,bq[0]>.5?'lava':'lake'); if(!lkNames.has(nm)){ lkNames.add(nm); lkUsed.push([x,y]); labs.push([x-20,y+4,nm,'wt']); } } } } } }
   let trails=''; const dsOk=(x,y)=>{ if(!P_DESERT) return true; const v=y/PX+pOff, d=pDesertAt(v); return !d||d.clr(x,v,6); }, dry=(x,y)=>pHgt(x,y)>=P_SEA+.015&&!water.some(([wx,wy,wr])=>Math.hypot(x-wx,y-wy)<wr+1)&&dsOk(x,y);
   // 森（中くらいの高さの所に）
   o+='<g class="mp-tree">'; if(P_DESERT) for(let c=Math.floor(vA/P_DC)-1;c<=Math.floor(vB/P_DC)+1;c++){ const dso=pDesert(c); if(!dso) continue; const r3=pRng('dt'+c,5), n=140; for(let k=0;k<n;k++){ const a=r3()*6.28, d=Math.sqrt(r3())*dso.RV, x=dso.x+Math.cos(a)*d/.95, v=dso.v+Math.sin(a)*d/.62, y=v2y(v); if(x<0||x>W||!far(x,y,10)||pDesertW(x,v)<.9||!dso.clr(x,v,.1*dso.RV)) continue; o+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="1.2"/>`; } } // 砂漠のまばらな黒い点（岩）
