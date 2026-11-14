@@ -3458,11 +3458,11 @@ function pAutoPlace(k){
   const P=plan(), day={...(P.d[k]||{})}, now=Date.now(); let ch=false;
   dayItems(k).forEach(x=>{ const m=pTm(x.time); if(m==null||m<PATH_H0||m>=PATH_H1) return; const sid=x.s?x.s.id:'';
     const ex=Object.entries(day).find(([id,b])=>b&&pHasStep(b,x.q.id,sid));
-    if(!ex){ if(x.s?x.s.done:x.q.done) return; day[uid()]={s:m,e:Math.min(PATH_H1,m+((x.s||x.q).doDur||60)),q:x.q.id,sid,at:x.time,u:now}; ch=true; return; }
+    if(!ex){ if(x.s?x.s.done:x.q.done) return; day['a'+x.q.id+(sid?'-'+sid:'')]={s:m,e:Math.min(PATH_H1,m+((x.s||x.q).doDur||60)),q:x.q.id,sid,at:x.time,u:now}; ch=true; return; }
     const [id,b]=ex; if(b.sids) return; if(!b.del&&b.at!==x.time&&(!b.at||b.s===pTm(b.at))){ const len=b.e-b.s; day[id]={...b,s:m,e:Math.min(PATH_H1,m+len),at:x.time,u:now}; ch=true; } });
   if(ch){ P.d={...P.d,[k]:day}; save(); } }
 // 道しるべを動かしたら、冒険の「やる時刻」もそろえる（時刻が入っていた物だけ）
-function pSyncTime(k,id){ const b=(plan().d[k]||{})[id]; if(!b||b.del||!b.q||b.s>=1440) return; const r=pRef(b); if(!r) return; const t=pHM(b.s), now=Date.now();
+function pSyncTime(k,id){ const b=(plan().d[k]||{})[id]; if(!b||b.del||!b.q||b.s>=1440) return; const r=pRef(b); if(!r||(!r.s&&!r.ss&&(r.q.steps||[]).length)) return; const t=pHM(b.s), now=Date.now();
   // 旅程に置いた冒険は、冒険手帳の「やる日・やる時刻」もその道しるべに合わせる（工程があるチャレンジは工程に入れる）
   const os=r.ss?r.ss:[r.s||r.q], du=b.e-b.s; let ch=0; os.forEach(x=>{ if(x.doDate!==k||x.doTime!==t){ if(x.doDate!==k) x.carry=0; x.doDate=k; x.doTime=t; ch=1; } if(!r.ss&&x.doDur!==du){ x.doDur=du; ch=1; } }); if(ch){ r.q.u=now; if(!r.ss) b.at=t; save(); } }
 // 旅程に立てただけの予定で終わらなかった物は、冒険と同じように今日へ持ち越す（同じ時刻で。毎日のことは持ち越さない）
@@ -3477,19 +3477,23 @@ function pCarry(){ const t=pJDay(); if(pCarryDay===t) return 0; pCarryDay=t; con
     if(ch) P.d={...P.d,[k]:day}; });
   if(n){ save(); if(listCat==='path'||listCat==='today') render(); toast(`やり残した道しるべ${n}本を、今日の道へ移した`); } return n; }
 // 冒険手帳でやる日を別の日に変えた冒険（工程）は、その日の旅程から外す（今日から先の日だけ。過去の旅程は記録として残す）
-function pPrune(k){ if(k<ymd()) return; const P=plan(), day={...(P.d[k]||{})}, now=Date.now(); let ch=false;
-  Object.entries(day).forEach(([id,b])=>{ if(!b||b.del) return;
+function pPrune(k){ if(k<ymd()) return; const P=plan(), day={...(P.d[k]||{})}, now=Date.now(); let ch=false; const seen={};
+  Object.entries(day).sort((a,b)=>(a[1]&&a[1].u||0)-(b[1]&&b[1].u||0)).forEach(([id,b])=>{ if(!b||b.del) return;
+    // 同じ冒険（工程）が同じ時刻に2本立っていたら1本にする（2台で同時に置いたとき）
+    if(b.q&&!(b.sids&&b.sids.length)){ const key=b.q+'|'+(b.sid||'')+'|'+b.s; if(seen[key]&&!pDone(b)){ day[id]={...b,del:1,u:now}; ch=true; return; } seen[key]=1; }
     if(b.tr){ const tt=trType(b.tr); if((!tt||tt==='R')&&!(hm().days[b.tr]||{}).train){ day[id]={...b,del:1,u:now}; ch=true; } return; }
     if(b.bk){ const B=(state.books||{})[b.bk]; if(!B||B.del||((B.ret||B.fin||B.drop)&&!pDone(b))){ day[id]={...b,del:1,u:now}; ch=true; } return; }
     if(!b.q) return; const q=findQ(b.q); if(!q){ day[id]={...b,del:1,u:now}; ch=true; return; } const on=x=>x&&x.doDate===k;
     // 冒険手帳で時刻を消した物は、道しるべも外す（やる日は残したまま、道しるべのない冒険にもどる）
     if(b.s<1440){ const r=pRef(b); if(r&&!r.done&&(r.ss?r.ss:[r.s||r.q]).every(x=>x.doDate===k&&!x.doTime)){ day[id]={...b,del:1,u:now}; ch=true; return; } }
     if(b.sids&&b.sids.length){ const keep=b.sids.filter(sid=>on((q.steps||[]).find(x=>x.id===sid))); if(keep.length===b.sids.length) return; day[id]=keep.length?{...b,sids:keep,u:now}:{...b,del:1,u:now}; ch=true; return; }
+    // 工程のなかった冒険に工程を足したら、冒険まるごとの道しるべは外す（工程それぞれの道しるべに置きかわる）
+    if(!b.sid&&q.steps&&q.steps.length&&!pDone(b)){ day[id]={...b,del:1,u:now}; ch=true; return; }
     const o=b.sid?(q.steps||[]).find(x=>x.id===b.sid):(q.steps&&q.steps.length?null:q); if(b.sid&&!o){ day[id]={...b,del:1,u:now}; ch=true; return; } if(o&&!on(o)){ day[id]={...b,del:1,u:now}; ch=true; } });
   if(ch){ P.d={...P.d,[k]:day}; save(); } }
 // すでに旅程に置いてある冒険（今日から先）の時刻を、冒険手帳にも入れておく。やる日を別の日に変えた物はさわらない
 function pBackfill(){ const t=ymd(), P=plan(); let n=0;
-  Object.keys(P.d).filter(k=>k>=t).forEach(k=>Object.entries(P.d[k]||{}).forEach(([id,b])=>{ if(!b||b.del||!b.q||b.s>=1440) return; const r=pRef(b); if(!r) return; const tm=pHM(b.s);
+  Object.keys(P.d).filter(k=>k>=t).forEach(k=>Object.entries(P.d[k]||{}).forEach(([id,b])=>{ if(!b||b.del||!b.q||b.s>=1440) return; const r=pRef(b); if(!r||(!r.s&&!r.ss&&(r.q.steps||[]).length)) return; const tm=pHM(b.s);
     (r.ss?r.ss:[r.s||r.q]).forEach(x=>{ if(x.doDate===k&&x.doTime!==tm&&!x.done){ x.doTime=tm; n++; } }); if(!r.ss&&b.at!==tm) b.at=tm; }));
   if(n) save(); return n; }
 // 道しるべを外したら、冒険手帳の時刻だけ外す（やる日は残す）
