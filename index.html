@@ -6752,10 +6752,10 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
   //  オアシス：地図の池（地形の湖）の、道に近い岸にヤシの林と天幕
   if(typeof pDesert==='function'){ const v0=vAt(0), vA=vAt(-3000), vB=vAt((PATH_H1-PATH_H0+30)*KM);
     /* 砂岩（像と台座）：部品の形にそった細い地層の縞、色むら、細かいざらつき。遠くは霞に溶けて、本当に遠いとわかるように */
-    const mkSand=(c,key,cap)=>{ const m=patch(new T.MeshLambertMaterial({color:c3(c)})), ob=m.onBeforeCompile; m.onBeforeCompile=sh=>{ ob(sh);
+    const mkSand=(c,key,cap,sc=1)=>{ const m=patch(new T.MeshLambertMaterial({color:c3(c)})), ob=m.onBeforeCompile; m.onBeforeCompile=sh=>{ ob(sh);
         sh.vertexShader=sh.vertexShader.replace('void main() {','varying vec3 vOP;\nvoid main() {\n vOP=position;');
         sh.fragmentShader=sh.fragmentShader.replace('void main() {','varying vec3 vOP;\nvoid main() {')
-          .replace('#include <color_fragment>','#include <color_fragment>\n { vec3 o=vOP; float s1=vn(vec2(o.y*240.,(o.x+o.z)*14.)), s2=vn(o.xz*90.+o.y*30.), s3=vn(vec2(o.x*700.+o.z*500.,o.y*700.));\n  float band=.9+.07*sin(o.y*1300.+s1*5.)+.08*(s1-.5); float pit=smoothstep(.72,.8,vn(vec2(o.x*260.+o.z*170.,o.y*260.)));\n  diffuseColor.rgb*=band*(.9+.18*s2)*(.93+.12*s3)*(1.-.18*pit); }')
+          .replace('#include <color_fragment>','#include <color_fragment>\n { vec3 o=vOP*'+sc.toFixed(9)+'; float s1=vn(vec2(o.y*240.,(o.x+o.z)*14.)), s2=vn(o.xz*90.+o.y*30.), s3=vn(vec2(o.x*700.+o.z*500.,o.y*700.));\n  float band=.9+.07*sin(o.y*1300.+s1*5.)+.08*(s1-.5); float pit=smoothstep(.72,.8,vn(vec2(o.x*260.+o.z*170.,o.y*260.)));\n  diffuseColor.rgb*=band*(.9+.18*s2)*(.93+.12*s3)*(1.-.18*pit); }')
           .replace('float f=1.-exp(-d*uFogD);','float f=min('+cap+',1.-exp(-d*uFogD*.7));'); };
       m.customProgramCacheKey=()=>'hero'+key; return m; };
     const mSand=mkSand([214,182,136],'a',.9), mSandD=mkSand([150,118,84],'d',.9), mSandL=mkSand([232,204,158],'l',.9), mGem=mkSand([96,170,176],'g',.9);
@@ -6831,7 +6831,48 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
     for(let c=Math.floor(vA/P_DC)-1;c<=Math.floor(vB/P_DC)+1;c++){ const ds=pDesert(c); if(!ds) continue; const r=pRng('lkds'+c,5);
       if(ds.pit){ const P2=ds.pit, cx=P2.x*KM, cy=(P2.v-v0)*KM, RR=P2.r*.8*KM, H=3900*(P2.r/40);
         for(let i=0;i<8;i++){ const a=P2.a0+i*Math.PI/4; const gapS=i===P2.gap;
-          const aj=a+(r()-.5)*.08, px=cx+Math.cos(aj)*RR, py=cy+Math.sin(aj)*RR, g=gapS?heroP[3].clone():statue(i); g.rotation.y=Math.atan2(cx-px,-(cy-py)); const gp=new T.Group(); gp.add(g); g.scale.setScalar(H*(.92+.16*r())); scene.add(gp); (scene.userData.ft=scene.userData.ft||[]).push({g:gp,x:px,y:py,h:Math.max(0,hAt(px,py)),fix:1,H0:1,B:1}); } }
+          const aj=a+(r()-.5)*.08, px=cx+Math.cos(aj)*RR, py=cy+Math.sin(aj)*RR, g=gapS?heroP[3].clone():statue(i); g.rotation.y=Math.atan2(cx-px,-(cy-py)); const gp=new T.Group(); gp.add(g); g.scale.setScalar(H*(.92+.16*r())); scene.add(gp); (scene.userData.ft=scene.userData.ft||[]).push({g:gp,x:px,y:py,h:Math.max(0,hAt(px,py)),fix:1,H0:1,B:1}); }
+        /* ---- 輪の内側の遺跡（東ゲルド遺跡）：地形のすり鉢の段（縁・0.76・0.6・0.43）に合わせて、
+           外の崩れた環状の城壁と門、段ごとの石の擁壁と欄干、像のあいだから底へ下りる大階段と敷石の道、
+           底の中央に三段の円い祭壇（彫りの輪・八角の紋・柱とオベリスク）、ところどころ砂に埋もれる ---- */
+        { const R0=P2.r*KM, hc=Math.max(0,hAt(cx,cy)), g=new T.Group(), rp=pRng('lkplz'+c,13), Hs=H; const ph=P2.a0;
+          const mS=mkSand([214,182,136],'pa',.9,1/Hs), mD=mkSand([150,118,84],'pd',.9,1/Hs), mL=mkSand([232,204,158],'pl',.9,1/Hs), mG=mkSand([96,170,176],'pg',.9,1/Hs);
+          const hW2=(x,y)=>Math.max(0,hAt(x,y))-hc;
+          const at=(rho,a)=>{ const x=cx+Math.cos(a)*rho*R0, y=cy+Math.sin(a)*rho*R0; return [x,y,hW2(x,y)]; };
+          const put=(geo,m,x,y,yy,ry=0,rx=0,rz=0)=>{ const o=new T.Mesh(geo,m); o.position.set(x-cx,yy,-(y-cy)); o.rotation.set(rx,ry,rz); g.add(o); return o; };
+          const blk=(w,h,d,m,x,y,yy,ry,rx,rz)=>put(new T.BoxGeometry(w,h,d),m,x,y,yy+h/2,ry,rx,rz);
+          const tang=a=>-a+Math.PI/2; /* 円周に沿う向き（three の y 回転） */
+          /* ① 外の環状の城壁（縁の少し外）：崩れて途切れ、上はぎざぎざ。ところどころ控え壁と狭間 */
+          { const rho=.9, n=96; for(let i=0;i<n;i++){ if(rp()<.28) continue; const a=ph+i/n*6.2832, a2=ph+(i+1)/n*6.2832, [x1,y1,h1]=at(rho,a), [x2,y2,h2]=at(rho,a2), L=Math.hypot(x2-x1,y2-y1)*1.02, hb=Math.min(h1,h2)-Hs*.03, hh=Hs*(.12+.12*rp())*(rp()<.3?.45:1);
+              blk(L,hh+Hs*.03,Hs*.07,mS,(x1+x2)/2,(y1+y2)/2,hb,Math.atan2(-(y2-y1),x2-x1)); blk(L*1.01,Hs*.012,Hs*.075,mD,(x1+x2)/2,(y1+y2)/2,hb+hh*.7,Math.atan2(-(y2-y1),x2-x1));
+              if(rp()<.5){ const k=3+Math.floor(rp()*3); for(let q=0;q<k;q++){ const t=(q+.5)/k, xm=x1+(x2-x1)*t, ym=y1+(y2-y1)*t; blk(L/k*.45,Hs*.03,Hs*.072,mS,xm,ym,hb+hh+Hs*.03-.001,Math.atan2(-(y2-y1),x2-x1)); } }
+              if(i%6===0){ const [xb,yb]=at(rho+.012,a); blk(Hs*.06,hh*.8,Hs*.05,mS,xb,yb,hb,Math.atan2(-(y2-y1),x2-x1)); } } }
+          /* ② 像と像のあいだの門：二本の太い柱と梁、梁の上に三角の飾り。いくつかは梁が落ちて柱だけ */
+          for(let i=0;i<8;i++){ const a=ph+(i+.5)*Math.PI/4, [x,y,h]=at(.84,a), ry=tang(a), fall=rp()<.35; for(const s of [-1,1]){ const xx=x+Math.cos(a+Math.PI/2)*s*Hs*.16, yy=y+Math.sin(a+Math.PI/2)*s*Hs*.16, hp=Hs*(fall&&s>0?.18:.36);
+              blk(Hs*.075,Hs*.04,Hs*.075,mS,xx,yy,h-Hs*.02,ry); put(new T.CylinderGeometry(Hs*.026,Hs*.03,hp,16),mS,xx,yy,h+Hs*.02+hp/2); blk(Hs*.06,Hs*.02,Hs*.06,mD,xx,yy,h+Hs*.02+hp,ry); }
+            if(!fall){ blk(Hs*.42,Hs*.045,Hs*.07,mS,x,y,h+Hs*.4,ry); blk(Hs*.44,Hs*.012,Hs*.074,mD,x,y,h+Hs*.395,ry); const tri=put(new T.CylinderGeometry(0,Hs*.1,Hs*.07,3),mS,x,y,h+Hs*.48,ry,0,0); tri.scale.set(1,1,.35); }
+            else { const o=blk(Hs*.4,Hs*.045,Hs*.07,mS,x+Math.cos(a)*Hs*.1,y+Math.sin(a)*Hs*.1,h,ry+.4); } }
+          /* ③ 段ごとの擁壁（地形の段の高さに合わせる）と欄干 */
+          for(const rho of [.76,.6,.43]){ const n=rho>.7?84:rho>.5?66:48; for(let i=0;i<n;i++){ const a=ph+i/n*6.2832, a2=ph+(i+1)/n*6.2832; const [x1,y1]=at(rho,a), [x2,y2]=at(rho,a2), xm=(x1+x2)/2, ym=(y1+y2)/2, am=(a+a2)/2;
+              const [,,ho]=at(rho+.025,am), [,,hi]=at(rho-.03,am), top=Math.max(ho,hi+Hs*.02), L=Math.hypot(x2-x1,y2-y1)*1.03, ry=Math.atan2(-(y2-y1),x2-x1); if(rp()<.08) continue;
+              blk(L,top-hi+Hs*.02,Hs*.05,mS,xm,ym,hi-Hs*.02,ry); blk(L*1.005,Hs*.008,Hs*.056,mD,xm,ym,hi+(top-hi)*.55,ry); blk(L*1.01,Hs*.012,Hs*.07,mS,xm,ym,top,ry);
+              if(rp()<.7){ const k=4; for(let q=0;q<k;q++){ const t=(q+.5)/k; blk(Hs*.012,Hs*.05,Hs*.012,mS,x1+(x2-x1)*t,y1+(y2-y1)*t,top+Hs*.012,ry); } blk(L*.98,Hs*.01,Hs*.022,mS,xm,ym,top+Hs*.06,ry); } } }
+          /* ④ 大階段：像のあいだ4か所から底へ。段ごとの石段（両脇に袖壁と玉飾り）と、段の上の敷石の道 */
+          for(let s=0;s<4;s++){ const a=ph+(2*s+1.5)*Math.PI/4, ry=tang(a); let prev=null;
+            for(let rho=.9;rho>=.2;rho-=.0035){ const [x,y,h]=at(rho,a); if(prev&&prev[2]-h>Hs*.004){ /* 段差の所に石段 */ const nst=Math.min(14,Math.ceil((prev[2]-h)/(Hs*.012))); for(let q=0;q<nst;q++){ const t=q/nst, xx=prev[0]+(x-prev[0])*t, yy=prev[1]+(y-prev[1])*t; blk(Hs*.22,(prev[2]-h)*(1-t)+Hs*.006,Hs*.03,mS,xx,yy,h-Hs*.006,ry); }
+                for(const sd of [-1,1]){ const xx=(prev[0]+x)/2+Math.cos(a+Math.PI/2)*sd*Hs*.12, yy=(prev[1]+y)/2+Math.sin(a+Math.PI/2)*sd*Hs*.12; blk(Hs*.03,prev[2]-h+Hs*.03,Hs*.06,mD,xx,yy,h-Hs*.01,ry); const [bx,by]=[prev[0]+Math.cos(a+Math.PI/2)*sd*Hs*.12,prev[1]+Math.sin(a+Math.PI/2)*sd*Hs*.12]; put(new T.SphereGeometry(Hs*.018,12,8),mS,bx,by,prev[2]+Hs*.04); } }
+              else if(((rho*1000)|0)%9===0) blk(Hs*.18,Hs*.006,Hs*.05,rp()<.3?mD:mS,x,y,h-Hs*.003,ry+(rp()-.5)*.05); prev=[x,y,h]; } }
+          /* ⑤ 底の中央の祭壇：三段の円い壇、段のふちに彫りの帯、上に八角の紋（色石）と輪、八本の短い柱、四隅にオベリスク */
+          { const hb=hW2(cx,cy); const tiers=[[.16,.018],[.12,.018],[.085,.016]]; let yy=hb-Hs*.01; tiers.forEach(([rr,th],k)=>{ put(new T.CylinderGeometry(rr*R0,rr*R0*1.02,th*Hs,64),mS,cx,cy,yy+th*Hs/2); put(new T.CylinderGeometry(rr*R0*1.005,rr*R0*1.005,th*Hs*.25,64),mD,cx,cy,yy+th*Hs*.55); yy+=th*Hs; });
+            for(let q=0;q<8;q++){ const a=ph+q*Math.PI/4; const st=put(new T.BoxGeometry(Hs*.1,Hs*.016,(.16-.085)*R0),mS,cx+Math.cos(a)*.122*R0,cy+Math.sin(a)*.122*R0,hb+Hs*.02,tang(a)+Math.PI/2); }
+            const oc=put(new T.CylinderGeometry(.05*R0,.05*R0,Hs*.004,8),mG,cx,cy,yy+Hs*.002); oc.rotation.y=Math.PI/8; put(new T.TorusGeometry(.065*R0,Hs*.006,6,64),mD,cx,cy,yy+Hs*.003,0,Math.PI/2); put(new T.CylinderGeometry(.03*R0,.03*R0,Hs*.006,8),mS,cx,cy,yy+Hs*.004);
+            for(let q=0;q<8;q++){ const a=ph+(q+.5)*Math.PI/4, xx=cx+Math.cos(a)*.074*R0, y2=cy+Math.sin(a)*.074*R0, hp=Hs*(q%3===1?.06:.13); put(new T.CylinderGeometry(Hs*.016,Hs*.019,hp,14),mS,xx,y2,yy+hp/2); if(hp>Hs*.1) blk(Hs*.04,Hs*.012,Hs*.04,mD,xx,y2,yy+hp,0); }
+            for(let q=0;q<4;q++){ const a=ph+q*Math.PI/2+Math.PI/4, xx=cx+Math.cos(a)*.2*R0, y2=cy+Math.sin(a)*.2*R0, h2=hW2(xx,y2); blk(Hs*.07,Hs*.03,Hs*.07,mS,xx,y2,h2-Hs*.01,a); const ob=put(new T.CylinderGeometry(Hs*.012,Hs*.03,Hs*.32,4),mS,xx,y2,h2+Hs*.02+Hs*.16,a+Math.PI/4); put(new T.ConeGeometry(Hs*.017,Hs*.04,4),mD,xx,y2,h2+Hs*.36,a+Math.PI/4); if(q===2){ ob.rotation.z=1.25; ob.position.y=h2+Hs*.03; } } }
+          /* ⑥ 崩れた石と、段を埋める砂の吹きだまり */
+          for(let q=0;q<140;q++){ const rho=.2+rp()*.7, a=rp()*6.283, [x,y,h]=at(rho,a), s=Hs*(.01+rp()*.035); blk(s,s*.7,s*1.3,rp()<.3?mD:mS,x,y,h-s*.2,rp()*3,rp()*.4,rp()*.4); }
+          for(let q=0;q<22;q++){ const rho=.3+rp()*.62, a=rp()*6.283, [x,y,h]=at(rho,a); const d=put(new T.SphereGeometry(1,16,8),mL,x,y,h-Hs*.004,rp()*3); d.scale.set(Hs*(.25+rp()*.35),Hs*(.025+rp()*.03),Hs*(.12+rp()*.15)); }
+          g.traverse(o=>{ if(o.isMesh) o.castShadow=o.receiveShadow=true; }); bake(g); const gp=new T.Group(); gp.add(g); scene.add(gp); (scene.userData.ft=scene.userData.ft||[]).push({g:gp,x:cx,y:cy,h:hc,fix:1,H0:1,B:1,far:1}); }
+      }
       if(ds.oa){ /* オアシス：地図の池の、道に近い側。池とヤシの林、商人の天幕 */ const A=ds.oa, y=(A.v-v0)*KM, sd=A.x>=WD.roadU(A.v)?1:-1; if(y<-3000||y>(PATH_H1-PATH_H0+30)*KM) continue; let best=null;
         for(let t=0;t<40&&!best;t++){ const d=260*(1+t*.1)+r()*120, yy=y+(r()-.5)*(200+t*120), x=rX(yy)+sd*d; const es=[hAt(x,yy),hAt(x+60,yy),hAt(x-60,yy),hAt(x,yy+60),hAt(x,yy-60)]; if(Math.min(...es)>.8&&!nearMon(x,yy,70)) best=[x,yy,Math.min(...es)]; }
         if(best){ const [cx,cy,e0]=best, q=DK.findIndex(z=>z[0]==='オアシス'); if(q>=0){ const g=new T.Group(); DK[q][1](g); bake(g); g.scale.setScalar(3.4); g.position.set(X(cx),e0-.3,Z(cy)); g.rotation.y=r()*6; g.userData.poi='oasis'; scene.add(g); }
