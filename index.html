@@ -6751,21 +6751,87 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
   //  像：すり鉢の窪地の縁に、内を向いて剣を前に突き立てた女戦士の巨像が輪に並ぶ。一か所だけ像がなく、倒れた柱が2本。遠くからでもそびえて見える
   //  オアシス：地図の池（地形の湖）の、道に近い岸にヤシの林と天幕
   if(typeof pDesert==='function'){ const v0=vAt(0), vA=vAt(-3000), vB=vAt((PATH_H1-PATH_H0+30)*KM);
-    const mSand=(()=>{ const m=patch(new T.MeshLambertMaterial({color:c3([214,182,136])})), ob=m.onBeforeCompile; m.onBeforeCompile=sh=>{ ob(sh); sh.fragmentShader=sh.fragmentShader.replace('float f=1.-exp(-d*uFogD);','float f=min(.5,1.-exp(-d*uFogD));'); }; m.customProgramCacheKey=()=>'dsStat'; return m; })();
-    const statue=()=>{ const g=new T.Group(), P=(geo,x,y,z)=>{ const m=new T.Mesh(geo,mSand); m.position.set(x,y,z); m.castShadow=true; g.add(m); return m; };
-      P(new T.BoxGeometry(.34,.06,.3),0,.03,0); P(new T.CylinderGeometry(.075,.15,.46,12),0,.29,0); /* 衣のすそ */ P(new T.CylinderGeometry(.06,.08,.2,12),0,.6,0); /* 胴 */
-      P(new T.SphereGeometry(.05,12,8),0,.75,0); const hc=P(new T.ConeGeometry(.06,.1,10),0,.82,-.01); hc.rotation.x=-.3; /* 頭と髪飾り */
-      for(const sx of [-1,1]){ const sh=P(new T.SphereGeometry(.035,8,6),sx*.085,.67,0); const ar=P(new T.CylinderGeometry(.02,.025,.17,6),sx*.06,.6,.06); ar.rotation.x=-.9; ar.rotation.z=sx*.25; }
-      P(new T.BoxGeometry(.04,.5,.012),0,.3,.13); P(new T.BoxGeometry(.12,.025,.03),0,.55,.13); P(new T.CylinderGeometry(.012,.012,.08,6),0,.6,.13); /* 前に突き立てた剣 */
-      return g; };
+    /* 砂岩（像と台座）：部品の形にそった細い地層の縞、色むら、細かいざらつき。遠くは霞に溶けて、本当に遠いとわかるように */
+    const mkSand=(c,key,cap)=>{ const m=patch(new T.MeshLambertMaterial({color:c3(c)})), ob=m.onBeforeCompile; m.onBeforeCompile=sh=>{ ob(sh);
+        sh.vertexShader=sh.vertexShader.replace('void main() {','varying vec3 vOP;\nvoid main() {\n vOP=position;');
+        sh.fragmentShader=sh.fragmentShader.replace('void main() {','varying vec3 vOP;\nvoid main() {')
+          .replace('#include <color_fragment>','#include <color_fragment>\n { vec3 o=vOP; float s1=vn(vec2(o.y*240.,(o.x+o.z)*14.)), s2=vn(o.xz*90.+o.y*30.), s3=vn(vec2(o.x*700.+o.z*500.,o.y*700.));\n  float band=.9+.07*sin(o.y*1300.+s1*5.)+.08*(s1-.5); float pit=smoothstep(.72,.8,vn(vec2(o.x*260.+o.z*170.,o.y*260.)));\n  diffuseColor.rgb*=band*(.9+.18*s2)*(.93+.12*s3)*(1.-.18*pit); }')
+          .replace('float f=1.-exp(-d*uFogD);','float f=min('+cap+',1.-exp(-d*uFogD*.7));'); };
+      m.customProgramCacheKey=()=>'hero'+key; return m; };
+    const mSand=mkSand([214,182,136],'a',.9), mSandD=mkSand([150,118,84],'d',.9), mSandL=mkSand([232,204,158],'l',.9), mGem=mkSand([96,170,176],'g',.9);
+    /* 七人の英傑像（ブレワイの東ゲルド遺跡）：高い段の台座の上に、剣を前に突き立てて柄頭に両手を重ねて立つゲルドの女戦士。
+       高く結った髪を後ろへ長く垂らし、額飾りと耳飾り、首飾り。肩当て・胸当て、腰帯、ひだの多い長い裾。台座は四段で、帯の彫りと角飾り。
+       まわりに折れた柱・倒れた柱・崩れた石・砂の吹きだまり、正面（輪の中）へ下りる石段。像ごとに欠け方を変える（剣が折れた・右腕がない） */
+    const V3=(x,y,z)=>new T.Vector3(x,y,z);
+    const heroProto=(variant)=>{ const g=new T.Group(), r=pRng('hero'+variant,31);
+      const P=(geo,m,x,y,z,rx=0,ry=0,rz=0,sx=1,sy=1,sz=1)=>{ const o=new T.Mesh(geo,m); o.position.set(x,y,z); o.rotation.set(rx,ry,rz); o.scale.set(sx,sy,sz); g.add(o); return o; };
+      const B=(w,h,d,m,x,y,z,rx,ry,rz)=>P(new T.BoxGeometry(w,h,d),m,x,y,z,rx,ry,rz);
+      const lathe=(pr,seg,m,x=0,y=0,z=0,sz=1,pleat=0)=>{ const ge=new T.LatheGeometry(pr.map(([rr,yy])=>new T.Vector2(rr,yy)),seg); if(pleat){ const p=ge.attributes.position, y0=pr[0][1], y1=pr[pr.length-1][1]; for(let i=0;i<p.count;i++){ const px=p.getX(i), pz=p.getZ(i), py=p.getY(i), a=Math.atan2(pz,px), t=(py-y0)/(y1-y0), k=1+pleat*(1-t)*(Math.sin(a*15)+.35*Math.sin(a*31+1.3)); p.setX(i,px*k); p.setZ(i,pz*k); } ge.computeVertexNormals(); } return P(ge,m,x,y,z,0,0,0,1,1,sz); };
+      const limb=(a,b,r1,r2,m,sg=10)=>{ const d=new T.Vector3().subVectors(b,a), L=d.length(), o=P(new T.CylinderGeometry(r2,r1,L,sg),m,(a.x+b.x)/2,(a.y+b.y)/2,(a.z+b.z)/2); o.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),d.normalize()); return o; };
+      const ball=(rr,m,x,y,z,sx=1,sy=1,sz=1)=>P(new T.SphereGeometry(rr,14,10),m,x,y,z,0,0,0,sx,sy,sz);
+      const torus=(R,t,m,x,y,z,rx=Math.PI/2,ry=0,sz=1,sx=1)=>P(new T.TorusGeometry(R,t,6,28),m,x,y,z,rx,ry,0,sx,1,sz);
+      // ---- 台座：四段。三段目に彫りの帯、四隅に玉の飾り、正面に碑文の板 ----
+      B(.5,.035,.5,mSand,0,.0175,0); B(.42,.05,.42,mSand,0,.06,0); B(.36,.045,.36,mSand,0,.1075,0); B(.37,.012,.37,mSandD,0,.1075,0); B(.31,.03,.31,mSand,0,.145,0);
+      for(const sx of [-1,1]) for(const sz of [-1,1]){ if(variant===2&&sx>0&&sz<0) continue; B(.035,.035,.035,mSand,sx*.165,.1475,sz*.165); ball(.016,mSand,sx*.165,.175,sz*.165); }
+      B(.13,.035,.006,mSandD,0,.06,.212); for(let q=0;q<5;q++) B(.09,.003,.007,mSand,0,.048+q*.006,.213);
+      for(let q=0;q<3;q++) B(.26-q*.03,.012,.05,mSand,0,.006+q*.012,.27+(2-q)*.0); for(let q=0;q<3;q++) B(.24,.012,.035,mSand,0,.03+q*.025,.235+.035*(2-q)*.0+.0); /* 正面へ下りる石段 */
+      for(let q=0;q<4;q++) B(.22,.02,.04,mSand,0,.01+q*.02*1.0,.31-q*.035);
+      if(variant===3){ /* 像のない台座：足の跡だけ残り、砕けた像のかけらと柱が転がる */ for(const sx of [-1,1]) ball(.02,mSand,sx*.03,.165,.07,1.3,.7,1.8); B(.12,.04,.1,mSand,0,.18,0,.1,.2,.05);
+        P(new T.CylinderGeometry(.055,.07,.2,16),mSand,-.1,.06,.36,.15,.6,Math.PI/2-.1); ball(.05,mSand,.22,.04,.3,.9,1,1); P(new T.CylinderGeometry(.03,.03,.24,20),mSand,.3,.03,-.05,0,.2,Math.PI/2); }
+      else {
+      // ---- 裾：ひだの多い長い衣（足もとで広がる）。前に垂れ布、後ろに長い垂れ布 ----
+      const y0=.16; lathe([[.0,y0],[.098,y0],[.094,y0+.03],[.084,y0+.09],[.073,y0+.16],[.062,y0+.23],[.053,y0+.27],[.0,y0+.27]],48,mSand,0,0,0,.86,.06);
+      for(const sx of [-1,1]) ball(.016,mSand,sx*.03,y0+.004,.075,1.3,.6,1.8); /* つま先 */
+      P(new T.BoxGeometry(.055,.25,.007),mSand,0,y0+.135,.068,-.17); B(.055,.012,.009,mSandD,0,y0+.016,.089); /* 前の垂れ布とふちの帯 */
+      P(new T.BoxGeometry(.075,.3,.008),mSand,0,y0+.13,-.066,.16);
+      // ---- 腰帯：太い帯に飾りの留め金と宝石、横に結び目と垂れ帯 ----
+      const yw=y0+.27; torus(.054,.009,mSandD,0,yw,0,Math.PI/2,0,.86); B(.034,.028,.012,mSand,0,yw,.05); P(new T.OctahedronGeometry(.009),mGem,0,yw,.058);
+      ball(.012,mSand,.052,yw-.004,.0); B(.018,.11,.006,mSand,.056,yw-.06,.006,0,0,.12); B(.014,.09,.006,mSand,.05,yw-.05,-.008,0,0,.05);
+      // ---- 胴：素肌の腹、胸当て（2つのふくらみと下の帯）、肩当て ----
+      lathe([[.0,yw],[.05,yw],[.043,yw+.035],[.046,yw+.06],[.0,yw+.06]],24,mSand,0,0,0,.78);
+      const yc=yw+.06; lathe([[.0,yc],[.05,yc],[.057,yc+.03],[.058,yc+.055],[.05,yc+.075],[.03,yc+.085],[.0,yc+.087]],28,mSand,0,0,0,.76);
+      torus(.05,.006,mSandD,0,yc+.006,0,Math.PI/2,0,.78); for(const sx of [-1,1]) ball(.026,mSand,sx*.023,yc+.042,.022,1,.95,.62); torus(.053,.004,mSandD,0,yc+.062,0,Math.PI/2+.12,0,.74); /* 胸当てと上のふち */
+      for(const sx of [-1,1]){ ball(.031,mSand,sx*.067,yc+.077,0,1.1,.75,1); torus(.03,.004,mSandD,sx*.067,yc+.068,0,Math.PI/2,0,1,1.1); for(let q=0;q<2;q++) B(.026,.004,.044,mSandD,sx*(.074+q*.006),yc+.058-q*.01,0,0,0,sx*(.35+q*.12)); }
+      // ---- 首と首飾り ----
+      const yn=yc+.085; P(new T.CylinderGeometry(.016,.019,.04,12),mSand,0,yn+.015,0); torus(.027,.005,mSandD,0,yn,.004,Math.PI/2+.25); P(new T.OctahedronGeometry(.009),mGem,0,yn-.016,.03); for(let q=-2;q<=2;q++) ball(.004,mSand,q*.011,yn-.008-Math.abs(q)*.002,.026-Math.abs(q)*.002);
+      // ---- 頭：顔（眉・目・鼻・唇・あご）、高く結った髪と長い尾、額飾り、耳飾り ----
+      const yh=yn+.06; ball(.044,mSand,0,yh,0,.9,1.08,1); ball(.03,mSand,0,yh-.03,.012,.8,.6,.9); /* 頭とあご */
+      for(const sx of [-1,1]){ ball(.006,mSandD,sx*.015,yh+.004,.038,1.2,.55,.5); B(.02,.005,.008,mSand,sx*.015,yh+.012,.038,0,0,-sx*.12); torus(.008,.0022,mSand,sx*.041,yh-.018,0,0,Math.PI/2); }
+      P(new T.ConeGeometry(.0065,.02,4),mSand,0,yh-.006,.043,-.25,Math.PI/4); B(.016,.004,.006,mSandD,0,yh-.026,.039);
+      ball(.047,mSandD,0,yh+.009,-.009,.94,1.04,.98); /* 髪：額の上から後ろを覆う */
+      ball(.024,mSandD,0,yh+.052,-.02); { let a=V3(0,yh+.06,-.03); const pts=[V3(0,yh+.075,-.06),V3(0,yh+.05,-.085),V3(0,yh,-.088),V3(0,yh-.06,-.082),V3(.004,yh-.12,-.078),V3(.006,yh-.17,-.074)]; let rr=.019; for(const b of pts){ limb(a,b,rr,rr*.86,mSandD); ball(rr*.86,mSandD,b.x,b.y,b.z); a=b; rr*=.86; } }
+      torus(.046,.004,mSand,0,yh+.026,.0,Math.PI/2-.18,0,1.02,.96); P(new T.OctahedronGeometry(.011),mGem,0,yh+.032,.047); P(new T.ConeGeometry(.01,.035,4),mSand,0,yh+.055,.04,-.2,Math.PI/4);
+      for(const sx of [-1,1]) B(.006,.05,.008,mSandD,sx*.039,yh-.006,.012,0,0,sx*.08); /* 耳の前に垂れる髪 */
+      // ---- 腕：肩から下へ、ひじを曲げて前で柄頭に両手を重ねる。手首に腕輪 ----
+      const pom=V3(0,yw+.055,.09);
+      for(const sx of [-1,1]){ if(variant===2&&sx>0){ const sh=V3(sx*.072,yc+.068,0), el=V3(sx*.08,yc-.01,.012); limb(sh,el,.017,.016,mSand); ball(.016,mSandD,el.x,el.y,el.z,1,.7,1); continue; }
+        const sh=V3(sx*.072,yc+.068,0), el=V3(sx*.08,yc-.025,.018), wr=V3(sx*.022,pom.y+.006,pom.z-.004); limb(sh,el,.018,.015,mSand); ball(.015,mSand,el.x,el.y,el.z); limb(el,wr,.015,.011,mSand);
+        { const d=new T.Vector3().subVectors(wr,el).normalize(), bc=wr.clone().addScaledVector(d,-.022); const o=limb(bc.clone().addScaledVector(d,-.014),bc.clone().addScaledVector(d,.014),.0145,.0135,mSandD); }
+        ball(.015,mSand,sx*.012,pom.y+.006,pom.z+.002,1.1,.85,1.25); }
+      // ---- 剣：柄頭の玉、握り、三日月の鍔と宝石、刃は台座に突き立つ（溝つき） ----
+      ball(.012,mSand,0,pom.y+.024,pom.z); P(new T.CylinderGeometry(.007,.008,.04,10),mSandD,0,pom.y,pom.z);
+      { const gy=pom.y-.024; B(.1,.012,.016,mSand,0,gy,pom.z); for(const sx of [-1,1]) P(new T.ConeGeometry(.009,.03,6),mSand,sx*.056,gy+.01,pom.z,0,0,-sx*.9); P(new T.OctahedronGeometry(.01),mGem,0,gy,pom.z+.008);
+        const top=gy-.006, bot=y0-.012, cut=variant===1?gy-.12:bot, s=new T.Shape(); s.moveTo(-.026,0); s.lineTo(.026,0); if(variant===1){ s.lineTo(.024,cut-top); s.lineTo(.006,cut-top-.012); s.lineTo(-.01,cut-top+.004); s.lineTo(-.024,cut-top); } else { s.lineTo(.02,bot+.03-top); s.lineTo(0,bot-top); s.lineTo(-.02,bot+.03-top); } s.lineTo(-.026,0);
+        const bl=new T.ExtrudeGeometry(s,{depth:.012,bevelEnabled:true,bevelSize:.003,bevelThickness:.003,bevelSegments:1}); bl.translate(0,top,-.006); P(bl,mSand,0,0,pom.z); B(.008,(variant===1?top-cut:top-bot-.04)*.92,.004,mSandD,0,(top+(variant===1?cut:bot+.04))/2,pom.z+.0105);
+        if(variant===1){ const fr=new T.ExtrudeGeometry((()=>{ const q=new T.Shape(); q.moveTo(-.024,0); q.lineTo(.02,-.004); q.lineTo(.02,-.13); q.lineTo(0,-.16); q.lineTo(-.02,-.13); q.lineTo(-.024,0); return q; })(),{depth:.012,bevelEnabled:false}); P(fr,mSand,.12,.176,.06,-Math.PI/2,0,.4); } }
+      }
+      // ---- まわり：折れた柱、倒れた柱の胴、崩れた石、砂の吹きだまり ----
+      const col=(x,z,h,rr=.03)=>{ B(rr*2.7,.02,rr*2.7,mSand,x,.01,z); const cg=new T.CylinderGeometry(rr,rr*1.06,h,20,4), p=cg.attributes.position; for(let i=0;i<p.count;i++){ const a=Math.atan2(p.getZ(i),p.getX(i)), k=1-.08*Math.max(0,Math.cos(a*10)); p.setX(i,p.getX(i)*k); p.setZ(i,p.getZ(i)*k); if(p.getY(i)>h/2-.001){ p.setY(i,p.getY(i)-h*.25*Math.abs(Math.sin(a*2.3+x*40))); } } cg.computeVertexNormals(); P(cg,mSand,x,.02+h/2,z); };
+      const sites=[[-.3,-.12,.2],[.32,-.2,.09],[-.2,-.34,.13],[.26,.14,.05]]; sites.forEach(([x,z,h])=>col(x,z,h));
+      { const o=P(new T.CylinderGeometry(.03,.03,.16,20),mSand,.05,.03,-.36,0,.7,Math.PI/2); B(.05,.05,.05,mSand,-.08,.025,-.4,.3,.5,.2); }
+      for(let q=0;q<9;q++){ const a=r()*6.283, d=.27+r()*.2, s=.025+r()*.04; B(s,s*.7,s*1.2,q%3?mSand:mSandD,Math.cos(a)*d,s*.3,Math.sin(a)*d,r()*.6,r()*3,r()*.5); }
+      ball(.3,mSandL,-.05,-.005,-.24,1.1,.13,.75); ball(.18,mSandL,.24,-.004,.05,1,.16,1.3); /* 砂の吹きだまり（台座の後ろと横を埋める） */
+      g.traverse(o=>{ if(o.isMesh) o.castShadow=true; }); bake(g); return g; };
+    const heroP=[heroProto(0),heroProto(1),heroProto(2),heroProto(3)];
+    const statue=(i)=>heroP[[0,0,1,0,2,0,0,1][i%8]].clone();
     const palm=(sz,r)=>{ const g=new T.Group(), mT=tm([150,118,80]), mF=tm([92,146,58]), mF2=tm([70,118,46]); let x=0, y=0, z=0; const lean=(r()-.5)*.5, la=r()*6.28;
       for(let k=0;k<6;k++){ const t=k/6, nx=x+Math.cos(la)*lean*sz*.16*(1+t), ny=y+sz*.17, nz=z+Math.sin(la)*lean*sz*.16*(1+t); g.add(Cy(sz*.035*(1-t*.3),sz*.04*(1-t*.3),sz*.18,mT,(x+nx)/2,(y+ny)/2,(z+nz)/2,6)); x=nx; y=ny; z=nz; }
       for(let k=0;k<9;k++){ const a=k/9*6.28+r()*.3, fr=mk(new T.ConeGeometry(sz*.06,sz*.55,4),k%2?mF:mF2,x+Math.cos(a)*sz*.22,y-sz*.06,z+Math.sin(a)*sz*.22); fr.scale.set(1,1,.25); fr.rotation.z=Math.PI/2; fr.rotation.y=-a; fr.rotation.x=0; const pv=new T.Group(); pv.position.set(x,y,z); pv.rotation.y=-a; fr.position.set(sz*.25,-sz*.06,0); fr.rotation.set(0,0,-Math.PI/2-.35); pv.add(fr); g.add(pv); }
       g.add(Sp(sz*.05,tm([120,88,50]),x,y-sz*.04,z,1)); bake(g); return g; };
     for(let c=Math.floor(vA/P_DC)-1;c<=Math.floor(vB/P_DC)+1;c++){ const ds=pDesert(c); if(!ds) continue; const r=pRng('lkds'+c,5);
       if(ds.pit){ const P2=ds.pit, cx=P2.x*KM, cy=(P2.v-v0)*KM, RR=P2.r*.8*KM, H=3900*(P2.r/40);
-        for(let i=0;i<8;i++){ const a=P2.a0+i*Math.PI/4; if(i===P2.gap){ for(let k=0;k<2;k++){ const aa=a+(k-.5)*.12, px=cx+Math.cos(aa)*RR, py=cy+Math.sin(aa)*RR*1, pl=mk(new T.CylinderGeometry(H*.05,H*.05,H*.5,14),mSand); pl.rotation.z=Math.PI/2; pl.rotation.y=r()*3; const gp=new T.Group(); gp.add(pl); pl.position.y=H*.04; (scene.userData.ft=scene.userData.ft||[]).push({g:gp,x:px,y:py,h:Math.max(0,hAt(px,py)),fix:1,H0:1,B:1}); scene.add(gp); } continue; }
-          const aj=a+(r()-.5)*.08, px=cx+Math.cos(aj)*RR, py=cy+Math.sin(aj)*RR, g=statue(); g.rotation.y=Math.atan2(cx-px,-(cy-py)); const gp=new T.Group(); gp.add(g); g.scale.setScalar(H*(.92+.16*r())); scene.add(gp); (scene.userData.ft=scene.userData.ft||[]).push({g:gp,x:px,y:py,h:Math.max(0,hAt(px,py)),fix:1,H0:1,B:1}); } }
+        for(let i=0;i<8;i++){ const a=P2.a0+i*Math.PI/4; const gapS=i===P2.gap;
+          const aj=a+(r()-.5)*.08, px=cx+Math.cos(aj)*RR, py=cy+Math.sin(aj)*RR, g=gapS?heroP[3].clone():statue(i); g.rotation.y=Math.atan2(cx-px,-(cy-py)); const gp=new T.Group(); gp.add(g); g.scale.setScalar(H*(.92+.16*r())); scene.add(gp); (scene.userData.ft=scene.userData.ft||[]).push({g:gp,x:px,y:py,h:Math.max(0,hAt(px,py)),fix:1,H0:1,B:1}); } }
       if(ds.oa){ /* オアシス：地図の池の、道に近い側。池とヤシの林、商人の天幕 */ const A=ds.oa, y=(A.v-v0)*KM, sd=A.x>=WD.roadU(A.v)?1:-1; if(y<-3000||y>(PATH_H1-PATH_H0+30)*KM) continue; let best=null;
         for(let t=0;t<40&&!best;t++){ const d=260*(1+t*.1)+r()*120, yy=y+(r()-.5)*(200+t*120), x=rX(yy)+sd*d; const es=[hAt(x,yy),hAt(x+60,yy),hAt(x-60,yy),hAt(x,yy+60),hAt(x,yy-60)]; if(Math.min(...es)>.8&&!nearMon(x,yy,70)) best=[x,yy,Math.min(...es)]; }
         if(best){ const [cx,cy,e0]=best, q=DK.findIndex(z=>z[0]==='オアシス'); if(q>=0){ const g=new T.Group(); DK[q][1](g); bake(g); g.scale.setScalar(3.4); g.position.set(X(cx),e0-.3,Z(cy)); g.rotation.y=r()*6; g.userData.poi='oasis'; scene.add(g); }
