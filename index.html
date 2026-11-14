@@ -3445,8 +3445,8 @@ const pSide=y=>{ const [a,b]=pSpan(y); return (pW-b)>=a?'r':'l'; };
 // 砂漠の像の遺跡（すり鉢）がある所では、道が輪の中（中央の祭壇の横）を通り抜ける
 let pRXin=false;
 /* 海のある所では、道が浜へ下りて波打ちぎわから100mほどの砂浜を走る */
-let pRXsIn=false;
-const pRXsea=(y,x0)=>{ if(pRXsIn||typeof P_OCEAN==='undefined') return x0; const v=y/PX+pOff; let o; pRXsIn=true; try{ o=pOceanAt(v); } finally{ pRXsIn=false; } if(!o) return x0; const w=pSm(o.RV*.8,o.RV*.42,Math.abs(v-o.v)); if(w<=0) return x0; const t=pOceanT(x0,v,o), xc=x0-o.s*t; return x0+(xc-o.s*.12-x0)*w; };
+let pRXsIn=false; const pRXsC=new Map();
+const pRXsea=(y,x0)=>{ if(pRXsIn||typeof P_OCEAN==='undefined') return x0; const v=y/PX+pOff, ck=Math.floor(v/4); let o=pRXsC.get(ck); if(o===undefined){ pRXsIn=true; try{ o=null; for(const dv of [0,4]){ const q=pOceanAt(ck*4+dv); if(q&&Math.abs(ck*4+2-q.v)<q.RV*.8+4){ o=q; break; } } } finally{ pRXsIn=false; } pRXsC.set(ck,o); if(pRXsC.size>4000) pRXsC.clear(); } if(!o) return x0; const w=pSm(o.RV*.8,o.RV*.42,Math.abs(v-o.v)); if(w<=0) return x0; const t=pOceanT(x0,v,o), xc=x0-o.s*t; return x0+(xc-o.s*.12-x0)*w; };
 const pRX=y=>{ const x0=pRXsea(y,pRX0(y)); if(!P_DESERT||pRXin) return x0; const v=y/PX+pOff; let o; pRXin=true; try{ o=pDesertAt(v); } finally{ pRXin=false; } if(!o||!o.pit) return x0; const P=o.pit, w=pSm(P.r*2.8,P.r*.55,Math.abs(v-P.v)); if(w<=0) return x0; const side=x0>=P.x?1:-1; return x0+(P.x+side*P.r*.3-x0)*w; };
 const pRX0=y=>{ const q=y/PX+pOff, R=[4.1,1.3,2.2,1.05], c=pW/2, A=pW/2-34; return Math.max(30,Math.min(pW-30,c+A*(.62*Math.sin(q/(150*R[3])+R[0])+.28*Math.sin(q/61+R[1])+.1*Math.sin(q/27+R[2])))); };
 let pathSheet=false, pathPick=false;
@@ -4751,7 +4751,7 @@ function pWorld(k){ pSeedRoad(k); const key=k+'|'+pOff.toFixed(4); if(pWorldMemo
   const plF=(x,y,b)=>{ b=b||bAt(x,y); const g=sm(.3,.12,Math.max(b[0],b[1],b[2],b[3])); if(g<=0) return 0; return g*sm(.48,.56,pn(x,y,6500,17,5)*.85+pn(x,y,1400,23,8)*.15); };
   /* 森の濃さ（0〜1）：ブレワイのように丘や山の斜面・高い所は木がびっしり、低い平らな所はまばら。大きなまだらで森と草地が分かれる。平原・砂漠・火山には生えない */
   /* 砂浜の広さ：波打ちぎわから陸へ約250m（ot はおよそ km 単位）。1 で砂浜の真ん中、0 で砂浜の外 */
-  const bchCache=new Map(), beachW=(x,y)=>{ const v=vAt(y), oc=pOceanAt(v); if(!oc) return 0; const ot=pOceanT(uOf(x),v,oc); return ot>.6?0:sm(-.4,-.24,ot+.04*(pn(x,y,90,71,2)-.5)); };
+  const bchCache=new Map(), beachW=(x,y)=>{ const v=vAt(y); const ck=Math.round(v/8); let oc=bchCache.get(ck); if(oc===undefined){ oc=pOceanAt(v)||null; if(oc&&Math.abs(v-oc.v)>oc.RV+60) oc=null; bchCache.set(ck,oc); } if(!oc) return 0; const ot=pOceanT(uOf(x),v,oc); return ot>.6?0:sm(-.4,-.24,ot+.04*(pn(x,y,90,71,2)-.5)); };
   const forM=(x,y,b,e,ny)=>{ const mac=sm(.42,.64,pn(x,y,1800,41,3)*.8+pn(x,y,420,43,9)*.2), sl=sm(.985,.9,ny), hi=sm(140,420,e); return Math.min(1,Math.max(mac*.8,sl*.95,hi*(.45+.45*mac)))*(1-plF(x,y,b)*(1-sm(300,800,e)))*(1-sm(.2,.35,b[1]))*(1-sm(.3,.6,b[0]))*(1-beachW(x,y)); };
   const bName=b=>{ let m=.35, r=''; ['volc','desert','wet','snow'].forEach((n,i)=>{ if(b[i]>m){ m=b[i]; r=n; } }); return r; };
   const elevM=h=>h>=P_SEA?(h-P_SEA)*EH:(h-P_SEA)*EH*.5;
@@ -5082,7 +5082,7 @@ void main() {`)
     if(nl){ const g=new T.BufferGeometry(); g.setAttribute('position',new T.Float32BufferAttribute(Pl,3)); g.setIndex(Il); G.add(new T.Mesh(g,L.lavaMat)); }
     if(ns){ const g=new T.BufferGeometry(); g.setAttribute('position',new T.Float32BufferAttribute(Ps,3)); g.setAttribute('aD',new T.Float32BufferAttribute(Ds,1)); g.setIndex(Is); g.computeVertexNormals(); const sm2=new T.Mesh(g,L.seaMat); sm2.receiveShadow=true; G.add(sm2); } };
   // 遠くの湖や海：大きな水面をカメラの下に敷く
-  const seaPG=new T.PlaneGeometry(60000,60000,8,8); seaPG.setAttribute('aD',new T.BufferAttribute(new Float32Array(seaPG.attributes.position.count).fill(60),1)); const seaP=new T.Mesh(seaPG,L.seaMat); /* 遠くの海も同じ海の面で（境目が見えないように） */ seaP.rotation.x=-Math.PI/2; seaP.position.y=-1.2; seaP.renderOrder=2; scene.add(seaP);
+  const seaP=new T.Mesh(new T.PlaneGeometry(60000,60000),patch(new T.MeshStandardMaterial({color:c3([16,74,108]),roughness:.12,envMap:L.env,envMapIntensity:1.1}))); seaP.rotation.x=-Math.PI/2; seaP.position.y=-1.2; seaP.renderOrder=2; scene.add(seaP);
   // 何時間も先の土地（遠景の地形よりさらに先）は、地平線の目じるしの山として見せる
   // ---- 遠くに見える目じるし：この先の道で出会う土地（雪山・火山・砂漠の台地）を、地平線に大きな山として見せる。
   //      何時間も先ほど小さくかすみ、近づくほど大きくはっきりする（ブレワイで遠くの山を目指すように）----
