@@ -7057,6 +7057,7 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
   const animSmoke=(t,dt)=>{ smk.forEach((g,q)=>{ if(g.userData.need||g.position.distanceTo(cam.position)>1300||(new T.Vector3().subVectors(g.position,cam.position).dot(new T.Vector3(Math.sin(hY),0,Math.cos(hY))))<-200){ const d=300+dRng()*800, a=hY+(dRng()-.5)*1.6, x=cam.position.x+Math.sin(a)*d, z=cam.position.z+Math.cos(a)*d; g.position.set(x,(hAt(x+OX,y0-z)??horse.position.y)-2,z); g.userData.need=0; }
       g.children.forEach((sp,k2)=>{ let u=(sp.userData.t+t*.03+q*.13)%1; const s=8+u*70; sp.position.set(Math.pow(u,1.7)*90+Math.sin(u*5+q)*u*10,Math.pow(u,.8)*150,Math.pow(u,1.7)*25); sp.scale.set(s,s,1); sp.material.rotation=k2*2.4+t*.05; sp.material.color.setRGB(.28+.3*u,.26+.29*u,.25+.29*u).multiplyScalar(nf>.5?.4:1); sp.material.opacity=.6*Math.pow(Math.sin(Math.PI*u),1.2)*(1-.3*u); }); }); };
   let bT=-1e9; const animBirds=(t,dt)=>{
+    /* 夜は鳥は飛ばない（月の前を鷹の黒い影が横切っていた） */ if(U.uNtT.value>.45){ hawk.b.visible=false; birds.visible=false; return; } birds.visible=true;
     if(t-bT>(fsp&&fsp.near?22:40)){ bT=t; const sp=pickSp(); setFlock(sp); const a=dRng()*6.28, fw=new T.Vector3(Math.sin(hY),0,Math.cos(hY));
       if(sp.near){ // 小鳥：前方の草むらから飛び立って、道を低く横切る
         const ahead=cam.position.clone().addScaledVector(fw,70+dRng()*60), sd=dRng()<.5?-1:1, rt=new T.Vector3(fw.z,0,-fw.x).multiplyScalar(sd);
@@ -7143,7 +7144,11 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
     const D=9000, R=D*.034; mm.scale.set(R*2,R*2,1); halo.scale.set(R*(RED?16:11),R*(RED?16:11),1);
     moonSet=S=>{ const up=S.mUp; mm.visible=halo.visible=up; mm.material.uniforms.uP.value=S.MPH*6.2832; mm.material.uniforms.uA.value=Math.max(.32*(1-S.nf),Math.min(1,S.nf*1.4))*Math.min(1,Math.max(0,S.mo.alt/.03)); halo.material.opacity=(.35+.65*lf)*S.nf; }; moonSet(S0);
     moonFx=()=>{ mm.position.copy(cam.position).addScaledVector(MD,D); mm.lookAt(cam.position); halo.position.copy(mm.position); }; } }
-  let skyT=0; const loop=n=>{ if(!L.alive) return; const dt=Math.min(.05,(n-last)/1000); last=n; U.uTime.value=(n-t00)/1000; if(isT&&n-skyT>2000){ skyT=n; applySky(skyState(new Date())); } /* 太陽と月を時刻に合わせて動かす */ if(nightFx) nightFx(U.uTime.value,dt); if(volcFx) volcFx(U.uTime.value,dt); if(moonFx) moonFx();
+  let skyT=0; const PF=/lkperf/.test(location.search); L.pf=[];
+  /* 重い所（森・草・町）では描く細かさを自動で下げ、軽くなったら戻す（コマ落ちが続かないように） */
+  const PR0=Math.min(1.35,window.devicePixelRatio||1); let prC=PR0, dtE=1/60, prT=0;
+  const adapt=(n,dt)=>{ if(!L.started||L.shot) return; dtE+=(dt-dtE)*.05; if(n-prT<1500) return; prT=n; let np=prC; if(dtE>1/38) np=Math.max(.8,prC-.12); else if(dtE<1/56&&prC<PR0) np=Math.min(PR0,prC+.06); if(Math.abs(np-prC)>.01){ prC=np; ren.setPixelRatio(prC); ren.setSize(ov.clientWidth,ov.clientHeight,false); } };
+  const loop=n=>{ if(!L.alive) return; const pt0=performance.now(); const dt=Math.min(.05,(n-last)/1000); last=n; U.uTime.value=(n-t00)/1000; if(isT&&n-skyT>2000){ skyT=n; applySky(skyState(new Date())); } /* 太陽と月を時刻に合わせて動かす */ if(nightFx) nightFx(U.uTime.value,dt); if(volcFx) volcFx(U.uTime.value,dt); if(moonFx) moonFx();
     { const w=Date.now(), gap=(w-wall)/1000; wall=w; if(gap>.5&&go&&!L.shot){ py=Math.min(yEnd,py+(gap-dt)*Math.max(v,KM/60)); v=KM/60; } }
     if(intro){ const kq=Math.min(1,(n-tIn)/2600), e2=1-Math.pow(1-kq,3); dist=50-29*e2; cp=(34-23*e2)*rad; if(kq>=1) intro=false; }
     // 道をたどる：駆けているときは速く、手綱を引くと止まる。道の終わりで止まる
@@ -7164,7 +7169,7 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
     if(isT||k){ const m=nowM+(py-y0)/KM; tEl.textContent=`${dLab}　${pfmt(Math.floor(m))}`; }
     animDisc(n/1000,dt); animBirds(n/1000,dt); animSmoke(n/1000,dt); place(); L.started=1; clouds.forEach(s=>{ s.position.x+=dt*7; if(s.position.x>1600) s.position.x=-1600; if(s.position.z>cam.position.z+600) s.position.z-=3100; }); if(L.nt){ L.nt.offset.x+=dt*.004; L.nt.offset.y+=dt*.006; }
     if(rain){ rain.position.set(cam.position.x,cam.position.y-40,cam.position.z); const P=rain.geometry.attributes.position.array; if(snowFx){ for(let q=1;q<P.length;q+=3){ P[q]-=10*dt; P[q-1]+=Math.sin(n/900+q)*dt*2; if(P[q]<0) P[q]+=120; } } else { for(let q=1;q<P.length;q+=6){ P[q]-=110*dt; P[q+3]-=110*dt; if(P[q+3]<0){ P[q]+=120; P[q+3]+=120; } } } rain.geometry.attributes.position.needsUpdate=true; }
-    if(/lknochunk/.test(location.search)) chunkRoot.visible=false; ren.render(scene,cam); if(L.shot&&n-tIn>(+(new URLSearchParams(location.search).get('lkrun'))||1200)){ L.shot(); return; } L.raf=requestAnimationFrame(loop); };
+    if(/lknochunk/.test(location.search)) chunkRoot.visible=false; const pt1=performance.now(); adapt(n,dt); ren.render(scene,cam); if(PF) L.pf.push([Math.round(pt1-pt0),Math.round(performance.now()-pt1),Math.round(L.getPy?L.getPy():0)]); if(L.shot&&n-tIn>(+(new URLSearchParams(location.search).get('lkrun'))||1200)){ L.shot(); return; } L.raf=requestAnimationFrame(loop); };
   L.raf=requestAnimationFrame(loop);
 }
 /* ---------- 旅程を寄せる（今日の旅程の地図を指でつまむと、そのまま足もとの細かさまで寄っていける）---------- */
