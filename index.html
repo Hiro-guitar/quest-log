@@ -232,6 +232,7 @@ select option{background:var(--panel-solid)}
 .kids{display:grid;gap:2px}
 .kid{display:flex;justify-content:space-between;gap:10px;padding:7px 4px;text-align:left;width:100%;font-size:14px;border-bottom:1px dashed rgba(242,236,214,.07)}
 .kid:hover{color:var(--blue)}
+.sl-row{flex-wrap:wrap;align-items:center;justify-content:flex-start;gap:6px 10px}.sl-d{min-width:42px;color:var(--muted)}.sl-f{display:inline-flex;align-items:center;gap:4px}.sl-l{font-size:12px;color:var(--muted)}.sl-f input{width:96px;padding:3px 6px;font-size:14px}.sl-x{background:none;border:0;color:var(--muted);font-size:16px;padding:0 4px;cursor:pointer}.sl-m{font-size:12px}.sl-row .btn{margin-left:auto}
 .kid .k-pct{color:var(--muted);font-size:12px;flex:none}
 .kid.done{color:var(--dim)}
 .actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px;padding-top:16px;border-top:1px solid var(--line)}
@@ -2092,6 +2093,7 @@ document.addEventListener('click',e=>{
     case 'trsw': { const H=hm(); H.ovr={...H.ovr,[trSel]:b.dataset.v}; hmTouch('ovr',trSel); save(); render(); break; }
     case 'trbody': { const d=$('trBd').value, kg=parseFloat($('trKg').value), cm=parseFloat($('trCm').value); if(!d||!(kg>40||cm>50)){ toast('体重かお腹まわりを記そう'); break; } const H=hm(); H.body={...H.body,[d]:{...(H.body[d]||{}),...(kg>40&&kg<120?{kg:Math.round(kg*10)/10}:{}),...(cm>50&&cm<130?{cm:Math.round(cm*2)/2}:{})}}; hmTouch('body',d); save(); render(); toast('からだの手記に記した'); break; }
     case 'slsave': { const d=$('slD').value, tw=pTm($('slW').value), tb=pTm($('slB').value); if(!d||(tw==null&&tb==null)){ toast('目覚めた刻か休んだ刻を記そう'); break; } if(tw!=null) slSet(d,'w',tw); if(tb!=null) slSet(d,'b',tb<PATH_H0?tb+1440:tb); renderDetail(); toast('からだの手記に記した'); break; }
+    case 'slclr': { slSet(b.dataset.v,b.dataset.f,null); renderDetail(); toast(b.dataset.f==='w'?'起床の記録を消した':'就寝の記録を消した'); break; }
     case 'sldel': { const H=hm(); const o={...H.sleep}; delete o[b.dataset.v]; H.sleep=o; hmTouch('sleep',b.dataset.v); save(); renderDetail(); break; }
     case 'trbdel': { const H=hm(); const o={...H.body}; delete o[b.dataset.v]; H.body=o; hmTouch('body',b.dataset.v); save(); renderDetail(); break; }
     case 'step': toggleStep(b.dataset.q,b.dataset.s); break;
@@ -2231,6 +2233,7 @@ document.addEventListener('input',e=>{
 document.addEventListener('change',e=>{
   if(e.target.type==='checkbox'&&pathInput(e)) return;
   if(trOnChange(e)) return;
+  if(e.target.dataset.slf){ const d=e.target.dataset.sld, f=e.target.dataset.slf, m=pTm(e.target.value); if(m==null) slSet(d,f,null); else slSet(d,f,f==='b'&&m<PATH_H0?m+1440:m); return; } /* からだの手記：起床・就寝をその場で直す（描き直さない：時刻を選んでいる途中で閉じないように） */
   if(e.target.dataset.chap){ state.chap.cur[e.target.dataset.chap]=e.target.value.trim(); state.chap.u=Date.now(); save(); renderList(); return; }
   if(e.target.dataset.sdate||e.target.dataset.stime||e.target.dataset.sdue){
     return; // スマホは日付欄を開いた瞬間に今日が入るので、OKを押すまで保存しない
@@ -2833,7 +2836,8 @@ function bodyPanel(){
     h+=`<div class="sec-h"><span>起きた時間と寝た時間</span></div><p class="hint" style="margin:0 0 8px">旅程の地図の「目覚め」で〈起きた〉、「焚き火で休む」で〈休む〉を押すと記録されます。あとから入れるときはここで。0時すぎに寝た日は、寝た時刻に 0:30 のように入れれば前の日の夜として残ります。${av!=null?`<br>この1週間の睡眠：平均 <b style="color:var(--blue)">${slDurFmt(av)}</b>`:''}</p>
     <div class="tr-bin"><input type="date" id="slD" value="${t}"><input type="time" id="slW" aria-label="起きた時間"><input type="time" id="slB" aria-label="寝た時間"><button class="btn primary small" data-act="slsave">記録する</button></div>
     <p class="hint" style="margin:-2px 0 8px">左から：日付・起きた時間・寝た時間</p>`+slChart();
-    h+=last.length?`<div class="kids">${last.map(d=>{ const v=S[d]||{}, m=slDur(d); return `<div class="kid"><span>${d.slice(5).replace('-','/')}　${v.w!=null?'起床 '+slFmt(v.w):''}　${v.b!=null?'就寝 '+slFmt(v.b):''}${m!=null?`　<span class="hint">${slDurFmt(m)}眠った</span>`:''}</span><button class="btn small ghost" data-act="sldel" data-v="${d}">消す</button></div>`; }).join('')}</div>`:'<p class="hint">まだ記録はありません。</p>'; }
+    h+=last.length?`<div class="kids">${last.map(d=>{ const v=S[d]||{}, m=slDur(d); const hh=x=>x==null?'':String(Math.floor(((x%1440)+1440)%1440/60)).padStart(2,'0')+':'+String(((x%1440)+1440)%1440%60).padStart(2,'0'), fld=(f,lb)=>`<span class="sl-f"><span class="sl-l">${lb}</span><input type="time" data-sld="${d}" data-slf="${f}" value="${hh(v[f])}" aria-label="${lb}">${v[f]!=null?`<button class="sl-x" data-act="slclr" data-v="${d}" data-f="${f}" aria-label="${lb}を消す">×</button>`:''}</span>`;
+      return `<div class="kid sl-row"><span class="sl-d">${d.slice(5).replace('-','/')}</span>${fld('w','起床')}${fld('b','就寝')}${m!=null?`<span class="hint sl-m">${slDurFmt(m)}眠った</span>`:''}<button class="btn small ghost" data-act="sldel" data-v="${d}">日ごと消す</button></div>`; }).join('')}</div>`:'<p class="hint">まだ記録はありません。</p>'; }
   h+='</div>'; return h;
 }
 function trLogPanel(){
