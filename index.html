@@ -4760,7 +4760,7 @@ function pWorld(k){ pSeedRoad(k); const key=k+'|'+pOff.toFixed(4); if(pWorldMemo
   /* 森の濃さ（0〜1）：ブレワイのように丘や山の斜面・高い所は木がびっしり、低い平らな所はまばら。大きなまだらで森と草地が分かれる。平原・砂漠・火山には生えない */
   /* 砂浜の広さ：波打ちぎわから陸へ約250m（ot はおよそ km 単位）。1 で砂浜の真ん中、0 で砂浜の外 */
   const bchCache=new Map(), beachW=(x,y)=>{ const v=vAt(y); const ck=Math.round(v/8); let oc=bchCache.get(ck); if(oc===undefined){ oc=pOceanAt(v)||null; if(oc&&Math.abs(v-oc.v)>oc.RV+60) oc=null; bchCache.set(ck,oc); } if(!oc) return 0; const ot=pOceanT(uOf(x),v,oc); return ot>.6?0:sm(-.4,-.24,ot+.04*(pn(x,y,90,71,2)-.5)); };
-  const forM=(x,y,b,e,ny)=>{ const mac=sm(.42,.64,pn(x,y,1800,41,3)*.8+pn(x,y,420,43,9)*.2), sl=sm(.985,.9,ny), hi=sm(140,420,e); return Math.min(1,Math.max(mac*.8,sl*.95,hi*(.45+.45*mac)))*(1-plF(x,y,b)*(1-sm(300,800,e)))*(1-sm(.2,.35,b[1]))*(1-sm(.3,.6,b[0]))*(1-beachW(x,y)); };
+  const forM=(x,y,b,e,ny)=>{ const mac=sm(.42,.64,pn(x,y,1800,41,3)*.8+pn(x,y,420,43,9)*.2), sl=sm(.985,.9,ny), hi=sm(140,420,e); return Math.min(1,Math.max(mac*.8,sl*.95,hi*(.45+.45*mac)))*(1-plF(x,y,b)*(1-sm(300,800,e)))*(1-sm(.2,.35,b[1]))*(1-sm(.3,.6,b[0]))*(1-beachW(x,y))*(1-paddyW(x,y)); };
   const bName=b=>{ let m=.35, r=''; ['volc','desert','wet','snow'].forEach((n,i)=>{ if(b[i]>m){ m=b[i]; r=n; } }); return r; };
   const elevM=h=>h>=P_SEA?(h-P_SEA)*EH:(h-P_SEA)*EH*.5;
   const roadU=v=>{ const sv=[PX,pOff]; PX=PX0; pOff=off; const r=pRX((v-off)*PX0); PX=sv[0]; pOff=sv[1]; return r; };
@@ -4815,6 +4815,10 @@ function pWorld(k){ pSeedRoad(k); const key=k+'|'+pOff.toFixed(4); if(pWorldMemo
   const snAt=(x,y,e,nyy,b,n1)=>{ n1=n1==null?pn(x,y,46,3):n1; return Math.max(b[3]*.9,sm(520,760,e+n1*60)*(1-sm(.15,.4,b[0])))*(1-sm(.55,.8,1-nyy)*.5); };
   /* 季節（実際の日付）：au＝紅葉、dr＝落葉、fr＝新緑。高い所ほど早い */
   const DOY0=(()=>{ const q=+(new URLSearchParams(location.search).get('lkdoy')); if(q) return q; const d=new Date(); return Math.floor((d-new Date(d.getFullYear(),0,0))/864e5); })(), seas=e=>{ const dy=DOY0+e*.03; return [sm(280,310,dy),sm(328,352,dy),sm(86,108,dy)*(1-sm(112,150,dy)),1-sm(86,108,dy)]; };
+  /* 田んぼ（平原の道ぞい、平らで低い所）：5月は水を張って空を映し、6〜8月は青い稲、9月は黄金色、10月は刈り跡。畦（あぜ）で区切る */
+  const PADS=DOY0>=118&&DOY0<=300, paddyW=(x,y)=>{ if(!PADS) return 0; const dr=Math.abs(x-rX(y)); if(dr<12||dr>420) return 0; const p=plF(x,y); if(p<.5) return 0; const z=sm(.56,.62,pn(x,y,520,83,3)); if(z<=0) return 0; return z*sm(.5,.7,p); };
+  const paddyC=(x,y,c)=>{ const w=paddyW(x,y); if(w<.05) return c; const ix=((x%36)+36)%36, iy=((y%24)+24)%24, dk=Math.min(ix,36-ix,iy,24-iy)<.9; if(dk) return mix(c,lin([96,120,58]),w); const n=pn(x,y,3,91,2); let pc;
+    if(DOY0<160) pc=mix(lin([118,150,168]),lin([150,176,190]),n); else if(DOY0<235) pc=mix(lin([78,138,52]),lin([104,158,62]),n); else if(DOY0<272) pc=mix(lin([196,164,72]),lin([214,184,94]),n); else pc=mix(lin([150,122,78]),lin([128,104,66]),n); return mix(c,pc,w); };
   const colAt=(x,y,e,nyy,b,gr,fo)=>{ const n1=pn(x,y,46,3), n2=pn(x,y,6,7,2), slope=1-nyy, [bv,bd,bw,bs]=b;
     const pl=plF(x,y,b); let c=mix(C.g1,C.g2,sm(.35,.7,n1)*(1-pl*.5)+pl*.5); c=mix(c,C.dry,sm(.62,.9,pn(x,y,90,1,5))*.45*(1-.6*pl));
     if(bw>.05) c=mix(c,mix(C.wet,C.mud,n2*.6),bw);
@@ -4832,6 +4836,7 @@ function pWorld(k){ pSeedRoad(k); const key=k+'|'+pOff.toFixed(4); if(pWorldMemo
       colAt.fc=fc; if(fc>.01){ const cn=sm(380,560,e+n1*80)+bs, [au,dr,fr,wb]=seas(es); let bl=lin([72,110,48]); if(au>0) bl=mix(bl,mix(lin([168,72,30]),lin([196,150,44]),n1),au*(1-dr*.4)); if(dr>0||wb>0) bl=mix(bl,lin([104,84,66]),Math.max(dr,wb)*.8); if(fr>0) bl=mix(bl,lin([110,150,56]),fr*.6); c=mix(c,mix(bl,lin([48,76,54]),Math.min(1,cn)),Math.min(1,fc*1.35)); } }
     if(!fo&&!gr){ const [au,dr]=seas(e), lt=au*(1-sm(.2,.4,bd))*(1-sm(.3,.6,bv))*(1-bs); if(lt>.02){ const fm=forM(x,y,b,e,nyy); if(fm>.25) c=mix(c,mix(lin([150,70,30]),lin([176,128,48]),n2),lt*sm(.25,.6,fm)*(.35+.25*dr)); } } /* 森の地面は秋から落ち葉で赤や黄色に */
     { const sn=snAt(x,y,es,nyy,b,n1)*(1-.45*fc); if(sn>.02) c=gr?mix(c,C.dry,Math.min(1,sn*2.2)*.7):mix(c,C.snow,Math.min(1,sn*1.2)); } /* 草には雪の白を混ぜない（雪が薄い所は冬枯れの色に） */
+    if(e>.5&&!fo&&nyy>.97) c=paddyC(x,y,c);
     if(e<-.3) c=mix(c,bv>.3?lin([40,30,28]):C.bed,sm(-.3,-4,e));
     const v=.92+.16*n2; return [c[0]*v,c[1]*v,c[2]*v]; };
   // 見つけるもの：約260ごとに1つ。場所と種類は地図の場所で決まる
@@ -4841,7 +4846,7 @@ function pWorld(k){ pSeedRoad(k); const key=k+'|'+pOff.toFixed(4); if(pWorldMemo
   padOn=true;
   // 見つけるもの（記念物）のまわりには木・岩・小物・草を置かない（重なって見えないように）
   const POIF=[]; /* 地図の名前つきの場所（祠・馬宿・村・遺跡）の足もと：木や岩を置かない */ const nearMon=(x,y,pad)=>{ for(const q of POIF) if(Math.abs(y-q[1])<q[2]+pad&&Math.hypot(x-q[0],y-q[1])<q[2]+pad) return true; const n0=Math.max(0,Math.floor((y-140)/LG)-1), n1=Math.floor((y+140)/LG)+1; for(let n=n0;n<=n1;n++){ const s2=dSpot(n); if(Math.hypot(x-s2.x,y-s2.yy)<s2.rad+pad) return true; } return false; };
-  const w={k,rXs,plF,forM,beachW,KM,ST,W,vAt,uOf,pn,nz,sm,mir,macro,bAt,bName,elevM,roadU,rMean,rX,raw,roadH,hFn,hTile,hAt,rivK,brSpans,brCover,brSp,brF,deckH,TL,colAt,snAt,lin,mix,C,LG,dSpot,nearMon,POIF,padNear,volcLavaF,lavaH,FBI};
+  const w={k,rXs,plF,forM,beachW,paddyW,KM,ST,W,vAt,uOf,pn,nz,sm,mir,macro,bAt,bName,elevM,roadU,rMean,rX,raw,roadH,hFn,hTile,hAt,rivK,brSpans,brCover,brSp,brF,deckH,TL,colAt,snAt,lin,mix,C,LG,dSpot,nearMon,POIF,padNear,volcLavaF,lavaH,FBI};
   pWorldMemo.set(key,w); return w; }
 /* ---------- 見渡す：今いる場所に立って、道の先の世界を眺める（WebGL） ---------- */
 // ブレワイの景色に寄せて：地上の目の高さから水平に近く見る。遠くは青白くかすみ（太陽の側は明るく）、谷には低い霧。
@@ -4865,7 +4870,7 @@ async function pLookOpen(){
   // 大きな地形（山・湖・雪山・火山・砂漠・湿原）は地図と同じ計算、そこへ足もとの起伏・岩山の尾根・砂丘・道の細かな曲がりを足す。
   // 近くは細かい区画を馬の前後に作っては捨て、遠くは粗い地形で地平線まで描く
   const CL=540, LAT=900, HS=118;
-  const WD=pWorld(k), {rXs,plF,forM,beachW,KM,ST,vAt,uOf,pn,nz,macro,bAt,bName,elevM,roadU,rMean,rX,raw,roadH,hFn,hTile,hAt,TL,FBI,dSpot,LG,nearMon,POIF,padNear,volcLavaF,lavaH,rivK,brSpans,brCover,brSp,brF,deckH}=WD; L.WD=WD;
+  const WD=pWorld(k), {rXs,plF,forM,beachW,paddyW,KM,ST,vAt,uOf,pn,nz,macro,bAt,bName,elevM,roadU,rMean,rX,raw,roadH,hFn,hTile,hAt,TL,FBI,dSpot,LG,nearMon,POIF,padNear,volcLavaF,lavaH,rivK,brSpans,brCover,brSp,brF,deckH}=WD; L.WD=WD;
   const u0=pRX(pm2y(nowM)), OX=u0*KM;
   const elev=e=>e; // 高さはもう見渡すの単位
   const mx0=rX(y0), b0=bAt(mx0,y0);
@@ -4922,7 +4927,7 @@ async function pLookOpen(){
     return {el,az,er,ar,day,eve,dw,nf,mr,ma,MPH,mo,mUp,MD,sd,hz,md,zn,fA,fB}; };
   const t0=new Date(); if(!isT) t0.setHours(12,0,0,0); const S0=skyState(t0), {el,az,er,ar,day,eve,dw,nf,mr,ma,MPH,hz,md,zn,fA,fB}=S0, MD=S0.MD, sd=S0.sd;
   const DOY=(()=>{ const q=+(new URLSearchParams(location.search).get('lkdoy')); if(q) return q; const d=new Date(); return Math.floor((d-new Date(d.getFullYear(),0,0))/864e5); })(); L.DOY=DOY;
-  const U={uDoy:{value:DOY},uHorse:{value:new T.Vector3(0,-9999,0)},uSun:{value:sd},uFogA:{value:c3(fA)},uFogB:{value:c3(fB)},uFogD:{value:(wet?.0021:{wet:.0014,volc:.0017,snow:.0013,desert:.0012}[BIO]||.0009)*.13},uFogH:{value:0},uFogHk:{value:wet?.45:BIO==='wet'?.75:.35},uTime:{value:0},uTint:{value:RED?new T.Vector3(1.04,.74,.76):rl?new T.Vector3(.56,.9,.88):new T.Vector3(.62,.86,1.0)},uSat:{value:(wet?.85:{wet:1.0,volc:1.0,snow:.92,desert:1.1}[BIO]||1.22)*(1-.22*nf)},uNtT:{value:nf},uCloud:{value:cc/100}};
+  const U={uSnowCov:{value:0},uDoy:{value:DOY},uHorse:{value:new T.Vector3(0,-9999,0)},uSun:{value:sd},uFogA:{value:c3(fA)},uFogB:{value:c3(fB)},uFogD:{value:(wet?.0021:{wet:.0014,volc:.0017,snow:.0013,desert:.0012}[BIO]||.0009)*.13},uFogH:{value:0},uFogHk:{value:wet?.45:BIO==='wet'?.75:.35},uTime:{value:0},uTint:{value:RED?new T.Vector3(1.04,.74,.76):rl?new T.Vector3(.56,.9,.88):new T.Vector3(.62,.86,1.0)},uSat:{value:(wet?.85:{wet:1.0,volc:1.0,snow:.92,desert:1.1}[BIO]||1.22)*(1-.22*nf)},uNtT:{value:nf},uCloud:{value:cc/100}};
   const sky=new T.Mesh(new T.SphereGeometry(38000,32,16),new T.ShaderMaterial({side:T.BackSide,depthWrite:false,fog:false,uniforms:{uHz:{value:c3(hz)},uMd:{value:c3(md)},uZn:{value:c3(zn)},uSun:U.uSun,uDay:{value:day},uDw:{value:dw},uNt:{value:wet?nf*.85:nf},uMD:{value:MD},uMP:{value:MPH*6.2832},uMR:{value:Math.cos(.034)},uMC:{value:RED?new T.Vector3(1.25,.36,.26):new T.Vector3(1.,1.,.96)},uMI:{value:RED?1.6:.4+.6*Math.sin(MPH*3.1416)},uTime:U.uTime,uCov:{value:Math.min(.95,Math.max(nf>.5?.5:.12,(wet?Math.max(cc,80):cc)/100))},uClA:{value:c3(wet?lerpA([196,200,210],[30,46,48],nf):RED?[96,30,30]:nf>.5?[26,28,46]:lerpA([255,255,255],[255,212,176],eve))},uClB:{value:c3(wet?lerpA([120,126,140],[16,28,30],nf):RED?[60,72,104]:nf>.5?[52,60,86]:lerpA([178,188,210],[176,128,132],eve))}},
     vertexShader:'varying vec3 vD; void main(){ vD=normalize(position); vec4 p=modelViewMatrix*vec4(position,1.); gl_Position=projectionMatrix*p; }',
     fragmentShader:`uniform vec3 uHz,uMd,uZn,uSun,uClA,uClB,uMD,uMC; uniform float uDay,uDw,uNt,uTime,uCov,uMP,uMR,uMI; varying vec3 vD; float h3(vec3 p){ return fract(sin(dot(p,vec3(127.1,311.7,74.7)))*43758.5453); } float hn(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); } float vn(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.-2.*f); return mix(mix(hn(i),hn(i+vec2(1.,0.)),f.x),mix(hn(i+vec2(0.,1.)),hn(i+vec2(1.,1.)),f.x),f.y); } float fbm(vec2 p){ float a=.5, s=0.; for(int i=0;i<5;i++){ s+=a*vn(p); p=p*2.03+vec2(1.7,9.2); a*=.5; } return s; } void main(){ vec3 MC=vec3(0.); float MA=0., CD=0.; float h=max(vD.y,0.); vec3 c=mix(uHz,uMd,pow(min(h*3.,1.),1.6)); c=mix(c,uZn,smoothstep(.3,1.,h)); float s=max(dot(normalize(vD),uSun),0.); /* 補間でvDの長さが1未満になり、太陽の円盤が一度も描かれていなかった */ c+=vec3(1.,.88,.7)*(pow(s,8.)*.16+pow(s,90.)*.45)*uDay; /* ブレワイの朝焼け：太陽の側の地平線が金色〜橙に燃え、その上が桃色、反対側は青紫に沈む */ vec3 hd=normalize(vec3(vD.x,0.,vD.z)), sh2=normalize(vec3(uSun.x,0.,uSun.z)); float ga=max(dot(hd,sh2),0.), gb=max(-dot(hd,sh2),0.); float GA=ga*ga; if(uDw>0.){ c=mix(c,vec3(0.093,0.133,0.428),uDw*smoothstep(.12,.7,h)*.65); c=mix(c,vec3(0.893,0.237,0.325),uDw*(.35+.5*ga)*smoothstep(.0,.12,h)*exp(-h*2.2)*.85); c=mix(c,vec3(1.000,0.218,0.029),uDw*(.3+.7*GA)*exp(-h*5.)); c=mix(c,vec3(0.164,0.148,0.401),uDw*gb*exp(-h*2.)*.6); c+=vec3(1.000,0.401,0.071)*uDw*pow(s,5.)*.6; }  if(vD.y>0.){ vec2 p=vD.xz/(vD.y+.15)*1.3+vec2(uTime*.006,uTime*.0025); float n=fbm(p); float d=smoothstep(.5,.66,n+uCov*.42-.2); float sh=fbm(p+uSun.xz*.18+.3); vec3 cc=mix(uClA,uClB,clamp((sh-n)*3.+.3,0.,1.)); cc+=vec3(1.,.9,.74)*pow(s,14.)*.55*uDay*(1.-uNt); /* 朝焼けの雲：下側が桃色〜金色に照らされ、影の側は紫 */ if(uDw>0.){ float lit=clamp((n-sh)*3.+.5,0.,1.); cc=mix(cc,mix(vec3(0.148,0.071,0.218),mix(vec3(1.000,0.199,0.164),vec3(1.000,0.401,0.061),GA),lit),uDw*(.7+.25*ga)); } CD=d*smoothstep(.0,.14,vD.y)*.95; c=mix(c,cc,CD); } c=mix(c,MC,MA*(1.-.75*CD)); /* 太陽：ブレワイのように白く大きめの円盤。薄い雲なら透けて見える */ c+=mix(vec3(1.,.97,.9),vec3(1.,.62,.26),uDw)*(smoothstep(.99962,.99982,s)*5.+pow(s,1500.)*1.6)*uDay*(1.-.82*CD); if(vD.y<0.) c=uHz; gl_FragColor=vec4(c,1.);
@@ -5003,8 +5008,9 @@ async function pLookOpen(){
   // 地面・木・草に共通：距離と高さの霧（太陽の側は暖かく明るい）、雲の影、彩度
   const patch=(m,sway,det)=>{ m.fog=false; m.onBeforeCompile=sh=>{ Object.assign(sh.uniforms,U);
       sh.vertexShader='varying vec3 vWP;\nuniform float uTime;\n'+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n'+(sway?'#ifdef USE_INSTANCING\n transformed.x+=sin(uTime*1.3+instanceMatrix[3].x*.11+instanceMatrix[3].z*.07)*'+sway+'*max(0.,position.y);\n#endif\n':'')).replace('#include <worldpos_vertex>','#include <worldpos_vertex>\n vec4 wq=vec4(transformed,1.);\n#ifdef USE_INSTANCING\n wq=instanceMatrix*wq;\n#endif\n vWP=(modelMatrix*wq).xyz;');
-      sh.fragmentShader='varying vec3 vWP;\nuniform vec3 uSun,uFogA,uFogB,uTint,uHorse; uniform float uFogD,uFogH,uFogHk,uTime,uSat,uCloud,uNtT,uDoy;\nfloat hh(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }\nfloat vn(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.-2.*f); return mix(mix(hh(i),hh(i+vec2(1,0)),f.x),mix(hh(i+vec2(0,1)),hh(i+vec2(1,1)),f.x),f.y); }\n vec4 seasT(vec3 c,vec2 sd,float el){ float h=fract(sin(dot(sd,vec2(12.9898,78.233)))*43758.5453), h2=fract(h*91.7); float dy=uDoy+el*.03+(h2-.5)*12.; float au=smoothstep(280.,310.,dy), dr=smoothstep(328.,352.,dy), lo=smoothstep(86.,108.,dy), fr=lo*(1.-smoothstep(112.,150.,dy)); float bare=max(dr,1.-lo); vec3 ac=h<.3?vec3(.78,.13,.06):h<.55?vec3(.96,.74,.12):h<.8?vec3(.88,.42,.1):vec3(.62,.3,.12); float L=dot(c,vec3(.3,.59,.11)); vec3 o=mix(c,ac*(.55+1.6*L),au*(1.-dr*.5)); o=mix(o,o*vec3(1.08,1.15,.78),fr*.6); o=mix(o,vec3(.42,.3,.2)*(.6+L),dr*.7); return vec4(o,bare); } \n'+sh.fragmentShader.replace('#include <dithering_fragment>',`
+      sh.fragmentShader='varying vec3 vWP;\nuniform vec3 uSun,uFogA,uFogB,uTint,uHorse; uniform float uFogD,uFogH,uFogHk,uTime,uSat,uCloud,uNtT,uDoy,uSnowCov;\nfloat hh(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }\nfloat vn(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.-2.*f); return mix(mix(hh(i),hh(i+vec2(1,0)),f.x),mix(hh(i+vec2(0,1)),hh(i+vec2(1,1)),f.x),f.y); }\n vec4 seasT(vec3 c,vec2 sd,float el){ float h=fract(sin(dot(sd,vec2(12.9898,78.233)))*43758.5453), h2=fract(h*91.7); float dy=uDoy+el*.03+(h2-.5)*12.; float au=smoothstep(280.,310.,dy), dr=smoothstep(328.,352.,dy), lo=smoothstep(86.,108.,dy), fr=lo*(1.-smoothstep(112.,150.,dy)); float bare=max(dr,1.-lo); float sk=step(.84,h2)*smoothstep(80.,86.,uDoy+el*.03)*(1.-smoothstep(97.,104.,uDoy+el*.03)); bare*=1.-sk; vec3 ac=h<.3?vec3(.78,.13,.06):h<.55?vec3(.96,.74,.12):h<.8?vec3(.88,.42,.1):vec3(.62,.3,.12); float L=dot(c,vec3(.3,.59,.11)); vec3 o=mix(c,ac*(.55+1.6*L),au*(1.-dr*.5)); o=mix(o,o*vec3(1.08,1.15,.78),fr*.6); o=mix(o,vec3(.42,.3,.2)*(.6+L),dr*.7); o=mix(o,vec3(1.,.74,.84)*(.62+.7*L),sk); return vec4(o,bare); } \n'+sh.fragmentShader.replace('#include <dithering_fragment>',`
  { ${det?'{ float dn=vn(vWP.xz*.21)*.6+vn(vWP.xz*.9+5.)*.4; gl_FragColor.rgb*=.78+.38*dn; float gr=smoothstep(.0,.04,gl_FragColor.g-max(gl_FragColor.r,gl_FragColor.b)); gl_FragColor.rgb*=mix(vec3(1.),vec3(1.08,1.04,.82),smoothstep(.55,.8,vn(vWP.xz*.05+9.))*gr); gl_FragColor.rgb=mix(gl_FragColor.rgb,gl_FragColor.rgb*vec3(.86,.92,1.08),(1.-gr)*step(.55,dot(gl_FragColor.rgb,vec3(.33)))*.6); }':''}
+   if(uSnowCov>0.&&vWP.y>-.1&&!(length(vWP-uHorse)<3.2&&vWP.y>uHorse.y-.95)){ vec3 fn=normalize(cross(dFdx(vWP),dFdy(vWP))); float lum=dot(gl_FragColor.rgb,vec3(.3,.59,.11)); float pc=vn(vWP.xz*.35)*.55+vn(vWP.xz*2.3)*.3+hh(floor(vWP.xz*9.))*.15; float cv=uSnowCov*smoothstep(.5,.85,abs(fn.y))*smoothstep(.62-uSnowCov*.6,.8-uSnowCov*.5,pc+uSnowCov*.25); gl_FragColor.rgb=mix(gl_FragColor.rgb,vec3(.9,.93,1.)*clamp(lum*1.5+.2,.25,1.15),cv); } /* 雪化粧と霜：雪の日は上を向いた面（地面・屋根・岩）に雪がのり、冬の晴れた朝は霜でうっすら白い */
    vec3 g=vec3(dot(gl_FragColor.rgb,vec3(.299,.587,.114))); gl_FragColor.rgb=mix(g,gl_FragColor.rgb,uSat); gl_FragColor.rgb*=mix(vec3(1.),uTint,uNtT);
    float cs=vn(vWP.xz*.004+vec2(uTime*.012,uTime*.004))*.65+vn(vWP.xz*.011+3.)*.35; gl_FragColor.rgb*=1.-.26*smoothstep(.62-.25*uCloud,.82-.2*uCloud,cs);
    vec3 vd=vWP-cameraPosition; float d=length(vd); vd/=d; float f=1.-exp(-d*uFogD); f+=clamp((uFogH-vWP.y)/(40.+d*.12),0.,1.)*uFogHk*smoothstep(20.,220.,d)*(1.-.6*smoothstep(1500.,6000.,d)); f=clamp(f,0.,1.);
@@ -5499,7 +5505,7 @@ void main() {`)
     return [fm,pl,ftc,sm(thr,thr+.13,g)]; };
   const treeKind=(x,y,e,b,fm,pl,ftc,r6,r7,r8,ed=1)=>{ /* 針葉樹か広葉樹かは、まとまった林ごとに決める（1本ずつ混ぜない）。高い所・寒い所・大きなまだらの「針葉樹の林」側は針葉樹。境目だけ少し混じる */ const cf=(e-340)/170+(pn(x,y,1300,47,5)-.5)*2.4+b[3]*6+(ftc?6:0), con=(cf+(r8-.5)*.18>0||e>520)&&(pl<.5||e>420), vi=con?4:pl>.5?(r6<.6?0:2):r6<.35?0:r6<.65?1:r6<.85?2:3; return [vi,(.85+r7*.5)*(9+r8*4)/10*1.4*(1+.5*pl)*(con?1:vi===3?1.25:1.1)*(.55+.45*ed)]; };
   const treesFor=(tileG,yA,P,XA,XB,near,nx,fz,tR)=>{ const all=[], RLm=190, NREAL=600;
-    for(let q=0;q<10800;q++){ const x=XA+tR()*(XB-XA), y=yA+tR()*P, f=pn(x,y,70,11,4), rr=[tR(),tR(),tR()], r6=tR(), r7=tR(), r8=tR(), rot=tR()*6.28; if(f<.02) continue; const e=hAt(x,y); if(e<1.5) continue; const dr=Math.abs(x-rX(y)); if(dr<19) continue;
+    for(let q=0;q<10800;q++){ const x=XA+tR()*(XB-XA), y=yA+tR()*P, f=pn(x,y,70,11,4), rr=[tR(),tR(),tR()], r6=tR(), r7=tR(), r8=tR(), rot=tR()*6.28; if(f<.02) continue; const e=hAt(x,y); if(e<1.5) continue; const dr=Math.abs(x-rX(y)); if(dr<19) continue; if(paddyW(x,y)>.15) continue;
       const i=Math.round((x-XA)/ST), j=Math.round((y-yA)/ST), ny=near.attributes.normal.array[(j*nx+i)*3+1], b=bAt(x,y), ok=treeOK(x,y,e,ny,b,f,rr); if(!ok) continue; if(nearMon(x,y,6)) continue;
       const [vi,s]=treeKind(x,y,e,b,ok[0],ok[1],ok[2],r6,r7,r8,ok[3]); all.push([x,y,e,vi,s,rot,r7,dr]); const tr=.3+.35*s; obsAdd({t:0,x,y,r:tr},x,y,tr); if(all.length>=5200) break; }
     all.sort((a,b)=>a[7]-b[7]); const sp=[], im=[]; for(const t of all){ if(t[7]<RLm&&sp.length<NREAL) sp.push(t); else im.push(t); }
@@ -5573,6 +5579,31 @@ void main() {`)
     for(let q=0;q<28;q++){ const px=24+rng()*80, py=rng()*256, r=.6+rng()*1.1, c=rng(); x.fillStyle=c<.6?`rgb(${176+c*40|0},${160+c*30|0},${138+c*20|0})`:`rgb(${118+c*20|0},${92+c*16|0},${66+c*10|0})`; for(const oy of [-256,0,256]){ x.beginPath(); x.ellipse(px,py+oy,r*1.3,r,0,0,6.3); x.fill(); } } }
   const rtx=new T.CanvasTexture(rcv); rtx.wrapS=T.ClampToEdgeWrapping; rtx.wrapT=T.RepeatWrapping; rtx.colorSpace=T.SRGBColorSpace; rtx.anisotropy=4;
   const roadMat=patch(new T.MeshToonMaterial({map:rtx,gradientMap:gmap,side:T.DoubleSide,transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2}));
+  /* 田んぼ：畦（あぜ）で区切った区画。初夏は水を張って空を映し、夏は青い稲の列、秋は黄金色、刈ったあとは切り株 */
+  let mPadM=null; const mPad=()=>mPadM||(mPadM=(()=>{ const m=tm([255,255,255]); const ob=m.onBeforeCompile; m.onBeforeCompile=sh=>{ ob(sh);
+    sh.vertexShader='attribute vec3 aPd;\nvarying vec3 vPd;\n'+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n vPd=aPd;');
+    sh.fragmentShader='varying vec3 vPd;\n'+sh.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
+ { vec2 q=vPd.xy; float dk=smoothstep(.45,.8,vPd.z); float rw=abs(fract(q.x/.62)-.5)*2., hl=abs(fract(q.y/.3)-.5)*2.; float n=vn(q*.18)*.6+vn(q*.9+3.)*.4;
+   vec3 vdP=normalize(cameraPosition-vWP); float fr=pow(1.-max(vdP.y,0.),3.);
+   float st1=smoothstep(150.,162.,uDoy), st2=smoothstep(228.,240.,uDoy), st3=smoothstep(268.,276.,uDoy);
+   float fdP=1.-smoothstep(30.,110.,length(vWP-cameraPosition)); rw=mix(.5,rw,fdP); hl=mix(.5,hl,fdP); vec3 water=mix(vec3(.24,.34,.36),vec3(.52,.64,.70)*(1.-uNtT*.8),.25+.5*fr); water+=vec3(.05)*vn(q*.5+uTime*.3); float sd=(1.-smoothstep(.0,.35,rw))*(1.-smoothstep(.0,.55,hl)); water=mix(water,vec3(.36,.62,.26),sd*.85);
+   vec3 grn=mix(vec3(.20,.42,.12),vec3(.36,.60,.18),n)*mix(.62,1.08,smoothstep(.15,.6,1.-rw));
+   vec3 gld=mix(vec3(.70,.54,.20),vec3(.86,.70,.30),n)*mix(.7,1.06,smoothstep(.15,.6,1.-rw));
+   vec3 stb=mix(vec3(.52,.42,.27),vec3(.44,.36,.24),n); stb=mix(stb,vec3(.68,.58,.36),(1.-smoothstep(.0,.25,rw))*(1.-smoothstep(.0,.4,hl)));
+   vec3 c=mix(water,grn,st1); c=mix(c,gld,st2); c=mix(c,stb,st3);
+   vec3 dke=mix(vec3(.34,.50,.18),vec3(.42,.58,.22),n); dke=mix(dke,vec3(.62,.52,.30),st3*.6);
+   diffuseColor.rgb=mix(c,dke,dk); }`); }; m.customProgramCacheKey=()=>'pad1'; return m; })());
+  const padCX=[-.6,0,.6,6,12,18,24,30,35.4,36,36.6], padCY=[-.6,0,.6,6,12,18,23.4,24,24.6];
+  const paddyFor=(G,yA,yB,XA,XB)=>{ const P=[], A=[], I=[]; let n=0, cnt=0;
+    for(let cy=Math.floor(yA/24)*24; cy<yB; cy+=24) for(let cx=Math.floor(XA/36)*36; cx<XB; cx+=36){
+      if(paddyW(cx+18,cy+12)<.55||paddyW(cx,cy)<.25||paddyW(cx+36,cy)<.25||paddyW(cx,cy+24)<.25||paddyW(cx+36,cy+24)<.25) continue;
+      const hs=[hAt(cx,cy),hAt(cx+36,cy),hAt(cx,cy+24),hAt(cx+36,cy+24),hAt(cx+18,cy+12)]; if(Math.max(...hs)-Math.min(...hs)>2.2) continue; cnt++;
+      const nx=padCX.length, ny=padCY.length, b=n;
+      for(let j=0;j<ny;j++){ const ly=padCY[j], rj=Math.min(j,ny-1-j); for(let i=0;i<nx;i++){ const lx=padCX[i], ri=Math.min(i,nx-1-i), r=Math.min(ri,rj), x=cx+lx, y=cy+ly;
+        const off=r===0?-.08:r===1?.38:.14; P.push(X(x),hAt(x,y)+off,Z(y)); A.push(lx,ly,r<=1?1:0); n++; } }
+      for(let j=0;j<ny-1;j++) for(let i=0;i<nx-1;i++){ const a=b+j*nx+i; I.push(a,a+1,a+nx,a+1,a+nx+1,a+nx); } }
+    if(!cnt) return; const g=new T.BufferGeometry(); g.setAttribute('position',new T.Float32BufferAttribute(P,3)); g.setAttribute('aPd',new T.Float32BufferAttribute(A,3)); g.setIndex(I); g.computeVertexNormals();
+    const m=new T.Mesh(g,mPad()); m.receiveShadow=true; G.add(m); };
   const roadFor=(tileG,yA,yB,P)=>{ const WD=13, NU=7, Pp=[], Uv=[], I=[]; let n=0; for(let y=yA;y<=yB+.1;y+=3){ const x=rX(y), dx=rX(y+2)-rX(y-2), l=Math.hypot(dx,4)||1, ax=4/l, ay=dx/l;
       for(let q=0;q<NU;q++){ const t=q/(NU-1)-.5, px=x+t*WD*ax, py=y-t*WD*ay; Pp.push(X(px),Math.max(-.2,hW(px,py))+.25-.4*brF(py),Z(py)); /* 橋の上では土の道を石の面の下に隠す */ Uv.push(q/(NU-1),(y-yA)/P*Math.round(P/30)); }
       if(n&&brF(y)<.6&&brF(y-3)<.6&&beachW(x,y)<.5) for(let q=0;q<NU-1;q++){ const a=(n-1)*NU+q, b=a+1, c=a+NU, e=c+1; I.push(a,c,b,b,c,e); } n++; } /* 橋の上は土の道を描かない（石の面を見せる）*/
@@ -5658,6 +5689,7 @@ void main() {`)
     o.bm.visible=o.s.visible=true; o.bm.position.set(X(x+sh(y)),e+o.h*hs/2,Z(y)); o.bm.scale.set(hs,hs,hs); o.s.position.set(X(x+sh(y)),e+(wd<15000?o.h*hs*.36:60+o.q*.06*sd),Z(y)); });
   const clouds=[];
   let rain=null;
+  { const hrN=new Date().getHours()+new Date().getMinutes()/60, wint=DOY>335||DOY<70, q=+(new URLSearchParams(location.search).get('lksnc')); U.uSnowCov.value=q||(BIO==='snow'?0:sl?Math.min(.85,.45+sl*.15):(wint&&!rl&&cc<60&&hrN>=4&&hrN<9.5?.32*(1-sm(7.5,9.5,hrN)):0)); }
   const snowFx=sl||(BIO==='snow'&&rl), snL=sl||(BIO==='snow'?rl:0); /* 雪の地方では雨の日は雪になる。晴れ・曇りの日は降らない。強い雨・雪は吹雪 */
   /* 雪：ふわふわと舞い落ちる本物の雪。1秒に1m前後でゆっくり落ち、一つずつ違う大きさ・速さで、風に流されながら左右にゆらゆら回る。
      丸くやわらかい粒で、近いものは大きくぼけ、遠いものは小さく霞む。カメラのまわりの箱の中をくり返し（GPUで動かす） */
@@ -5841,7 +5873,7 @@ void main() {`)
     if(c.q>=need||c.q>=GPC) return c; if(!c.ex){ const cy=(iy+.5)*GCS, a=Math.max(0,Math.floor((cy-60)/LG)-1); c.ex=[]; for(let q=a;q<a+3;q++){ const s2=dSpot(q), ring={'石の環':[6.2,1.6],'キノコの輪':[5.1,.9]}[s2.nm]; c.ex.push(ring?[s2.x,s2.yy,(ring[0]+ring[1])*s2.SC,(ring[0]-ring[1])*s2.SC]:[s2.x,s2.yy,{'花畑':s2.rad*.55,'鹿の群れ':s2.rad*.6}[s2.nm]||s2.rad+1,0]); } }
     while(c.q<need&&c.q<GPC){ const r=c.r, rank=c.q/GPC, x=(ix+r())*GCS, y=(iy+r())*GCS, rot=r()*6.28, s0=r(), v0=r(), v1=r(); c.q++;
       if(!c.G){ c.G=[]; for(let gj=0;gj<5;gj++) for(let gi=0;gi<5;gi++){ const gx2=(ix+gi/4)*GCS, gy2=(iy+gj/4)*GCS, e2=hAt(gx2,gy2), b2=bAt(gx2,gy2), sx2=hAt(gx2+3,gy2)-hAt(gx2-3,gy2), sy2=hAt(gx2,gy2+3)-hAt(gx2,gy2-3), ny2=6/Math.hypot(sx2,sy2,6); c.G.push({b:b2,ny:ny2,ok:!(b2[0]>.2||b2[1]>.25||b2[3]>.3)&&beachW(gx2,gy2)<.45&&ny2>=.8&&snAt(gx2,gy2,e2,ny2,b2)<.3,col:colAt(gx2,gy2,e2,ny2,b2,1)}); } }
-      const gp=c.G[Math.round((y/GCS-iy)*4)*5+Math.round((x/GCS-ix)*4)]; if(!gp.ok) continue; const e=hAt(x,y); if(e<2.6) continue; { const dr=Math.abs(x-rX(y)); if(dr<5.2||(dr<8&&v1<(8-dr)/2.8)) continue; } { const sw=Math.max(STR(x,y),Math.abs(x-rX(y))<TBW+2.3?sm(.35,.6,TWN(x,y)||0):0); if(sw>.02&&v1<sw*(1-STOV(x,y))*1.15) continue; } /* 石畳の上は草が少ない（草に埋もれた所だけ生える） */ if(c.ex.some(([ex2,ey,R,Ri])=>{ const d=Math.hypot(x-ex2,y-ey); return d<R&&d>=Ri; })) continue; if(RK.some(([rx2,ry2,rs])=>Math.abs(ry2-y)<rs*1.1&&Math.hypot(rx2-x,ry2-y)<rs*1.05)) continue;
+      const gp=c.G[Math.round((y/GCS-iy)*4)*5+Math.round((x/GCS-ix)*4)]; if(!gp.ok) continue; const e=hAt(x,y); if(e<2.6) continue; { const dr=Math.abs(x-rX(y)); if(dr<5.2||(dr<8&&v1<(8-dr)/2.8)) continue; } if(paddyW(x,y)>.3) continue; { const sw=Math.max(STR(x,y),Math.abs(x-rX(y))<TBW+2.3?sm(.35,.6,TWN(x,y)||0):0); if(sw>.02&&v1<sw*(1-STOV(x,y))*1.15) continue; } /* 石畳の上は草が少ない（草に埋もれた所だけ生える） */ if(c.ex.some(([ex2,ey,R,Ri])=>{ const d=Math.hypot(x-ex2,y-ey); return d<R&&d>=Ri; })) continue; if(RK.some(([rx2,ry2,rs])=>Math.abs(ry2-y)<rs*1.1&&Math.hypot(rx2-x,ry2-y)<rs*1.05)) continue;
       const cc=gp.col; Q.setFromAxisAngle(up,rot); const s=.8+s0*.4, hA=.6+.9*sm(.25,.75,pNoise(x/150+3.1,y/150+7.7)); Sc.set(s,s*(.9+v0*.25)*hA,s); /* 場所によって背の高い草むら・低い草地 */ V.set(X(x),e-.1,Z(y)); M.compose(V,Q,Sc); for(const v of M.elements) c.P.push(v); const vb=.95+v0*.1; c.C.push(cc[0]*vb,cc[1]*vb,cc[2]*vb); c.R.push(rank); }
     return c; };
   // 並べ直し：層ごとに、受け持つ距離の草だけを入れる（少し余裕をもって。細かい出し入れはシェーダーで）
@@ -5912,7 +5944,7 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
     const mB=mkMat(0), mS=mkMat(1); L.rkMB=mB; L.rkMS=mS; L.rkG=[mkRock(11,3,1.0,0),mkRock(12,3,1.3,2),mkRock(13,3,.9,0)]; const kinds=[[mkRock(1,3,1.0,0),mB,170],[mkRock(2,2,.95,0),mB,130],[mkRock(3,3,.55,3),mS,28],[mkRock(4,3,.92,0),mB,170]], rc=new T.Color(), tW=c3({volc:[176,128,104],desert:[206,164,116]}[BIO]||[184,172,152]), tC=c3({volc:[150,108,92],desert:[190,148,104]}[BIO]||[170,166,158]);
     rocksFor=(tileG,yA,P,XA,XB,near,nx,ny,fz,rR)=>{ const im=kinds.map(([g,m,n])=>new T.InstancedMesh(g,m,Math.ceil(n*fz))), cnt=kinds.map(()=>0), NK=kinds.map(([g,m,n])=>Math.ceil(n*fz));
     const ca=near.attributes.color.array;
-    const place=(kd,s2,x,y,rot,tilt)=>{ if(cnt[kd]>=NK[kd]||x<XA||x>XB||y<yA||y>yA+P) return; if(Math.abs(x-rX(y))<8+s2*1.3||nearMon(x,y,s2+2)) return; const e=Math.min(hAt(x,y),hAt(x+s2*.7,y),hAt(x-s2*.7,y),hAt(x,y+s2*.7),hAt(x,y-s2*.7)); if(e<1) return;
+    const place=(kd,s2,x,y,rot,tilt)=>{ if(cnt[kd]>=NK[kd]||x<XA||x>XB||y<yA||y>yA+P) return; if(Math.abs(x-rX(y))<8+s2*1.3||nearMon(x,y,s2+2)||paddyW(x,y)>.15) return; const e=Math.min(hAt(x,y),hAt(x+s2*.7,y),hAt(x-s2*.7,y),hAt(x,y+s2*.7),hAt(x,y-s2*.7)); if(e<1) return;
       Q.setFromEuler(new T.Euler((rR()-.5)*tilt,rot,(rR()-.5)*tilt)); Sc.set(s2*(1+rR()*.3),s2*(.85+rR()*.3),s2*(1+rR()*.3)); V.set(X(x),e-s2*(kd===2?.3:.16),Z(y)); M.compose(V,Q,Sc); im[kd].setMatrixAt(cnt[kd],M); RK.push([x,y,s2]); if(s2>.5) obsAdd({t:0,x,y,r:s2*.85},x,y,s2*.85);
       const w=.92+rR()*.14, t=rR()<.25?tC:tW; im[kd].setColorAt(cnt[kd],rc.setRGB(t.r*w,t.g*w,t.b*w)); cnt[kd]++;
       // 接地の暗がり：岩のまわりの地面を少し暗く
@@ -5985,7 +6017,7 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
     for(let tj=Math.floor(yA/TL);tj<=Math.floor(yB/TL);tj++){ for(let ti=Math.floor(XA/TL);ti<=Math.floor(XB/TL);ti++) hTile(ti,tj); yield; }
     const near=mkGround(XA,XB,yA,yB,ST,(x,y)=>hAt(x,y),(x,y)=>bAt(x,y),true); yield;
     const gN=new T.Mesh(near,[gMat,gMatSk]); gN.receiveShadow=true; gN.castShadow=true; G.add(gN);
-    waterFor(G,yA,yB,XA,XB); roadFor(G,yA,yB,P); bridgeFor(G,yA,yB); yield;
+    waterFor(G,yA,yB,XA,XB); roadFor(G,yA,yB,P); paddyFor(G,yA,yB,XA,XB); bridgeFor(G,yA,yB); yield;
     treesFor(G,yA,P,XA,XB,near,nx,.16,pRng('tr'+ci,4)); yield;
     rocksFor(G,yA,P,XA,XB,near,nx,ny,.42,pRng('rk'+ci,6)); near.attributes.color.needsUpdate=true; yield;
     townFor(G,yA,yB,XA,XB); yield;
