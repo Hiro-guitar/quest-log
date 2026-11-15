@@ -4891,7 +4891,7 @@ async function pLookOpen(){
   const scene=new T.Scene(); L.scene=scene; const cam=new T.PerspectiveCamera(48,1,1,40000); L.cam=cam; L.T=T; if(/lkshot/.test(location.search)){ window.__lk=L; L.pWorld=pWorld; L.pHgtC=pHgtC; L.pq={pOffOf,pGeo,pOcean,pOceanAt,P_OC,pOceanT,uOf:typeof uOf!=="undefined"?uOf:null}; }
   const rs=()=>{ const w=ov.clientWidth, h=ov.clientHeight; ren.setSize(w,h,false); cam.aspect=w/h; cam.updateProjectionMatrix(); }; L.rs=rs; window.addEventListener('resize',rs); rs();
   // ---- 太陽と空の色（今の時刻・天気）----
-  let wx=null; try{ wx=JSON.parse(localStorage.getItem(WX_KEY)||'null'); }catch(e){} const wc=isT&&wx&&Date.now()-wx.at<3*3600e3?(+(new URLSearchParams(location.search).get('wx'))||wx.code):1, cc=isT&&wx&&wx.cc!=null?wx.cc:35, rl=WXFX.rain[wc]||0, sl=WXFX.snow[wc]||0, wet=rl||sl;
+  let wx=null; try{ wx=JSON.parse(localStorage.getItem(WX_KEY)||'null'); }catch(e){} const wc=+(new URLSearchParams(location.search).get('wx'))||(isT&&wx&&Date.now()-wx.at<3*3600e3?wx.code:1), cc=isT&&wx&&wx.cc!=null?wx.cc:35, rl=WXFX.rain[wc]||0, sl=WXFX.snow[wc]||0, wet=rl||sl;
   /* 太陽と月は本当の位置（今の時刻・西東京の緯度経度）。開いている間も時刻に合わせて動く（skyState を数秒ごとに計算し直す） */
   const moonAA=t=>{ const d=t/864e5-.5+2440588-2451545, e=23.4397*rad, L0=rad*(218.316+13.176396*d), M=rad*(134.963+13.064993*d), F=rad*(93.272+13.22935*d), l=L0+rad*6.289*Math.sin(M), b=rad*5.128*Math.sin(F),
       ra=Math.atan2(Math.sin(l)*Math.cos(e)-Math.tan(b)*Math.sin(e),Math.cos(l)), dec=Math.asin(Math.sin(b)*Math.cos(e)+Math.cos(b)*Math.sin(e)*Math.sin(l)), H=rad*(280.16+360.9856235*d)+SUN_LON*rad-ra, f=SUN_LAT*rad;
@@ -5655,7 +5655,17 @@ void main() {`)
   const clouds=[];
   let rain=null;
   const snowFx=sl||BIO==='snow';
-  if(snowFx){ const N=2400+(sl||1)*500, P=new Float32Array(N*3); for(let q=0;q<N;q++){ P[q*3]=(rng()-.5)*300; P[q*3+1]=rng()*120; P[q*3+2]=(rng()-.5)*300; } const g=new T.BufferGeometry(); g.setAttribute('position',new T.BufferAttribute(P,3)); rain=new T.Points(g,new T.PointsMaterial({color:0xffffff,size:.7,transparent:true,opacity:.9,depthWrite:false})); scene.add(rain); }
+  /* 雪：ふわふわと舞い落ちる本物の雪。1秒に1m前後でゆっくり落ち、一つずつ違う大きさ・速さで、風に流されながら左右にゆらゆら回る。
+     丸くやわらかい粒で、近いものは大きくぼけ、遠いものは小さく霞む。カメラのまわりの箱の中をくり返し（GPUで動かす） */
+  if(snowFx){ const N=Math.round(4000+(sl||1)*3000), B=[56,30,56], P=new Float32Array(N*3), A=new Float32Array(N*4); for(let q=0;q<N;q++){ P[q*3]=rng()*B[0]; P[q*3+1]=rng()*B[1]; P[q*3+2]=rng()*B[2]; A.set([.7+rng()*1.1,rng()*6.283,.4+rng()*.9,rng()],q*4); }
+    const g=new T.BufferGeometry(); g.setAttribute('position',new T.BufferAttribute(P,3)); g.setAttribute('aS',new T.BufferAttribute(A,4));
+    const sm2=new T.ShaderMaterial({transparent:true,depthWrite:false,fog:false,uniforms:{uTime:U.uTime,uNtT:U.uNtT,uB:{value:new T.Vector3(...B)},uC:{value:new T.Vector3()},uPR:{value:ren.getPixelRatio()},uH:{value:innerHeight}},
+      vertexShader:`attribute vec4 aS; uniform float uTime,uPR,uH; uniform vec3 uB,uC; varying float vA; varying float vS;
+        void main(){ float t=uTime; float sp=aS.x; vec3 p=position; p.y-=t*sp; p.x+=t*.9+sin(t*aS.z+aS.y)*1.1+sin(t*.37+aS.y*2.)*.6; p.z+=cos(t*aS.z*.8+aS.y*1.3)*1.1+t*.25;
+          p=mod(p-uC+uB*.5,uB)-uB*.5+uC; vec4 mv=modelViewMatrix*vec4(p,1.); gl_Position=projectionMatrix*mv; float d=-mv.z;
+          float sz=(.07+.1*aS.w)*uH*.55/max(d,.5); gl_PointSize=clamp(sz*uPR,1.5,46.); vS=sz; vA=smoothstep(.8,2.5,d)*(1.-smoothstep(18.,28.,d))*(.75+.25*aS.w)*(1.-.45*smoothstep(6.,30.,d)*0.); }`,
+      fragmentShader:`uniform float uNtT; varying float vA; varying float vS; void main(){ vec2 q=gl_PointCoord*2.-1.; float r=dot(q,q); if(r>1.) discard; float soft=mix(1.6,4.5,clamp(vS/10.,0.,1.)); float k=exp(-r*soft)*(1.-r*.15); vec3 c=mix(vec3(.97,.98,1.),vec3(.55,.6,.72),uNtT); gl_FragColor=vec4(c,min(1.,k*vA*1.15)); }`});
+    rain=new T.Points(g,sm2); rain.frustumCulled=false; rain.userData.snow=sm2; scene.add(rain); }
   else if(rl){ const N=2600+rl*800, P=new Float32Array(N*6); for(let q=0;q<N;q++){ const x=(rng()-.5)*300, y=rng()*120, z=(rng()-.5)*300; P.set([x,y,z,x-.3,y-3.5,z],q*6); } const g=new T.BufferGeometry(); g.setAttribute('position',new T.BufferAttribute(P,3)); rain=new T.LineSegments(g,new T.LineBasicMaterial({color:new T.Color(0xc8dcf0).lerp(new T.Color(0x4f7a78),nf),transparent:true,opacity:.42-.27*nf,depthWrite:false})); scene.add(rain); }
   // ---- 馬：道をたどって進む。うしろから見る（ブレワイで馬に乗っているときのように）----
   // 栗毛にクリーム色の長いたてがみと尾。影は2段でくっきり（ブレワイのような塗り）
@@ -7442,7 +7452,7 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
     plantStep(3); chunkStep(3); farStep(2); if(L.OBS.size>30000){ for(const k of L.OBS.keys()){ const j=+k.split(',')[1]; if(Math.abs(j*16-py)>5000) L.OBS.delete(k); } }
     if(isT||k){ const m=nowM+(py-y0)/KM; tEl.textContent=`${dLab}　${pfmt(Math.floor(m))}`; }
     animDisc(n/1000,dt); animBirds(n/1000,dt); animSmoke(n/1000,dt); place(); L.started=1; clouds.forEach(s=>{ s.position.x+=dt*7; if(s.position.x>1600) s.position.x=-1600; if(s.position.z>cam.position.z+600) s.position.z-=3100; }); if(L.nt){ L.nt.offset.x+=dt*.004; L.nt.offset.y+=dt*.006; }
-    if(rain){ rain.position.set(cam.position.x,cam.position.y-40,cam.position.z); const P=rain.geometry.attributes.position.array; if(snowFx){ for(let q=1;q<P.length;q+=3){ P[q]-=10*dt; P[q-1]+=Math.sin(n/900+q)*dt*2; if(P[q]<0) P[q]+=120; } } else { for(let q=1;q<P.length;q+=6){ P[q]-=110*dt; P[q+3]-=110*dt; if(P[q+3]<0){ P[q]+=120; P[q+3]+=120; } } } rain.geometry.attributes.position.needsUpdate=true; }
+    if(rain&&rain.userData.snow){ rain.userData.snow.uniforms.uC.value.copy(cam.position); rain.userData.snow.uniforms.uPR.value=ren.getPixelRatio(); rain.userData.snow.uniforms.uH.value=ov.clientHeight; } else if(rain){ rain.position.set(cam.position.x,cam.position.y-40,cam.position.z); const P=rain.geometry.attributes.position.array; if(snowFx){ for(let q=1;q<P.length;q+=3){ P[q]-=10*dt; P[q-1]+=Math.sin(n/900+q)*dt*2; if(P[q]<0) P[q]+=120; } } else { for(let q=1;q<P.length;q+=6){ P[q]-=110*dt; P[q+3]-=110*dt; if(P[q+3]<0){ P[q]+=120; P[q+3]+=120; } } } rain.geometry.attributes.position.needsUpdate=true; }
     if(/lknochunk/.test(location.search)) chunkRoot.visible=false; const pt1=performance.now(); adapt(n,dt); ren.render(scene,cam); if(PF) L.pf.push([Math.round(pt1-pt0),Math.round(performance.now()-pt1),Math.round(L.getPy?L.getPy():0)]); if(L.shot&&n-tIn>(+(new URLSearchParams(location.search).get('lkrun'))||1200)){ L.shot(); return; } L.raf=requestAnimationFrame(loop); };
   L.raf=requestAnimationFrame(loop);
 }
