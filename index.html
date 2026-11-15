@@ -5735,7 +5735,7 @@ void main() {`)
     o.bm.visible=o.s.visible=true; o.bm.position.set(X(x+sh(y)),e+o.h*hs/2,Z(y)); o.bm.scale.set(hs,hs,hs); o.s.position.set(X(x+sh(y)),e+(wd<15000?o.h*hs*.36:60+o.q*.06*sd),Z(y)); });
   const clouds=[];
   let rain=null;
-  { const hrN=new Date().getHours()+new Date().getMinutes()/60, wint=DOY>335||DOY<70, q=+(new URLSearchParams(location.search).get('lksnc')); U.uSnowCov.value=q||(BIO==='snow'?0:sl?Math.min(.85,.45+sl*.15):(wint&&!rl&&cc<60&&hrN>=4&&hrN<9.5?.32*(1-sm(7.5,9.5,hrN)):0)); }
+  { const hrN=new Date().getHours()+new Date().getMinutes()/60, wint=DOY>335||DOY<70, q=+(new URLSearchParams(location.search).get('lksnc')); U.uSnowCov.value=q||(BIO==='snow'?0:sl?Math.min(.85,.45+sl*.15):(wint&&!rl&&cc<60&&hrN>=4&&hrN<9.5?.46*(1-sm(7.5,9.5,hrN)):0)); }
   const snowFx=sl||(BIO==='snow'&&rl), snL=sl||(BIO==='snow'?rl:0); /* 雪の地方では雨の日は雪になる。晴れ・曇りの日は降らない。強い雨・雪は吹雪 */
   /* 雪：ふわふわと舞い落ちる本物の雪。1秒に1m前後でゆっくり落ち、一つずつ違う大きさ・速さで、風に流されながら左右にゆらゆら回る。
      丸くやわらかい粒で、近いものは大きくぼけ、遠いものは小さく霞む。カメラのまわりの箱の中をくり返し（GPUで動かす） */
@@ -5910,7 +5910,7 @@ void main() {`)
         // テクスチャは形（透け）と根元→先の明暗だけに使い、色は地面と同じ。遠くでは透けの切り捨てを甘くして、葉が痩せて地面が透けるのを防ぐ
         .replace('#include <map_fragment>','#ifdef USE_MAP\n { vec4 tc=texture2D(map,vMapUv); vec2 tq=vMapUv*128.; float lod=max(0.,.5*log2(max(dot(dFdx(tq),dFdx(tq)),dot(dFdy(tq),dFdy(tq))))); diffuseColor.a*=tc.a*(1.+lod*.32); gTip=smoothstep(.2,1.,fract(vMapUv.y)); }\n#endif')
         .replace('#include <alphatest_fragment>','if(diffuseColor.a<.5) discard;')
-        .replace('#include <color_fragment>','#include <color_fragment>\n diffuseColor.rgb=mix(diffuseColor.rgb,mix(mix(diffuseColor.rgb*1.25,vec3(.95,.95,.5),.22),diffuseColor.rgb*vec3(.9,1.02,1.0),uNtT),gTip*'+(Ly.K===1?'1.':'.6')+');\n { float dy=uDoy+vWP.y*.03; float wt=max(smoothstep(318.,350.,dy),1.-smoothstep(70.,110.,dy)), at=smoothstep(290.,325.,dy)*(1.-wt); float L=dot(diffuseColor.rgb,vec3(.3,.59,.11)); diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.66,.52,.28)*(.5+L*.55),wt*.75); diffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb*vec3(1.12,.98,.62),at*.55); } /* 草も季節で：秋は黄ばみ、冬は枯れ草の色 */')
+        .replace('#include <color_fragment>','#include <color_fragment>\n diffuseColor.rgb=mix(diffuseColor.rgb,mix(mix(diffuseColor.rgb*1.25,vec3(.95,.95,.5),.22),diffuseColor.rgb*vec3(.9,1.02,1.0),uNtT),gTip*'+(Ly.K===1?'1.':'.6')+');\n { float dy=uDoy+vWP.y*.03; float wt=max(smoothstep(318.,350.,dy),1.-smoothstep(70.,110.,dy)), at=smoothstep(290.,325.,dy)*(1.-wt); float L=dot(diffuseColor.rgb,vec3(.3,.59,.11)); diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.66,.52,.28)*(.5+L*.55),wt*.75); diffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb*vec3(1.12,.98,.62),at*.55); } /* 草も季節で：秋は黄ばみ、冬は枯れ草の色 */ if(uSnowCov>0.) diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.84,.89,.96)*(.78+.3*gTip),uSnowCov*(.3+.65*gTip)); /* 霜や雪：草の先が白くなる */')
         .replace('#include <dithering_fragment>','#include <dithering_fragment>\n { float kt=pow(max(dot(normalize(vWP-cameraPosition),uSun),0.),3.); gl_FragColor.rgb+=vec3(1.,.96,.78)*.3*kt*gTip*gTip*(1.-uNtT); }'); }; gm.customProgramCacheKey=()=>'grass-'+Ly.nm; return gm; }; // 層ごとに別のシェーダーとして作らせる（同じ形の関数だと使い回されてしまう）
   const gLay=Ly=>{ const g=(Ly.K===1?GG:GB).clone(), rk=new T.InstancedBufferAttribute(new Float32Array(Ly.N),1); g.setAttribute('aRk',rk); const m=new T.InstancedMesh(g,mkGM(Ly),Ly.N); m.receiveShadow=true; m.frustumCulled=false; m.count=0; scene.add(m); return Object.assign({m,rk,Ma:new Float32Array(Ly.N*16),Ca:new Float32Array(Ly.N*3),Ra:new Float32Array(Ly.N),at:null,job:null},Ly); };
   const GL=GLAY.map(gLay), gCells=new Map(); L.gl=GL;
@@ -7496,26 +7496,37 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
     // 13. 生き物：鹿やキツネが草地にいて、馬が近づくと跳ねて逃げる。水辺では魚が跳ねて波紋、夜の森ではフクロウの目が光る
     { const tmW=c=>tm(c), SG=new T.SphereGeometry(1,10,8), CG=new T.CylinderGeometry(1,1,1,7), KG=new T.ConeGeometry(1,1,6);
       const pr=(geo,m,sx,sy,sz,x,y,z,par)=>{ const o=new T.Mesh(geo,m); o.scale.set(sx,sy,sz); o.position.set(x,y,z); o.castShadow=true; par.add(o); return o; };
-      const legs=(g,m,mH,pts,len,w)=>pts.map(([x,z])=>{ const p=new T.Group(); p.position.set(x,len,z); g.add(p); pr(CG,m,w,len,w,0,-len/2,0,p); pr(CG,mH,w*1.05,.08,w*1.05,0,-len+.04,0,p); return p; });
-      const mkDeer=()=>{ const g=new T.Group(), b=new T.Group(); g.add(b); const mF=tmW([156,100,58]), mB=tmW([234,220,198]), mH=tmW([40,34,30]);
-        pr(SG,mF,.36,.42,.82,0,1.15,0,b); pr(SG,mB,.3,.22,.6,0,.95,0,b); pr(SG,mB,.2,.24,.12,0,1.22,-.8,b);
-        const nk=new T.Group(); nk.position.set(0,1.35,.62); b.add(nk); const n1=pr(CG,mF,.13,.62,.15,0,.26,.12,nk); n1.rotation.x=.45; pr(SG,mF,.16,.16,.26,0,.58,.34,nk); pr(SG,mH,.05,.05,.05,0,.53,.6,nk);
-        for(const s of [-1,1]){ const e=pr(SG,mF,.05,.14,.03,s*.13,.74,.3,nk); e.rotation.z=-s*.8; }
-        const L=legs(b,mF,mH,[[-.17,.55],[.17,.55],[-.17,-.55],[.17,-.55]],.95,.06); return {g,b,nk,L,h:1.0}; };
-      const mkFox=()=>{ const g=new T.Group(), b=new T.Group(); g.add(b); const mF=tmW([214,110,40]), mW=tmW([244,236,224]), mD=tmW([46,32,28]);
-        pr(SG,mF,.16,.17,.42,0,.45,0,b); pr(SG,mW,.12,.1,.28,0,.36,.08,b);
-        const nk=new T.Group(); nk.position.set(0,.55,.38); b.add(nk); pr(SG,mF,.13,.12,.14,0,.06,.04,nk); const sn=pr(KG,mF,.07,.22,.07,0,.03,.22,nk); sn.rotation.x=Math.PI/2; pr(SG,mD,.025,.025,.025,0,.03,.33,nk); pr(SG,mW,.1,.06,.1,0,-.02,.08,nk);
-        for(const s of [-1,1]){ pr(KG,mF,.05,.14,.03,s*.07,.2,.0,nk); }
-        const tl=new T.Group(); tl.position.set(0,.5,-.38); b.add(tl); tl.rotation.x=-.5; pr(SG,mF,.1,.1,.32,0,0,-.28,tl); pr(SG,mW,.07,.07,.1,0,0,-.58,tl);
-        const L=legs(b,mD,mD,[[-.08,.24],[.08,.24],[-.08,-.24],[.08,-.24]],.34,.03); return {g,b,nk,L,tl,h:.35}; };
+      /* 脚：もも（太い）→すね（細い）→ひづめ。関節で曲がる。前脚はひざが前、後ろ脚はかかとが後ろに折れる */
+      const TG=(r0,r1,len,seg=7)=>new T.CylinderGeometry(r1,r0,len,seg).translate(0,-len/2,0);
+      const legs=(g,m,mH,pts,len,w,hind)=>pts.map(([x,z],i)=>{ const p=new T.Group(); p.position.set(x,len,z); g.add(p); const hd=i>=2;
+        const up=new T.Mesh(TG(w*(hd?2.1:1.6),w*1.05,len*.5),m); up.castShadow=true; p.add(up); const kn=new T.Group(); kn.position.y=-len*.5; p.add(kn);
+        const lo=new T.Mesh(TG(w*1.0,w*.72,len*.5),m); lo.castShadow=true; kn.add(lo); const ho=new T.Mesh(new T.CylinderGeometry(w*.75,w*.95,len*.08,6).translate(0,-len*.5,0),mH); kn.add(ho);
+        p.userData.kn=kn; p.userData.hind=hd; return p; });
+      /* 鹿（ニホンジカ・ブレワイの鹿を参考）：胸が深く腰が丸い胴、白いおしり、細長い首、先が細い顔に黒い鼻と大きな耳。雄は枝分かれした角。脚は細く長い */
+      const mkDeer=()=>{ const g=new T.Group(), b=new T.Group(); g.add(b); const mF=tmW([150,98,58]), mB=tmW([226,206,178]), mH=tmW([36,30,28]), mW=tmW([246,244,236]), mA=tmW([196,176,140]), stag=Math.random()<.5;
+        pr(SG,mF,.33,.42,.42,0,1.18,.38,b); pr(SG,mF,.3,.34,.42,0,1.15,-.05,b); pr(SG,mF,.32,.38,.36,0,1.17,-.42,b); pr(SG,mB,.25,.2,.55,0,.98,0,b); pr(SG,mW,.17,.2,.05,0,1.16,-.77,b); const tl=pr(SG,mF,.06,.13,.05,0,1.32,-.8,b);
+        const nk=new T.Group(); nk.position.set(0,1.38,.6); b.add(nk); const n1=new T.Mesh(new T.CylinderGeometry(.1,.17,.66,8).translate(0,.33,0),mF); n1.rotation.x=.5; n1.castShadow=true; nk.add(n1);
+        const hd=new T.Group(); hd.position.set(0,.58,.3); nk.add(hd); pr(SG,mF,.13,.14,.17,0,0,0,hd); const sn=new T.Mesh(new T.CylinderGeometry(.06,.11,.3,8),mF); sn.rotation.x=1.75; sn.position.set(0,-.05,.22); hd.add(sn); pr(SG,mH,.055,.045,.04,0,-.08,.37,hd);
+        for(const sx of [-1,1]){ const e=pr(SG,mF,.05,.13,.025,sx*.13,.1,-.04,hd); e.rotation.z=-sx*1.1; e.rotation.y=sx*.4; pr(SG,mH,.025,.025,.02,sx*.11,.03,.1,hd);
+          if(stag){ const bm=new T.Group(); bm.position.set(sx*.07,.12,-.02); bm.rotation.set(-.35,0,-sx*.35); hd.add(bm); const A1=new T.Mesh(new T.CylinderGeometry(.012,.025,.55,5).translate(0,.27,0),mA); bm.add(A1);
+            for(const [h2,ln,ang] of [[.15,.22,.9],[.33,.2,.7],[.5,.16,-.7]]){ const t=new T.Mesh(new T.CylinderGeometry(.008,.016,ln,4).translate(0,ln/2,0),mA); t.position.y=h2; t.rotation.x=ang; bm.add(t); } } }
+        const L=legs(b,mF,mH,[[-.15,.5],[.15,.5],[-.15,-.5],[.15,-.5]],1.0,.05); return {g,b,nk,L,tl,h:1.0}; };
+      /* キツネ（ホンドギツネ）：細く長い胴、白い胸とほお、とがった鼻、黒い耳の裏、黒い靴下の脚、先が白い太い尾 */
+      const mkFox=()=>{ const g=new T.Group(), b=new T.Group(); g.add(b); const mF=tmW([206,104,38]), mW=tmW([246,238,226]), mD=tmW([40,30,26]);
+        pr(SG,mF,.14,.15,.24,0,.48,.12,b); pr(SG,mF,.13,.14,.24,0,.48,-.14,b); pr(SG,mW,.1,.11,.16,0,.42,.26,b);
+        const nk=new T.Group(); nk.position.set(0,.56,.32); b.add(nk); const nkc=new T.Mesh(new T.CylinderGeometry(.07,.1,.18,7).translate(0,.09,0),mF); nkc.rotation.x=.7; nk.add(nkc);
+        const hd=new T.Group(); hd.position.set(0,.13,.1); nk.add(hd); pr(SG,mF,.11,.1,.11,0,0,0,hd); pr(SG,mW,.09,.06,.07,0,-.04,.05,hd); const sn=new T.Mesh(new T.ConeGeometry(.055,.2,7),mF); sn.rotation.x=1.62; sn.position.set(0,-.03,.17); hd.add(sn); pr(SG,mD,.022,.02,.02,0,-.025,.27,hd);
+        for(const sx of [-1,1]){ const ear=new T.Mesh(new T.ConeGeometry(.05,.15,4),mF); ear.position.set(sx*.06,.13,-.01); ear.rotation.z=-sx*.2; hd.add(ear); const eb=new T.Mesh(new T.ConeGeometry(.045,.13,4),mD); eb.position.set(sx*.06,.125,-.02); eb.rotation.z=-sx*.2; hd.add(eb); pr(SG,mD,.016,.016,.012,sx*.055,.02,.08,hd); }
+        const tl=new T.Group(); tl.position.set(0,.52,-.36); b.add(tl); tl.rotation.x=-.5; pr(SG,mF,.085,.09,.2,0,0,-.18,tl); pr(SG,mF,.1,.1,.18,0,-.02,-.4,tl); pr(SG,mW,.07,.07,.09,0,-.03,-.6,tl);
+        const L=legs(b,mD,mD,[[-.07,.22],[.07,.22],[-.07,-.24],[.07,-.24]],.38,.025); L.forEach(l=>l.children[0].material=mF); return {g,b,nk,L,tl,h:.38}; };
       const fw=new T.Vector3(); let hP=new T.Vector3();
       const beast=(name,mk,rate,cond,near,spd,stride)=>{ const A=mk(); A.g.visible=false; scene.add(A.g); let st=null, nx=FORCE===name?1:rate*(.3+Math.random()*.7);
         FX.push((t,dt,ok)=>{ hP=U.uHorse.value; if(!st){ nx-=dt; if(nx>0) return; nx=FORCE===name?8:rate*(.6+Math.random()*.8); if(!on(name,cond(ok))) return;
-            cam.getWorldDirection(fw); fw.y=0; fw.normalize(); const fwd=new T.Vector3(0,0,-1); if(fw.dot(fwd)<0) fwd.copy(fw); for(let k=0;k<8;k++){ const d=FORCE===name?24+Math.random()*8:45+Math.random()*40, s=(Math.random()<.5?-1:1)*(FORCE===name?6+Math.random()*6:12+Math.random()*30), x=hP.x+fwd.x*d-fwd.z*s, z=hP.z+fwd.z*d+fwd.x*s, e=gnd(x,z), wx=x+OX, wy=y0-z;
+            cam.getWorldDirection(fw); fw.y=0; fw.normalize(); const fwd=new T.Vector3(0,0,-1); if(fw.dot(fwd)<0) fwd.copy(fw); for(let k=0;k<8;k++){ const d=FORCE===name?24+Math.random()*8:32+Math.random()*30, s=(Math.random()<.5?-1:1)*(FORCE===name?6+Math.random()*6:12+Math.random()*30), x=hP.x+fwd.x*d-fwd.z*s, z=hP.z+fwd.z*d+fwd.x*s, e=gnd(x,z), wx=x+OX, wy=y0-z;
               if(e<.9||Math.abs(wx-rX(wy))<9||beachW(wx,wy)>.4||Math.abs(gnd(x+2,z)-e)>1.2) continue; st={x,z,ph:'idle',a:Math.random()*6.28,t:0,op:0,run:0}; A.g.visible=true; break; } return; }
           st.t+=dt; const dx=st.x-hP.x, dz=st.z-hP.z, dh=Math.hypot(dx,dz);
           if(st.ph==='idle'){ A.nk.rotation.x=.25+.6*Math.max(0,Math.sin(st.t*.35))*(name==='deer'?1:.4); if(A.tl) A.tl.rotation.y=Math.sin(st.t*2)*.3; if(dh<near||st.t>45){ st.ph='flee'; st.t=0; const sd=(dx*fw.z-dz*fw.x)>0?1:-1; st.a=Math.atan2(dx+(-fw.z)*sd*dh*.6,dz+fw.x*sd*dh*.6); } if(dh>160){ st=null; A.g.visible=false; return; } }
-          else { st.run=Math.min(1,st.run+dt*2.5); const v=spd*st.run; st.x+=Math.sin(st.a)*v*dt; st.z+=Math.cos(st.a)*v*dt; const ph=st.t*stride; A.b.position.y=Math.abs(Math.sin(ph))*A.h*.45*st.run; A.b.rotation.x=Math.sin(ph*2)*.12*st.run; A.L.forEach((l,i)=>{ l.rotation.x=Math.sin(ph*2+(i<2?0:2.2)+(i%2)*.3)*.9*st.run; }); A.nk.rotation.x=fade(A.nk.rotation.x,-.15,dt,4); if(A.tl) A.tl.rotation.x=fade(A.tl.rotation.x,-.1,dt,3);
+          else { st.run=Math.min(1,st.run+dt*2.5); const v=spd*st.run; st.x+=Math.sin(st.a)*v*dt; st.z+=Math.cos(st.a)*v*dt; const ph=st.t*stride; A.b.position.y=Math.abs(Math.sin(ph))*A.h*.45*st.run; A.b.rotation.x=Math.sin(ph*2)*.12*st.run; A.L.forEach((l,i)=>{ const q=ph*2+(i<2?0:2.2)+(i%2)*.3, sw=Math.sin(q); l.rotation.x=sw*.8*st.run; l.userData.kn.rotation.x=(l.userData.hind?1:-1)*Math.max(0,Math.cos(q))*1.1*st.run; }); A.nk.rotation.x=fade(A.nk.rotation.x,-.15,dt,4); if(A.tl) A.tl.rotation.x=fade(A.tl.rotation.x,-.1,dt,3);
             if(st.t>9||dh>110){ st.op-=dt*1.5; if(st.op<=0){ st=null; A.g.visible=false; return; } } }
           st.op=st.ph==='idle'||st.t<9?Math.min(1,st.op+dt*2):st.op; const e=gnd(st.x,st.z); A.g.position.set(st.x,e,st.z); A.g.rotation.y=fade(A.g.rotation.y,st.a,dt,st.ph==='idle'?.5:6); A.g.scale.setScalar(Math.max(.001,Math.min(1,st.op*1.2))); }); return A; };
       const grassy=ok=>{ const b=ok.b; return b&&b[1]<.4&&b[0]<.3; };
