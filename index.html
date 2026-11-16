@@ -4802,7 +4802,7 @@ function pWorld(k){ pSeedRoad(k); const key=k+'|'+pOff.toFixed(4); if(pWorldMemo
       /* 区切りの境でとぎれた同じ橋をつなぐ */ sp.sort((p,q)=>p[0]-q[0]); for(let i=sp.length-1;i>0;i--){ const A=sp[i-1], B=sp[i]; if(B[0]<=A[1]+5&&A[2]===B[2]&&A[2]!=='rv'){ A[1]=Math.max(A[1],B[1]); sp.splice(i,1); } } } };
   const brSp=y=>{ brCover(y-500,y+500); let f=0, k=null; for(const [a,b,kd] of brSpans()) if(y>a-60&&y<b+60){ const v=sm(a-60,a+10,y)*sm(b+60,b-10,y); if(v>f){ f=v; k=kd; } } return [f,k]; };
   const brF=y=>brSp(y)[0];
-  const deckH=y=>{ const r=roadH(y), [b,k]=brSp(y); if(!b) return r; return r+(Math.max(r,k==='wt'?3.4:k==='lv'?Math.max(9,lavaH(rX(y),y)+3.5):11)-r)*b; };
+  const deckH=y=>{ const r=roadH(y), [b,k]=brSp(y); if(!b) return r; if(k==='wt') return r+(.45-r)*b; /* 湿原の木道は水面のすぐ上 */ return r+(Math.max(r,k==='wt'?.5:k==='lv'?Math.max(9,lavaH(rX(y),y)+3.5):11)-r)*b; };
   const hFn0=(x,y)=>{ const d=Math.abs(x-rX(y)); let e=raw(x,y); if(d<200){ const df=roadH(y)-e, W=Math.min(200,Math.max(60,12+Math.abs(df)*2.6)); if(d<W) e+=df*sm(W,12,d)*(1-brF(y)); } return e; }; /* 道の両わき：高さの差が大きい所ほど広い幅でなだらかにつなぐ（切り立った壁にしない） */
   // 見つけるもの（記念物）の足もとは平らにならす（急な斜面で片側が浮かないように）
   let padOn=false; const padNear=(x,y,m)=>{ if(!padOn) return false; const n0=Math.floor((y-120-m)/LG), n1=Math.floor((y+120+m)/LG)+1; for(let n=Math.max(0,n0);n<=n1;n++){ const s2=dSpot(n); if(Math.hypot(x-s2.x,y-s2.yy)<s2.rad*1.1+16+m) return true; } return false; }; const hFn=(x,y)=>{ let e=hFn0(x,y); if(!padOn) return e; const n0=Math.floor((y-120)/LG), n1=Math.floor((y+120)/LG)+1;
@@ -5737,11 +5737,21 @@ void main() {`)
     m.customProgramCacheKey=()=>'sh'+kind+(cap||''); return m; });
   // 石の橋（ブレワイのハイリア大橋のような）：白っぽい切り石の、同じ形のアーチがずっと続く橋。橋脚の根元は水に沈み、両側に低い石の欄干。両端は道の高さから少しずつ上がる
   const bridgeFor=(G,yA,yB)=>{ brCover(yA-500,yB+500); const PB={st:[],lv:[],wd:[]}; let Pp=PB.st; for(const [a,b,kd] of brSpans()){ const y0=Math.max(a-60,yA), y1=Math.min(b+60,yB); if(y1<=y0) continue;
-      if(kd==='wt'){ /* 湿原の板の桟橋（ブレワイの湿地の木道）：杭に渡した板の道と、細い手すり */ const W2=PB.wd, ext=(fn)=>{ let pv=fn(y0); for(let y=y0+2;y<=y1+.01;y+=2){ const cu=fn(y); for(let q=0;q<cu.length-1;q++){ const A=pv[q], B=pv[q+1], C2=cu[q], D=cu[q+1]; W2.push(...A,...C2,...B,...B,...C2,...D); } pv=cu; } };
-        const fr=y=>{ const x=rX(y), dx=rX(y+2)-rX(y-2), l=Math.hypot(dx,4)||1; return [x,4/l,dx/l,deckH(y)]; }, pt=(x,ax,ay,y,o,h)=>[X(x+o*ax),h,Z(y-o*ay)];
-        ext(y=>{ const [x,ax,ay,dk]=fr(y); return [[-3.6,dk-.5],[-3.6,dk],[3.6,dk],[3.6,dk-.5],[-3.6,dk-.5]].map(([o,h])=>pt(x,ax,ay,y,o,h)); });
-        for(const sd of [-1,1]) ext(y=>{ const [x,ax,ay,dk]=fr(y), o=sd*3.35; return [[o-.12,dk+1.15],[o-.12,dk+1.4],[o+.12,dk+1.4],[o+.12,dk+1.15],[o-.12,dk+1.15]].map(([u,h])=>pt(x,ax,ay,y,u,h)); });
-        for(let y=Math.ceil(y0/4.8)*4.8;y<=y1;y+=4.8){ if(brF(y)<.3) continue; const [x,ax,ay,dk]=fr(y); for(const sd of [-1,1]){ const o=sd*3.35, lo=-3, hi=dk+1.45, cx=x+o*ax, cy=y-o*ay, hx=.17, cn=[[-hx,-hx],[hx,-hx],[hx,hx],[-hx,hx]].map(([u,v])=>[X(cx+u),Z(cy+v)]); for(let q=0;q<4;q++){ const A=cn[q], B=cn[(q+1)%4]; W2.push(A[0],lo,A[1],B[0],lo,B[1],A[0],hi,A[1],A[0],hi,A[1],B[0],lo,B[1],B[0],hi,B[1]); } } }
+      if(kd==='wt'){ /* 湿原の木道（尾瀬のような）：水面のすぐ上に、細い板を2本並べた低い道。杭は短く、板はところどころ古びて少し傾く。手すりはない。
+           ところどころに、すれ違い用に板が広がった所とベンチ。まわりにはヨシの群れと、草の島（ぬかるんだ地面）が点々とある */
+        const W2=PB.wd, rB=pRng('bw'+Math.round(y0),5), box=(cx,cy,ax,ay,w,l,h0,h1,tilt)=>{ const c=[[-w,-l],[w,-l],[w,l],[-w,l]].map(([u,v])=>[cx+u*ax+v*ay,cy-u*ay+v*ax]) /* u＝道の横方向、v＝道に沿う方向 */, P=c.map(([px,py],i)=>[X(px),Z(py)]), hs=c.map((_,i)=>h1+(i<2?-tilt:tilt)*.5);
+          W2.push(P[0][0],hs[0],P[0][1],P[3][0],hs[3],P[3][1],P[1][0],hs[1],P[1][1], P[1][0],hs[1],P[1][1],P[3][0],hs[3],P[3][1],P[2][0],hs[2],P[2][1], P[0][0],hs[0],P[0][1],P[1][0],hs[1],P[1][1],P[3][0],hs[3],P[3][1], P[1][0],hs[1],P[1][1],P[2][0],hs[2],P[2][1],P[3][0],hs[3],P[3][1]); /* 表と裏の両方 */
+          for(let q=0;q<4;q++){ const A=P[q], B=P[(q+1)%4], h2=hs[(q+1)%4]; W2.push(A[0],h0,A[1],B[0],h0,B[1],A[0],hs[q],A[1], A[0],hs[q],A[1],B[0],h0,B[1],B[0],h2,B[1], A[0],h0,A[1],A[0],hs[q],A[1],B[0],h0,B[1], A[0],hs[q],A[1],B[0],h2,B[1],B[0],h0,B[1]); } };
+        const fr=y=>{ const x=rX(y), dx=rX(y+2)-rX(y-2), l=Math.hypot(dx,4)||1; return [x,4/l,dx/l,deckH(y)]; };
+        for(let y=Math.ceil(y0/2.2)*2.2;y<=y1;y+=2.2){ if(brF(y)<.15) continue; const [x,ax,ay,dk]=fr(y+1.1), sag=(rB()-.5)*.08, tl=(rB()-.5)*.06;
+          for(const sd of [-1,1]){ const o=sd*.62; box(x+o*ax,y+1.1-o*ay,ax,ay,.52,1.1/Math.max(.2,ax)-.03,dk-.16+sag,dk+sag,tl); /* yを2.2進むと道に沿っては2.2/ax進むので、板の長さもそれに合わせる */ } /* 板2本 */
+          if(((y/2.2)|0)%2===0) for(const sd of [-1,1]){ const o=sd*1.0; box(x+o*ax,y+.2-o*ay,ax,ay,.07,.07,-1.4,dk-.14,0); } /* 短い杭 */
+          if(((y/88)|0)!==(((y-2.2)/88)|0)&&brF(y)>.9){ const sd=rB()<.5?-1:1; for(let q=0;q<3;q++){ const o=sd*(1.7+q*1.05); box(x+o*ax,y+1.1-o*ay,ax,ay,.5,2.2/Math.max(.2,ax),dk-.16,dk-.02,0); } /* すれ違い用の広い所とベンチ */
+            const ob=sd*3.2; box(x+ob*ax,y+1.1-ob*ay,ax,ay,.22,1.2,dk,dk+.45,0); for(const v of [-.9,.9]) box(x+ob*ax,y+1.1+v-ob*ay,ax,ay,.08,.08,dk,dk+.45,0); } }
+        /* ヨシの群れと草の島 */ const RE=[], HU=[]; for(let y=y0;y<y1;y+=3){ if(brF(y)<.5) continue; for(let q=0;q<9;q++){ const sd=rB()<.5?-1:1, o=sd*(2.0+Math.pow(rB(),1.8)*70), x=rX(y)+o, yy=y+rB()*3; if(hAt(x,yy)>-.2) continue; const u=pn(x,yy,45,77,2); if(u>.46) RE.push([x,yy,.7+rB()*.9]); else if(u<.36&&rB()<.45) HU.push([x,yy,2.5+rB()*6]); } }
+        if(RE.length||HU.length){ const M4=new T.Matrix4(), Q4=new T.Quaternion(), E4=new T.Euler(), cc=new T.Color();
+          if(RE.length){ const im=new T.InstancedMesh(reedG(),reedM(),RE.length); RE.forEach(([x,y,sc],i)=>{ Q4.setFromEuler(E4.set(0,rB()*6.28,0)); M4.compose(new T.Vector3(X(x),-.42,Z(y)),Q4,new T.Vector3(sc,sc*(.8+rB()*.5),sc)); im.setMatrixAt(i,M4); im.setColorAt(i,cc.setRGB(.85+rB()*.3,.85+rB()*.25,.8+rB()*.2)); }); im.castShadow=true; G.add(im); }
+          if(HU.length){ const im=new T.InstancedMesh(humG(),humM(),HU.length); HU.forEach(([x,y,sc],i)=>{ Q4.setFromEuler(E4.set(0,rB()*6.28,0)); M4.compose(new T.Vector3(X(x),-.42,Z(y)),Q4,new T.Vector3(sc,.6,sc*(.6+rB()*.6))); im.setMatrixAt(i,M4); }); im.receiveShadow=true; G.add(im); } }
         continue; }
       Pp=kd==='lv'?PB.lv:PB.st;
       const prof=y=>{ const x=rX(y), dx=rX(y+2)-rX(y-2), l=Math.hypot(dx,4)||1, ax=4/l, ay=dx/l, dk=deckH(y), PS=40, sp=((y-a)%PS+PS)%PS, wet=hAt(x,y)<.6&&brF(y)>.98;
@@ -5754,6 +5764,11 @@ void main() {`)
       let pv=prof(y0); for(let y=y0+2;y<=y1+.01;y+=2){ const cu=prof(y); for(let q=0;q<cu.length-1;q++){ const A=pv[q], B=pv[q+1], C2=cu[q], D=cu[q+1]; Pp.push(...A,...C2,...B,...B,...C2,...D); } pv=cu; } }
     for(const [kk,arr] of Object.entries(PB)){ if(!arr.length) continue; const g=new T.BufferGeometry(); g.setAttribute('position',new T.Float32BufferAttribute(arr,3)); g.computeVertexNormals();
       const m=new T.Mesh(g,kk==='wd'?brWood():kk==='lv'?shMat('bz',[84,72,66]):shMat('br',[184,178,160])); m.castShadow=m.receiveShadow=true; G.add(m); } };
+  /* ヨシ：細い葉と穂の束（季節で色が変わる）。草の島：水面からわずかに盛り上がった、ぬかるんだ緑の地面 */
+  const reedG=()=>memo('reedG',()=>{ const gs=[], r=pRng('reed',3); for(let q=0;q<9;q++){ const h=1.6+r()*1.2, g=new T.ConeGeometry(.035,h,3).translate(0,h/2,0); g.rotateZ((r()-.5)*.35); g.rotateX((r()-.5)*.35); g.translate((r()-.5)*.5,0,(r()-.5)*.5); gs.push(g.toNonIndexed()); if(q%3===0){ const p=new T.CylinderGeometry(.06,.03,.35,5).translate(0,h+.1,0); p.rotateZ((r()-.5)*.35); p.translate((r()-.5)*.5,0,(r()-.5)*.5); gs.push(p.toNonIndexed()); } } return mergeG(gs); });
+  const reedM=()=>memo('reedM',()=>{ const m=patch(new T.MeshToonMaterial({color:new T.Color().setRGB(...(U.uDoy.value>290||U.uDoy.value<90?[.66,.58,.36]:U.uDoy.value>250?[.58,.6,.3]:[.36,.52,.2])),gradientMap:gmap}),.3); return m; });
+  const humG=()=>memo('humG',()=>new T.SphereGeometry(1,14,6,0,6.2832,0,1.2).scale(1,.35,1));
+  const humM=()=>memo('humM',()=>patch(new T.MeshToonMaterial({color:new T.Color().setRGB(...(U.uDoy.value>290||U.uDoy.value<90?[.5,.48,.3]:[.34,.46,.2])),gradientMap:gmap})));
   const brWood=()=>memo('brWood',()=>{ const m=tm([112,82,54]); m.side=T.DoubleSide; return m; }); /* 桟橋の木：雨にさらされた茶色 */
   // ---- 道しるべ：光の柱と名前の札。今いる所は青い光 ----
   const beam=(x,y,col,h2,w)=>{ const e=Math.max(0,hAt(x,y)), m=new T.Mesh(new T.CylinderGeometry(w*.6,w,h2,10,1,true),new T.MeshBasicMaterial({color:col,transparent:true,opacity:.5,depthWrite:false,blending:T.AdditiveBlending,fog:false})); m.position.set(X(x),e+h2/2,Z(y)); scene.add(m); return e; };
@@ -6089,7 +6104,7 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
     }
   };
   // ---- 区画：馬の前後に、1分ぶんずつの細かい地面と、そこに乗る道・木・岩・水を作っては捨てる ----
-  const SL=0, sh=()=>0, rXw=rX, hW=(x,y)=>{ const b=brF(y); return b>0&&Math.abs(x-rX(y))<7.6?Math.max(hAt(x,y),deckH(y)):hAt(x,y); }; /* 橋の上は橋の面の高さ */
+  const SL=0, sh=()=>0, rXw=rX, hW=(x,y)=>{ const [b,kd]=brSp(y); return b>0&&Math.abs(x-rX(y))<(kd==='wt'?1.7:7.6)?Math.max(hAt(x,y),deckH(y)):hAt(x,y); }; /* 橋の上は橋の面の高さ */
   const chunks=new Map(); let cJob=null;
   const chunkGen=function*(ci){ const yA=ci*CL, yB=yA+CL, P=CL, rc=rX(yA+CL/2), XA=Math.round((rc-LAT)/ST)*ST, XB=XA+2*LAT, nx=(XB-XA)/ST+1, ny=P/ST+1, G=new T.Group(), br0=pRng('ch'+ci,8);
     for(let tj=Math.floor(yA/TL);tj<=Math.floor(yB/TL);tj++){ for(let ti=Math.floor(XA/TL);ti<=Math.floor(XB/TL);ti++) hTile(ti,tj); yield; }
