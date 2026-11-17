@@ -3566,7 +3566,7 @@ function pPickList(k){ const md=d=>d?`${+d.slice(5,7)}/${+d.slice(8)}`:'', rows=
 function pTpl(k){ const wd=new Date(k+'T00:00:00').getDay(); return (wd===0||wd===6||holiday(k))?'we':'wk'; }
 
 function pathList(){
-  pPrune(dayView); pAutoPlace(dayView); pSeedRoad(dayView); pW=Math.max(300,(($('slView')||{}).clientWidth)||(document.body.classList.contains('pfull')?window.innerWidth:(($('list')||{}).clientWidth||380)));
+  pPrune(dayView); pAutoPlace(dayView); pSeedRoad(dayView); if(!(()=>{ try{ return pLookSt; }catch(e){ return null; } })()){ const w0=Math.max(300,(($('slView')||{}).clientWidth)||(document.body.classList.contains('pfull')?window.innerWidth:(($('list')||{}).clientWidth||380))), sh=Math.min(screen.width||9999,screen.height||9999); pW=sh<900?Math.min(w0,Math.max(300,sh)):w0; } /* 道の形は地図の幅で決まるので、スマホを横にしても幅（＝景色）が変わらないよう短い辺に合わせる。見渡すを開いている間は変えない */
   const k=dayView, d=new Date(k+'T00:00:00'), isT=k===pJDay(), bl=pBlocks(k), P=plan(), tk=pTpl(k), tpl=(P.tpl[tk]||{}).b||[];
   let h=`<div class="cat-bar"><div class="cat-name">旅程</div></div>`;
   const un=pUnplaced(k), unAt=h.length;
