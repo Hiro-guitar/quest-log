@@ -5378,7 +5378,8 @@ void main() {`)
   const JNC=new Map(), JNblk=b=>{ let o=JNC.get(b); if(o) return o; o=[]; const y0b=b*1000; let p=RT(y0b-10).t[0]>.5; for(let y=y0b;y<y0b+1000;y+=10){ const c=RT(y).t[0]>.5; if(c!==p){ const yj=y-5, dir=p?1:-1, rd=RT(yj+dir*60); let ok=rd.t[0]<.3&&brF(yj)<.05&&wdF(yj)<.05; for(let k=40;k<=400&&ok;k+=60){ if(RT(yj-dir*k).t[0]<.5) ok=false; if(k<=300&&RT(yj+dir*k).t[0]>.5) ok=false; } /* けもの道も道も、ある程度長く続く所だけ */ if(ok){ const s=fract1(yj*.0137+.31)<.5?-1:1; o.push({y:yj,dir,s,rt:rd,x0:rX(yj)}); } } p=c; } if(JNC.size>400) JNC.clear(); JNC.set(b,o); return o; };
   const JN=(yA,yB)=>{ const r=[]; for(let b=Math.floor(yA/1000);b<=Math.floor(yB/1000);b++) r.push(...JNblk(b)); return r; };
   const JBL=520, jbXY=(j,u)=>{ const y=j.y-j.dir*u*.8, x=j.x0+(rX(y)-j.x0)*Math.max(0,1-u/40)+j.s*(u*.58+u*u*.00035)*sm(0,30,u); return [x,y]; };
-  const onBr=(x,y,pad)=>{ for(const j of JN(y-JBL,y+JBL)){ const u=(j.y-y)*j.dir/.8; if(u<-2||u>JBL) continue; const [bx]=jbXY(j,Math.max(0,u)); if(Math.abs(x-bx)<j.rt.w*1.25+pad) return true; } return false; };
+  const JBK=new Map(), jbk=y=>{ const k=Math.floor(y/25); let a=JBK.get(k); if(a) return a; a=[]; const y0=k*25; for(let b=Math.floor((y0-JBL)/1000);b<=Math.floor((y0+25+JBL)/1000);b++) for(const j of JNblk(b)){ const u0=(j.y-y0)*j.dir/.8, u1=(j.y-y0-25)*j.dir/.8; if(Math.max(u0,u1)>=-2&&Math.min(u0,u1)<=JBL) a.push(j); } if(JBK.size>20000) JBK.clear(); JBK.set(k,a); return a; };
+  const onBr=(x,y,pad)=>{ const A=jbk(y); if(!A.length) return false; { for(let i=0;i<A.length;i++){ const j=A[i], u=(j.y-y)*j.dir/.8; if(u<-2||u>JBL) continue; const uu=Math.max(0,u), bx=j.x0+(rX(y)-j.x0)*Math.max(0,1-uu/40)+j.s*(uu*.58+uu*uu*.00035)*sm(0,30,uu); if(Math.abs(x-bx)<j.rt.w*1.25+pad) return true; } } return false; };
   L.JN=JN;
   /* 城下町の通りの跡：家並みの間（区画の境、幅6m）と、町を抜ける大通り。STR＝石畳の残り具合（0〜1）、STOV＝草に埋もれた所 */
   /* 城下町の区画は道の向きにそろえる：u＝道からの横の距離、v＝道にそった位置。家はその場所の道の向きに回す */
@@ -5599,7 +5600,7 @@ void main() {`)
     const nC=sp.filter(s=>s[3]===4).length, iC=new T.InstancedMesh(cone,mC,Math.max(1,nC)), M=new T.Matrix4(), Q=new T.Quaternion(), V=new T.Vector3(), Sc=new T.Vector3(), up=new T.Vector3(0,1,0), cA=c3([128,172,60]), cB=c3([150,190,72]), cc2=new T.Color(); iC.count=nC;
     const IB=BT.map((b,vi)=>{ if(!b) return null; const n=sp.filter(s=>s[3]===vi).length, tm2=TM[vi]; return n?{n,a:0,R:new T.InstancedMesh(b.canopy,tm2.mR,n),L:new T.InstancedMesh(b.leafCards,tm2.mL,n),T:new T.InstancedMesh(b.trunk,tm2.mT,n)}:null; });
     let c=0; sp.forEach(([x,y,e,vi,s,r,rv])=>{ Q.setFromAxisAngle(up,r); Sc.set(s,s,s); V.set(X(x),e-.4,Z(y)); M.compose(V,Q,Sc); if(vi===4){ iC.setMatrixAt(c,M); iC.setColorAt(c++,cc2.setRGB(.9+rv*.2,.92+rv*.16,.9+rv*.14)); } else { const B=IB[vi], a=B.a++; B.R.setMatrixAt(a,M); B.L.setMatrixAt(a,M); B.T.setMatrixAt(a,M); { const lc=LCOL[vi]||LCOL[0]; B.R.setColorAt(a,cc2.copy(c3(lc[0])).lerp(c3(lc[1]),rv)); } B.L.setColorAt(a,cc2); } });
-    tileG.userData.trees=sp.filter(q=>q[3]!==4).map(q=>[X(q[0]),q[2]-.4,Z(q[1]),q[3],q[4]]); const ms=[iC]; IB.forEach(B=>{ if(B) ms.push(B.R,B.L,B.T); }); ms.forEach(m=>{ m.castShadow=true; m.receiveShadow=true; m.layers.enable(3); /* 水たまりにも映る */ tileG.add(m); });
+    tileG.userData.trees=sp.filter(q=>q[3]!==4).map(q=>[X(q[0]),q[2]-.4,Z(q[1]),q[3],q[4]]); const ms=[iC]; IB.forEach(B=>{ if(B) ms.push(B.R,B.L,B.T); }); ms.forEach(m=>{ m.castShadow=true; m.receiveShadow=true; tileG.add(m); });
     if(im.length) tileG.add(IMP.inst(im.map(([x,y,e,vi,s,r,rv])=>[vi,x,y,e,s,rv,1e9]))); };
   // ---- 遠くの森：足もとの区画（本物の木がある所）の外にも、本物の木を横から写した絵の板を立てて、山や丘の森を地平の手前まで続ける。
   //      木の種類・生える場所の決まりは手前の木と同じ。板はいつもカメラの方を向く ----
@@ -7782,7 +7783,7 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
   let skyT=0; const PF=/lkperf/.test(location.search); L.pf=[];
   /* 重い所（森・草・町）では描く細かさを自動で下げ、軽くなったら戻す（コマ落ちが続かないように） */
   const PR0=Math.min(1.35,window.devicePixelRatio||1); let prC=PR0, dtE=1/60, prT=0;
-  const adapt=(n,dt)=>{ if(!L.started||L.shot) return; dtE+=(dt-dtE)*.05; if(n-prT<1500) return; prT=n; let np=prC; if(dtE>1/31) np=Math.max(Math.min(PR0,1.1),prC-.1); else if(dtE<1/50&&prC<PR0) np=Math.min(PR0,prC+.08); /* 重い時は解像度を下げるが、馬や人が粗く見えるほどは下げない（30fpsを目安） */ if(Math.abs(np-prC)>.01){ prC=np; ren.setPixelRatio(prC); ren.setSize(ov.clientWidth,ov.clientHeight,false); } };
+  const adapt=(n,dt)=>{ if(!L.started||L.shot) return; dtE+=(dt-dtE)*.05; if(n-prT<1500) return; prT=n; let np=prC; if(dtE>1/31) np=Math.max(Math.min(PR0,.95),prC-.1); else if(dtE<1/50&&prC<PR0) np=Math.min(PR0,prC+.08); /* 重い時は解像度を下げるが、馬や人が粗く見えるほどは下げない（30fpsを目安） */ if(Math.abs(np-prC)>.01){ prC=np; ren.setPixelRatio(prC); ren.setSize(ov.clientWidth,ov.clientHeight,false); } };
   const loop=n=>{ if(!L.alive) return; const pt0=performance.now(); const dt=Math.min(.05,(n-last)/1000); last=n; U.uTime.value=(n-t00)/1000; if(isT&&n-skyT>2000){ skyT=n; applySky(skyState(new Date())); } /* 太陽と月を時刻に合わせて動かす */ if(nightFx) nightFx(U.uTime.value,dt); if(ambFx) ambFx(U.uTime.value,dt); if(L.ntF) L.ntF(n); if(L.oceanFx) L.oceanFx(dt); if(L.beachFx) L.beachFx(dt); if(volcFx) volcFx(U.uTime.value,dt); if(moonFx) moonFx(); if(unkaiFx) unkaiFx(U.uTime.value,dt); if(SHEEP.length) sheepFx(dt,U.uTime.value);
     { const w=Date.now(), gap=(w-wall)/1000; wall=w; if(gap>.5&&go&&!L.shot){ py=Math.min(yEnd,py+(gap-dt)*Math.max(v,KM/60)); v=KM/60; } }
     if(intro){ const kq=Math.min(1,(n-tIn)/2600), e2=1-Math.pow(1-kq,3); dist=50-29*e2; cp=(34-23*e2)*rad; if(kq>=1) intro=false; }
