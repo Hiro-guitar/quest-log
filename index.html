@@ -5065,8 +5065,8 @@ async function pLookOpen(){
    gl_FragColor.rgb=mix(gl_FragColor.rgb,gl_FragColor.rgb*(.92+.16*sk)*(.94+.12*cl)*mix(1.02,.97,gz),im); }`); }; }
   const chunkRoot=new T.Group(), farG=new T.Group(); scene.add(chunkRoot,farG);
   // ---- 光 ----
-  const sun=new T.DirectionalLight(day>.1?c3(lerpA([255,246,232],[255,190,130],eve)):c3(RED?[236,128,116]:[126,166,196]),day>.1?2.2:1.0); scene.add(sun.target); sun.castShadow=true; sun.shadow.mapSize.set(2048,2048);
-  const sc=sun.shadow.camera; sc.left=-260; sc.right=260; sc.top=320; sc.bottom=-320; sc.near=10; sc.far=2400; sun.shadow.bias=-.0005; sun.shadow.normalBias=.4; scene.add(sun);
+  const sun=new T.DirectionalLight(day>.1?c3(lerpA([255,246,232],[255,190,130],eve)):c3(RED?[236,128,116]:[126,166,196]),day>.1?2.2:1.0); scene.add(sun.target); sun.castShadow=true; sun.shadow.mapSize.set(1536,1536);
+  const sc=sun.shadow.camera; sc.left=-170; sc.right=170; sc.top=210; sc.bottom=-210; /* 影を落とす範囲を馬のまわりに絞る（影を描く物が減って軽くなる） */ sc.near=10; sc.far=2400; sun.shadow.bias=-.0005; sun.shadow.normalBias=.4; scene.add(sun);
   const hemi=new T.HemisphereLight(c3([170,200,235]),c3([90,80,60]),.6); scene.add(hemi);
   const RAYQ=new URLSearchParams(location.search).get('lkray')!=null?+new URLSearchParams(location.search).get('lkray'):null; /* 空・霧・光を今の太陽と月に合わせる */ const applySky=S=>{ U.uSun.value.copy(S.sd); U.uFogA.value.copy(c3(S.fA)); U.uFogB.value.copy(c3(S.fB)); U.uNtT.value=S.nf; const su=sky.material.uniforms; su.uHz.value.copy(c3(S.hz)); su.uMd.value.copy(c3(S.md)); su.uZn.value.copy(c3(S.zn)); su.uDay.value=S.day; su.uDw.value=S.dw; su.uNt.value=wet?S.nf*.85:S.nf; su.uMD.value.copy(S.MD); if(su.uMP) su.uMP.value=S.MPH*6.2832; { const cv=su.uCov.value; U.uRay.value=wet?0:Math.max(S.dw*(.55+.45*Math.min(1,cv*2)),S.day*(1-S.nf)*.55*sm(.3,.5,cv)*(1-sm(.82,.95,cv))); if(RAYQ!=null) U.uRay.value=RAYQ; U.uRayF.value=Math.min(U.uRay.value,S.dw); }
     const moonLit=S.mUp&&S.mo.alt>.08; sun.color.copy(S.day>.1?c3(lerpA([255,246,232],[255,190,130],S.eve)):c3([126,166,196])); const mlf=(1-Math.cos(S.MPH*6.2832))/2; /* 月の満ち欠け：満月の夜は明るく影もくっきり、新月の夜は暗い */ sun.intensity=S.day>.1?2.2:moonLit?.55+.7*mlf:.45;
@@ -5600,7 +5600,7 @@ void main() {`)
     const nC=sp.filter(s=>s[3]===4).length, iC=new T.InstancedMesh(cone,mC,Math.max(1,nC)), M=new T.Matrix4(), Q=new T.Quaternion(), V=new T.Vector3(), Sc=new T.Vector3(), up=new T.Vector3(0,1,0), cA=c3([128,172,60]), cB=c3([150,190,72]), cc2=new T.Color(); iC.count=nC;
     const IB=BT.map((b,vi)=>{ if(!b) return null; const n=sp.filter(s=>s[3]===vi).length, tm2=TM[vi]; return n?{n,a:0,R:new T.InstancedMesh(b.canopy,tm2.mR,n),L:new T.InstancedMesh(b.leafCards,tm2.mL,n),T:new T.InstancedMesh(b.trunk,tm2.mT,n)}:null; });
     let c=0; sp.forEach(([x,y,e,vi,s,r,rv])=>{ Q.setFromAxisAngle(up,r); Sc.set(s,s,s); V.set(X(x),e-.4,Z(y)); M.compose(V,Q,Sc); if(vi===4){ iC.setMatrixAt(c,M); iC.setColorAt(c++,cc2.setRGB(.9+rv*.2,.92+rv*.16,.9+rv*.14)); } else { const B=IB[vi], a=B.a++; B.R.setMatrixAt(a,M); B.L.setMatrixAt(a,M); B.T.setMatrixAt(a,M); { const lc=LCOL[vi]||LCOL[0]; B.R.setColorAt(a,cc2.copy(c3(lc[0])).lerp(c3(lc[1]),rv)); } B.L.setColorAt(a,cc2); } });
-    tileG.userData.trees=sp.filter(q=>q[3]!==4).map(q=>[X(q[0]),q[2]-.4,Z(q[1]),q[3],q[4]]); const ms=[iC]; IB.forEach(B=>{ if(B) ms.push(B.R,B.L,B.T); }); ms.forEach(m=>{ m.castShadow=true; m.receiveShadow=true; tileG.add(m); });
+    tileG.userData.trees=sp.filter(q=>q[3]!==4).map(q=>[X(q[0]),q[2]-.4,Z(q[1]),q[3],q[4]]); const ms=[iC]; IB.forEach(B=>{ if(B){ ms.push(B.R,B.L,B.T); (tileG.userData.leafM||(tileG.userData.leafM=[])).push(B.L); } }); ms.forEach(m=>{ m.castShadow=true; m.receiveShadow=true; tileG.add(m); });
     if(im.length) tileG.add(IMP.inst(im.map(([x,y,e,vi,s,r,rv])=>[vi,x,y,e,s,rv,1e9]))); };
   // ---- 遠くの森：足もとの区画（本物の木がある所）の外にも、本物の木を横から写した絵の板を立てて、山や丘の森を地平の手前まで続ける。
   //      木の種類・生える場所の決まりは手前の木と同じ。板はいつもカメラの方を向く ----
@@ -6156,7 +6156,8 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
     propsFor(G,yA,P,XA,XB,FBI!=null?BIO:bName(bAt(rc,yA+CL/2)),.42,br0);
     return G; };
   const addChunk=(ci,G)=>{ chunks.set(ci,G); chunkRoot.add(G); IMP.updChk([...chunks.keys()]); };
-  const updChunks=(py,sync)=>{ const cc=Math.floor(py/CL), c0=cc-1, c1=cc+3;
+  /* 遠くの区画の木は、細かい葉の板を描かず、丸い樹冠と幹だけにする（遠いと見分けがつかないので軽くする） */ const leafLOD=py=>{ for(const [ci,G] of chunks){ const LM=G.userData.leafM; if(!LM) continue; const d=Math.max(0,Math.abs((ci+.5)*CL-py)-CL/2), on=d<650; for(const m of LM) m.visible=on; } }; L.leafLOD=leafLOD;
+  const updChunks=(py,sync)=>{ const cc=Math.floor(py/CL), c0=cc-1, c1=cc+3; leafLOD(py);
     for(const [ci,G] of chunks) if(ci<c0-1||ci>c1+1){ chunkRoot.remove(G); G.traverse(o=>{ if(o.geometry&&(!o.isInstancedMesh||o.userData.own)) o.geometry.dispose(); }); chunks.delete(ci); IMP.updChk([...chunks.keys()]); }
     for(let ci=c0;ci<=c1;ci++) if(!chunks.has(ci)&&(sync&&(ci<=cc+1||/lkshot/.test(location.search)&&!/lkfast/.test(location.search))||ci===cc)){ if(cJob&&cJob.ci===ci) cJob=null; let G2; try{ const it=chunkGen(ci); let r; while(!(r=it.next()).done); G2=r.value; }catch(e){ console.error('chunk',ci,e); G2=new T.Group(); } addChunk(ci,G2); } /* 一部の作りで失敗しても、景色の読み込みは止めない */
     if(!cJob) for(let ci=cc;ci<=c1;ci++) if(!chunks.has(ci)){ cJob={ci,it:chunkGen(ci)}; break; } };
@@ -7782,8 +7783,8 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
     moonFx=()=>{ mm.position.copy(cam.position).addScaledVector(MD,D); mm.lookAt(cam.position); halo.position.copy(mm.position); }; } }
   let skyT=0; const PF=/lkperf/.test(location.search); L.pf=[];
   /* 重い所（森・草・町）では描く細かさを自動で下げ、軽くなったら戻す（コマ落ちが続かないように） */
-  const PR0=Math.min(1.35,window.devicePixelRatio||1); let prC=PR0, dtE=1/60, prT=0;
-  const adapt=(n,dt)=>{ if(!L.started||L.shot) return; dtE+=(dt-dtE)*.05; if(n-prT<1500) return; prT=n; let np=prC; if(dtE>1/31) np=Math.max(Math.min(PR0,.95),prC-.1); else if(dtE<1/50&&prC<PR0) np=Math.min(PR0,prC+.08); /* 重い時は解像度を下げるが、馬や人が粗く見えるほどは下げない（30fpsを目安） */ if(Math.abs(np-prC)>.01){ prC=np; ren.setPixelRatio(prC); ren.setSize(ov.clientWidth,ov.clientHeight,false); } };
+  const PR0=Math.min(1.25,window.devicePixelRatio||1); let prC=PR0, dtE=1/60, prT=0;
+  const adapt=(n,dt)=>{ if(!L.started||L.shot) return; dtE+=(dt-dtE)*.05; if(n-prT<1500) return; prT=n; let np=prC; if(dtE>1/44) np=Math.max(Math.min(PR0,.9),prC-.08); else if(dtE<1/56&&prC<PR0) np=Math.min(PR0,prC+.05); /* 45fpsを切ったら少しずつ細かさを下げる */ /* 重い時は解像度を下げるが、馬や人が粗く見えるほどは下げない（30fpsを目安） */ if(Math.abs(np-prC)>.01){ prC=np; ren.setPixelRatio(prC); ren.setSize(ov.clientWidth,ov.clientHeight,false); } };
   const loop=n=>{ if(!L.alive) return; const pt0=performance.now(); const dt=Math.min(.05,(n-last)/1000); last=n; U.uTime.value=(n-t00)/1000; if(isT&&n-skyT>2000){ skyT=n; applySky(skyState(new Date())); } /* 太陽と月を時刻に合わせて動かす */ if(nightFx) nightFx(U.uTime.value,dt); if(ambFx) ambFx(U.uTime.value,dt); if(L.ntF) L.ntF(n); if(L.oceanFx) L.oceanFx(dt); if(L.beachFx) L.beachFx(dt); if(volcFx) volcFx(U.uTime.value,dt); if(moonFx) moonFx(); if(unkaiFx) unkaiFx(U.uTime.value,dt); if(SHEEP.length) sheepFx(dt,U.uTime.value);
     { const w=Date.now(), gap=(w-wall)/1000; wall=w; if(gap>.5&&go&&!L.shot){ py=Math.min(yEnd,py+(gap-dt)*Math.max(v,KM/60)); v=KM/60; } }
     if(intro){ const kq=Math.min(1,(n-tIn)/2600), e2=1-Math.pow(1-kq,3); dist=50-29*e2; cp=(34-23*e2)*rad; if(kq>=1) intro=false; }
