@@ -4770,7 +4770,8 @@ function pWorld(k){ pSeedRoad(k); const key=k+'|'+pOff.toFixed(4); if(pWorldMemo
   /* 森の濃さ（0〜1）：ブレワイのように丘や山の斜面・高い所は木がびっしり、低い平らな所はまばら。大きなまだらで森と草地が分かれる。平原・砂漠・火山には生えない */
   /* 砂浜の広さ：波打ちぎわから陸へ約250m（ot はおよそ km 単位）。1 で砂浜の真ん中、0 で砂浜の外 */
   const bchCache=new Map(), beachW=(x,y)=>{ const v=vAt(y); const ck=Math.round(v/8); let oc=bchCache.get(ck); if(oc===undefined){ oc=pOceanAt(v)||null; if(oc&&Math.abs(v-oc.v)>oc.RV+60) oc=null; bchCache.set(ck,oc); } if(!oc) return 0; const ot=pOceanT(uOf(x),v,oc); return ot>.6?0:sm(-.4,-.24,ot+.04*(pn(x,y,90,71,2)-.5)); };
-  /* 海に近い土地（波打ちぎわから約2km）：1で海べ、0で内陸。海沿いの木の種類を変えるのに使う */ const coastK=(x,y)=>{ const v=vAt(y); const ck=Math.round(v/8); let oc=bchCache.get(ck); if(oc===undefined){ oc=pOceanAt(v)||null; if(oc&&Math.abs(v-oc.v)>oc.RV+60) oc=null; bchCache.set(ck,oc); } if(!oc) return 0; return sm(-2.4,-.7,pOceanT(uOf(x),v,oc)); };
+  /* 海に近い土地（波打ちぎわから約2km）：1で海べ、0で内陸。海沿いの木の種類を変えるのに使う */ /* 南の海：海ごとに約3割は南の島のような暖かい海べ（浜にヤシ、内陸も常緑樹）。残りは日本の海べ（クロマツ） */ const TRQ=new URLSearchParams(location.search).get('lktrop'), tropAt=y=>{ const v=vAt(y), oc=pOceanAt(v); if(!oc) return false; if(TRQ!=null) return TRQ==='1'; const q=Math.sin(oc.v*12.9898+78.233)*43758.5453; return q-Math.floor(q)<.32; };
+  const coastK=(x,y)=>{ const v=vAt(y); const ck=Math.round(v/8); let oc=bchCache.get(ck); if(oc===undefined){ oc=pOceanAt(v)||null; if(oc&&Math.abs(v-oc.v)>oc.RV+60) oc=null; bchCache.set(ck,oc); } if(!oc) return 0; return sm(-2.4,-.7,pOceanT(uOf(x),v,oc)); };
   const forM=(x,y,b,e,ny)=>{ const mac=sm(.42,.64,pn(x,y,1800,41,3)*.8+pn(x,y,420,43,9)*.2), sl=sm(.985,.9,ny), hi=sm(140,420,e); return Math.min(1,Math.max(mac*.8,sl*.95,hi*(.45+.45*mac)))*(1-plF(x,y,b)*(1-sm(300,800,e)))*(1-sm(.2,.35,b[1]))*(1-sm(.3,.6,b[0]))*(1-beachW(x,y))*(1-paddyW(x,y)); };
   const bName=b=>{ let m=.35, r=''; ['volc','desert','wet','snow'].forEach((n,i)=>{ if(b[i]>m){ m=b[i]; r=n; } }); return r; };
   const elevM=h=>h>=P_SEA?(h-P_SEA)*EH:(h-P_SEA)*EH*.5;
@@ -4861,7 +4862,7 @@ function pWorld(k){ pSeedRoad(k); const key=k+'|'+pOff.toFixed(4); if(pWorldMemo
   padOn=true;
   // 見つけるもの（記念物）のまわりには木・岩・小物・草を置かない（重なって見えないように）
   const POIF=[]; /* 地図の名前つきの場所（祠・馬宿・村・遺跡）の足もと：木や岩を置かない */ const nearMon=(x,y,pad)=>{ for(const q of POIF) if(Math.abs(y-q[1])<q[2]+pad&&Math.hypot(x-q[0],y-q[1])<q[2]+pad) return true; const n0=Math.max(0,Math.floor((y-140)/LG)-1), n1=Math.floor((y+140)/LG)+1; for(let n=n0;n<=n1;n++){ const s2=dSpot(n); if(Math.hypot(x-s2.x,y-s2.yy)<s2.rad+pad) return true; } return false; };
-  const w={k,coastK,wdF,rXs,plF,forM,beachW,paddyW,KM,ST,W,vAt,uOf,pn,nz,sm,mir,macro,bAt,bName,elevM,roadU,rMean,rX,raw,roadH,hFn,hTile,hAt,rivK,brSpans,brCover,brSp,brF,deckH,TL,colAt,snAt,lin,mix,C,LG,dSpot,nearMon,POIF,padNear,volcLavaF,lavaH,FBI};
+  const w={k,tropAt,coastK,wdF,rXs,plF,forM,beachW,paddyW,KM,ST,W,vAt,uOf,pn,nz,sm,mir,macro,bAt,bName,elevM,roadU,rMean,rX,raw,roadH,hFn,hTile,hAt,rivK,brSpans,brCover,brSp,brF,deckH,TL,colAt,snAt,lin,mix,C,LG,dSpot,nearMon,POIF,padNear,volcLavaF,lavaH,FBI};
   pWorldMemo.set(key,w); return w; }
 /* ---------- 見渡す：今いる場所に立って、道の先の世界を眺める（WebGL） ---------- */
 // ブレワイの景色に寄せて：地上の目の高さから水平に近く見る。遠くは青白くかすみ（太陽の側は明るく）、谷には低い霧。
@@ -4885,7 +4886,7 @@ async function pLookOpen(){
   // 大きな地形（山・湖・雪山・火山・砂漠・湿原）は地図と同じ計算、そこへ足もとの起伏・岩山の尾根・砂丘・道の細かな曲がりを足す。
   // 近くは細かい区画を馬の前後に作っては捨て、遠くは粗い地形で地平線まで描く
   const CL=540, LAT=900, HS=118;
-  const WD=pWorld(k), {coastK,wdF,rXs,plF,forM,beachW,paddyW,KM,ST,vAt,uOf,pn,nz,macro,bAt,bName,elevM,roadU,rMean,rX,raw,roadH,hFn,hTile,hAt,TL,FBI,dSpot,LG,nearMon,POIF,padNear,volcLavaF,lavaH,rivK,brSpans,brCover,brSp,brF,deckH}=WD; L.WD=WD;
+  const WD=pWorld(k), {tropAt,coastK,wdF,rXs,plF,forM,beachW,paddyW,KM,ST,vAt,uOf,pn,nz,macro,bAt,bName,elevM,roadU,rMean,rX,raw,roadH,hFn,hTile,hAt,TL,FBI,dSpot,LG,nearMon,POIF,padNear,volcLavaF,lavaH,rivK,brSpans,brCover,brSp,brF,deckH}=WD; L.WD=WD;
   const u0=pRX(pm2y(nowM)), OX=u0*KM;
   const elev=e=>e; // 高さはもう見渡すの単位
   const mx0=rX(y0), b0=bAt(mx0,y0);
@@ -5621,8 +5622,8 @@ void main() {`)
   const treeKind=(x,y,e,b,fm,pl,ftc,r6,r7,r8,ed=1)=>{ /* 針葉樹か広葉樹かは、まとまった林ごとに決める（1本ずつ混ぜない）。高い所・寒い所・大きなまだらの「針葉樹の林」側は針葉樹。境目だけ少し混じる */ const cf=(e-340)/170+(pn(x,y,1300,47,5)-.5)*2.4+b[3]*6+(ftc?6:0), con=(cf+(r8-.5)*.18>0||e>520)&&(pl<.5||e>420), vi0=con?4:pl>.5?(r6<.6?0:2):r6<.35?0:r6<.65?1:r6<.85?2:3;
       /* 広葉樹は「木立ごと」に種類が決まる：カエデの林、クスノキの森、桜の並木、イチョウの林、高い所の白樺林。木立の中にもふつうの木が少し混じる。平原の一本木はときどき桜 */
       let vi=vi0; if(!con){ const dense=fm>.45; const hr=fract1(x*.0731+y*.1173), wq=pn(x,y,300,7,2)*240, gc=fract1(Math.floor((x+wq)/230)*.131+Math.floor((y-wq)/230)*.917+.37), g=gc<.35?0:gc<.5?2:gc<.65?3:gc<.77?4:gc<.87?5:6; if(pl>.5){ if(hr<.16) vi=6; } else if(hr<.74){ vi=g===2?7:g===3?8:g===4?(dense?vi0:6):g===5?(dense?8:5):g===6?(e>180||b[3]>.1?9:7):g===1&&e>260?9:vi0; } /* 桜とイチョウは森の奥には生えず、林の縁や開けた所に */ }
-      if(!con){ const ck=coastK(x,y); if(ck>.05&&fract1(x*.0193+y*.0711)<ck*1.15){ vi=fract1(x*.311+y*.173)<.6?13:8; } } /* 海沿いは、潮風に強いクロマツの林と、常緑の木（タブ・ウバメガシ）。紅葉する木は内陸へ */
-      const sc={5:1.0,6:1.05,7:.9,8:1.0,9:.95}[vi]; if(con) vi=10+(coastK(x,y)>.4?3:conK(x,y,e,b)); if(vi===13&&coastK(x,y)>.05) vi=15; /* 15＝海べのクロマツ（色の濃い葉） */ return [vi,(.85+r7*.5)*(9+r8*4)/10*1.4*(1+.5*pl)*(con?1:sc?sc:vi===3?1.25:1.1)*(.55+.45*ed)]; };
+      if(!con){ const ck=coastK(x,y); if(ck>.05&&fract1(x*.0193+y*.0711)<ck*1.15){ vi=tropAt(y)?8:fract1(x*.311+y*.173)<.6?13:8; } } /* 海沿いは、潮風に強いクロマツの林と、常緑の木（タブ・ウバメガシ）。紅葉する木は内陸へ */
+      const sc={5:1.0,6:1.05,7:.9,8:1.0,9:.95}[vi]; if(con) vi=coastK(x,y)>.4&&tropAt(y)?8:10+(coastK(x,y)>.4?3:conK(x,y,e,b)); if(vi===13&&coastK(x,y)>.05) vi=15; /* 15＝海べのクロマツ（色の濃い葉） */ return [vi,(.85+r7*.5)*(9+r8*4)/10*1.4*(1+.5*pl)*(con?1:sc?sc:vi===3?1.25:1.1)*(.55+.45*ed)]; };
   
   const treesFor=(tileG,yA,P,XA,XB,near,nx,fz,tR)=>{ const all=[], RLm=190, NREAL=600;
     for(let q=0;q<10800;q++){ const x=XA+tR()*(XB-XA), y=yA+tR()*P, f=pn(x,y,70,11,4), rr=[tR(),tR(),tR()], r6=tR(), r7=tR(), r8=tR(), rot=tR()*6.28; if(f<.02) continue; const e=hAt(x,y); if(e<1.5) continue; const dr=Math.abs(x-rX(y)); if(dr<Math.max(4.6,RT(y).w*2.9)||onBr(x,y,8)) continue; if(paddyW(x,y)>.15) continue; /* けもの道は木のすぐ脇を通る */
@@ -7582,14 +7583,14 @@ ${BIO==='snow'?'   col=mix(col,vec3(.92,.95,1.),smoothstep(.35,.6,vNy+(rn3(p*.8)
       const nf=9; for(let q=0;q<nf;q++){ const a=q/nf*6.28+r()*.3, L=4.2+r()*1.6, droop=.5+r()*.5, NS=16, P=[], I=[]; for(let s=0;s<=NS;s++){ const t=s/NS, w=Math.sin(Math.PI*Math.min(1,t*1.1))*1.05*(1-t*.25)*(s%2?1:.55), x=t*L, y=-droop*L*t*t*.55+.4*t; P.push(x,y,-w, x,y-.08,0, x,y,w); if(s<NS){ const b=s*3; I.push(b,b+3,b+1,b+1,b+3,b+4,b+1,b+4,b+2,b+2,b+4,b+5); } }
         const ge=new T.BufferGeometry(); ge.setAttribute('position',new T.Float32BufferAttribute(P,3)); ge.setAttribute('uv',new T.Float32BufferAttribute(new Array(P.length/3*2).fill(0),2)); ge.setIndex(I); ge.computeVertexNormals(); const f=new T.Mesh(ge.toNonIndexed(),q%2?mFr:mFr2); f.geometry.computeVertexNormals(); f.position.copy(top); f.rotation.y=a; f.rotation.z=.15-r()*.2; g.add(f); }
       g.traverse(o=>{ if(o.isMesh) o.castShadow=true; }); return g; };
-    /* 浜の木：ヤシはやめて、日本の海べらしいクロマツ（潮風で傾いた松）にする */ const PP=[0,1,2,3].map(i=>{ const g=new T.Group(), n=new T.Mesh(CK[5].n,mC), w=new T.Mesh(CK[5].w,mCW); n.castShadow=w.castShadow=true; g.add(n,w); return g; });
+    /* 浜の木：ヤシはやめて、日本の海べらしいクロマツ（潮風で傾いた松）にする */ const PPalm=[palm(1),palm(2),palm(3),palm(4)], PP=[0,1,2,3].map(i=>{ const g=new T.Group(), n=new T.Mesh(CK[5].n,mC), w=new T.Mesh(CK[5].w,mCW); n.castShadow=w.castShadow=true; g.add(n,w); return g; });
     const dwood=seed=>{ const g=new T.Group(), r=pRng('dw'+seed,3), L=4+r()*5; const c=new T.Mesh(new T.CylinderGeometry(.16+r()*.1,.24+r()*.12,L,8),mDw); c.rotation.z=Math.PI/2; c.position.y=.15; g.add(c); for(let q=0;q<2;q++){ const b=new T.Mesh(new T.CylinderGeometry(.05,.1,1+r()*1.2,6),mDw); b.position.set((r()-.5)*L*.6,.25,(r()-.5)*.4); b.rotation.set(r()*.6,0,.6+r()*.8); g.add(b); } g.traverse(o=>{ if(o.isMesh) o.castShadow=true; }); return g; };
     const DW=[dwood(1),dwood(2),dwood(3)], RK=[0,1,2].map(i=>{ const ge=new T.DodecahedronGeometry(1,1), p=ge.attributes.position, rr=pRng('brk'+i,3); for(let q=0;q<p.count;q++){ const k=.8+rr()*.35; p.setXYZ(q,p.getX(q)*k*1.3,p.getY(q)*k*.7,p.getZ(q)*k); } ge.computeVertexNormals(); return ge; });
     const tuft=(()=>{ const g=new T.Group(); for(let q=0;q<9;q++){ const b=new T.Mesh(new T.PlaneGeometry(.08,.9+q%3*.25),mGr); b.position.y=.45; b.rotation.set((q%3-1)*.35,q*.7,(q%2-.5)*.5); g.add(b); } return g; })();
     const cells=new Map(), CS=200;
     const build=iy=>{ const g=new T.Group(), r=pRng('bch'+k+'_'+iy,9); let n=0; const y0c=iy*CS, xr=rX(y0c+CS/2);
       for(let q=0;q<90;q++){ const y=y0c+r()*CS, x=xr+(r()-.5)*420, bw=beachW(x,y); if(bw<.6) continue; const e=hAt(x,y); if(e==null||e<.6) continue; if(Math.abs(x-rX(y))<7) continue; const kind=r(); let o;
-        if(kind<.3&&e>1.8){ o=PP[Math.floor(r()*4)].clone(); o.rotation.y=r()*6.28; o.scale.setScalar(.6+r()*.35); o.userData.obr=.7; }
+        if(kind<.3&&e>1.8){ const tp=tropAt(y); o=(tp?PPalm:PP)[Math.floor(r()*4)].clone(); o.rotation.y=r()*6.28; o.scale.setScalar(tp?.85+r()*.35:.6+r()*.35); o.userData.obr=tp?.6:.7; }
         else if(kind<.45){ o=DW[Math.floor(r()*3)].clone(); o.rotation.y=r()*6.28; }
         else if(kind<.6){ o=new T.Mesh(RK[Math.floor(r()*3)],mRk); const s2=.5+r()*1.6; o.scale.setScalar(s2); o.rotation.set(r(),r()*6,r()); o.castShadow=true; }
         else if(e>2.2){ o=tuft.clone(); o.scale.setScalar(.8+r()*.8); o.rotation.y=r()*6; o.userData.obr=.4; } else continue;
