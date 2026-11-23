@@ -810,7 +810,7 @@ body{background:#050607}
 @media (max-width:820px){ input,select,textarea{font-size:16px} }
 /* 帯の演出（受注・実・休む） */
 .banner{position:fixed;left:0;right:0;top:38%;z-index:55;pointer-events:none;opacity:0;display:flex;justify-content:center}
-.banner.show{animation:bnIn 2.2s ease forwards}
+.banner.show{animation:bnIn var(--bn,2.2s) ease forwards}.banner.long{pointer-events:auto;cursor:pointer}
 .bn-in{width:100%;text-align:center;padding:14px 16px;background:linear-gradient(90deg,transparent,rgba(5,8,10,.82) 18%,rgba(5,8,10,.82) 82%,transparent);border-top:1px solid rgba(242,236,214,.35);border-bottom:1px solid rgba(242,236,214,.35)}
 .bn-k{font-size:11px;letter-spacing:.5em;color:var(--orange)}
 .bn-big{font-size:clamp(22px,5vw,34px);font-weight:900;letter-spacing:.12em;text-shadow:0 0 18px rgba(242,236,214,.55)}
@@ -960,7 +960,7 @@ body{background:#050607}
 .pf{display:grid;grid-template-columns:minmax(0,1fr) auto 3.5em;align-items:center;gap:8px;font-size:12.5px;padding:2px 0}.pf small{color:var(--muted);text-align:right}
 .pf-d{display:flex;gap:5px}.pf-d i{width:8px;height:8px;border:1.3px solid #d9d3be;transform:rotate(45deg);opacity:.7}.pf-d i.on{background:#f2ecd6;opacity:1;box-shadow:0 0 6px rgba(242,236,214,.5)}
 .pf-note{font-size:10.5px;color:var(--dim);margin-top:4px}
-.banner.shrine .bn-k{color:#6fe0ff}.banner.book .bn-k{color:#6fe0ff}.banner.wake .bn-k{color:#f5c27a}.banner.pr .bn-k,.banner.reward .bn-k{color:var(--orange)}
+.banner.shrine .bn-k{color:#6fe0ff}.banner.book .bn-k{color:#6fe0ff}.banner.dawn .bn-k{color:#f5c27a}.banner.pr .bn-k,.banner.reward .bn-k{color:var(--orange)}
 .banner.heart .bn-k::before{content:'♥';color:#e8705f;font-size:20px;letter-spacing:0}.banner.stamina .bn-k::before{content:'◔';color:#9fd98a;font-size:20px;letter-spacing:0}
 .rupee{display:inline-flex;align-items:center;gap:3px;margin-right:12px;font-size:14px}.rupee b{font-weight:900}.rp{width:9px;height:14px;filter:drop-shadow(0 0 3px rgba(240,166,64,.6));vertical-align:-2px}
 .sensor{display:inline-flex;align-items:center;gap:4px;margin-right:14px;font-size:12px;color:#e9e4cf;text-shadow:0 1px 3px rgba(0,0,0,.7)}.sensor b{font-weight:700}.sn-t{color:var(--muted);font-variant-numeric:tabular-nums}
@@ -1250,10 +1250,11 @@ function lvInfo(xp){let lv=1,need=100,rest=xp;while(rest>=need){rest-=need;lv++;
 function allStepsDone(q){return !q.done && (q.steps.length||kids(q.id).length) && q.steps.every(stepDone) && kids(q.id).every(k=>k.done)}
 
 // ゼルダ風の帯（受注・実の発見など）
-function banner(kind,big,sub){
+function banner(kind,big,sub,ms){ /* ms：長く見せたいとき（ゆっくり読める。タップで閉じる） */
   const b=$('banner'); if(!b) return;
-  b.className='banner '+kind; b.innerHTML=`<div class="bn-in"><div class="bn-k">${{wake:'DAWN',book:'ANCIENT SCRIPT',accept:'CHALLENGE',seed:'✿',rest:'REST',pr:'NEW RECORD',train:'TRAINING',reward:'REWARD',shrine:'SHRINE'}[kind]||''}</div><div class="bn-big">${esc(big)}</div>${sub?`<div class="bn-sub">${esc(sub)}</div>`:''}</div>`;
-  void b.offsetWidth; b.classList.add('show'); banner._until=Date.now()+2300;
+  b.className='banner '+kind; b.innerHTML=`<div class="bn-in"><div class="bn-k">${{dawn:'DAWN',book:'ANCIENT SCRIPT',accept:'CHALLENGE',seed:'✿',rest:'REST',pr:'NEW RECORD',train:'TRAINING',reward:'REWARD',shrine:'SHRINE'}[kind]||''}</div><div class="bn-big">${esc(big)}</div>${sub?`<div class="bn-sub">${esc(sub)}</div>`:''}</div>`;
+  b.style.setProperty('--bn',(ms||2200)/1000+'s'); if(ms) b.classList.add('long'); b.onclick=ms?()=>{ b.classList.remove('show','long'); banner._until=0; }:null;
+  void b.offsetWidth; b.classList.add('show'); banner._until=Date.now()+(ms||2200)+100;
 }
 function toast(msg){ const w=(banner._until||0)-Date.now(); if(w>0){ setTimeout(()=>toast(msg),w+150); return; } const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('show'),2200)}
 function gain(n){
@@ -3215,7 +3216,7 @@ function wakeAct(a,b){
   if(a==='wkdel'){ slSet(ymd(),'w',null); $('wake').classList.remove('show'); render(); return; }
   if(a==='wkok'){ const m=pTm($('wkT').value); if(m==null){ toast('刻を記そう'); return; } if(m>pnow()+5){ toast('その刻はまだ来ていない'); return; }
     const t=ymd(); slSet(t,'w',m); const bb=$('wkB')&&pTm($('wkB').value); if(bb!=null) slSet(ymd(new Date(Date.now()-DAY)),'b',bb<PATH_H0?bb+1440:bb);
-    $('wake').classList.remove('show'); render(); const d=slDur(t); banner('wake','目覚め',`${pfmt(m)}　${d!=null?`${slDurFmt(d)}眠った　`:''}さあ、手綱をとって進もう`); }
+    $('wake').classList.remove('show'); render(); const d=slDur(t); banner('dawn','目覚め',`${pfmt(m)}　${d!=null?`${slDurFmt(d)}眠った　`:''}さあ、手綱をとって進もう`,7000); }
 }
 function renderMoon(){
   const M=$('moon'); if(!M) return;
