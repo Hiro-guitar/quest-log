@@ -5253,7 +5253,7 @@ void main() {`)
   //  葉：枝の先ごとに葉の房。房は1枚ずつ形のわかる葉の集まり（切り抜き）で、輪郭がぎざぎざ。上は明るい黄緑、下と内側は暗い青緑
   //  4つの形：横に広い傘の木／丸い木／幹の高い木／若い木
   const RI=RIMG?await Promise.race([RIMG,new Promise(r=>setTimeout(()=>r(null),8000))]):null, RLf=RI&&RI[0], RTw=RI&&RI[1], RBk=RI&&RI[2];
-  const imgTex=(im,rep)=>{ const t=new T.Texture(im); t.colorSpace=T.SRGBColorSpace; t.anisotropy=4; if(rep) t.wrapS=t.wrapT=T.RepeatWrapping; t.needsUpdate=true; return t; };
+  const imgTex=(im,rep)=>{ const t=new T.Texture(im); t.colorSpace=T.SRGBColorSpace; if(rep){ t.anisotropy=2; }; if(rep) t.wrapS=t.wrapT=T.RepeatWrapping; t.needsUpdate=true; return t; };
   /* 写真の質感のときは、光の段（ゼルダ調の3段の塗り）をやめて、なめらかに明るさが移る陰影にする */
   const gmT=(()=>{ if(!REALT) return gmap; const c=document.createElement('canvas'); c.width=8; c.height=1; const x=c.getContext('2d'); for(let i=0;i<8;i++){ const v=Math.round(255*(.42+.58*Math.pow(i/7,.9))); x.fillStyle=`rgb(${v},${v},${v})`; x.fillRect(i,0,1,1); } const t=new T.CanvasTexture(c); t.minFilter=t.magFilter=T.LinearFilter; t.colorSpace=T.NoColorSpace; return t; })();
   for(let q=0;q<700;q++) rng(); // 前の葉の絵が使っていた乱数の分（ほかの物の並びを変えない）
