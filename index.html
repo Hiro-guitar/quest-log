@@ -4881,6 +4881,8 @@ async function pLookOpen(){
   let T; try{ T=await import('./three.module.min.js'); }catch(e){ loadEl.textContent='景色を読み込めなかった'; return; }
   /* 木の見た目：ゼルダ調（塗り）か、写真の質感か。写真の素材（Poly Haven・CC0）は先に読み始めておく */
   const REALT=(()=>{ const q=new URLSearchParams(location.search).get('lkreal'); if(q!=null) return q==='1'; try{ return localStorage.getItem('ql-tree')==='real'; }catch(e){ return false; } })();
+  /* 幹の樹皮は写真（Poly Haven・CC0：ケヤキ・クスノキ・桜・トウカエデ・コナラ・マツ）。凹凸の向き（法線）の絵も使って、光で溝が陰になる */
+  const PBN=['zelkova','camphor','sakura','maple','oak','pine'], BIMG=/lkoldbark/.test(location.search)?null:Promise.all(PBN.flatMap(n=>['tex_b_','tex_bn_'].map(p=>new Promise(r=>{ const i=new Image(); i.onload=()=>r(i); i.onerror=()=>r(null); i.src=p+n+'.webp?v=1'; }))));
   const RIMG=REALT?Promise.all(['leaf','twig','bark'].map(n=>new Promise(r=>{ const i=new Image(); i.onload=()=>r(i); i.onerror=()=>r(null); i.src='tex_'+n+'.webp?v=1'; }))):null;
   if(!L.alive) return;
   const mir=x=>x /* 旅の幅の外も折り返さず、地図と同じ土地をそのまま続ける */, vOf=y=>y/PX+pOff, rng=pRng('lk'+k,3), sm=(a,b,x)=>{ const t=Math.max(0,Math.min(1,(x-a)/(b-a))); return t*t*(3-2*t); };
@@ -5253,6 +5255,9 @@ void main() {`)
   //  葉：枝の先ごとに葉の房。房は1枚ずつ形のわかる葉の集まり（切り抜き）で、輪郭がぎざぎざ。上は明るい黄緑、下と内側は暗い青緑
   //  4つの形：横に広い傘の木／丸い木／幹の高い木／若い木
   const RI=RIMG?await Promise.race([RIMG,new Promise(r=>setTimeout(()=>r(null),8000))]):null, RLf=RI&&RI[0], RTw=RI&&RI[1], RBk=RI&&RI[2];
+  const BI=BIMG?await Promise.race([BIMG,new Promise(r=>setTimeout(()=>r(null),8000))]):null, PB={};
+  if(BI) PBN.forEach((n,i)=>{ const d=BI[2*i], nm=BI[2*i+1]; if(!d||!nm) return; const m=new T.Texture(d), q=new T.Texture(nm); m.colorSpace=T.SRGBColorSpace; m.anisotropy=2; q.colorSpace=T.NoColorSpace; for(const t of [m,q]){ t.wrapS=t.wrapT=T.RepeatWrapping; t.repeat.set(1,3); t.needsUpdate=true; } PB[n]={m,n:q}; });
+  const bkN=(mat,k)=>{ if(PB[k]){ mat.normalMap=PB[k].n; mat.normalScale=new T.Vector2(1.4,1.4); } return mat; };
   const imgTex=(im,rep)=>{ const t=new T.Texture(im); t.colorSpace=T.SRGBColorSpace; if(rep){ t.anisotropy=2; }; if(rep) t.wrapS=t.wrapT=T.RepeatWrapping; t.needsUpdate=true; return t; };
   /* 写真の質感のときは、光の段（ゼルダ調の3段の塗り）をやめて、なめらかに明るさが移る陰影にする */
   const gmT=(()=>{ if(!REALT) return gmap; const c=document.createElement('canvas'); c.width=8; c.height=1; const x=c.getContext('2d'); for(let i=0;i<8;i++){ const v=Math.round(255*(.42+.58*Math.pow(i/7,.9))); x.fillStyle=`rgb(${v},${v},${v})`; x.fillRect(i,0,1,1); } const t=new T.CanvasTexture(c); t.minFilter=t.magFilter=T.LinearFilter; t.colorSpace=T.NoColorSpace; return t; })();
@@ -5300,7 +5305,7 @@ void main() {`)
     else if(!/lkoldbark/.test(location.search)) return barkF(kind);
     else { const dark=kind==='ginkgo'?.6:kind==='ever'?.45:.25, n=kind==='maple'?120:300; for(let q=0;q<n;q++){ const px=r()*128, py=r()*256, w=kind==='ginkgo'?2+r()*4:1+r()*3, h=kind==='maple'?10+r()*30:30+r()*90, dk=r()<.6; W((o,p)=>{ x.fillStyle=dk?`rgba(40,34,28,${dark*(.4+r()*.6)})`:`rgba(200,190,170,${.12+r()*.2})`; x.fillRect(px+o,py+p,w,h); }); } }
     const t=new T.CanvasTexture(cv); t.wrapS=t.wrapT=T.RepeatWrapping; t.colorSpace=T.SRGBColorSpace; return t; };
-  const barkTx=RBk?imgTex(RBk,1):barkMk('gray');
+  const barkTx=PB.zelkova?PB.zelkova.m:RBk?imgTex(RBk,1):barkMk('gray');
   const V3=(x,y,z)=>new T.Vector3(x,y,z);
   // 曲がった管（幹・枝）：太さは元から先へ細く。根元は根の張り出し
   const tTube=(pts,r0,r1,seg,flare,o)=>{ const n=pts.length, Ls=[0]; for(let i=1;i<n;i++) Ls.push(Ls[i-1]+pts[i].distanceTo(pts[i-1])); const len=Ls[n-1], rings=[];
@@ -5407,16 +5412,16 @@ void main() {`)
     return {n:mk(Pn,Nn,Cn,Un),w:mk(Pw,Nw,Cw,Uw)}; };
   const CK=CKP.map(conifBuild);
   const cone=CK[0].n;
-  const mR=patch(new T.MeshToonMaterial({color:0xffffff,gradientMap:gmT,vertexColors:true}),.15), mL=patch(new T.MeshToonMaterial({color:0xffffff,gradientMap:gmT,vertexColors:true,map:ltx,alphaTest:.4,side:T.DoubleSide}),.15), mT=patch(new T.MeshToonMaterial({color:0xffffff,gradientMap:gmT,map:barkTx,vertexColors:true})), mC=patch(new T.MeshToonMaterial({color:0xffffff,gradientMap:gmT,vertexColors:true,map:ntx,alphaTest:.42,side:T.DoubleSide}),.1); /* 木の雪：雪の土地だけでなく、標高が高く地面に雪が積もる所の木にも、上を向いた枝・葉に雪をのせる（地面の雪と同じ標高の目安） */
+  const mR=patch(new T.MeshToonMaterial({color:0xffffff,gradientMap:gmT,vertexColors:true}),.15), mL=patch(new T.MeshToonMaterial({color:0xffffff,gradientMap:gmT,vertexColors:true,map:ltx,alphaTest:.4,side:T.DoubleSide}),.15), mT=bkN(patch(new T.MeshToonMaterial({color:0xffffff,gradientMap:gmT,map:barkTx,vertexColors:true})),'zelkova'), mC=patch(new T.MeshToonMaterial({color:0xffffff,gradientMap:gmT,vertexColors:true,map:ntx,alphaTest:.42,side:T.DoubleSide}),.1); /* 木の雪：雪の土地だけでなく、標高が高く地面に雪が積もる所の木にも、上を向いた枝・葉に雪をのせる（地面の雪と同じ標高の目安） */
   const augT=(m,nm,useU,spc)=>{ const ob=m.onBeforeCompile; m.onBeforeCompile=sh=>{ ob(sh); sh.uniforms.uSpc={value:spc}; sh.vertexShader='varying float vUp, vSn; varying vec3 vIP;\n'+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n vUp=normal.y; vSn='+(BIO==='snow'?'1.':'0.')+'; vIP=modelMatrix[3].xyz;\n#ifdef USE_INSTANCING\n vSn=max(vSn,smoothstep(520.,760.,instanceMatrix[3].y)); vIP=(modelMatrix*instanceMatrix[3]).xyz;\n#endif'); sh.fragmentShader='varying float vUp, vSn; varying vec3 vIP;\n'+sh.fragmentShader.replace('#include <color_fragment>','#include <color_fragment>\n'+(nm==='c'?'':' { vec4 st=seasT(diffuseColor.rgb,floor(vIP.xz),vIP.y,uSpc); diffuseColor.rgb=st.rgb; if(st.a>.01&&(st.a>.88||vn(vWP.xz*.9+vec2(vWP.y*.8))*.8+vn(vWP.xz*2.3+vec2(vWP.y*2.))*.2<st.a*1.1)) discard; /* 葉の落ち方：かたまりで減っていき、ほぼ落ちたら残さない（細かい粒が枝のまわりに残らない） */ } /* 季節の色：春の新緑・秋の紅葉・冬は葉が落ちる（実際の日付、高い所ほど早い） */\n')+' { float cl=smoothstep(.3,.56,vn(vWP.xz*1.4+vec2(vWP.y*.9))*.7+vn(vWP.xz*4.5+vec2(vWP.y*2.7,0.))*.3); float sa=smoothstep(.5,.88,vUp)*cl*vSn*(gl_FrontFacing?1.:.25)*'+(useU?'(.55+.45*smoothstep(.3,.7,vMapUv.x))':(nm==='r'?'.9':'.85'))+'; diffuseColor.rgb=mix(diffuseColor.rgb*(1.-.12*vSn),vec3(.93,.96,1.),sa); } /* 雪は枝の上にかたまりで（全体を白っぽくせず、濃い緑の葉の上に白い雪の塊） */'); }; m.customProgramCacheKey=()=>'tree-'+nm+BIO+spc; }; [[mC,'c',1,4],[mR,'r',0,0],[mL,'l',0,0]].forEach(a=>augT(...a));
-  /* 針葉樹の幹・枝と、カラマツの葉（秋に黄金色、冬に落葉） */ const mCW=patch(new T.MeshToonMaterial({color:0xffffff,gradientMap:gmT,map:barkTx,vertexColors:true}),.1), /* 葉と同じだけ風で揺らす（幹と葉がずれないように） */ mCL=patch(new T.MeshToonMaterial({color:0xffffff,gradientMap:gmT,vertexColors:true,map:ntx,alphaTest:.42,side:T.DoubleSide}),.1); augT(mCL,'k',1,1);
+  /* 針葉樹の幹・枝と、カラマツの葉（秋に黄金色、冬に落葉） */ const mCW=bkN(patch(new T.MeshToonMaterial({color:0xffffff,gradientMap:gmT,map:PB.pine?PB.pine.m:barkTx,vertexColors:true}),.1),'pine'), /* 葉と同じだけ風で揺らす（幹と葉がずれないように） */ mCL=patch(new T.MeshToonMaterial({color:0xffffff,gradientMap:gmT,vertexColors:true,map:ntx,alphaTest:.42,side:T.DoubleSide}),.1); augT(mCL,'k',1,1);
   // 葉は光を透かす：日陰側や逆光でも真っ黒にならず、くすんだ緑が残る（ブレワイの木の陰の側のように）
   const augTr=mT=>{ mT.onBeforeCompile=(ob=>sh=>{ ob(sh); sh.fragmentShader=sh.fragmentShader.replace('#include <lights_fragment_end>','#include <lights_fragment_end>\n reflectedLight.indirectDiffuse+=diffuseColor.rgb*vec3(.26,.27,.22);'); })(mT.onBeforeCompile); }; augTr(mT); augTr(mCW);
   const augL=m=>{ const ob=m.onBeforeCompile; m.onBeforeCompile=sh=>{ ob(sh); sh.fragmentShader=sh.fragmentShader.replace('#include <lights_fragment_end>','#include <lights_fragment_end>\n reflectedLight.indirectDiffuse+=diffuseColor.rgb*vec3(.30,.36,.22);\n { /* 逆光で葉が透けて光る（太陽の方を見ると、葉のふちが黄緑に明るむ）と、日なた側のふちの明かり */ vec3 vd=normalize(vWP-cameraPosition), sn=normalize(uSun); float up=smoothstep(-.02,.12,sn.y), bl=pow(max(0.,dot(vd,sn)),3.)*up; float rim=pow(1.-abs(dot(normalize(normal),normalize(vViewPosition))),3.)*up; reflectedLight.indirectDiffuse+=diffuseColor.rgb*(vec3(1.05,1.12,.55)*bl*.45+vec3(1.,.95,.75)*rim*.15); }'); }; }; [mR,mL,mC,mCL].forEach(augL);
   /* 木の種類ごとの材質（葉の形・樹皮・季節の色づき方）。5イチョウ 6桜 7カエデ 8常緑樹 9白樺。0〜3はこれまでの木 */
   const SPK={5:['fan','ginkgo',1],6:['sakura','sakura',2],7:['palm','maple',3],8:['gloss','ever',4],9:['small','birch',5]}, LTX={}, BTX={};
-  const TM=[0,1,2,3,4,5,6,7,8,9].map(v=>{ if(v===4) return null; if(v<4) return {mR,mL,mT}; const [lk,bk,spc]=SPK[v], lt=LTX[v]=(RLf&&lk==='gloss')?ltx:leafTx(lk), bt=BTX[v]=barkMk(bk);
-    const a={mR:patch(new T.MeshToonMaterial({color:0xffffff,gradientMap:gmT,vertexColors:true}),.15), mL:patch(new T.MeshToonMaterial({color:0xffffff,gradientMap:gmT,vertexColors:true,map:lt,alphaTest:.4,side:T.DoubleSide}),.15), mT:patch(new T.MeshToonMaterial({color:0xffffff,gradientMap:gmT,map:bt,vertexColors:true}))};
+  const TM=[0,1,2,3,4,5,6,7,8,9].map(v=>{ if(v===4) return null; if(v<4) return {mR,mL,mT}; const [lk,bk,spc]=SPK[v], lt=LTX[v]=(RLf&&lk==='gloss')?ltx:leafTx(lk), pbk={ginkgo:'oak',sakura:'sakura',maple:'maple',ever:'camphor'}[bk], bt=BTX[v]=PB[pbk]?PB[pbk].m:barkMk(bk);
+    const a={mR:patch(new T.MeshToonMaterial({color:0xffffff,gradientMap:gmT,vertexColors:true}),.15), mL:patch(new T.MeshToonMaterial({color:0xffffff,gradientMap:gmT,vertexColors:true,map:lt,alphaTest:.4,side:T.DoubleSide}),.15), mT:bkN(patch(new T.MeshToonMaterial({color:0xffffff,gradientMap:gmT,map:bt,vertexColors:true})),pbk)};
     augT(a.mR,'r',0,spc); augT(a.mL,'l',0,spc); augTr(a.mT); augL(a.mR); augL(a.mL); return a; });
   /* 葉の地の色：常緑樹は濃い緑、イチョウ・白樺は明るい黄緑 */ const LCOL={0:[[128,172,60],[150,190,72]],5:[[150,186,64],[170,200,80]],6:[[118,160,60],[138,178,70]],7:[[124,166,56],[148,186,66]],8:[[72,112,48],[92,132,58]],9:[[146,184,70],[166,198,86]]};
   if(/lkshot/.test(location.search)) L.TREE={CK,mCW,mCL,TM,TRS,BT,BV,canopy,leafCards,trunk,cone,mR,mL,mT,mC,BT,parts:v=>[[BT[v].canopy,mR],[BT[v].leafCards,mL],[BT[v].trunk,mT]]};
