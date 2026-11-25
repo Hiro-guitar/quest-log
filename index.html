@@ -5272,17 +5272,21 @@ void main() {`)
     const t=new T.CanvasTexture(cv); t.colorSpace=T.SRGBColorSpace; return t; };
   const ltx=RLf?imgTex(RLf):leafTx('ovate');
   /* 樹皮（作り直し）：縦に走る割れ目と、そのあいだの板状の皮。割れ目は暗く奥まり、板の上は明るく細かな筋。うっすら地衣類の点。種類ごとに割れ目の細かさと色を変える */
-  const barkF=(kind)=>{ const P={gray:{b:[138,130,112],c:[44,38,32],cols:12,rows:2.6,dep:.85,li:.05},ever:{b:[106,90,74],c:[34,27,22],cols:13,rows:3,dep:.88,li:.03},ginkgo:{b:[128,114,96],c:[46,40,34],cols:7,rows:1.6,dep:.85,li:.04},maple:{b:[136,134,120],c:[84,82,72],cols:14,rows:5,dep:.35,li:.07}}[kind];
+  const barkF=(kind)=>{ /* 樹皮：割れ目の網目（縦に長い板が、まっすぐな深い溝で区切られる）。板ごとに明るさが少し違い、ふちは落ちこみ、表面は細かくざらつく */
+    const P={gray:{b:[140,132,114],c:[58,52,44],gx:17,gy:3,cw:3.6,bv:.3},ever:{b:[108,92,76],c:[44,36,30],gx:20,gy:4,cw:3,bv:.28},ginkgo:{b:[132,118,100],c:[52,46,40],gx:12,gy:3,cw:4.6,bv:.34},maple:{b:[140,138,124],c:[96,94,84],gx:6,gy:3,cw:2,bv:.12}}[kind];
     const W=256, H=512, r=pRng('barkF_'+kind,7), cv=document.createElement('canvas'); cv.width=W; cv.height=H; const x=cv.getContext('2d'), im=x.createImageData(W,H), D=im.data;
-    const grid=(gx,gy)=>{ const g=new Float32Array(gx*gy); for(let i=0;i<g.length;i++) g[i]=r(); return (u,v)=>{ u=((u%gx)+gx)%gx; v=((v%gy)+gy)%gy; const i0=Math.floor(u), j0=Math.floor(v), fu=u-i0, fv=v-j0, su=fu*fu*(3-2*fu), sv=fv*fv*(3-2*fv), i1=(i0+1)%gx, j1=(j0+1)%gy; const a=g[j0*gx+i0], b=g[j0*gx+i1], c=g[j1*gx+i0], d=g[j1*gx+i1]; return a+(b-a)*su+(c-a)*sv+(a-b-c+d)*su*sv; }; };
-    const n1=grid(P.cols,Math.max(1,Math.round(P.rows))), n2=grid(P.cols*2,Math.max(1,Math.round(P.rows*2))), n3=grid(P.cols*4,8), wp=grid(4,2), gr=grid(64,16), lic=grid(24,24);
-    const F=(u,v)=>{ const w=(wp(u*4,v*2)-.5)*.35; return n1((u+w)*P.cols,v*Math.round(P.rows))*.62+n2((u+w)*P.cols*2,v*Math.round(P.rows*2))*.28+n3(u*P.cols*4,v*8)*.1; };
-    for(let j=0;j<H;j++) for(let i=0;i<W;i++){ const u=i/W, v=j/H, f=F(u,v), fx=F(u+1/W,v);
-      const cr=Math.min(1,Math.abs(f-.5)/.055), ridge=Math.pow(cr,.7); // 0＝割れ目の底 1＝板の上
-      const lit=Math.max(-.3,Math.min(.3,(fx-f)*60))*(1-ridge*.4); // 横から光が当たったような段差の陰影
-      const g=(gr(u*64,v*16)-.5)*.22; let k=P.dep*(1-ridge)+(1-P.dep)*0; const R=[0,1,2].map(c=>{ const base=P.b[c]*(1+g+lit), dark=P.c[c]; return base+(dark-base)*(1-ridge)*P.dep; });
-      const l=lic(u*24,v*24); if(l>1-P.li*3&&ridge>.6){ const a=Math.min(1,(l-(1-P.li*3))/(P.li*3))*.55; R[0]+=(168-R[0])*a; R[1]+=(174-R[1])*a; R[2]+=(150-R[2])*a; }
-      const o=(j*W+i)*4; D[o]=R[0]; D[o+1]=R[1]; D[o+2]=R[2]; D[o+3]=255; }
+    const gx=P.gx, gy=P.gy, cwp=W/gx, chp=H/gy, pts=[], lum=[];
+    for(let j=0;j<gy;j++) for(let i=0;i<gx;i++){ pts.push([(i+.15+.7*r())*cwp,(j+.1+.8*r())*chp]); lum.push(.86+.26*r()); }
+    const hs=(a,b)=>{ const q=Math.sin(a*127.1+b*311.7)*43758.5453; return q-Math.floor(q); };
+    const ln=new Float32Array(W); for(let i=0;i<W;i++) ln[i]=.9+.2*hs(i,7)+.08*Math.sin(i*.9); // 細かい縦の筋
+    for(let y=0;y<H;y++){ const cj=Math.floor(y/chp); for(let px=0;px<W;px++){ const ci=Math.floor(px/cwp); let d1=1e9,d2=1e9,k1=0,v1x=0,v1y=0,v2x=0,v2y=0;
+        for(let dj=-1;dj<=1;dj++) for(let di=-1;di<=1;di++){ const ii=(ci+di+gx)%gx, jj=(cj+dj+gy)%gy, q=pts[jj*gx+ii], qx=q[0]+(ci+di-ii)*cwp, qy=q[1]+(cj+dj-jj)*chp, dx=px-qx, dy=(y-qy)*.24, d=dx*dx+dy*dy; if(d<d1){ d2=d1; v2x=v1x; v2y=v1y; d1=d; k1=jj*gx+ii; v1x=dx; v1y=dy; } else if(d<d2){ d2=d; v2x=dx; v2y=dy; } }
+        const e=Math.sqrt(d2)-Math.sqrt(d1); // 境目までの近さ（溝）
+        const sx=Math.abs(v1x-v2x), sy=Math.abs(v1y-v2y), hz=sy/(sx+sy+1e-3); /* 横向きの境目（上下の板の切れ目）は細く浅く。溝の太さは場所で揺らぐ */ const wv=P.cw*(1-.75*hz)*(.55+.9*hs(Math.floor(px/9),Math.floor(y/23)));
+        const cr=Math.min(1,Math.max(0,(e-wv*.35)/Math.max(.6,wv))), cs=cr*cr*(3-2*cr), deep=1-.55*hz; // 0＝溝の底 1＝板の上
+        const bev=1-P.bv*(1-Math.min(1,e/(P.cw*4))); // 板のふちが落ちこむ
+        const g=ln[px]*(.92+.16*hs(px,y))*lum[k1]*bev;
+        const o=(y*W+px)*4; for(let c=0;c<3;c++){ const top=P.b[c]*g; const bot=P.c[c]*(.85+.3*hs(px*3,y)); D[o+c]=Math.max(0,Math.min(255,top+(bot-top)*(1-cs)*deep)); } D[o+3]=255; } }
     x.putImageData(im,0,0); const t=new T.CanvasTexture(cv); t.wrapS=t.wrapT=T.RepeatWrapping; t.colorSpace=T.SRGBColorSpace; return t; };
   const barkMk=(kind)=>{ const cv=document.createElement('canvas'); cv.width=128; cv.height=256; const x=cv.getContext('2d'), r=pRng('bark',7); if(kind!=='gray') return barkMk2(kind); if(!/lkoldbark/.test(location.search)) return barkF('gray'); x.fillStyle='rgb(150,146,120)'; x.fillRect(0,0,128,256);
     for(let q=0;q<260;q++){ const px=r()*128, py=r()*256, w=1+r()*3.5, h=18+r()*80, dk=r()<.55, a=.18+r()*.32; x.fillStyle=dk?`rgba(86,84,70,${a})`:`rgba(186,182,156,${a})`; for(const o of [-128,0,128]) for(const p of [-256,0,256]) x.fillRect(px+o,py+p,w,h); }
