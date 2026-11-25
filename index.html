@@ -5303,7 +5303,9 @@ void main() {`)
     {H:3.6,R:.3,nL:4,bl:3.6,op:48,cr:1.35,lean:.1,bu:.25,fill:.4,sub:2},                        // 7 カエデ：細い幹、枝が細かく分かれ、層になった樹冠
     {H:4.2,R:.82,nL:4,bl:4.3,op:56,cr:2.5,lean:.08,bu:.3,fill:.55,sub:2},                      // 8 常緑樹（クスノキ・カシ）：太い幹にこんもり詰まった丸い樹冠
     {H:9.,R:.24,nL:5,bl:2.3,op:30,cr:1.05,lean:.06,al:[.45,.95],tap:.5,bu:.45,fill:.35,sub:1}]; // 9 白樺：細く白い幹、軽い樹冠
-  const mkBroad=vi=>{ const S=TRS[vi], r=pRng('btree'+vi,11), tr={P:[],N:[],U:[],C:[],y0:0,y1:S.H+S.bl}, tips=[];
+  /* 同じ種類でも形を3通り作る：0＝ふつう、1＝横に広がり枝が多く片側へ傾く、2＝背が高く枝が少なく上へ伸びる（1本ずつどれかになる） */
+  const VARS=[{},{nL:1,lean:1.8,bl:1.15,op:10,cr:.9,fill:.15,H:.88},{nL:-1,lean:.6,bl:.82,op:-9,cr:1.08,fill:-.08,H:1.15}], NVAR=3;
+  const mkBroad=(vi,vk=0)=>{ const S0=TRS[vi], VV=VARS[vk], S=vk?{...S0,nL:Math.max(3,S0.nL+VV.nL),lean:S0.lean*VV.lean,bl:S0.bl*VV.bl,op:S0.op+VV.op,cr:S0.cr*VV.cr,fill:Math.max(.15,(S0.fill??.4)+VV.fill),H:S0.H*VV.H}:S0, r=pRng('btree'+vi+(vk?'v'+vk:''),11), tr={P:[],N:[],U:[],C:[],y0:0,y1:S.H+S.bl}, tips=[];
     const la=r()*6.28, lv=V3(Math.cos(la)*S.lean,1,Math.sin(la)*S.lean);
     const tp=tCurve(V3(0,-.3,0),lv,S.H+.3,0,.12,r,6); tTube(tp,S.R,S.R*.72,7,1.0,tr); const top=tp[tp.length-1];
     for(let i=0;i<S.nL;i++){ const az=(i+r()*.9-.2)/S.nL*6.2832, op=(S.op+(r()-.5)*16)*Math.PI/180, d=V3(Math.cos(az)*Math.sin(op),Math.cos(op),Math.sin(az)*Math.sin(op)), fa=S.al?S.al[0]+(S.al[1]-S.al[0])*i/Math.max(1,S.nL-1):1, st=(S.al?tp[Math.round(fa*(tp.length-1))]:tp[Math.max(2,tp.length-3-(i%2))]).clone(), bl=S.bl*(.65+r()*.6)*(S.tap?1-fa*S.tap+S.tap*.3:1);
@@ -5325,7 +5327,7 @@ void main() {`)
       for(const tri of [[0,1,2],[0,2,3]]) for(const k2 of tri){ const [pt,u,w]=cs[k2]; cd.P.push(pt.x,pt.y,pt.z); cd.U.push(u,w); const n=bn(pt,d); cd.N.push(n.x,n.y,n.z); const sh=shade(pt); cd.C.push(sh[0]*vc[0],sh[1]*vc[1],sh[2]*vc[2]); } } });
     const G=(o,uv)=>{ const g=new T.BufferGeometry(); g.setAttribute('position',new T.Float32BufferAttribute(o.P,3)); g.setAttribute('normal',new T.Float32BufferAttribute(o.N,3)); g.setAttribute('color',new T.Float32BufferAttribute(o.C,3)); if(uv) g.setAttribute('uv',new T.Float32BufferAttribute(o.U,2)); g.computeBoundingSphere(); return g; };
     return {canopy:G(core),leafCards:G(cd,1),trunk:G(tr,1),tris:(core.P.length+cd.P.length+tr.P.length)/9}; };
-  const BT=[0,1,2,3,4,5,6,7,8,9].map(v=>v===4?null:mkBroad(v)), canopy=BT[0].canopy, leafCards=BT[0].leafCards, trunk=BT[0].trunk;
+  const BV=[0,1,2,3,4,5,6,7,8,9].map(v=>v===4?null:[0,1,2].map(k=>mkBroad(v,k))), BT=BV.map(b=>b&&b[0]), canopy=BT[0].canopy, leafCards=BT[0].leafCards, trunk=BT[0].trunk;
   // 針葉樹（ブレワイのトウヒを見ながら作り直し）：まっすぐ細い幹に、先が垂れ下がった枝が段々に重なり、上へ行くほど短く細くなる。
   //   枝は1本ずつ針葉の付いた小枝の板（切り抜き）で、輪郭は針葉でけば立つ。内と下は濃い青緑、枝先と上は明るい
   const ntx=RTw?imgTex(RTw):(()=>{ const cv=document.createElement('canvas'); cv.width=256; cv.height=256; const x=cv.getContext('2d'), r=pRng('needle',3); x.save(); x.beginPath(); x.rect(0,0,256,128); x.clip(); /* 上半分：小枝の板。下半分：段の枝の「すそ」（輪のように広がる枝の層。内側はびっしり針葉、外の縁は枝先がぎざぎざに出る） */
@@ -5399,7 +5401,7 @@ void main() {`)
     const a={mR:patch(new T.MeshToonMaterial({color:0xffffff,gradientMap:gmT,vertexColors:true}),.15), mL:patch(new T.MeshToonMaterial({color:0xffffff,gradientMap:gmT,vertexColors:true,map:lt,alphaTest:.4,side:T.DoubleSide}),.15), mT:patch(new T.MeshToonMaterial({color:0xffffff,gradientMap:gmT,map:bt,vertexColors:true}))};
     augT(a.mR,'r',0,spc); augT(a.mL,'l',0,spc); augTr(a.mT); augL(a.mR); augL(a.mL); return a; });
   /* 葉の地の色：常緑樹は濃い緑、イチョウ・白樺は明るい黄緑 */ const LCOL={0:[[128,172,60],[150,190,72]],5:[[150,186,64],[170,200,80]],6:[[118,160,60],[138,178,70]],7:[[124,166,56],[148,186,66]],8:[[72,112,48],[92,132,58]],9:[[146,184,70],[166,198,86]]};
-  if(/lkshot/.test(location.search)) L.TREE={CK,mCW,mCL,TM,TRS,BT,canopy,leafCards,trunk,cone,mR,mL,mT,mC,BT,parts:v=>[[BT[v].canopy,mR],[BT[v].leafCards,mL],[BT[v].trunk,mT]]};
+  if(/lkshot/.test(location.search)) L.TREE={CK,mCW,mCL,TM,TRS,BT,BV,canopy,leafCards,trunk,cone,mR,mL,mT,mC,BT,parts:v=>[[BT[v].canopy,mR],[BT[v].leafCards,mL],[BT[v].trunk,mT]]};
   // 木：丘や山の斜面は森がびっしり、平らな低地はまばら（森の濃さ forM）。道に近い木（RLm以内、近い順に上限まで）は本物の形、その外は本物を写した絵の板（遠くの森と同じ板）
   // ---- 城下町（ブレワイのハイラル城下町の廃墟）：地図の城下町の範囲（城の南、湖の外の陸）に、本当の大きさで。
   //   道はそのまま町の中を通る。通りの格子に沿って、2〜3階の石の家が並ぶ（切妻のスレート屋根、アーチの窓）。
@@ -5649,9 +5651,10 @@ void main() {`)
       const [vi,s]=treeKind(x,y,e,b,ok[0],ok[1],ok[2],r6,r7,r8,ok[3]); all.push([x,y,e,vi,s,rot,r7,dr]); const tr=.3+.35*s; obsAdd({t:0,x,y,r:tr},x,y,tr); if(all.length>=5200) break; }
     all.sort((a,b)=>a[7]-b[7]); const sp=[], im=[]; for(const t of all){ if(t[7]<RLm&&sp.length<NREAL) sp.push(t); else im.push(t); }
     const CI=CK.map((g,k)=>{ /* k＝針葉樹の種類（4カラマツだけ秋に色づく葉） */ const n=sp.filter(s=>s[3]===10+k).length; return n?{a:0,N:new T.InstancedMesh(g.n,k===4?mCL:mC,n),W:new T.InstancedMesh(g.w,mCW,n)}:null; }), iC=new T.Group(), M=new T.Matrix4(), Q=new T.Quaternion(), V=new T.Vector3(), Sc=new T.Vector3(), up=new T.Vector3(0,1,0), cA=c3([128,172,60]), cB=c3([150,190,72]), cc2=new T.Color();
-    const IB=BT.map((b,vi)=>{ if(!b) return null; const n=sp.filter(s=>s[3]===vi).length, tm2=TM[vi]; return n?{n,a:0,R:new T.InstancedMesh(b.canopy,tm2.mR,n),L:new T.InstancedMesh(b.leafCards,tm2.mL,n),T:new T.InstancedMesh(b.trunk,tm2.mT,n)}:null; });
-    const Qt=new T.Quaternion(), Vt=new T.Vector3(); let c=0; sp.forEach(([x,y,e,vi,s,r,rv])=>{ Q.setFromAxisAngle(up,r); Sc.set(s,s,s); if(vi<10){ /* 1本ずつ形を変える：横幅・高さ・傾きを少しずつ */ const h=k=>{ const q=Math.sin(x*12.9898+y*78.233+k*37.7)*43758.5453; return q-Math.floor(q); }; Sc.set(s*(.84+.32*h(1)),s*(.86+.28*h(2)),s*(.84+.32*h(3))); Q.multiply(Qt.setFromAxisAngle(Vt.set(1,0,0),(h(4)-.5)*.16)); } V.set(X(x),e-.4,Z(y)); M.compose(V,Q,Sc); if(vi>=10){ const B=CI[vi-10], a=B.a++; B.N.setMatrixAt(a,M); B.W.setMatrixAt(a,M); B.N.setColorAt(a,cc2.setRGB(.9+rv*.2,.92+rv*.16,.9+rv*.14)); B.W.setColorAt(a,cc2.setRGB(1,1,1)); } else { const B=IB[vi], a=B.a++; B.R.setMatrixAt(a,M); B.L.setMatrixAt(a,M); B.T.setMatrixAt(a,M); { const lc=LCOL[vi]||LCOL[0]; B.R.setColorAt(a,cc2.copy(c3(lc[0])).lerp(c3(lc[1]),rv)); } B.L.setColorAt(a,cc2); } });
-    CI.forEach(B=>{ if(B) iC.add(B.N,B.W); }); iC.children.forEach(m=>{ m.castShadow=true; m.receiveShadow=true; }); tileG.userData.trees=sp.filter(q=>q[3]<10).map(q=>[X(q[0]),q[2]-.4,Z(q[1]),q[3],q[4]]); const ms=[iC]; IB.forEach(B=>{ if(B){ ms.push(B.R,B.L,B.T); (tileG.userData.leafM||(tileG.userData.leafM=[])).push(B.L); } }); ms.forEach(m=>{ m.castShadow=true; m.receiveShadow=true; tileG.add(m); });
+    const vkOf=(x,y)=>{ const q=Math.sin(x*41.31+y*17.77)*43758.5453; return Math.floor((q-Math.floor(q))*NVAR); };
+    const IB=BV.map((bv,vi)=>{ if(!bv) return null; return bv.map((b,k)=>{ const n=sp.filter(s=>s[3]===vi&&vkOf(s[0],s[1])===k).length, tm2=TM[vi]; return n?{n,a:0,R:new T.InstancedMesh(b.canopy,tm2.mR,n),L:new T.InstancedMesh(b.leafCards,tm2.mL,n),T:new T.InstancedMesh(b.trunk,tm2.mT,n)}:null; }); });
+    const Qt=new T.Quaternion(), Vt=new T.Vector3(); let c=0; sp.forEach(([x,y,e,vi,s,r,rv])=>{ Q.setFromAxisAngle(up,r); Sc.set(s,s,s); if(vi<10){ /* 1本ずつ形を変える：横幅・高さ・傾きを少しずつ */ const h=k=>{ const q=Math.sin(x*12.9898+y*78.233+k*37.7)*43758.5453; return q-Math.floor(q); }; Sc.set(s*(.84+.32*h(1)),s*(.86+.28*h(2)),s*(.84+.32*h(3))); Q.multiply(Qt.setFromAxisAngle(Vt.set(1,0,0),(h(4)-.5)*.16)); } V.set(X(x),e-.4,Z(y)); M.compose(V,Q,Sc); if(vi>=10){ const B=CI[vi-10], a=B.a++; B.N.setMatrixAt(a,M); B.W.setMatrixAt(a,M); B.N.setColorAt(a,cc2.setRGB(.9+rv*.2,.92+rv*.16,.9+rv*.14)); B.W.setColorAt(a,cc2.setRGB(1,1,1)); } else { const B=IB[vi][vkOf(x,y)], a=B.a++; B.R.setMatrixAt(a,M); B.L.setMatrixAt(a,M); B.T.setMatrixAt(a,M); { const lc=LCOL[vi]||LCOL[0]; B.R.setColorAt(a,cc2.copy(c3(lc[0])).lerp(c3(lc[1]),rv)); } B.L.setColorAt(a,cc2); } });
+    CI.forEach(B=>{ if(B) iC.add(B.N,B.W); }); iC.children.forEach(m=>{ m.castShadow=true; m.receiveShadow=true; }); tileG.userData.trees=sp.filter(q=>q[3]<10).map(q=>[X(q[0]),q[2]-.4,Z(q[1]),q[3],q[4]]); const ms=[iC]; IB.forEach(BB=>BB&&BB.forEach(B=>{ if(B){ ms.push(B.R,B.L,B.T); (tileG.userData.leafM||(tileG.userData.leafM=[])).push(B.L); } })); ms.forEach(m=>{ m.castShadow=true; m.receiveShadow=true; tileG.add(m); });
     if(im.length) tileG.add(IMP.inst(im.map(([x,y,e,vi,s,r,rv])=>[vi,x,y,e,s,rv,1e9]))); };
   // ---- 遠くの森：足もとの区画（本物の木がある所）の外にも、本物の木を横から写した絵の板を立てて、山や丘の森を地平の手前まで続ける。
   //      木の種類・生える場所の決まりは手前の木と同じ。板はいつもカメラの方を向く ----
